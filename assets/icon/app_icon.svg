@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+    <!-- Fondo circular granate oscuro -->
+    <circle cx="54" cy="54" r="54" fill="#4A1D3D"/>
+    
+    <!-- Fondo circular con gradiente visual -->
+    <circle cx="54" cy="54" r="40" fill="#6B2D5B"/>
+    
+    <!-- Círculo interior más claro -->
+    <circle cx="54" cy="54" r="32" fill="#8B3A6E"/>
+    
+    <!-- Cuerpo del autobús - forma principal -->
+    <path fill="#FFFFFF" d="M30,42 L78,42 Q82,42 82,46 L82,62 Q82,66 78,66 L30,66 Q26,66 26,62 L26,46 Q26,42 30,42 Z"/>
+    
+    <!-- Ventanas del bus -->
+    <rect x="32" y="46" width="10" height="8" fill="#6B2D5B"/>
+    <rect x="46" y="46" width="10" height="8" fill="#6B2D5B"/>
+    <rect x="60" y="46" width="10" height="8" fill="#6B2D5B"/>
+    
+    <!-- Parabrisas delantero -->
+    <rect x="74" y="46" width="4" height="12" fill="#9B4D7D"/>
+    
+    <!-- Rueda trasera -->
+    <circle cx="36" cy="66" r="5" fill="#4A1D3D"/>
+    <circle cx="36" cy="66" r="2" fill="#FFFFFF"/>
+    
+    <!-- Rueda delantera -->
+    <circle cx="68" cy="66" r="5" fill="#4A1D3D"/>
+    <circle cx="68" cy="66" r="2" fill="#FFFFFF"/>
+    
+    <!-- Línea decorativa lateral -->
+    <rect x="28" y="58" width="52" height="2" fill="#6B2D5B"/>
+    
+    <!-- Faro delantero -->
+    <circle cx="80" cy="52" r="2" fill="#FFD700"/>
+    
+    <!-- Señal ubicación/conectividad encima del bus -->
+    <circle cx="54" cy="28" r="2" fill="#FFFFFF"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="1.5" d="M54,32 Q60,36 54,40 Q48,36 54,32"/>
+</svg>
