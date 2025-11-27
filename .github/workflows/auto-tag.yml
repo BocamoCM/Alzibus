@@ -1,0 +1,116 @@
+# Auto-tag workflow - Creates version tags based on commit messages
+name: Auto Version Tag
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  auto-tag:
+    name: Create Version Tag
+    runs-on: ubuntu-latest
+    # Solo ejecutar si el commit NO es de un tag automático
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'Auto-bump version') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necesario para obtener todos los tags
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          # Obtener el último tag o usar v0.0.0 si no hay ninguno
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+      
+      - name: Determine version bump
+        id: bump
+        run: |
+          LATEST="${{ steps.latest_tag.outputs.LATEST_TAG }}"
+          VERSION=${LATEST#v}
+          
+          # Separar major.minor.patch
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          
+          # Determinar tipo de bump basado en commits o input manual
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BUMP_TYPE="${{ github.event.inputs.version_type }}"
+          else
+            # Auto-detectar basado en mensajes de commit
+            COMMITS=$(git log $LATEST..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+            
+            if echo "$COMMITS" | grep -qiE "^(BREAKING CHANGE|feat!|fix!):"; then
+              BUMP_TYPE="major"
+            elif echo "$COMMITS" | grep -qiE "^feat(\(.+\))?:"; then
+              BUMP_TYPE="minor"
+            else
+              BUMP_TYPE="patch"
+            fi
+          fi
+          
+          # Calcular nueva versión
+          case $BUMP_TYPE in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Bump type: $BUMP_TYPE"
+          echo "New version: $NEW_VERSION"
+      
+      - name: Check if changes exist
+        id: changes
+        run: |
+          LATEST="${{ steps.latest_tag.outputs.LATEST_TAG }}"
+          if [ "$LATEST" == "v0.0.0" ]; then
+            echo "HAS_CHANGES=true" >> $GITHUB_OUTPUT
+          else
+            CHANGES=$(git diff --name-only $LATEST..HEAD -- lib/ pubspec.yaml android/ ios/ 2>/dev/null | wc -l)
+            if [ "$CHANGES" -gt "0" ]; then
+              echo "HAS_CHANGES=true" >> $GITHUB_OUTPUT
+            else
+              echo "HAS_CHANGES=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Create and push tag
+        if: steps.changes.outputs.HAS_CHANGES == 'true'
+        run: |
+          NEW_VERSION="${{ steps.bump.outputs.NEW_VERSION }}"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Crear tag anotado
+          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION - ${{ steps.bump.outputs.BUMP_TYPE }} bump"
+          git push origin "$NEW_VERSION"
+          
+          echo "✅ Created tag: $NEW_VERSION"

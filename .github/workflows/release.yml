@@ -1,0 +1,73 @@
+# Release workflow - Triggered by tags
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on v1.0.0, v1.2.3, etc.
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Update version in pubspec.yaml
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.VERSION }}+${{ github.run_number }}/" pubspec.yaml
+      
+      - name: Build Release APK
+        run: flutter build apk --release
+      
+      - name: Build App Bundle (AAB)
+        run: flutter build appbundle --release
+      
+      - name: Rename artifacts
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/alzibus-${{ steps.version.outputs.VERSION }}.apk
+          mv build/app/outputs/bundle/release/app-release.aab build/app/outputs/bundle/release/alzibus-${{ steps.version.outputs.VERSION }}.aab
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## Cambios en esta versión" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          git log $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD --pretty=format:"- %s" >> CHANGELOG.md || echo "- Release inicial" >> CHANGELOG.md
+          cat CHANGELOG.md
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Alzibus v${{ steps.version.outputs.VERSION }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          files: |
+            build/app/outputs/flutter-apk/alzibus-${{ steps.version.outputs.VERSION }}.apk
+            build/app/outputs/bundle/release/alzibus-${{ steps.version.outputs.VERSION }}.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
