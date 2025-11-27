@@ -21,7 +21,7 @@ dependencies:
   android_alarm_manager_plus: ^4.0.3
   http: ^1.2.2
   html: ^0.15.4
-  device_info_plus: ^11.5.0
+  device_info_plus: 11.3.0
   url_launcher: ^6.3.2
 
 dev_dependencies:
