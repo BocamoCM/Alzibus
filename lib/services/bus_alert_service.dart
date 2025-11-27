@@ -1,0 +1,366 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'bus_times_service.dart';
+import 'notification_service.dart';
+
+class BusAlert {
+  final int stopId;
+  final String stopName;
+  final String line;
+  final String destination;
+  final DateTime createdAt;
+  bool notified5min;
+  bool notified2min;
+  bool notifiedArriving;
+  
+  BusAlert({
+    required this.stopId,
+    required this.stopName,
+    required this.line,
+    required this.destination,
+    required this.createdAt,
+    this.notified5min = false,
+    this.notified2min = false,
+    this.notifiedArriving = false,
+  });
+
+  String get key => '${stopId}_${line}_${destination}';
+  
+  Map<String, dynamic> toJson() => {
+    'stopId': stopId,
+    'stopName': stopName,
+    'line': line,
+    'destination': destination,
+    'createdAt': createdAt.toIso8601String(),
+    'notified5min': notified5min,
+    'notified2min': notified2min,
+    'notifiedArriving': notifiedArriving,
+  };
+  
+  factory BusAlert.fromJson(Map<String, dynamic> json) => BusAlert(
+    stopId: int.parse(json['stopId'].toString()),
+    stopName: json['stopName'].toString(),
+    line: json['line'].toString(),
+    destination: json['destination'].toString(),
+    createdAt: DateTime.parse(json['createdAt'].toString()),
+    notified5min: json['notified5min'].toString() == 'true',
+    notified2min: json['notified2min'].toString() == 'true',
+    notifiedArriving: json['notifiedArriving'].toString() == 'true',
+  );
+}
+
+// Callback estático global para android_alarm_manager_plus
+@pragma('vm:entry-point')
+Future<void> checkAlertsCallback() async {
+  final prefs = await SharedPreferences.getInstance();
+  final alertsJson = prefs.getString('bus_alerts');
+  
+  if (alertsJson == null || alertsJson.isEmpty) {
+    return;
+  }
+  
+  try {
+    final List<dynamic> list = jsonDecode(alertsJson);
+    if (list.isEmpty) {
+      return;
+    }
+    
+    // Crear instancia del servicio
+    final service = BusAlertService();
+    
+    // Cargar alertas desde SharedPreferences
+    await service._loadAlerts();
+    
+    if (service._activeAlerts.isEmpty) {
+      await AndroidAlarmManager.cancel(999);
+      return;
+    }
+    
+    // Inicializar plugin de notificaciones
+    final notifPlugin = FlutterLocalNotificationsPlugin();
+    const androidSettings = AndroidInitializationSettings('@drawable/ic_launcher_foreground');
+    await notifPlugin.initialize(const InitializationSettings(android: androidSettings));
+    
+    // Crear canal de notificación
+    final androidPlugin = notifPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final alertsChannel = AndroidNotificationChannel(
+      'alzibus-alerts',
+      'Alertas de Bus',
+      description: 'Te avisa cuando tu bus está llegando',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+      vibrationPattern: Int64List.fromList([0, 1000, 300, 1000]),
+    );
+    await androidPlugin?.createNotificationChannel(alertsChannel);
+    
+    // Inicializar servicios
+    service._notificationService = NotificationService(notifPlugin);
+    
+    // Chequear alertas
+    await service._checkAlerts();
+  } catch (e) {
+    // Registrar error en SharedPreferences para depuración
+    await prefs.setString('last_alert_error', e.toString());
+    await prefs.setString('last_alert_check', DateTime.now().toIso8601String());
+  }
+}
+
+@pragma('vm:entry-point')
+class BusAlertService {
+  static final BusAlertService _instance = BusAlertService._internal();
+  factory BusAlertService() => _instance;
+  BusAlertService._internal();
+
+  final BusTimesService _busTimesService = BusTimesService();
+  late final NotificationService _notificationService;
+  final Map<String, BusAlert> _activeAlerts = {};
+  final Set<String> _notifiedAlerts = {};
+  Timer? _checkTimer;
+
+  static const String _prefsKey = 'bus_alerts';
+
+  Future<void> initialize() async {
+    final notifPlugin = FlutterLocalNotificationsPlugin();
+    _notificationService = NotificationService(notifPlugin);
+    await _loadAlerts();
+    if (_activeAlerts.isNotEmpty) {
+      await _startMonitoring();
+    }
+  }
+
+  Future<void> _loadAlerts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final alertsJson = prefs.getString(_prefsKey);
+    
+    _activeAlerts.clear();
+    if (alertsJson != null && alertsJson.isNotEmpty) {
+      try {
+        final List<dynamic> list = jsonDecode(alertsJson);
+        for (final json in list) {
+          final alert = BusAlert.fromJson(json);
+          
+          // Remover alertas de más de 2 horas
+          if (DateTime.now().difference(alert.createdAt).inHours < 2) {
+            _activeAlerts[alert.key] = alert;
+          }
+        }
+      } catch (e) {
+        // Ignorar alertas corruptas
+      }
+    }
+  }
+
+  Future<void> _saveAlerts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final alertsList = _activeAlerts.values.map((alert) => alert.toJson()).toList();
+    final alertsJson = jsonEncode(alertsList);
+    await prefs.setString(_prefsKey, alertsJson);
+  }
+
+  Future<void> addAlert(BusAlert alert) async {
+    _activeAlerts[alert.key] = alert;
+    await _saveAlerts();
+    
+    // Iniciar monitoreo en segundo plano
+    await _startMonitoring();
+  }
+
+  Future<void> removeAlert(String key) async {
+    _activeAlerts.remove(key);
+    _notifiedAlerts.remove(key);
+    await _saveAlerts();
+    
+    // Detener monitoreo si no hay alertas
+    if (_activeAlerts.isEmpty) {
+      await _stopMonitoring();
+    }
+  }
+
+  // Método público para cargar alertas
+  Future<void> loadAlertsFromPrefs(SharedPreferences prefs) async {
+    await _loadAlerts();
+  }
+
+  // Obtener todas las alertas activas
+  List<BusAlert> getActiveAlerts() {
+    return _activeAlerts.values.toList();
+  }
+
+  // Obtener número de alertas activas
+  int get activeAlertsCount => _activeAlerts.length;
+
+  bool hasAlert(int stopId, String line, String destination) {
+    final key = '${stopId}_${line}_${destination}';
+    return _activeAlerts.containsKey(key);
+  }
+
+  // Método público para chequear alertas inmediatamente
+  Future<void> checkAlertsNow() async {
+    await _checkAlerts();
+  }
+
+  Future<void> _startMonitoring() async {
+    // Registrar alarma periódica en segundo plano (cada minuto)
+    await AndroidAlarmManager.periodic(
+      const Duration(minutes: 1),
+      999, // ID único para alertas de bus
+      checkAlertsCallback,
+      exact: true,
+      wakeup: true,
+      rescheduleOnReboot: true,
+    );
+    // También chequear inmediatamente
+    await _checkAlerts();
+  }
+
+  Future<void> _stopMonitoring() async {
+    await AndroidAlarmManager.cancel(999);
+    _checkTimer?.cancel();
+    _checkTimer = null;
+  }
+
+  Future<void> _checkAlerts() async {
+    if (_activeAlerts.isEmpty) return;
+
+    final alertsByStop = <int, List<BusAlert>>{};
+    for (final alert in _activeAlerts.values) {
+      alertsByStop.putIfAbsent(alert.stopId, () => []).add(alert);
+    }
+
+    for (final entry in alertsByStop.entries) {
+      final stopId = entry.key;
+      final alerts = entry.value;
+      
+      try {
+        final arrivals = await _busTimesService.getArrivalTimes(stopId);
+        
+        for (final alert in alerts) {
+          // Buscar coincidencia en los arrivals
+          final matchingArrival = arrivals.firstWhere(
+            (arrival) => 
+                arrival.line == alert.line && 
+                arrival.destination == alert.destination,
+            orElse: () => BusArrival(line: '', destination: '', time: ''),
+          );
+          
+          if (matchingArrival.line.isNotEmpty) {
+            final minutes = _parseMinutes(matchingArrival.time);
+            bool alertUpdated = false;
+            
+            // Si el tiempo es -1 (>>> sin servicio), el bus ya pasó - eliminar alerta
+            if (minutes < 0) {
+              await removeAlert(alert.key);
+              continue;
+            }
+            
+            // Si el bus ya pasó hace más de 5 minutos o la alerta es muy antigua, eliminarla
+            if (minutes > 60 || DateTime.now().difference(alert.createdAt).inMinutes > 30) {
+              await removeAlert(alert.key);
+              continue;
+            }
+            
+            // Si nunca hemos notificado y el bus está llegando pronto (<=10 min)
+            if (minutes <= 10 && !alert.notified5min && !alert.notified2min && !alert.notifiedArriving) {
+              // Primera notificación
+              await _notificationService.showBusArrivalAlert(
+                stopName: alert.stopName,
+                line: alert.line,
+                destination: alert.destination,
+                minutes: minutes,
+                urgency: minutes <= 2 ? 'muy_cerca' : 'pronto',
+              );
+              
+              if (minutes <= 2) {
+                alert.notified2min = true;
+                alert.notified5min = true; // Marcar ambos para no repetir
+              } else {
+                alert.notified5min = true;
+              }
+              alertUpdated = true;
+            }
+            // Segunda notificación a 2 minutos (si ya notificamos a 5)
+            else if (minutes <= 2 && minutes > 0 && alert.notified5min && !alert.notified2min) {
+              await _notificationService.showBusArrivalAlert(
+                stopName: alert.stopName,
+                line: alert.line,
+                destination: alert.destination,
+                minutes: minutes,
+                urgency: 'muy_cerca',
+              );
+              alert.notified2min = true;
+              alertUpdated = true;
+            }
+            // Notificación final cuando llega
+            else if (minutes == 0 && !alert.notifiedArriving) {
+              await _notificationService.showBusArrivalAlert(
+                stopName: alert.stopName,
+                line: alert.line,
+                destination: alert.destination,
+                minutes: 0,
+                urgency: 'llegando',
+              );
+              alert.notifiedArriving = true;
+              alertUpdated = true;
+              
+              // Remover alerta después de notificar llegada
+              await removeAlert(alert.key);
+            }
+            
+            // Guardar cambios si hubo actualización
+            if (alertUpdated) {
+              await _saveAlerts();
+            }
+          }
+        }
+      } catch (e) {
+        // Error al obtener horarios, continuar con siguiente parada
+      }
+    }
+  }
+
+  int _parseMinutes(String time) {
+    // Parsear tiempo: "5 min", "En parada", "12:30", etc.
+    if (time.toLowerCase().contains('parada')) return 0;
+    
+    // Sin servicio o ya pasó
+    if (time.contains('>>>') || time.contains('---') || time.trim().isEmpty) return -1;
+    
+    final minMatch = RegExp(r'(\d+)\s*min', caseSensitive: false).firstMatch(time);
+    if (minMatch != null) {
+      return int.tryParse(minMatch.group(1) ?? '99') ?? 99;
+    }
+    
+    // Si es hora (HH:MM), calcular diferencia
+    final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(time);
+    if (timeMatch != null) {
+      final hour = int.tryParse(timeMatch.group(1) ?? '0') ?? 0;
+      final minute = int.tryParse(timeMatch.group(2) ?? '0') ?? 0;
+      final now = DateTime.now();
+      final busTime = DateTime(now.year, now.month, now.day, hour, minute);
+      var diff = busTime.difference(now).inMinutes;
+      
+      // Si el tiempo es negativo, asumir que es para el día siguiente
+      if (diff < 0) diff += 24 * 60;
+      
+      return diff;
+    }
+    
+    return 99; // Desconocido
+  }
+
+  List<BusAlert> getAlertsForStop(int stopId) {
+    return _activeAlerts.values
+        .where((alert) => alert.stopId == stopId)
+        .toList();
+  }
+
+  void dispose() {
+    _stopMonitoring();
+  }
+}
