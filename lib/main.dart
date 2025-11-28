@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'models/bus_stop.dart';
 import 'services/foreground_service.dart';
 import 'services/stops_service.dart';
 import 'services/bus_alert_service.dart';
@@ -119,6 +120,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _notificationsEnabled = true;
   double _notificationDistance = 80.0;
   int _notificationCooldown = 5;
+  
+  // Para navegar a una parada desde Rutas
+  final GlobalKey<MapPageState> _mapPageKey = GlobalKey<MapPageState>();
 
   @override
   void initState() {
@@ -257,12 +261,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final pages = [
       MapPage(
+        key: _mapPageKey,
         notif: _notif,
         notificationsEnabled: _notificationsEnabled,
         notificationDistance: _notificationDistance,
         notificationCooldown: _notificationCooldown,
       ),
-      const RoutesPage(),
+      RoutesPage(
+        onStopTapped: (stop) {
+          // Cambiar a la pestaña del mapa
+          setState(() => _index = 0);
+          // Ir a la parada
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _mapPageKey.currentState?.goToStop(stop);
+          });
+        },
+      ),
       const NfcPage(),
       SettingsPage(
         notificationsEnabled: _notificationsEnabled,

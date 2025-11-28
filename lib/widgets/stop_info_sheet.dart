@@ -9,6 +9,7 @@ import '../services/bus_times_service.dart';
 import '../services/bus_alert_service.dart';
 import '../services/foreground_service.dart';
 import '../services/favorite_stops_service.dart';
+import '../services/renfe_service.dart';
 import 'simple_map_widget.dart';
 
 class StopInfoSheet extends StatefulWidget {
@@ -34,6 +35,16 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   Timer? _autoRefreshTimer;
   final Set<String> _activeAlerts = {};
   bool _isFavorite = false;
+  
+  // Estado para trenes de Renfe (solo para estación Renfe)
+  List<TrainArrival>? _trainArrivals;
+  bool _loadingTrains = false;
+  
+  /// Verifica si esta parada es la estación de Renfe
+  bool get _isRenfeStation {
+    final name = widget.stop.name.toUpperCase();
+    return name.contains('RENFE') || name.contains('ESTACIÓ') || name.contains('ESTACION');
+  }
 
   @override
   void initState() {
@@ -41,6 +52,27 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     _loadArrivalTimes();
     _startAutoRefresh();
     _checkFavorite();
+    if (_isRenfeStation) {
+      _loadTrainTimes();
+    }
+  }
+  
+  Future<void> _loadTrainTimes() async {
+    setState(() => _loadingTrains = true);
+    try {
+      final trains = await RenfeService.getNextTrains(limit: 6);
+      if (mounted) {
+        setState(() {
+          _trainArrivals = trains;
+          _loadingTrains = false;
+        });
+      }
+    } catch (e) {
+      print('[StopInfoSheet] Error loading trains: $e');
+      if (mounted) {
+        setState(() => _loadingTrains = false);
+      }
+    }
   }
 
   Future<void> _checkFavorite() async {
@@ -486,6 +518,166 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                 ),
               );
             }),
+          
+          // Sección de trenes (solo para estación Renfe)
+          if (_isRenfeStation) ...[
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF79529), // Color naranja de la línea C2
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.train, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Text('🚆 Trenes Cercanías C2:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 20),
+                  onPressed: _loadTrainTimes,
+                  tooltip: 'Actualizar trenes',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_loadingTrains)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(color: Color(0xFFF79529)),
+                ),
+              )
+            else if (_trainArrivals == null || _trainArrivals!.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'No hay trenes próximos',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._trainArrivals!.map((train) {
+                final minutesUntil = RenfeService.minutesUntilArrival(train.scheduledTime, train.delayMinutes);
+                final bool isDelayed = train.delayMinutes > 0;
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDelayed ? Colors.red[50] : Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDelayed ? Colors.red[300]! : Colors.orange[200]!, 
+                      width: 1
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      // Badge C2
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF79529),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'C2',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Destino
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              train.destination,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  train.scheduledTime,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDelayed ? Colors.grey : Colors.grey[700],
+                                    decoration: isDelayed ? TextDecoration.lineThrough : null,
+                                  ),
+                                ),
+                                if (isDelayed) ...[
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    train.actualTime,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Tiempo restante
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            minutesUntil <= 0 ? 'Llegando' : '$minutesUntil min',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: minutesUntil <= 5 ? Colors.red : const Color(0xFFF79529),
+                              fontSize: 15,
+                            ),
+                          ),
+                          if (isDelayed)
+                            Text(
+                              '+${train.delayMinutes} min',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.red,
+                              ),
+                            )
+                          else
+                            Text(
+                              train.statusText,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+          
           const SizedBox(height: 16),
           const Text('Líneas:', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),

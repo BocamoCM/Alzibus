@@ -1,7 +1,7 @@
 name: alzibus
 description: Aplicación para ver paradas de bus en Alzira y leer tarjetas NFC MIFARE Classic 1K
 publish_to: 'none'
-version: 1.2.0
+version: 1.5.0+1
 
 environment:
   sdk: '>=2.18.0 <4.0.0'
@@ -25,6 +25,7 @@ dependencies:
   flutter_background_service: ^5.0.10
   flutter_background_service_android: ^6.2.7
   home_widget: ^0.8.1
+  package_info_plus: ^8.0.0
 
 dev_dependencies:
   flutter_test:

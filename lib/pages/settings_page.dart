@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/foreground_service.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -31,11 +32,22 @@ class _SettingsPageState extends State<SettingsPage> {
   String _lastBusCheck = 'Sin datos';
   int _alertsCount = 0;
   bool _serviceRunning = false;
+  String _appVersion = '';
+  String _buildNumber = '';
 
   @override
   void initState() {
     super.initState();
     _loadDebugInfo();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = packageInfo.version;
+      _buildNumber = packageInfo.buildNumber;
+    });
   }
 
   Future<void> _loadDebugInfo() async {
@@ -333,20 +345,40 @@ class _SettingsPageState extends State<SettingsPage> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        const Card(
+        Card(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Alzibus',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    const Icon(Icons.directions_bus, color: Colors.blue, size: 28),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Alzibus',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'v$_appVersion${_buildNumber.isNotEmpty && _buildNumber != '1' ? '+$_buildNumber' : ''}',
+                        style: TextStyle(
+                          color: Colors.blue[800],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 8),
-                Text('Versión: 1.2.0'),
-                SizedBox(height: 8),
-                Text(
+                const SizedBox(height: 12),
+                const Text(
                   'Aplicación para ver paradas de bus en Alzira, Valencia.',
                   style: TextStyle(color: Colors.grey),
                 ),

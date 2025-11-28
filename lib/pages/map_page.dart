@@ -19,6 +19,7 @@ class MapPage extends StatefulWidget {
   final bool notificationsEnabled;
   final double notificationDistance;
   final int notificationCooldown;
+  final BusStop? initialStop;
 
   const MapPage({
     super.key,
@@ -26,13 +27,14 @@ class MapPage extends StatefulWidget {
     required this.notificationsEnabled,
     required this.notificationDistance,
     required this.notificationCooldown,
+    this.initialStop,
   });
 
   @override
-  State<MapPage> createState() => _MapPageState();
+  State<MapPage> createState() => MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class MapPageState extends State<MapPage> {
   List<BusStop> stops = [];
   Set<String> selectedLines = {'L1', 'L2', 'L3'};
   LatLng center = LatLng(39.1566, -0.4354);
@@ -71,6 +73,24 @@ class _MapPageState extends State<MapPage> {
     _loadStops();
     _locationService.startTracking();
     _setupBusSimulation();
+    
+    // Si hay una parada inicial, ir a ella después de cargar
+    if (widget.initialStop != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        goToStop(widget.initialStop!);
+      });
+    }
+  }
+  
+  /// Método público para ir a una parada desde otras pantallas
+  void goToStop(BusStop stop) {
+    // Mover el mapa a la parada
+    _mapController.move(LatLng(stop.lat, stop.lng), 17);
+    
+    // Mostrar la info de la parada
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _showStopInfo(stop);
+    });
   }
 
   @override

@@ -7,6 +7,8 @@ import android.content.SharedPreferences
 import android.widget.RemoteViews
 import android.app.PendingIntent
 import android.content.Intent
+import android.view.View
+import android.graphics.Color
 import es.antonborri.home_widget.HomeWidgetPlugin
 
 class BusWidgetProvider : AppWidgetProvider() {
@@ -30,6 +32,29 @@ class BusWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
+        // Colores para las líneas de bus
+        private val lineColors = mapOf(
+            "L1" to Color.parseColor("#E53935"),  // Rojo
+            "L2" to Color.parseColor("#1E88E5"),  // Azul
+            "L3" to Color.parseColor("#43A047"),  // Verde
+            "L4" to Color.parseColor("#FB8C00"),  // Naranja
+            "L5" to Color.parseColor("#8E24AA"),  // Púrpura
+            "L6" to Color.parseColor("#00ACC1"),  // Cyan
+            "C2" to Color.parseColor("#F79529")   // Naranja Renfe
+        )
+        
+        fun getLineColor(line: String): Int {
+            return lineColors[line.uppercase()] ?: Color.parseColor("#2196F3")
+        }
+        
+        fun getTimeColor(time: String): Int {
+            return when {
+                time.contains("llegando", ignoreCase = true) || time.contains("!") -> Color.parseColor("#F44336") // Rojo
+                time.contains("1 min") || time.contains("2 min") || time.contains("3 min") -> Color.parseColor("#FF9800") // Naranja
+                else -> Color.parseColor("#4CAF50") // Verde
+            }
+        }
+
         fun updateAppWidget(
             context: Context,
             appWidgetManager: AppWidgetManager,
@@ -37,27 +62,76 @@ class BusWidgetProvider : AppWidgetProvider() {
         ) {
             val views = RemoteViews(context.packageName, R.layout.bus_widget)
             
-            // Obtener datos usando HomeWidgetPlugin (la manera correcta)
+            // Obtener datos usando HomeWidgetPlugin
             val widgetData = HomeWidgetPlugin.getData(context)
             
-            val stopName = widgetData.getString("widget_stop_name", "Sin parada favorita") ?: "Sin parada favorita"
-            val lineDestination = widgetData.getString("widget_line_destination", "Toca para configurar") ?: "Toca para configurar"
-            val arrivalTime = widgetData.getString("widget_arrival_time", "--") ?: "--"
+            // Obtener número de llegadas disponibles
+            val arrivalCount = widgetData.getInt("widget_arrival_count", 0)
             val lastUpdate = widgetData.getString("widget_last_update", "--:--") ?: "--:--"
             
-            // Actualizar vistas
-            views.setTextViewText(R.id.stop_name, "🚏 $stopName")
-            views.setTextViewText(R.id.line_destination, lineDestination)
-            views.setTextViewText(R.id.arrival_time, "⏱️ $arrivalTime")
-            views.setTextViewText(R.id.last_update, "Actualizado: $lastUpdate")
+            // Actualizar última actualización
+            views.setTextViewText(R.id.last_update, "🔄 $lastUpdate")
             
-            // Color del tiempo según urgencia
-            val timeColor = when {
-                arrivalTime.contains("llegando", ignoreCase = true) -> 0xFFF44336.toInt() // Rojo
-                arrivalTime.contains("1 min") || arrivalTime.contains("2 min") -> 0xFFFF9800.toInt() // Naranja
-                else -> 0xFF4CAF50.toInt() // Verde
+            if (arrivalCount == 0) {
+                // Mostrar estado vacío
+                views.setViewVisibility(R.id.arrival_row_1, View.GONE)
+                views.setViewVisibility(R.id.arrival_row_2, View.GONE)
+                views.setViewVisibility(R.id.arrival_row_3, View.GONE)
+                views.setViewVisibility(R.id.empty_state, View.VISIBLE)
+                
+                val emptyText = widgetData.getString("widget_empty_text", "Sin favoritos") ?: "Sin favoritos"
+                views.setTextViewText(R.id.empty_state, emptyText)
+            } else {
+                views.setViewVisibility(R.id.empty_state, View.GONE)
+                
+                // Llegada 1
+                if (arrivalCount >= 1) {
+                    views.setViewVisibility(R.id.arrival_row_1, View.VISIBLE)
+                    val line1 = widgetData.getString("widget_line_1", "L1") ?: "L1"
+                    val dest1 = widgetData.getString("widget_dest_1", "") ?: ""
+                    val time1 = widgetData.getString("widget_time_1", "--") ?: "--"
+                    
+                    views.setTextViewText(R.id.line_1, line1)
+                    views.setTextViewText(R.id.destination_1, dest1)
+                    views.setTextViewText(R.id.time_1, time1)
+                    views.setTextColor(R.id.time_1, getTimeColor(time1))
+                    views.setInt(R.id.line_1, "setBackgroundColor", getLineColor(line1))
+                } else {
+                    views.setViewVisibility(R.id.arrival_row_1, View.GONE)
+                }
+                
+                // Llegada 2
+                if (arrivalCount >= 2) {
+                    views.setViewVisibility(R.id.arrival_row_2, View.VISIBLE)
+                    val line2 = widgetData.getString("widget_line_2", "L2") ?: "L2"
+                    val dest2 = widgetData.getString("widget_dest_2", "") ?: ""
+                    val time2 = widgetData.getString("widget_time_2", "--") ?: "--"
+                    
+                    views.setTextViewText(R.id.line_2, line2)
+                    views.setTextViewText(R.id.destination_2, dest2)
+                    views.setTextViewText(R.id.time_2, time2)
+                    views.setTextColor(R.id.time_2, getTimeColor(time2))
+                    views.setInt(R.id.line_2, "setBackgroundColor", getLineColor(line2))
+                } else {
+                    views.setViewVisibility(R.id.arrival_row_2, View.GONE)
+                }
+                
+                // Llegada 3
+                if (arrivalCount >= 3) {
+                    views.setViewVisibility(R.id.arrival_row_3, View.VISIBLE)
+                    val line3 = widgetData.getString("widget_line_3", "L3") ?: "L3"
+                    val dest3 = widgetData.getString("widget_dest_3", "") ?: ""
+                    val time3 = widgetData.getString("widget_time_3", "--") ?: "--"
+                    
+                    views.setTextViewText(R.id.line_3, line3)
+                    views.setTextViewText(R.id.destination_3, dest3)
+                    views.setTextViewText(R.id.time_3, time3)
+                    views.setTextColor(R.id.time_3, getTimeColor(time3))
+                    views.setInt(R.id.line_3, "setBackgroundColor", getLineColor(line3))
+                } else {
+                    views.setViewVisibility(R.id.arrival_row_3, View.GONE)
+                }
             }
-            views.setTextColor(R.id.arrival_time, timeColor)
             
             // Intent para abrir la app al tocar el widget
             val intent = Intent(context, MainActivity::class.java)

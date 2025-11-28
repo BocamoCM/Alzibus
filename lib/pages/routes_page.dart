@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/stops_service.dart';
+import '../models/bus_stop.dart';
 
 class RoutesPage extends StatefulWidget {
-  const RoutesPage({super.key});
+  final Function(BusStop stop)? onStopTapped;
+  
+  const RoutesPage({super.key, this.onStopTapped});
 
   @override
   State<RoutesPage> createState() => _RoutesPageState();
@@ -218,23 +221,37 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
               ),
               // Información de la parada
               Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: (isFirst || isLast) 
-                        ? color.withOpacity(0.1) 
-                        : Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
+                child: GestureDetector(
+                  onTap: () {
+                    if (widget.onStopTapped != null) {
+                      // Crear un BusStop desde los datos del mapa
+                      final busStop = BusStop(
+                        id: stop['id'] ?? 0,
+                        name: stop['name'] ?? 'Sin nombre',
+                        lat: stop['lat'] ?? 0.0,
+                        lng: stop['lng'] ?? 0.0,
+                        lines: [lineId],
+                      );
+                      widget.onStopTapped!(busStop);
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
                       color: (isFirst || isLast) 
-                          ? color.withOpacity(0.3) 
-                          : Colors.grey[200]!,
+                          ? color.withOpacity(0.1) 
+                          : Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: (isFirst || isLast) 
+                            ? color.withOpacity(0.3) 
+                            : Colors.grey[200]!,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                       Row(
                         children: [
                           if (isFirst)
@@ -291,16 +308,27 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Parada #${stop['id']}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            'Parada #${stop['id']}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.grey[400],
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+              ),
               ),
             ],
           ),
