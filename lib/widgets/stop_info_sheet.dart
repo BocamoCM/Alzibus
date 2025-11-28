@@ -8,6 +8,7 @@ import '../constants/line_colors.dart';
 import '../services/bus_times_service.dart';
 import '../services/bus_alert_service.dart';
 import '../services/foreground_service.dart';
+import '../services/favorite_stops_service.dart';
 import 'simple_map_widget.dart';
 
 class StopInfoSheet extends StatefulWidget {
@@ -32,12 +33,55 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   bool _showStreetView = false;
   Timer? _autoRefreshTimer;
   final Set<String> _activeAlerts = {};
+  bool _isFavorite = false;
 
   @override
   void initState() {
     super.initState();
     _loadArrivalTimes();
     _startAutoRefresh();
+    _checkFavorite();
+  }
+
+  Future<void> _checkFavorite() async {
+    final isFav = await FavoriteStopsService.isFavorite(widget.stop.id);
+    if (mounted) {
+      setState(() => _isFavorite = isFav);
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_isFavorite) {
+      await FavoriteStopsService.removeFavorite(widget.stop.id);
+      if (mounted) {
+        setState(() => _isFavorite = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Parada eliminada de favoritos'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } else {
+      final favorite = FavoriteStop(
+        stopId: widget.stop.id,
+        stopName: widget.stop.name,
+        lat: widget.stop.lat,
+        lng: widget.stop.lng,
+        lines: widget.stop.lines,
+      );
+      await FavoriteStopsService.addFavorite(favorite);
+      if (mounted) {
+        setState(() => _isFavorite = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⭐ Parada añadida a favoritos'),
+            backgroundColor: Colors.amber,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -296,6 +340,15 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                   widget.stop.name,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+              ),
+              IconButton(
+                icon: Icon(
+                  _isFavorite ? Icons.star : Icons.star_border,
+                  color: _isFavorite ? Colors.amber : Colors.grey,
+                  size: 28,
+                ),
+                onPressed: _toggleFavorite,
+                tooltip: _isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
               ),
             ],
           ),

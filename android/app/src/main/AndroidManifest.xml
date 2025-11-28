@@ -48,6 +48,18 @@
             android:foregroundServiceType="location"
             tools:replace="android:foregroundServiceType" />
 
+        <!-- Widget de parada favorita -->
+        <receiver
+            android:name=".BusWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/bus_widget_info" />
+        </receiver>
+
 
     </application>
 </manifest>

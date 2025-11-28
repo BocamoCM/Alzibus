@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:vibration/vibration.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
+import 'package:home_widget/home_widget.dart';
 
 // Callbacks top-level para el background service
 @pragma('vm:entry-point')
@@ -70,6 +71,9 @@ Future<void> _checkLocationStatic(
     
     // SIEMPRE verificar alertas de bus
     await _checkBusAlertsStatic(prefs, notif);
+    
+    // Actualizar widget de Android con parada favorita
+    await _updateWidgetStatic(prefs);
     
     // Verificar si las notificaciones de PROXIMIDAD están habilitadas
     final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
@@ -376,6 +380,138 @@ Future<void> _showBusArrivingNotificationStatic(
     'Línea $line $timeText - $stopName',
     NotificationDetails(android: androidDetails),
   );
+}
+
+// Actualizar el widget de Android con la parada favorita
+Future<void> _updateWidgetStatic(SharedPreferences prefs) async {
+  try {
+    final favoriteJson = prefs.getString('favorite_stop');
+    
+    // También buscar en widget_favorite_stop (ID) para compatibilidad
+    final widgetStopId = prefs.getInt('widget_favorite_stop');
+    
+    String? stopId;
+    String? stopName;
+    
+    // Intentar obtener del favorito directo
+    if (favoriteJson != null && favoriteJson.isNotEmpty) {
+      try {
+        final favorite = jsonDecode(favoriteJson);
+        stopId = favorite['stopId']?.toString();
+        stopName = favorite['stopName'];
+      } catch (e) {
+        print('[ForegroundService] Error parsing favorite: $e');
+      }
+    }
+    
+    // Si no hay favorito directo, buscar en la lista de favoritos
+    if (stopId == null && widgetStopId != null) {
+      final favoritesJson = prefs.getString('favorite_stops');
+      if (favoritesJson != null) {
+        try {
+          final List<dynamic> favorites = jsonDecode(favoritesJson);
+          for (final fav in favorites) {
+            if (fav['stopId'] == widgetStopId) {
+              stopId = widgetStopId.toString();
+              stopName = fav['stopName'];
+              break;
+            }
+          }
+        } catch (e) {
+          print('[ForegroundService] Error parsing favorites list: $e');
+        }
+      }
+    }
+    
+    // Buscar el primer favorito si no hay uno específico
+    if (stopId == null) {
+      final favoritesJson = prefs.getString('favorite_stops');
+      if (favoritesJson != null) {
+        try {
+          final List<dynamic> favorites = jsonDecode(favoritesJson);
+          if (favorites.isNotEmpty) {
+            stopId = favorites.first['stopId']?.toString();
+            stopName = favorites.first['stopName'];
+          }
+        } catch (e) {
+          print('[ForegroundService] Error parsing favorites: $e');
+        }
+      }
+    }
+    
+    if (stopId == null) {
+      // No hay parada favorita
+      await HomeWidget.saveWidgetData<String>('widget_stop_name', 'Sin parada favorita');
+      await HomeWidget.saveWidgetData<String>('widget_line_destination', 'Añade una desde la app');
+      await HomeWidget.saveWidgetData<String>('widget_arrival_time', '--');
+      await HomeWidget.saveWidgetData<String>('widget_last_update', '--:--');
+      await HomeWidget.updateWidget(
+        name: 'BusWidgetProvider',
+        androidName: 'BusWidgetProvider',
+      );
+      return;
+    }
+    
+    // Consultar tiempo real de la API
+    final url = 'https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=$stopId';
+    final response = await http.get(Uri.parse(url)).timeout(
+      const Duration(seconds: 10),
+    );
+    
+    String lineDestination = 'Sin buses';
+    String arrivalTime = '--';
+    
+    if (response.statusCode == 200) {
+      final document = html_parser.parse(response.body);
+      final rows = document.querySelectorAll('tr');
+      
+      for (final row in rows) {
+        final cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          final lineText = cells[0].text.trim();
+          final timeText = cells[1].text.trim();
+          final destText = cells[2].text.trim();
+          
+          // Tomar el primer bus válido
+          if (lineText.isNotEmpty && timeText.isNotEmpty) {
+            lineDestination = '$lineText → $destText';
+            
+            // Formatear tiempo
+            if (timeText.toLowerCase().contains('llegando') || 
+                timeText.toLowerCase().contains('inminente') ||
+                timeText.contains('<')) {
+              arrivalTime = '¡Llegando!';
+            } else {
+              final match = RegExp(r'(\d+)').firstMatch(timeText);
+              if (match != null) {
+                arrivalTime = '${match.group(1)} min';
+              } else {
+                arrivalTime = timeText;
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+    
+    // Obtener hora actual
+    final now = DateTime.now();
+    final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    
+    await HomeWidget.saveWidgetData<String>('widget_stop_name', stopName ?? 'Parada favorita');
+    await HomeWidget.saveWidgetData<String>('widget_line_destination', lineDestination);
+    await HomeWidget.saveWidgetData<String>('widget_arrival_time', arrivalTime);
+    await HomeWidget.saveWidgetData<String>('widget_last_update', timeStr);
+    
+    await HomeWidget.updateWidget(
+      name: 'BusWidgetProvider',
+      androidName: 'BusWidgetProvider',
+    );
+    print('[ForegroundService] Widget actualizado: $stopName - $lineDestination - $arrivalTime');
+  } catch (e) {
+    print('[ForegroundService] Error actualizando widget: $e');
+  }
 }
 
 // Clase principal del servicio

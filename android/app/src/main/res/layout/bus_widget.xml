@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/widget_background"
+    android:id="@+id/widget_container">
+
+    <!-- Nombre de la parada -->
+    <TextView
+        android:id="@+id/stop_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🚏 Parada"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <!-- Línea y destino -->
+    <TextView
+        android:id="@+id/line_destination"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="L2 → Hospital"
+        android:textSize="12sp"
+        android:textColor="#E0E0E0"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <!-- Tiempo de llegada -->
+    <TextView
+        android:id="@+id/arrival_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⏱️ 5 min"
+        android:textSize="20sp"
+        android:textColor="#4CAF50"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp" />
+
+    <!-- Última actualización -->
+    <TextView
+        android:id="@+id/last_update"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Actualizado: --:--"
+        android:textSize="10sp"
+        android:textColor="#9E9E9E"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>
