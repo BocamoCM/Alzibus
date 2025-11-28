@@ -9,8 +9,10 @@ import '../constants/line_colors.dart';
 import '../services/notification_service.dart';
 import '../services/location_service.dart';
 import '../services/stops_service.dart';
+import '../services/bus_simulation_service.dart';
 import '../widgets/line_filter.dart';
 import '../widgets/stop_info_sheet.dart';
+import '../widgets/animated_bus_marker.dart';
 
 class MapPage extends StatefulWidget {
   final FlutterLocalNotificationsPlugin notif;
@@ -43,12 +45,17 @@ class _MapPageState extends State<MapPage> {
   late final NotificationService _notificationService;
   late final LocationService _locationService;
   late final StopsService _stopsService;
+  late final BusSimulationService _busSimulationService;
+  
+  Map<String, SimulatedBus> _simulatedBuses = {};
+  Timer? _busUpdateTimer;
 
   @override
   void initState() {
     super.initState();
     _notificationService = NotificationService(widget.notif);
     _stopsService = StopsService();
+    _busSimulationService = BusSimulationService();
     _locationService = LocationService(
       onLocationUpdate: (position, heading) {
         setState(() {
@@ -61,17 +68,58 @@ class _MapPageState extends State<MapPage> {
     
     _loadStops();
     _locationService.startTracking();
+    _setupBusSimulation();
   }
 
   @override
   void dispose() {
     _locationService.stopTracking();
+    _busSimulationService.dispose();
+    _busUpdateTimer?.cancel();
     super.dispose();
+  }
+  
+  void _setupBusSimulation() {
+    _busSimulationService.busStream.listen((buses) {
+      setState(() {
+        _simulatedBuses = buses;
+      });
+    });
+    
+    _busSimulationService.startSimulation();
+  }
+  
+  Future<void> _initializeBuses() async {
+    if (stops.isEmpty) return;
+    
+    print('Configurando lineas...');
+    
+    // Cargar rutas de cada linea desde archivos separados
+    for (final line in ['L1', 'L2', 'L3']) {
+      final routeStops = await _stopsService.loadLineRoute(line);
+      if (routeStops.isNotEmpty) {
+        print('$line: ${routeStops.length} paradas cargadas');
+        _busSimulationService.setLineStops(line, routeStops);
+      }
+    }
+    
+    // Escaneo inicial de todas las paradas
+    final allStopsData = stops.map((s) => {
+      'id': s.id,
+      'name': s.name,
+      'lat': s.lat,
+      'lng': s.lng,
+      'lines': s.lines,
+    }).toList();
+    
+    await _busSimulationService.initialScan(allStopsData);
   }
 
   Future<void> _loadStops() async {
     final loadedStops = await _stopsService.loadStops();
     setState(() => stops = loadedStops);
+    // Inicializar buses despues de cargar paradas
+    await _initializeBuses();
   }
 
   void _checkProximity(LatLng myPos) async {
@@ -164,6 +212,25 @@ class _MapPageState extends State<MapPage> {
           child: Transform.rotate(
             angle: (myHeading ?? 0) * 3.14159 / 180,
             child: const Icon(Icons.navigation, color: Colors.blue, size: 40),
+          ),
+        ),
+      );
+    }
+    
+    // Agregar marcadores de autobuses simulados
+    for (final bus in _simulatedBuses.values) {
+      if (!selectedLines.contains(bus.lineId)) continue;
+      
+      markers.add(
+        Marker(
+          width: 60,
+          height: 60,
+          point: bus.currentPosition,
+          child: AnimatedBusMarker(
+            heading: bus.heading,
+            lineId: bus.lineId,
+            isAtStop: bus.isAtStop,
+            size: 56,
           ),
         ),
       );
