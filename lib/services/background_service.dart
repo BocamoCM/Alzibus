@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,25 +13,19 @@ const String portName = 'background_location_port';
 
 @pragma('vm:entry-point')
 class BackgroundService {
-  static const int alarmId = 0;
+  // Este servicio ya no se usa - ForegroundService lo reemplaza
+  // Se mantiene por compatibilidad pero no hace nada
   
   static Future<void> initialize() async {
-    await AndroidAlarmManager.initialize();
+    // Ya no se necesita - ForegroundService se encarga
   }
 
   static Future<void> startBackgroundService() async {
-    await AndroidAlarmManager.periodic(
-      const Duration(minutes: 1),
-      alarmId,
-      _checkLocationCallback,
-      exact: true,
-      wakeup: true,
-      rescheduleOnReboot: true,
-    );
+    // Ya no se necesita - ForegroundService se encarga
   }
 
   static Future<void> stopBackgroundService() async {
-    await AndroidAlarmManager.cancel(alarmId);
+    // Ya no se necesita - ForegroundService se encarga
   }
 
   @pragma('vm:entry-point')

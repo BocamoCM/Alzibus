@@ -18,7 +18,6 @@ dependencies:
   flutter_nfc_kit: ^3.5.0
   shared_preferences: ^2.3.3
   vibration: ^2.0.0
-  android_alarm_manager_plus: ^4.0.3
   http: ^1.2.2
   html: ^0.15.4
   device_info_plus: 11.3.0

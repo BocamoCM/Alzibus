@@ -283,6 +283,31 @@ Future<void> _checkBusAlertsStatic(
       await prefs.setString('bus_alerts', jsonEncode(alerts));
       print('[ForegroundService] Alerts updated and saved');
     }
+    
+    // Limpiar alertas completadas (todas las notificaciones enviadas) o muy antiguas
+    final List<dynamic> alertsToKeep = [];
+    for (final alert in alerts) {
+      final notified5 = alert['notified5min'] == true || alert['notified5min'] == 'true';
+      final notified2 = alert['notified2min'] == true || alert['notified2min'] == 'true';
+      final notifiedArr = alert['notifiedArriving'] == true || alert['notifiedArriving'] == 'true';
+      final createdAt = DateTime.tryParse(alert['createdAt']?.toString() ?? '');
+      
+      // Eliminar si: todas las notificaciones enviadas O más de 2 horas de antigüedad
+      final isCompleted = notified5 && notified2 && notifiedArr;
+      final isTooOld = createdAt != null && DateTime.now().difference(createdAt).inHours >= 2;
+      
+      if (!isCompleted && !isTooOld) {
+        alertsToKeep.add(alert);
+      } else {
+        print('[ForegroundService] Removing alert: ${alert['stopName']} (completed=$isCompleted, tooOld=$isTooOld)');
+      }
+    }
+    
+    // Guardar lista limpia si cambió
+    if (alertsToKeep.length != alerts.length) {
+      await prefs.setString('bus_alerts', jsonEncode(alertsToKeep));
+      print('[ForegroundService] Cleaned ${alerts.length - alertsToKeep.length} completed/old alerts');
+    }
   } catch (e) {
     print('[ForegroundService] Error checking bus alerts: $e');
     print('Error checking bus alerts: $e');

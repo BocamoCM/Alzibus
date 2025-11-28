@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'bus_times_service.dart';
 import 'notification_service.dart';
 
@@ -76,7 +75,6 @@ Future<void> checkAlertsCallback() async {
     await service._loadAlerts();
     
     if (service._activeAlerts.isEmpty) {
-      await AndroidAlarmManager.cancel(999);
       return;
     }
     
@@ -206,21 +204,12 @@ class BusAlertService {
   }
 
   Future<void> _startMonitoring() async {
-    // Registrar alarma periódica en segundo plano (cada minuto)
-    await AndroidAlarmManager.periodic(
-      const Duration(minutes: 1),
-      999, // ID único para alertas de bus
-      checkAlertsCallback,
-      exact: true,
-      wakeup: true,
-      rescheduleOnReboot: true,
-    );
-    // También chequear inmediatamente
+    // El ForegroundService se encarga del monitoreo en segundo plano
+    // Aquí solo chequeamos inmediatamente
     await _checkAlerts();
   }
 
   Future<void> _stopMonitoring() async {
-    await AndroidAlarmManager.cancel(999);
     _checkTimer?.cancel();
     _checkTimer = null;
   }
