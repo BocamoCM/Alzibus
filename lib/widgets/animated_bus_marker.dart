@@ -76,9 +76,9 @@ class _AnimatedBusMarkerState extends State<AnimatedBusMarker>
   Color _getLineColor() {
     switch (widget.lineId) {
       case 'L1':
-        return const Color(0xFF2E7D32); // Verde oscuro
-      case 'L2':
         return const Color(0xFF1565C0); // Azul
+      case 'L2':
+        return const Color(0xFF2E7D32); // Verde oscuro
       case 'L3':
         return const Color(0xFFE65100); // Naranja
       default:

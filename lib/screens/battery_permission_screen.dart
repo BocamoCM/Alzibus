@@ -5,9 +5,12 @@ import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
 class BatteryPermissionScreen extends StatefulWidget {
-  final VoidCallback onComplete;
+  final String destinationRoute;
   
-  const BatteryPermissionScreen({super.key, required this.onComplete});
+  const BatteryPermissionScreen({
+    super.key, 
+    this.destinationRoute = '/home',
+  });
 
   @override
   State<BatteryPermissionScreen> createState() => _BatteryPermissionScreenState();
@@ -57,7 +60,11 @@ class _BatteryPermissionScreenState extends State<BatteryPermissionScreen> {
   Future<void> _markAsComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('battery_permission_shown', true);
-    widget.onComplete();
+    
+    if (!mounted) return;
+    
+    // Navegar directamente a la ruta destino
+    Navigator.of(context).pushReplacementNamed(widget.destinationRoute);
   }
 
   @override

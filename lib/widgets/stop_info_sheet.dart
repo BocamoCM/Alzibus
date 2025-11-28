@@ -7,6 +7,7 @@ import '../models/bus_stop.dart';
 import '../constants/line_colors.dart';
 import '../services/bus_times_service.dart';
 import '../services/bus_alert_service.dart';
+import '../services/foreground_service.dart';
 import 'simple_map_widget.dart';
 
 class StopInfoSheet extends StatefulWidget {
@@ -99,8 +100,14 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
       _activeAlerts.add(alert.key);
     });
     
-    // Chequear inmediatamente si ya está cerca
-    await _alertService.checkAlertsNow();
+    // Asegurar que el ForegroundService está corriendo
+    final isRunning = await ForegroundService.isRunning();
+    if (!isRunning) {
+      await ForegroundService.start();
+    }
+    
+    // Chequear inmediatamente
+    await ForegroundService.checkAlertsNow();
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

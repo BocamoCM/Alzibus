@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'services/background_service.dart';
+import 'services/foreground_service.dart';
 import 'services/stops_service.dart';
 import 'services/bus_alert_service.dart';
 import 'services/trip_history_service.dart';
@@ -11,14 +12,15 @@ import 'pages/splash_page.dart';
 import 'pages/map_page.dart';
 import 'pages/nfc_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/routes_page.dart';
 import 'screens/trip_history_screen.dart';
 import 'screens/active_alerts_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar servicio de fondo
-  await BackgroundService.initialize();
+  // Inicializar foreground service
+  await ForegroundService.initialize();
   
   // Inicializar servicio de alertas de bus
   await BusAlertService().initialize();
@@ -37,15 +39,39 @@ void main() async {
     'lng': stop.lng,
     'lines': stop.lines,
   }).toList();
-  await BackgroundService.saveStopsToPreferences(stopsData);
   
-  // Iniciar servicio de fondo
-  await BackgroundService.startBackgroundService();
+  // Guardar paradas en preferences para el foreground service (en JSON)
+  await prefs.setString('bus_stops', jsonEncode(stopsData));
   
-  // Solicitar permiso de notificaciones (Android 13+)
-  await Permission.notification.request();
+  // Solicitar permisos necesarios
+  await _requestPermissions();
+  
+  // Iniciar foreground service si las notificaciones están habilitadas
+  final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+  if (notificationsEnabled) {
+    await ForegroundService.start();
+  }
   
   runApp(const AlzibusApp());
+}
+
+/// Solicita todos los permisos necesarios para el foreground service
+Future<void> _requestPermissions() async {
+  // 1. Permiso de notificaciones (Android 13+)
+  await Permission.notification.request();
+  
+  // 2. Permiso de ubicación (primero foreground)
+  final locationStatus = await Permission.location.request();
+  
+  if (locationStatus.isGranted) {
+    // 3. Permiso de ubicación en segundo plano (CRÍTICO para foreground service)
+    // Android requiere que primero tengas el permiso de ubicación normal
+    final bgStatus = await Permission.locationAlways.request();
+    
+    if (!bgStatus.isGranted) {
+      print('⚠️ Permiso de ubicación en segundo plano denegado');
+    }
+  }
 }
 
 // Handler para notificaciones en segundo plano (debe ser top-level)
@@ -236,6 +262,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         notificationDistance: _notificationDistance,
         notificationCooldown: _notificationCooldown,
       ),
+      const RoutesPage(),
       const NfcPage(),
       SettingsPage(
         notificationsEnabled: _notificationsEnabled,
@@ -245,11 +272,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           setState(() => _notificationsEnabled = value);
           await _savePreferences();
           
-          // Iniciar o detener servicio de fondo
+          // Iniciar o detener foreground service
           if (value) {
-            await BackgroundService.startBackgroundService();
+            await ForegroundService.start();
           } else {
-            await BackgroundService.stopBackgroundService();
+            await ForegroundService.stop();
           }
         },
         onDistanceChanged: (value) {
@@ -301,8 +328,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       body: pages[_index],
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: _index,
+          type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+            BottomNavigationBarItem(icon: Icon(Icons.route), label: 'Rutas'),
             BottomNavigationBarItem(icon: Icon(Icons.nfc), label: 'NFC'),
             BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Ajustes'),
           ],

@@ -40,10 +40,21 @@ class BusSimulationService {
   
   Timer? _updateTimer;
   Timer? _trackingTimer;
-  final _busStreamController = StreamController<Map<String, SimulatedBus>>.broadcast();
+  StreamController<Map<String, SimulatedBus>>? _busStreamController;
+  bool _isDisposed = false;
   
-  Stream<Map<String, SimulatedBus>> get busStream => _busStreamController.stream;
+  Stream<Map<String, SimulatedBus>> get busStream {
+    _busStreamController ??= StreamController<Map<String, SimulatedBus>>.broadcast();
+    return _busStreamController!.stream;
+  }
+  
   Map<String, SimulatedBus> get buses => Map.unmodifiable(_buses);
+  
+  void _emitBuses() {
+    if (!_isDisposed && _busStreamController != null && !_busStreamController!.isClosed) {
+      _busStreamController!.add(_buses);
+    }
+  }
   
   void setLineStops(String lineId, List<Map<String, dynamic>> stops) {
     _lineStops[lineId] = stops;
@@ -150,7 +161,7 @@ class BusSimulationService {
     
     print('');
     print('=== ESCANEO COMPLETO: ${_buses.length} buses encontrados ===');
-    _busStreamController.add(_buses);
+    _emitBuses();
   }
   
   /// Seguimiento continuo: consulta la siguiente parada de cada bus
@@ -197,7 +208,7 @@ class BusSimulationService {
       }
     }
     
-    _busStreamController.add(_buses);
+    _emitBuses();
   }
   
   int _estimateCurrentStop(int targetStopIndex, int minutesToArrival, int totalStops) {
@@ -272,7 +283,7 @@ class BusSimulationService {
     }
     
     if (changed) {
-      _busStreamController.add(_buses);
+      _emitBuses();
     }
   }
   
@@ -301,7 +312,8 @@ class BusSimulationService {
   }
   
   void dispose() {
+    _isDisposed = true;
     stopSimulation();
-    _busStreamController.close();
+    _busStreamController?.close();
   }
 }

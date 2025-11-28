@@ -50,10 +50,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     if (shouldShow) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => BatteryPermissionScreen(
-            onComplete: () {
-              Navigator.of(context).pushReplacementNamed('/home');
-            },
+          builder: (ctx) => const BatteryPermissionScreen(
+            destinationRoute: '/home',
           ),
         ),
       );

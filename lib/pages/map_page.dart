@@ -38,9 +38,11 @@ class _MapPageState extends State<MapPage> {
   LatLng center = LatLng(39.1566, -0.4354);
   LatLng? myLocation;
   double? myHeading = 0.0;
+  final TextEditingController _searchController = TextEditingController();
   
   final Distance distance = Distance();
   final Map<String, DateTime> _lastNotified = {};
+  final MapController _mapController = MapController();
   
   late final NotificationService _notificationService;
   late final LocationService _locationService;
@@ -76,6 +78,7 @@ class _MapPageState extends State<MapPage> {
     _locationService.stopTracking();
     _busSimulationService.dispose();
     _busUpdateTimer?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
   
@@ -156,6 +159,206 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
+  void _showBusInfo(SimulatedBus bus) {
+    final lineStops = _busSimulationService.getLineStops(bus.lineId);
+    String nextStopName = 'Desconocida';
+    String estimatedTime = '--';
+    
+    if (lineStops != null && bus.nextStopIndex < lineStops.length) {
+      nextStopName = lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
+    }
+    
+    if (bus.lastKnownMinutes != null) {
+      estimatedTime = bus.lastKnownMinutes == 0 
+          ? 'Llegando' 
+          : '${bus.lastKnownMinutes} min';
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getLineColor(bus.lineId),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    bus.lineId,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Autobús en servicio',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow(Icons.location_on, 'Próxima parada', nextStopName),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.access_time, 'Tiempo estimado', estimatedTime),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              Icons.speed, 
+              'Estado', 
+              bus.isAtStop ? '🛑 En parada' : '🚌 En movimiento',
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.grey[600], size: 20),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getLineColor(String lineId) {
+    switch (lineId) {
+      case 'L1':
+        return const Color(0xFF1565C0); // Azul
+      case 'L2':
+        return const Color(0xFF2E7D32); // Verde
+      case 'L3':
+        return const Color(0xFFE65100);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _centerOnMyLocation() {
+    if (myLocation != null) {
+      _mapController.move(myLocation!, 16.0);
+    }
+  }
+
+  void _showSearchDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar parada...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                  ),
+                  onChanged: (value) {
+                    // Actualiza el filtro
+                  },
+                ),
+              ),
+              Expanded(
+                child: StatefulBuilder(
+                  builder: (context, setStateLocal) {
+                    final query = _searchController.text.toLowerCase();
+                    final filteredStops = stops.where((stop) {
+                      return stop.name.toLowerCase().contains(query);
+                    }).toList();
+                    
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: filteredStops.length,
+                      itemBuilder: (context, index) {
+                        final stop = filteredStops[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: LineColors.getStopColor(stop.lines, selectedLines),
+                            child: const Icon(Icons.directions_bus, color: Colors.white, size: 20),
+                          ),
+                          title: Text(stop.name),
+                          subtitle: Text(stop.lines.join(', ')),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _mapController.move(LatLng(stop.lat, stop.lng), 17.0);
+                            Future.delayed(const Duration(milliseconds: 300), () {
+                              _showStopInfo(stop);
+                            });
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _toggleLine(String line) {
     setState(() {
       if (selectedLines.contains(line)) {
@@ -226,11 +429,14 @@ class _MapPageState extends State<MapPage> {
           width: 60,
           height: 60,
           point: bus.currentPosition,
-          child: AnimatedBusMarker(
-            heading: bus.heading,
-            lineId: bus.lineId,
-            isAtStop: bus.isAtStop,
-            size: 56,
+          child: GestureDetector(
+            onTap: () => _showBusInfo(bus),
+            child: AnimatedBusMarker(
+              heading: bus.heading,
+              lineId: bus.lineId,
+              isAtStop: bus.isAtStop,
+              size: 56,
+            ),
           ),
         ),
       );
@@ -239,6 +445,7 @@ class _MapPageState extends State<MapPage> {
     return Stack(
       children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
             initialCenter: myLocation ?? center,
             initialZoom: 15.0,
@@ -267,12 +474,59 @@ class _MapPageState extends State<MapPage> {
             MarkerLayer(markers: markers),
           ],
         ),
+        // Barra de búsqueda superior
+        Positioned(
+          top: 16,
+          left: 16,
+          right: 80,
+          child: GestureDetector(
+            onTap: _showSearchDialog,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: Colors.grey[600]),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Buscar parada...',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         Positioned(
           top: 16,
           right: 16,
           child: LineFilter(
             selectedLines: selectedLines,
             onLineToggle: _toggleLine,
+          ),
+        ),
+        // Botón para centrar en mi ubicación
+        Positioned(
+          bottom: 24,
+          right: 16,
+          child: FloatingActionButton(
+            heroTag: 'location',
+            onPressed: _centerOnMyLocation,
+            backgroundColor: Colors.white,
+            child: Icon(
+              Icons.my_location,
+              color: myLocation != null ? Colors.blue : Colors.grey,
+            ),
           ),
         ),
       ],
