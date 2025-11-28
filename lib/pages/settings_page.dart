@@ -171,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                Text('Versión: 0.1.0'),
+                Text('Versión: 1.2.0'),
                 SizedBox(height: 8),
                 Text(
                   'Aplicación para ver paradas de bus en Alzira, Valencia.',
