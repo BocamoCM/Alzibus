@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/stops_service.dart';
 import '../models/bus_stop.dart';
+import '../theme/app_theme.dart';
 
 class RoutesPage extends StatefulWidget {
   final Function(BusStop stop)? onStopTapped;
@@ -42,11 +43,11 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
   Color _getLineColor(String lineId) {
     switch (lineId) {
       case 'L1':
-        return const Color(0xFF1565C0); // Azul
+        return AlzibusColors.lineL1;
       case 'L2':
-        return const Color(0xFF2E7D32); // Verde
+        return AlzibusColors.lineL2;
       case 'L3':
-        return const Color(0xFFE65100); // Naranja
+        return AlzibusColors.lineL3;
       default:
         return Colors.grey;
     }
@@ -57,13 +58,8 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rutas'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.grey,
           indicatorSize: TabBarIndicatorSize.label,
           tabs: [
             Tab(

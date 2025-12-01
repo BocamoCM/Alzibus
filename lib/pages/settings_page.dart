@@ -4,23 +4,36 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/foreground_service.dart';
+import '../theme/app_theme.dart';
 
 class SettingsPage extends StatefulWidget {
   final bool notificationsEnabled;
   final double notificationDistance;
   final int notificationCooldown;
+  final bool showSimulatedBuses;
+  final bool autoRefreshTimes;
+  final bool vibrationEnabled;
   final Function(bool) onNotificationsChanged;
   final Function(double) onDistanceChanged;
   final Function(int) onCooldownChanged;
+  final Function(bool) onShowSimulatedBusesChanged;
+  final Function(bool) onAutoRefreshTimesChanged;
+  final Function(bool) onVibrationChanged;
 
   const SettingsPage({
     super.key,
     required this.notificationsEnabled,
     required this.notificationDistance,
     required this.notificationCooldown,
+    required this.showSimulatedBuses,
+    required this.autoRefreshTimes,
+    required this.vibrationEnabled,
     required this.onNotificationsChanged,
     required this.onDistanceChanged,
     required this.onCooldownChanged,
+    required this.onShowSimulatedBusesChanged,
+    required this.onAutoRefreshTimesChanged,
+    required this.onVibrationChanged,
   });
 
   @override
@@ -177,6 +190,40 @@ class _SettingsPageState extends State<SettingsPage> {
               ? (value) => widget.onCooldownChanged(value.toInt())
               : null,
         ),
+        
+        SwitchListTile(
+          title: const Text('Vibración'),
+          subtitle: const Text('Vibrar con las notificaciones'),
+          value: widget.vibrationEnabled,
+          onChanged: widget.notificationsEnabled ? widget.onVibrationChanged : null,
+          secondary: const Icon(Icons.vibration),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Sección de Mapa
+        const Text(
+          'Mapa',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        
+        SwitchListTile(
+          title: const Text('Mostrar buses en el mapa'),
+          subtitle: const Text('Ver posición simulada de los autobuses'),
+          value: widget.showSimulatedBuses,
+          onChanged: widget.onShowSimulatedBusesChanged,
+          secondary: const Icon(Icons.directions_bus),
+        ),
+        
+        SwitchListTile(
+          title: const Text('Actualizar tiempos automáticamente'),
+          subtitle: const Text('Refrescar cada 30 segundos'),
+          value: widget.autoRefreshTimes,
+          onChanged: widget.onAutoRefreshTimesChanged,
+          secondary: const Icon(Icons.refresh),
+        ),
+        
         const SizedBox(height: 24),
         
         // Sección de depuración
@@ -327,7 +374,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: AlzibusColors.burgundy,
                       foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.search),
@@ -353,7 +400,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.directions_bus, color: Colors.blue, size: 28),
+                    const Icon(Icons.directions_bus, color: AlzibusColors.burgundy, size: 28),
                     const SizedBox(width: 12),
                     const Text(
                       'Alzibus',
@@ -363,13 +410,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blue[100],
+                        color: AlzibusColors.burgundy.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'v$_appVersion${_buildNumber.isNotEmpty && _buildNumber != '1' ? '+$_buildNumber' : ''}',
-                        style: TextStyle(
-                          color: Colors.blue[800],
+                        style: const TextStyle(
+                          color: AlzibusColors.burgundy,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -390,15 +437,15 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 16),
         // Información sobre foreground service
         Card(
-          color: Colors.blue[50],
-          child: const Padding(
-            padding: EdgeInsets.all(16.0),
+          color: AlzibusColors.burgundy.withOpacity(0.08),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue),
+                    Icon(Icons.info_outline, color: AlzibusColors.burgundy),
                     SizedBox(width: 8),
                     Text('Servicio en primer plano', style: TextStyle(fontWeight: FontWeight.bold)),
                   ],

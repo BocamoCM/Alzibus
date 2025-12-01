@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/bus_alert_service.dart';
 import '../services/bus_times_service.dart';
+import '../theme/app_theme.dart';
 
 class ActiveAlertsScreen extends StatefulWidget {
   final Function(int stopId, String stopName)? onViewStop;
@@ -102,8 +103,8 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
   Color _getStatusColor(BusAlert alert) {
     if (alert.notifiedArriving) return Colors.red;
     if (alert.notified2min) return Colors.orange;
-    if (alert.notified5min) return Colors.green;
-    return Colors.blue;
+    if (alert.notified5min) return AlzibusColors.success;
+    return AlzibusColors.burgundy;
   }
 
   @override
@@ -198,7 +199,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: AlzibusColors.burgundy,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -253,7 +254,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
                   // Tiempo de llegada
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 18, color: Colors.blue),
+                      const Icon(Icons.access_time, size: 18, color: AlzibusColors.burgundy),
                       const SizedBox(width: 6),
                       Text(
                         time,

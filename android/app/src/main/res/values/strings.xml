@@ -3,4 +3,20 @@
     <string name="app_name">Alzibus</string>
     <string name="widget_description">Muestra el próximo bus de tu parada favorita</string>
     <string name="widget_name">Alzibus Widget</string>
+    
+    <!-- Shortcuts para Google Assistant -->
+    <string name="shortcut_bus_times_short">Ver buses</string>
+    <string name="shortcut_bus_times_long">Ver tiempos de buses favoritos</string>
+    <string name="shortcut_favorites_short">Favoritos</string>
+    <string name="shortcut_favorites_long">Ver paradas favoritas</string>
+    
+    <!-- Consultas de bus para App Actions -->
+    <string name="bus_query_time">tiempos de bus</string>
+    <string name="bus_query_next">próximo bus</string>
+    <string name="bus_query_when">cuándo llega el bus</string>
+    
+    <!-- Funcionalidades para App Actions -->
+    <string name="feature_favorites">paradas favoritas</string>
+    <string name="feature_routes">rutas de bus</string>
+    <string name="feature_map">mapa de paradas</string>
 </resources>

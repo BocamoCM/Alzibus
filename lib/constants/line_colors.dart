@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class LineColors {
+  // Colores de líneas basados en el tema de Alzira
   static const Map<String, Color> colors = {
-    'L1': Colors.blue,
-    'L2': Colors.green,
-    'L3': Colors.orange,
+    'L1': AlzibusColors.lineL1,  // Vino
+    'L2': AlzibusColors.lineL2,  // Carmesí
+    'L3': AlzibusColors.lineL3,  // Burdeos
   };
 
   static Color getColor(String line) {

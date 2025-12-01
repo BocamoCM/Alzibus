@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Atajo para ver tiempos de bus -->
+    <shortcut
+        android:shortcutId="check_bus_times"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_bus_times_short"
+        android:shortcutLongLabel="@string/shortcut_bus_times_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.alzibus"
+            android:targetClass="com.example.alzibus.MainActivity"
+            android:data="alzibus://bus_times" />
+        <capability-binding android:key="actions.intent.GET_BUS_TIME" />
+    </shortcut>
+    
+    <!-- Atajo para ver paradas favoritas -->
+    <shortcut
+        android:shortcutId="view_favorites"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_favorites_short"
+        android:shortcutLongLabel="@string/shortcut_favorites_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.alzibus"
+            android:targetClass="com.example.alzibus.MainActivity"
+            android:data="alzibus://favorites" />
+    </shortcut>
+
+</shortcuts>

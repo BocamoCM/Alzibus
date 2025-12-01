@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../screens/battery_permission_screen.dart';
+import '../theme/app_theme.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -70,16 +71,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue[700]!,
-              Colors.blue[400]!,
-              Colors.lightBlue[300]!,
-            ],
-          ),
+        decoration: const BoxDecoration(
+          gradient: AlzibusColors.primaryGradient,
         ),
         child: Center(
           child: FadeTransition(
@@ -93,7 +86,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AlzibusColors.background,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -106,26 +99,33 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     child: const Icon(
                       Icons.directions_bus,
                       size: 80,
-                      color: Colors.blue,
+                      color: AlzibusColors.burgundy,
                     ),
                   ),
                   const SizedBox(height: 30),
                   // Nombre de la app
-                  const Text(
+                  Text(
                     'Alzibus',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: 2,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(2, 2),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'Alzira, Valencia',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white70,
+                      color: Colors.white.withOpacity(0.8),
                       letterSpacing: 1,
                     ),
                   ),

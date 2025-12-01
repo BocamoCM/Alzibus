@@ -5,11 +5,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'models/bus_stop.dart';
 import 'services/foreground_service.dart';
 import 'services/stops_service.dart';
 import 'services/bus_alert_service.dart';
 import 'services/trip_history_service.dart';
+import 'services/assistant_service.dart';
+import 'theme/app_theme.dart';
 import 'pages/splash_page.dart';
 import 'pages/map_page.dart';
 import 'pages/nfc_page.dart';
@@ -27,6 +28,9 @@ void main() async {
     
     // Inicializar servicio de alertas de bus
     await BusAlertService().initialize();
+    
+    // Inicializar servicio de Google Assistant
+    AssistantService.initialize();
   }
   
   // Auto-confirmar viajes pendientes expirados
@@ -103,7 +107,8 @@ class AlzibusApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Alzibus',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: AlzibusTheme.lightTheme,
+      debugShowCheckedModeBanner: false,
       home: const SplashPage(),
       routes: {
         '/home': (context) => const HomePage(),
@@ -126,6 +131,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   double _notificationDistance = 80.0;
   int _notificationCooldown = 5;
   bool _isShowingTripDialog = false; // Para evitar mostrar múltiples diálogos
+  
+  // Nuevos ajustes
+  bool _showSimulatedBuses = true;
+  bool _autoRefreshTimes = true;
+  bool _vibrationEnabled = true;
   
   // Para navegar a una parada desde Rutas
   final GlobalKey<MapPageState> _mapPageKey = GlobalKey<MapPageState>();
@@ -166,6 +176,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
       _notificationDistance = prefs.getDouble('notification_distance') ?? 80.0;
       _notificationCooldown = prefs.getInt('notification_cooldown') ?? 5;
+      _showSimulatedBuses = prefs.getBool('show_simulated_buses') ?? true;
+      _autoRefreshTimes = prefs.getBool('auto_refresh_times') ?? true;
+      _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
     });
   }
 
@@ -174,6 +187,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await prefs.setBool('notifications_enabled', _notificationsEnabled);
     await prefs.setDouble('notification_distance', _notificationDistance);
     await prefs.setInt('notification_cooldown', _notificationCooldown);
+    await prefs.setBool('show_simulated_buses', _showSimulatedBuses);
+    await prefs.setBool('auto_refresh_times', _autoRefreshTimes);
+    await prefs.setBool('vibration_enabled', _vibrationEnabled);
   }
 
   Future<void> _initNotifications() async {
@@ -245,10 +261,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: AlzibusColors.burgundy.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.directions_bus, size: 50, color: Colors.blue),
+                child: const Icon(Icons.directions_bus, size: 50, color: AlzibusColors.burgundy),
               ),
               const SizedBox(height: 20),
               
@@ -263,7 +279,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AlzibusColors.background,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -273,7 +289,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.blue,
+                            color: AlzibusColors.burgundy,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -290,7 +306,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, color: Colors.red, size: 20),
+                        const Icon(Icons.location_on, color: AlzibusColors.coral, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -374,7 +390,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   Text('¡Viaje registrado!'),
                                 ],
                               ),
-                              backgroundColor: Colors.green,
+                              backgroundColor: AlzibusColors.success,
                               duration: const Duration(seconds: 2),
                               action: SnackBarAction(
                                 label: 'Ver historial',
@@ -393,7 +409,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       icon: const Icon(Icons.check),
                       label: const Text('¡Sí!'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: AlzibusColors.success,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -452,6 +468,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         notificationsEnabled: _notificationsEnabled,
         notificationDistance: _notificationDistance,
         notificationCooldown: _notificationCooldown,
+        showSimulatedBuses: _showSimulatedBuses,
       ),
       RoutesPage(
         onStopTapped: (stop) {
@@ -468,6 +485,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         notificationsEnabled: _notificationsEnabled,
         notificationDistance: _notificationDistance,
         notificationCooldown: _notificationCooldown,
+        showSimulatedBuses: _showSimulatedBuses,
+        autoRefreshTimes: _autoRefreshTimes,
+        vibrationEnabled: _vibrationEnabled,
         onNotificationsChanged: (value) async {
           setState(() => _notificationsEnabled = value);
           await _savePreferences();
@@ -485,6 +505,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         },
         onCooldownChanged: (value) {
           setState(() => _notificationCooldown = value);
+          _savePreferences();
+        },
+        onShowSimulatedBusesChanged: (value) {
+          setState(() => _showSimulatedBuses = value);
+          _savePreferences();
+        },
+        onAutoRefreshTimesChanged: (value) {
+          setState(() => _autoRefreshTimes = value);
+          _savePreferences();
+        },
+        onVibrationChanged: (value) {
+          setState(() => _vibrationEnabled = value);
           _savePreferences();
         },
       ),

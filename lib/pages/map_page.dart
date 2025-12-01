@@ -13,12 +13,14 @@ import '../services/bus_simulation_service.dart';
 import '../widgets/line_filter.dart';
 import '../widgets/stop_info_sheet.dart';
 import '../widgets/animated_bus_marker.dart';
+import '../theme/app_theme.dart';
 
 class MapPage extends StatefulWidget {
   final FlutterLocalNotificationsPlugin notif;
   final bool notificationsEnabled;
   final double notificationDistance;
   final int notificationCooldown;
+  final bool showSimulatedBuses;
   final BusStop? initialStop;
 
   const MapPage({
@@ -27,6 +29,7 @@ class MapPage extends StatefulWidget {
     required this.notificationsEnabled,
     required this.notificationDistance,
     required this.notificationCooldown,
+    required this.showSimulatedBuses,
     this.initialStop,
   });
 
@@ -434,32 +437,34 @@ class MapPageState extends State<MapPage> {
           point: myLocation!,
           child: Transform.rotate(
             angle: (myHeading ?? 0) * 3.14159 / 180,
-            child: const Icon(Icons.navigation, color: Colors.blue, size: 40),
+            child: const Icon(Icons.navigation, color: AlzibusColors.burgundy, size: 40),
           ),
         ),
       );
     }
     
-    // Agregar marcadores de autobuses simulados
-    for (final bus in _simulatedBuses.values) {
-      if (!selectedLines.contains(bus.lineId)) continue;
-      
-      markers.add(
-        Marker(
-          width: 60,
-          height: 60,
-          point: bus.currentPosition,
-          child: GestureDetector(
-            onTap: () => _showBusInfo(bus),
-            child: AnimatedBusMarker(
-              heading: bus.heading,
-              lineId: bus.lineId,
-              isAtStop: bus.isAtStop,
-              size: 56,
+    // Agregar marcadores de autobuses simulados (si está habilitado)
+    if (widget.showSimulatedBuses) {
+      for (final bus in _simulatedBuses.values) {
+        if (!selectedLines.contains(bus.lineId)) continue;
+        
+        markers.add(
+          Marker(
+            width: 60,
+            height: 60,
+            point: bus.currentPosition,
+            child: GestureDetector(
+              onTap: () => _showBusInfo(bus),
+              child: AnimatedBusMarker(
+                heading: bus.heading,
+                lineId: bus.lineId,
+                isAtStop: bus.isAtStop,
+                size: 56,
+              ),
             ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     return Stack(
@@ -485,8 +490,8 @@ class MapPageState extends State<MapPage> {
                     point: myLocation!,
                     radius: widget.notificationDistance,
                     useRadiusInMeter: true,
-                    color: Colors.blue.withOpacity(0.15),
-                    borderColor: Colors.blue.withOpacity(0.7),
+                    color: AlzibusColors.wine.withOpacity(0.15),
+                    borderColor: AlzibusColors.wine.withOpacity(0.7),
                     borderStrokeWidth: 2,
                   ),
                 ],
@@ -545,7 +550,7 @@ class MapPageState extends State<MapPage> {
             backgroundColor: Colors.white,
             child: Icon(
               Icons.my_location,
-              color: myLocation != null ? Colors.blue : Colors.grey,
+              color: myLocation != null ? AlzibusColors.burgundy : Colors.grey,
             ),
           ),
         ),

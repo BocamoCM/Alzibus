@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<actions>
+    <!-- Acción principal: ¿Cuánto falta para el bus? 
+         Usa GET_THING que es un BII genérico para consultas -->
+    <action intentName="actions.intent.GET_THING">
+        <parameter name="thing.name">
+            <entity-set-reference entitySetId="BusQueryEntitySet" />
+        </parameter>
+        <fulfillment urlTemplate="alzibus://bus_times" />
+    </action>
+    
+    <!-- Definición de entidades para consultas de bus -->
+    <entity-set entitySetId="BusQueryEntitySet">
+        <entity 
+            name="@string/bus_query_time"
+            identifier="bus_times" />
+        <entity 
+            name="@string/bus_query_next"
+            identifier="bus_times" />
+        <entity 
+            name="@string/bus_query_when"
+            identifier="bus_times" />
+    </entity-set>
+    
+    <!-- Acción: Abrir funcionalidades de la app -->
+    <action intentName="actions.intent.OPEN_APP_FEATURE">
+        <parameter name="feature">
+            <entity-set-reference entitySetId="FeatureEntitySet" />
+        </parameter>
+        <fulfillment urlTemplate="alzibus://{feature}" />
+    </action>
+    
+    <!-- Funcionalidades de la app -->
+    <entity-set entitySetId="FeatureEntitySet">
+        <entity 
+            name="@string/feature_favorites"
+            identifier="favorites" />
+        <entity 
+            name="@string/feature_routes"
+            identifier="routes" />
+        <entity 
+            name="@string/feature_map"
+            identifier="map" />
+    </entity-set>
+</actions>

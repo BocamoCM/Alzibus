@@ -37,7 +37,26 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            
+            <!-- Deep links para Google Assistant -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="alzibus" />
+            </intent-filter>
+            
+            <!-- Shortcuts para Google Assistant -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+        
+        <!-- Google Assistant App Actions -->
+        <meta-data
+            android:name="com.google.android.actions"
+            android:resource="@xml/actions" />
+            
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

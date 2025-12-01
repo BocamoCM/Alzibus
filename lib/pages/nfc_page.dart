@@ -4,6 +4,7 @@ import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
+import '../theme/app_theme.dart';
 
 class NfcPage extends StatefulWidget {
   const NfcPage({super.key});
@@ -194,11 +195,7 @@ class _NfcPageState extends State<NfcPage> {
                 width: double.infinity,
                 height: 200,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AlzibusColors.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -289,7 +286,7 @@ class _NfcPageState extends State<NfcPage> {
                       style: TextStyle(fontSize: 18),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: AlzibusColors.burgundy,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -363,6 +360,8 @@ class _NfcPageState extends State<NfcPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSettingsDialog,
+        backgroundColor: AlzibusColors.burgundy,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.settings),
         tooltip: 'Ajustes de advertencias',
       ),
