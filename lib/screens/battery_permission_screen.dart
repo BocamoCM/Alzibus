@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -294,6 +295,9 @@ class _BatteryPermissionScreenState extends State<BatteryPermissionScreen> {
 
 // Función para verificar si debe mostrarse la pantalla
 Future<bool> shouldShowBatteryPermission() async {
+  // No mostrar en web
+  if (kIsWeb) return false;
+  
   final prefs = await SharedPreferences.getInstance();
   final alreadyShown = prefs.getBool('battery_permission_shown') ?? false;
   

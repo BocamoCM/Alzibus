@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,11 +21,13 @@ import 'screens/active_alerts_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar foreground service
-  await ForegroundService.initialize();
-  
-  // Inicializar servicio de alertas de bus
-  await BusAlertService().initialize();
+  // Inicializar foreground service (solo Android/iOS)
+  if (!kIsWeb) {
+    await ForegroundService.initialize();
+    
+    // Inicializar servicio de alertas de bus
+    await BusAlertService().initialize();
+  }
   
   // Auto-confirmar viajes pendientes expirados
   final prefs = await SharedPreferences.getInstance();
@@ -44,13 +47,15 @@ void main() async {
   // Guardar paradas en preferences para el foreground service (en JSON)
   await prefs.setString('bus_stops', jsonEncode(stopsData));
   
-  // Solicitar permisos necesarios
-  await _requestPermissions();
-  
-  // Iniciar foreground service si las notificaciones están habilitadas
-  final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-  if (notificationsEnabled) {
-    await ForegroundService.start();
+  // Solicitar permisos necesarios (solo móvil)
+  if (!kIsWeb) {
+    await _requestPermissions();
+    
+    // Iniciar foreground service si las notificaciones están habilitadas
+    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+    if (notificationsEnabled) {
+      await ForegroundService.start();
+    }
   }
   
   runApp(const AlzibusApp());
@@ -120,6 +125,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _notificationsEnabled = true;
   double _notificationDistance = 80.0;
   int _notificationCooldown = 5;
+  bool _isShowingTripDialog = false; // Para evitar mostrar múltiples diálogos
   
   // Para navegar a una parada desde Rutas
   final GlobalKey<MapPageState> _mapPageKey = GlobalKey<MapPageState>();
@@ -127,8 +133,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Observar ciclo de vida
     _initNotifications();
     _loadPreferences();
+    
+    // Verificar viaje pendiente después de que el widget esté completamente construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Pequeño delay para asegurar que el contexto esté listo
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _checkPendingTrip();
+      });
+    });
+  }
+  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  
+  // Cuando la app vuelve al frente, comprobar viaje pendiente
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPendingTrip();
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -148,6 +177,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> _initNotifications() async {
+    // En web no inicializamos notificaciones nativas
+    if (kIsWeb) {
+      return;
+    }
+    
     const android = AndroidInitializationSettings('@drawable/ic_launcher_foreground');
     const initSettings = InitializationSettings(android: android);
     await _notif.initialize(
@@ -155,74 +189,226 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       onDidReceiveNotificationResponse: _onNotificationResponse,
       onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationResponse,
     );
-    
-    // Verificar si hay viaje pendiente al iniciar
-    _checkPendingTrip();
   }
   
   Future<void> _checkPendingTrip() async {
+    // Evitar mostrar múltiples diálogos
+    if (_isShowingTripDialog) return;
+    
     final prefs = await SharedPreferences.getInstance();
     final historyService = TripHistoryService(prefs);
     final pending = historyService.getPendingTrip();
     
+    print('[TripDialog] Checking pending trip: ${pending != null ? "FOUND" : "none"}');
     if (pending != null) {
+      print('[TripDialog] Pending trip data: $pending');
+      
+      final tripData = pending; // Capturar en variable local para el callback
       // Hay un viaje pendiente, mostrar diálogo después de que se construya el widget
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showTripConfirmDialog(pending);
+        if (mounted && !_isShowingTripDialog) {
+          _showTripConfirmDialog(tripData);
+        }
       });
     }
   }
   
   void _showTripConfirmDialog(Map<String, dynamic> trip) {
+    _isShowingTripDialog = true;
+    
+    // Calcular hace cuánto fue el viaje
+    final timestamp = DateTime.tryParse(trip['timestamp'] ?? '');
+    String timeAgo = '';
+    if (timestamp != null) {
+      final diff = DateTime.now().difference(timestamp);
+      if (diff.inMinutes < 60) {
+        timeAgo = 'Hace ${diff.inMinutes} minutos';
+      } else if (diff.inHours < 24) {
+        timeAgo = 'Hace ${diff.inHours} hora${diff.inHours > 1 ? 's' : ''}';
+      } else {
+        timeAgo = 'Hace ${diff.inDays} día${diff.inDays > 1 ? 's' : ''}';
+      }
+    }
+    
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('🚌 ¿Cogiste el bus?'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Línea ${trip['line']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 4),
-            Text('${trip['stopName']} → ${trip['destination']}'),
-            const SizedBox(height: 12),
-            Text(
-              'Esto nos ayuda a llevar un historial de tus viajes.',
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final prefs = await SharedPreferences.getInstance();
-              final historyService = TripHistoryService(prefs);
-              await historyService.rejectTrip();
-            },
-            child: const Text('❌ No lo cogí'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final prefs = await SharedPreferences.getInstance();
-              final historyService = TripHistoryService(prefs);
-              await historyService.confirmTrip();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✅ Viaje registrado en el historial'),
-                    duration: Duration(seconds: 2),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icono grande
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.directions_bus, size: 50, color: Colors.blue),
+              ),
+              const SizedBox(height: 20),
+              
+              // Título
+              const Text(
+                '¿Cogiste el bus?',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              
+              // Info del viaje
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Línea ${trip['line']}',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        if (timeAgo.isNotEmpty) ...[
+                          const Spacer(),
+                          Text(timeAgo, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            trip['stopName'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (trip['destination'] != null && trip['destination'].toString().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.arrow_forward, color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '→ ${trip['destination']}',
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              Text(
+                'Registra tus viajes para ver estadísticas',
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              
+              // Botones
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        _isShowingTripDialog = false;
+                        final prefs = await SharedPreferences.getInstance();
+                        final historyService = TripHistoryService(prefs);
+                        await historyService.rejectTrip();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('👍 Entendido, no se registró'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.close),
+                      label: const Text('No'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
                   ),
-                );
-              }
-            },
-            child: const Text('✅ Sí, lo cogí'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        _isShowingTripDialog = false;
+                        final prefs = await SharedPreferences.getInstance();
+                        final historyService = TripHistoryService(prefs);
+                        await historyService.confirmTrip();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text('¡Viaje registrado!'),
+                                ],
+                              ),
+                              backgroundColor: Colors.green,
+                              duration: const Duration(seconds: 2),
+                              action: SnackBarAction(
+                                label: 'Ver historial',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const TripHistoryScreen()),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.check),
+                      label: const Text('¡Sí!'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    );
+    ).then((_) {
+      _isShowingTripDialog = false;
+    });
   }
   
   void _onNotificationResponse(NotificationResponse response) async {

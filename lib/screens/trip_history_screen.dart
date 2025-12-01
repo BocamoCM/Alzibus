@@ -142,6 +142,16 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
           
           const SizedBox(height: 16),
           
+          // Racha y comparación mensual
+          _buildStreakCard(),
+          
+          const SizedBox(height: 16),
+          
+          // Gráfico mensual
+          _buildMonthlyChartCard(),
+          
+          const SizedBox(height: 16),
+          
           // Top líneas
           _buildTopLinesCard(stats),
           
@@ -152,10 +162,340 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
           
           const SizedBox(height: 16),
           
+          // Días de la semana
+          _buildWeekdayCard(stats),
+          
+          const SizedBox(height: 16),
+          
           // Actividad reciente
           _buildActivityCard(stats7days, stats30days),
         ],
       ),
+    );
+  }
+  
+  Widget _buildStreakCard() {
+    final currentStreak = _historyService!.getCurrentStreak();
+    final bestStreak = _historyService!.getBestStreak();
+    final comparison = _historyService!.getMonthComparison();
+    
+    final isUp = comparison['difference'] > 0;
+    final isDown = comparison['difference'] < 0;
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '🔥 Rachas y Progreso',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            Row(
+              children: [
+                // Racha actual
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: currentStreak > 0 ? Colors.orange[50] : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: currentStreak >= 3 
+                          ? Border.all(color: Colors.orange, width: 2)
+                          : null,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          currentStreak > 0 ? '🔥' : '❄️',
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                        Text(
+                          '$currentStreak',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: currentStreak > 0 ? Colors.orange[800] : Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          'Racha',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Mejor racha
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🏆', style: TextStyle(fontSize: 24)),
+                        Text(
+                          '$bestStreak',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber[800],
+                          ),
+                        ),
+                        Text(
+                          'Mejor',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Comparación mensual
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isUp ? Colors.green[50] : (isDown ? Colors.red[50] : Colors.grey[100]),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          isUp ? '📈' : (isDown ? '📉' : '➡️'),
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                        Text(
+                          '${isUp ? '+' : ''}${comparison['difference']}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isUp ? Colors.green[800] : (isDown ? Colors.red[800] : Colors.grey),
+                          ),
+                        ),
+                        Text(
+                          'vs mes ant.',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (currentStreak >= 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange[400]!, Colors.red[400]!],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '¡$currentStreak días seguidos viajando! 🎉',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildMonthlyChartCard() {
+    final monthlyStats = _historyService!.getMonthlyStats(months: 6);
+    if (monthlyStats.isEmpty) return const SizedBox.shrink();
+    
+    final maxTrips = monthlyStats.map((m) => m.tripCount).reduce((a, b) => a > b ? a : b);
+    if (maxTrips == 0) return const SizedBox.shrink();
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '📊 Viajes por Mes',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            SizedBox(
+              height: 140,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: monthlyStats.map((month) {
+                  final heightPercent = maxTrips > 0 ? (month.tripCount / maxTrips) : 0.0;
+                  final isCurrentMonth = month.month == DateTime.now().month && 
+                                         month.year == DateTime.now().year;
+                  
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${month.tripCount}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isCurrentMonth ? Colors.blue : Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Container(
+                            height: (heightPercent * 95).toDouble(),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: isCurrentMonth ? Colors.blue : Colors.blue[200],
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            month.label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: isCurrentMonth ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrentMonth ? Colors.blue : Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildWeekdayCard(TripStats stats) {
+    final weekdayStats = stats.getDayOfWeekStats();
+    if (weekdayStats.isEmpty) return const SizedBox.shrink();
+    
+    final maxTrips = weekdayStats.values.reduce((a, b) => a > b ? a : b);
+    if (maxTrips == 0) return const SizedBox.shrink();
+    
+    const dayNames = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    final today = DateTime.now().weekday;
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '📅 Días de la Semana',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            SizedBox(
+              height: 110,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(7, (index) {
+                  final day = index + 1;
+                  final count = weekdayStats[day] ?? 0;
+                  final heightPercent = maxTrips > 0 ? (count / maxTrips) : 0.0;
+                  final isToday = day == today;
+                  final isWeekend = day >= 6;
+                  
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 1),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (count > 0)
+                            Text(
+                              '$count',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: isToday ? Colors.blue : Colors.grey[700],
+                              ),
+                            ),
+                          const SizedBox(height: 2),
+                          Container(
+                            height: (heightPercent * 60).toDouble(),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: isToday 
+                                  ? Colors.blue 
+                                  : (isWeekend ? Colors.purple[200] : Colors.green[300]),
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dayNames[index],
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isToday ? Colors.blue : (isWeekend ? Colors.purple : Colors.grey[700]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _legendItem(Colors.green[300]!, 'Entre semana'),
+                const SizedBox(width: 16),
+                _legendItem(Colors.purple[200]!, 'Fin de semana'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _legendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+      ],
     );
   }
 
@@ -186,22 +526,26 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
   }
 
   Widget _buildStatItem(String emoji, String value, String label) {
-    return Column(
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-          textAlign: TextAlign.center,
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -231,19 +575,21 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                 child: Row(
                   children: [
                     Text(medals[index], style: const TextStyle(fontSize: 20)),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Línea ${line.key}',
-                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Línea ${line.key}',
+                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const Spacer(),
                     Text(
-                      '${line.value} viajes',
-                      style: TextStyle(color: Colors.grey[600]),
+                      '${line.value}',
+                      style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 8),
                     SizedBox(
-                      width: 60,
+                      width: 50,
                       child: LinearProgressIndicator(
                         value: line.value / maxCount,
                         backgroundColor: Colors.grey[300],
@@ -428,19 +774,26 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: Colors.blue,
+            radius: 18,
             child: Text(
               trip.line,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
           ),
-          title: Text(trip.stopName),
+          title: Text(
+            trip.stopName,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: const TextStyle(fontSize: 14),
+          ),
           subtitle: Text(
             '→ ${trip.destination}',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            overflow: TextOverflow.ellipsis,
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -448,25 +801,12 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
             children: [
               Text(
                 _formatTime(trip.timestamp),
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    trip.confirmed ? Icons.check_circle : Icons.help_outline,
-                    size: 14,
-                    color: trip.confirmed ? Colors.green : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    trip.confirmed ? 'Confirmado' : 'Asumido',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: trip.confirmed ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                ],
+              Icon(
+                trip.confirmed ? Icons.check_circle : Icons.help_outline,
+                size: 16,
+                color: trip.confirmed ? Colors.green : Colors.orange,
               ),
             ],
           ),

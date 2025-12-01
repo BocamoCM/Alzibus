@@ -58,6 +58,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   }
   
   Future<void> _loadTrainTimes() async {
+    if (!mounted) return;
     setState(() => _loadingTrains = true);
     try {
       final trains = await RenfeService.getNextTrains(limit: 6);
@@ -141,8 +142,12 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   }
 
   Future<void> _loadArrivalTimes() async {
+    if (!mounted) return;
     setState(() => _loading = true);
+    
     final arrivals = await _busTimesService.getArrivalTimes(widget.stop.id);
+    
+    if (!mounted) return;
     
     // Actualizar estado de alertas activas (solo las que realmente existen)
     final currentActiveAlerts = <String>{};
@@ -172,6 +177,8 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     
     await _alertService.addAlert(alert);
     
+    if (!mounted) return;
+    
     setState(() {
       _activeAlerts.add(alert.key);
     });
@@ -199,18 +206,18 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   Future<void> _cancelAlert(String alertKey) async {
     await _alertService.removeAlert(alertKey);
     
+    if (!mounted) return;
+    
     setState(() {
       _activeAlerts.remove(alertKey);
     });
     
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Alerta cancelada'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Alerta cancelada'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _openInGoogleMaps() async {

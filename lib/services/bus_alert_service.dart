@@ -285,17 +285,20 @@ class BusAlertService {
               alert.notified2min = true;
               alertUpdated = true;
             }
-            // Notificación final cuando llega
-            else if (minutes == 0 && !alert.notifiedArriving) {
+            // Notificación final cuando llega (1 min o menos, incluyendo <<< que se parsea como 0)
+            else if (minutes <= 1 && minutes >= 0 && !alert.notifiedArriving) {
               await _notificationService.showBusArrivalAlert(
                 stopName: alert.stopName,
                 line: alert.line,
                 destination: alert.destination,
-                minutes: 0,
+                minutes: minutes,
                 urgency: 'llegando',
               );
               alert.notifiedArriving = true;
               alertUpdated = true;
+              
+              // Guardar viaje pendiente para confirmar
+              await _savePendingTrip(alert);
               
               // Remover alerta después de notificar llegada
               await removeAlert(alert.key);
@@ -317,8 +320,14 @@ class BusAlertService {
     // Parsear tiempo: "5 min", "En parada", "12:30", etc.
     if (time.toLowerCase().contains('parada')) return 0;
     
-    // Sin servicio o ya pasó
-    if (time.contains('>>>') || time.contains('---') || time.trim().isEmpty) return -1;
+    // <<< o < < < significa que el bus está llegando/en parada
+    if (time.contains('<<<') || time.contains('< < <') || time.contains('<')) return 0;
+    
+    // >>> significa que el bus ya pasó - devolver -1
+    if (time.contains('>>>') || time.contains('> > >')) return -1;
+    
+    // Sin servicio
+    if (time.contains('---') || time.trim().isEmpty) return -1;
     
     final minMatch = RegExp(r'(\d+)\s*min', caseSensitive: false).firstMatch(time);
     if (minMatch != null) {
@@ -347,6 +356,21 @@ class BusAlertService {
     return _activeAlerts.values
         .where((alert) => alert.stopId == stopId)
         .toList();
+  }
+  
+  // Guardar viaje pendiente para confirmar después
+  Future<void> _savePendingTrip(BusAlert alert) async {
+    print('[BusAlertService] Guardando pending trip: ${alert.line} -> ${alert.stopName}');
+    final prefs = await SharedPreferences.getInstance();
+    final tripData = {
+      'stopId': alert.stopId,
+      'stopName': alert.stopName,
+      'line': alert.line,
+      'destination': alert.destination,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    await prefs.setString('pending_trip', jsonEncode(tripData));
+    print('[BusAlertService] Pending trip guardado!');
   }
 
   void dispose() {

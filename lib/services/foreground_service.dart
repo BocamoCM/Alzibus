@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -211,6 +212,7 @@ Future<void> _checkBusAlertsStatic(
       final stopId = alert['stopId'];
       final line = alert['line'];
       final stopName = alert['stopName'];
+      final destination = alert['destination'] ?? '';
       final notified5min = alert['notified5min'] == true || alert['notified5min'] == 'true';
       final notified2min = alert['notified2min'] == true || alert['notified2min'] == 'true';
       final notifiedArriving = alert['notifiedArriving'] == true || alert['notifiedArriving'] == 'true';
@@ -267,9 +269,20 @@ Future<void> _checkBusAlertsStatic(
               // 1 minuto o llegando (0): notificar si no se ha notificado "arriving"
               else if (minutes >= 0 && minutes <= 1 && !notifiedArriving) {
                 print('[ForegroundService] Sending ARRIVING notification (minutes=$minutes)');
-                await _showBusArrivingNotificationStatic(notif, line, stopName, minutes);
+                await _showBusArrivingNotificationStatic(notif, line, stopName, minutes, isArriving: true);
                 alerts[i]['notifiedArriving'] = true;
                 alertsModified = true;
+                
+                // Guardar viaje pendiente para historial
+                final pendingTrip = {
+                  'line': line.toString(),
+                  'destination': destination,
+                  'stopName': stopName,
+                  'stopId': stopId,
+                  'timestamp': DateTime.now().toIso8601String(),
+                };
+                await prefs.setString('pending_trip', jsonEncode(pendingTrip));
+                print('[ForegroundService] Saved pending trip for history');
               } else {
                 print('[ForegroundService] No notification needed. minutes=$minutes, notified5=$notified5min, notified2=$notified2min, notifiedArriving=$notifiedArriving');
               }
@@ -333,8 +346,9 @@ Future<void> _showBusArrivingNotificationStatic(
   FlutterLocalNotificationsPlugin notif,
   String line,
   String stopName,
-  int minutes,
-) async {
+  int minutes, {
+  bool isArriving = false,
+}) async {
   // Vibrar fuerte
   try {
     if (await Vibration.hasVibrator() == true) {
@@ -379,6 +393,7 @@ Future<void> _showBusArrivingNotificationStatic(
     '🚨 ¡Tu bus está llegando!',
     'Línea $line $timeText - $stopName',
     NotificationDetails(android: androidDetails),
+    payload: isArriving ? 'trip_confirm' : null,
   );
 }
 
@@ -519,6 +534,12 @@ class ForegroundService {
   static const String _channelName = 'Alzibus Service';
   
   static Future<void> initialize() async {
+    // No inicializar en web
+    if (kIsWeb) {
+      print('[ForegroundService] Web platform detected, skipping initialization');
+      return;
+    }
+    
     // Crear canal de notificaciones ANTES de configurar el servicio
     final FlutterLocalNotificationsPlugin notif = FlutterLocalNotificationsPlugin();
     
@@ -568,11 +589,13 @@ class ForegroundService {
   }
   
   static Future<void> start() async {
+    if (kIsWeb) return;
     await _service.startService();
     print('[ForegroundService] Service started');
   }
   
   static Future<void> stop() async {
+    if (kIsWeb) return;
     final isRunning = await _service.isRunning();
     if (isRunning) {
       _service.invoke('stop');
@@ -581,11 +604,13 @@ class ForegroundService {
   }
   
   static Future<bool> isRunning() async {
+    if (kIsWeb) return false;
     return await _service.isRunning();
   }
   
   /// Envía una notificación de prueba para verificar que funciona
   static Future<void> sendTestNotification() async {
+    if (kIsWeb) return;
     final FlutterLocalNotificationsPlugin notif = FlutterLocalNotificationsPlugin();
     
     const initSettings = InitializationSettings(

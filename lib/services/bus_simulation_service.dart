@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:latlong2/latlong.dart';
 import 'bus_times_service.dart';
+import 'routing_service.dart';
 
 class SimulatedBus {
   final String lineId;
@@ -16,6 +17,9 @@ class SimulatedBus {
   DateTime? departureTime;
   int? lastKnownMinutes;
   int? trackingStopId;
+  List<LatLng>? currentRoute; // Ruta actual entre paradas
+  DateTime? lastApiUpdate; // Cuando se actualizo por ultima vez desde la API
+  double targetProgress; // Progreso objetivo basado en tiempo real
   
   SimulatedBus({
     required this.lineId,
@@ -30,6 +34,9 @@ class SimulatedBus {
     this.departureTime,
     this.lastKnownMinutes,
     this.trackingStopId,
+    this.currentRoute,
+    this.lastApiUpdate,
+    this.targetProgress = 0,
   });
 }
 
@@ -68,9 +75,9 @@ class BusSimulationService {
       _updateBusPositions();
     });
     
-    // Actualizar posiciones de buses cada 20 segundos consultando siguiente parada
+    // Actualizar posiciones de buses cada 15 segundos consultando siguiente parada
     _trackingTimer?.cancel();
-    _trackingTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+    _trackingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       _trackBuses();
     });
   }
@@ -140,23 +147,43 @@ class BusSimulationService {
       final minutes = data['minutes'] as int;
       
       final estimatedStopIndex = _estimateCurrentStop(stopIndex, minutes, lineStops.length);
+      
+      // Calcular progreso inicial basado en minutos
+      double initialProgress = 0.0;
+      if (minutes <= 1) {
+        initialProgress = 0.9; // Casi llegando
+      } else if (minutes == 2) {
+        initialProgress = 0.5; // A medio camino
+      } else if (minutes <= 4) {
+        initialProgress = 0.2; // Saliendo de parada
+      }
+      
       final pos = _getStopPosition(lineStops[estimatedStopIndex]);
       
       print('');
       print('==> Creando bus $lineId:');
       print('    Llegara a parada ${data['stopName']} en $minutes min');
       print('    Posicion estimada: parada $estimatedStopIndex de ${lineStops.length}');
+      print('    Progreso inicial: ${(initialProgress * 100).toInt()}%');
       
-      _buses[lineId] = SimulatedBus(
+      final bus = SimulatedBus(
         lineId: lineId,
         busId: lineId,
         currentPosition: pos,
         currentStopIndex: estimatedStopIndex,
         nextStopIndex: (estimatedStopIndex + 1) % lineStops.length,
+        progress: initialProgress,
+        targetProgress: initialProgress,
         lastKnownMinutes: minutes,
         trackingStopId: data['stopId'] as int,
+        lastApiUpdate: DateTime.now(),
         speed: 1.0,
       );
+      
+      _buses[lineId] = bus;
+      
+      // Cargar la ruta inicial para este bus
+      _loadRouteForBus(bus);
     }
     
     print('');
@@ -184,24 +211,53 @@ class BusSimulationService {
           
           print('${bus.lineId}: Siguiente parada ${nextStopData['name']} en $minutes min (${arrival.time})');
           
-          // Ajustar velocidad segun tiempo real
-          if (minutes == 0) {
-            // Bus llegando, acelerar
-            bus.speed = 2.0;
-          } else if (minutes <= 2) {
-            bus.speed = 1.5;
-          } else if (minutes <= 5) {
+          // Calcular progreso objetivo basado en tiempo real
+          // Si minutes=0, el bus deberia estar llegando (progress ~= 1.0)
+          // Si minutes=2 (tiempo medio entre paradas), progress ~= 0.5
+          // Si minutes>3, el bus probablemente esta antes de esta parada
+          
+          bus.lastApiUpdate = DateTime.now();
+          bus.lastKnownMinutes = minutes;
+          bus.trackingStopId = nextStopId;
+          
+          if (minutes <= 0) {
+            // Bus llegando a la parada
+            bus.targetProgress = 1.0;
+            bus.speed = 2.5;
+          } else if (minutes == 1) {
+            // Bus muy cerca
+            bus.targetProgress = 0.85;
+            bus.speed = 1.8;
+          } else if (minutes == 2) {
+            // Bus a medio camino
+            bus.targetProgress = 0.5;
+            bus.speed = 1.2;
+          } else if (minutes <= 4) {
+            // Bus saliendo de la parada anterior
+            bus.targetProgress = 0.25;
             bus.speed = 1.0;
           } else {
-            bus.speed = 0.6;
+            // El bus esta mas atras - necesitamos recalcular su posicion
+            // Mover el bus hacia atras en la ruta
+            final stopsBack = (minutes / 2.5).floor(); // ~2.5 min por parada
+            int newCurrentIndex = bus.nextStopIndex - stopsBack - 1;
+            if (newCurrentIndex < 0) newCurrentIndex += lineStops.length;
+            
+            if (newCurrentIndex != bus.currentStopIndex) {
+              print('${bus.lineId}: Reposicionando de parada ${bus.currentStopIndex} a $newCurrentIndex (${minutes} min hasta siguiente)');
+              bus.currentStopIndex = newCurrentIndex;
+              bus.nextStopIndex = (newCurrentIndex + 1) % lineStops.length;
+              bus.progress = 0.8; // Casi llegando a la parada actual
+              bus.targetProgress = 0.8;
+              bus.currentRoute = null;
+              _loadRouteForBus(bus);
+            }
+            bus.speed = 0.8;
           }
           
           // Siempre reanudar el movimiento cuando tenemos datos frescos
           bus.isAtStop = false;
           bus.departureTime = null;
-          
-          bus.lastKnownMinutes = minutes;
-          bus.trackingStopId = nextStopId;
         }
       } catch (e) {
         // Mantener velocidad actual si falla la consulta
@@ -212,25 +268,23 @@ class BusSimulationService {
   }
   
   int _estimateCurrentStop(int targetStopIndex, int minutesToArrival, int totalStops) {
-    // Si llega en 0 min, esta en esa parada o muy cerca
-    if (minutesToArrival <= 0) {
+    // Si llega en 0-1 min, esta muy cerca de esa parada
+    if (minutesToArrival <= 1) {
       // El bus esta en la parada anterior o llegando a esta
       int prev = targetStopIndex - 1;
       if (prev < 0) prev = totalStops - 1;
       return prev;
     }
     
-    // Estimar ~2 minutos por parada
-    final stopsAway = (minutesToArrival / 2.0).ceil();
+    // Estimar ~2.5 minutos por parada (mas realista)
+    final stopsAway = (minutesToArrival / 2.5).ceil();
     int estimated = targetStopIndex - stopsAway;
     
     // Asegurar que este dentro del rango valido
-    if (estimated < 0) {
-      // El bus viene desde el final de la ruta (circular)
-      estimated = totalStops + estimated;
+    while (estimated < 0) {
+      estimated += totalStops;
     }
-    if (estimated < 0) estimated = 0;
-    if (estimated >= totalStops) estimated = totalStops - 1;
+    if (estimated >= totalStops) estimated = estimated % totalStops;
     
     print('    Calculo: parada destino=$targetStopIndex, minutos=$minutesToArrival, stopsAway=$stopsAway -> estimado=$estimated');
     return estimated;
@@ -254,10 +308,13 @@ class BusSimulationService {
     for (final bus in _buses.values) {
       if (bus.isAtStop) {
         if (bus.departureTime == null) {
-          bus.departureTime = DateTime.now().add(const Duration(seconds: 8));
+          bus.departureTime = DateTime.now().add(const Duration(seconds: 5));
         } else if (DateTime.now().isAfter(bus.departureTime!)) {
           bus.isAtStop = false;
           bus.departureTime = null;
+          bus.targetProgress = 0;
+          // Cargar la ruta para el siguiente tramo
+          _loadRouteForBus(bus);
         }
         continue;
       }
@@ -265,26 +322,77 @@ class BusSimulationService {
       final stops = _lineStops[bus.lineId];
       if (stops == null || stops.length < 2) continue;
       
-      bus.progress += 0.008 * bus.speed;
+      // Movimiento suave hacia el progreso objetivo
+      // Si tenemos datos recientes de la API, ajustar el progreso hacia el objetivo
+      if (bus.lastApiUpdate != null) {
+        final secondsSinceUpdate = DateTime.now().difference(bus.lastApiUpdate!).inSeconds;
+        
+        // Si los datos tienen mas de 30 segundos, avanzar normalmente
+        if (secondsSinceUpdate < 30) {
+          // Suavizar el movimiento hacia el objetivo
+          final diff = bus.targetProgress - bus.progress;
+          if (diff.abs() > 0.01) {
+            // Mover hacia el objetivo suavemente
+            bus.progress += diff * 0.05 * bus.speed;
+          } else {
+            // Continuar avanzando normalmente
+            bus.progress += 0.006 * bus.speed;
+          }
+        } else {
+          // Datos viejos, avanzar normalmente
+          bus.progress += 0.006 * bus.speed;
+        }
+      } else {
+        bus.progress += 0.006 * bus.speed;
+      }
+      
       changed = true;
       
       if (bus.progress >= 1.0) {
         bus.progress = 0;
+        bus.targetProgress = 0;
         bus.currentStopIndex = bus.nextStopIndex;
         bus.nextStopIndex = (bus.nextStopIndex + 1) % stops.length;
         bus.isAtStop = true;
+        bus.currentRoute = null; // Limpiar ruta al llegar
+        bus.lastApiUpdate = null; // Forzar nueva consulta
       }
       
-      final from = _getStopPosition(stops[bus.currentStopIndex]);
-      final to = _getStopPosition(stops[bus.nextStopIndex]);
-      
-      bus.currentPosition = _interpolate(from, to, bus.progress);
-      bus.heading = _calculateHeading(from, to);
+      // Si tenemos una ruta cacheada, seguirla
+      if (bus.currentRoute != null && bus.currentRoute!.length > 1) {
+        bus.currentPosition = RoutingService.interpolateAlongRoute(
+          bus.currentRoute!,
+          bus.progress,
+        );
+        bus.heading = RoutingService.getHeadingAtProgress(
+          bus.currentRoute!,
+          bus.progress,
+        );
+      } else {
+        // Fallback a línea recta si no hay ruta
+        final from = _getStopPosition(stops[bus.currentStopIndex]);
+        final to = _getStopPosition(stops[bus.nextStopIndex]);
+        
+        bus.currentPosition = _interpolate(from, to, bus.progress);
+        bus.heading = _calculateHeading(from, to);
+      }
     }
     
     if (changed) {
       _emitBuses();
     }
+  }
+  
+  /// Carga la ruta entre paradas para un bus
+  Future<void> _loadRouteForBus(SimulatedBus bus) async {
+    final stops = _lineStops[bus.lineId];
+    if (stops == null || stops.length < 2) return;
+    
+    final from = _getStopPosition(stops[bus.currentStopIndex]);
+    final to = _getStopPosition(stops[bus.nextStopIndex]);
+    
+    final route = await RoutingService.getRoute(from, to);
+    bus.currentRoute = route;
   }
   
   LatLng _getStopPosition(Map<String, dynamic> stop) {

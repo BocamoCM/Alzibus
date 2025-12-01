@@ -122,4 +122,54 @@ class TripStats {
       ..sort((a, b) => b.value.compareTo(a.value));
     return sorted.take(3).toList();
   }
+  
+  // Día de la semana más frecuente
+  String? get mostFrequentWeekday {
+    if (weekdayUsage.isEmpty) return null;
+    final peakDay = weekdayUsage.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+    
+    const days = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    return days[peakDay];
+  }
+  
+  // Promedio de viajes por día (en el período)
+  double get averageTripsPerDay {
+    if (totalTrips == 0) return 0;
+    final daysWithTrips = weekdayUsage.values.fold(0, (a, b) => a + b);
+    if (daysWithTrips == 0) return 0;
+    return totalTrips / 7; // Promedio semanal
+  }
+  
+  // Getter para estadísticas de días de la semana
+  Map<int, int> getDayOfWeekStats() {
+    return weekdayUsage;
+  }
+}
+
+/// Estadísticas mensuales
+class MonthlyStats {
+  final int year;
+  final int month;
+  final int tripCount;
+  final Map<String, int> lineUsage;
+  
+  MonthlyStats({
+    required this.year,
+    required this.month,
+    required this.tripCount,
+    required this.lineUsage,
+  });
+  
+  String get monthName {
+    const months = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return months[month];
+  }
+  
+  String get fullMonthName {
+    const months = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return months[month];
+  }
 }
