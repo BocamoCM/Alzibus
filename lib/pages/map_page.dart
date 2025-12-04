@@ -56,6 +56,9 @@ class MapPageState extends State<MapPage> {
   
   Map<String, SimulatedBus> _simulatedBuses = {};
   Timer? _busUpdateTimer;
+  
+  // Exponer el servicio de simulación para otras páginas
+  BusSimulationService get busSimulationService => _busSimulationService;
 
   @override
   void initState() {

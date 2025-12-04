@@ -461,6 +461,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Obtener el servicio de simulación del MapPage si está disponible
+    final busService = _mapPageKey.currentState?.busSimulationService;
+    
     final pages = [
       MapPage(
         key: _mapPageKey,
@@ -471,6 +474,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         showSimulatedBuses: _showSimulatedBuses,
       ),
       RoutesPage(
+        busSimulationService: busService,
         onStopTapped: (stop) {
           // Cambiar a la pestaña del mapa
           setState(() => _index = 0);
