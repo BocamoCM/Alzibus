@@ -1,0 +1,20 @@
+[
+  {"id": 14, "name": "HOSPITAL", "lat": 39.159686, "lng": -0.414966},
+  {"id": 43, "name": "CASAL FESTER", "lat": 39.164029, "lng": -0.420725},
+  {"id": 17, "name": "AV. DELS ESPORTS-AV. LLIBERTAT", "lat": 39.164625, "lng": -0.425656},
+  {"id": 18, "name": "AV. DELS ESPORTS-CIPFP LLUIS SUÑER", "lat": 39.166203, "lng": -0.430935},
+  {"id": 19, "name": "AV. DIGNITAT HUMANA-C. C. CARREFOUR", "lat": 39.163495, "lng": -0.430995},
+  {"id": 73, "name": "SUECA", "lat": 39.15833, "lng": -0.430651},
+  {"id": 45, "name": "JOANOT MARTORELL", "lat": 39.155695, "lng": -0.434966},
+  {"id": 46, "name": "AV. SANTS PATRONS-PLAÇA GENERALITAT", "lat": 39.152968, "lng": -0.437626},
+  {"id": 27, "name": "PLAÇA DEL REGNE", "lat": 39.149855, "lng": -0.438875},
+  {"id": 59, "name": "ESTACIÓ D'AUTOBUSOS", "lat": 39.148338, "lng": -0.441128},
+  {"id": 1, "name": "ESTACIO RENFE", "lat": 39.153858, "lng": -0.450553},
+  {"id": 39, "name": "CARRER SABATERS", "lat": 39.156341, "lng": -0.446425},
+  {"id": 3, "name": "PLAÇA DEL REGNE (A HOSPITAL)", "lat": 39.149363, "lng": -0.438956},
+  {"id": 40, "name": "AV. SANTS PATRONS-HOTEL", "lat": 39.15335, "lng": -0.437596},
+  {"id": 41, "name": "JOANOT MARTORELL-SANTOCILDES", "lat": 39.155563, "lng": -0.435308},
+  {"id": 42, "name": "SUECA-HOTEL", "lat": 39.157889, "lng": -0.430961},
+  {"id": 12, "name": "GENERAL ESPARTERO", "lat": 39.160385, "lng": -0.429076},
+  {"id": 13, "name": "AV. MEDITERRANIA-RESIDENCIA", "lat": 39.160643, "lng": -0.421791}
+]
