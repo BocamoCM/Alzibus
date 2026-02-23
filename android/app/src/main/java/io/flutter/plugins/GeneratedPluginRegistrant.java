@@ -46,6 +46,11 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin home_widget, es.antonborri.home_widget.HomeWidgetPlugin", e);
     }
     try {
+      flutterEngine.getPlugins().add(new dev.flutter.plugins.nfcmanager.NfcManagerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin nfc_manager, dev.flutter.plugins.nfcmanager.NfcManagerPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.packageinfo.PackageInfoPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin package_info_plus, dev.fluttercommunity.plus.packageinfo.PackageInfoPlugin", e);

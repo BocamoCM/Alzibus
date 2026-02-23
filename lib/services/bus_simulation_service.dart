@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:latlong2/latlong.dart';
 import 'bus_times_service.dart';
-import 'routing_service.dart';
+import 'gps_track_service.dart';
 
 class SimulatedBus {
   final String lineId;
@@ -17,7 +17,9 @@ class SimulatedBus {
   DateTime? departureTime;
   int? lastKnownMinutes;
   int? trackingStopId;
-  List<LatLng>? currentRoute; // Ruta actual entre paradas
+  List<LatLng>? gpsTrack; // Track GPS completo de la línea
+  int trackFromIndex; // Índice del punto de inicio en el track
+  int trackToIndex; // Índice del punto de destino en el track
   DateTime? lastApiUpdate; // Cuando se actualizo por ultima vez desde la API
   double targetProgress; // Progreso objetivo basado en tiempo real
   
@@ -34,7 +36,9 @@ class SimulatedBus {
     this.departureTime,
     this.lastKnownMinutes,
     this.trackingStopId,
-    this.currentRoute,
+    this.gpsTrack,
+    this.trackFromIndex = 0,
+    this.trackToIndex = 0,
     this.lastApiUpdate,
     this.targetProgress = 0,
   });
@@ -180,10 +184,16 @@ class BusSimulationService {
         speed: 1.0,
       );
       
+      // Cargar el track GPS para esta línea
+      final gpsTrack = await GpsTrackService.loadTrack(lineId);
+      if (gpsTrack.isNotEmpty) {
+        bus.gpsTrack = gpsTrack;
+      }
+      
       _buses[lineId] = bus;
       
-      // Cargar la ruta inicial para este bus
-      _loadRouteForBus(bus);
+      // Actualizar los índices del segmento inicial
+      _updateBusTrackSegment(bus);
     }
     
     print('');
@@ -209,53 +219,34 @@ class BusSimulationService {
           final arrival = lineArrivals.first;
           final minutes = _parseMinutes(arrival.time);
           
-          print('${bus.lineId}: Siguiente parada ${nextStopData['name']} en $minutes min (${arrival.time})');
-          
-          // Calcular progreso objetivo basado en tiempo real
-          // Si minutes=0, el bus deberia estar llegando (progress ~= 1.0)
-          // Si minutes=2 (tiempo medio entre paradas), progress ~= 0.5
-          // Si minutes>3, el bus probablemente esta antes de esta parada
+          // Solo loguear si hay cambio significativo
+          if (bus.lastKnownMinutes == null || (bus.lastKnownMinutes! - minutes).abs() > 1) {
+            print('${bus.lineId}: Próxima parada ${nextStopData['name']} en $minutes min');
+          }
           
           bus.lastApiUpdate = DateTime.now();
           bus.lastKnownMinutes = minutes;
           bus.trackingStopId = nextStopId;
           
+          // Ajustar velocidad según tiempo real - SIN teletransportar
           if (minutes <= 0) {
-            // Bus llegando a la parada
+            // Bus llegando - acelerar para llegar
             bus.targetProgress = 1.0;
-            bus.speed = 2.5;
+            bus.speed = 2.0;
           } else if (minutes == 1) {
-            // Bus muy cerca
-            bus.targetProgress = 0.85;
-            bus.speed = 1.8;
-          } else if (minutes == 2) {
-            // Bus a medio camino
-            bus.targetProgress = 0.5;
+            bus.targetProgress = 0.8;
+            bus.speed = 1.5;
+          } else if (minutes <= 3) {
+            // Tiempo normal entre paradas
+            bus.targetProgress = max(0.3, 1.0 - (minutes * 0.25));
             bus.speed = 1.2;
-          } else if (minutes <= 4) {
-            // Bus saliendo de la parada anterior
-            bus.targetProgress = 0.25;
-            bus.speed = 1.0;
           } else {
-            // El bus esta mas atras - necesitamos recalcular su posicion
-            // Mover el bus hacia atras en la ruta
-            final stopsBack = (minutes / 2.5).floor(); // ~2.5 min por parada
-            int newCurrentIndex = bus.nextStopIndex - stopsBack - 1;
-            if (newCurrentIndex < 0) newCurrentIndex += lineStops.length;
-            
-            if (newCurrentIndex != bus.currentStopIndex) {
-              print('${bus.lineId}: Reposicionando de parada ${bus.currentStopIndex} a $newCurrentIndex (${minutes} min hasta siguiente)');
-              bus.currentStopIndex = newCurrentIndex;
-              bus.nextStopIndex = (newCurrentIndex + 1) % lineStops.length;
-              bus.progress = 0.8; // Casi llegando a la parada actual
-              bus.targetProgress = 0.8;
-              bus.currentRoute = null;
-              _loadRouteForBus(bus);
-            }
-            bus.speed = 0.8;
+            // Más de 3 min - ir más lento, el bus está lejos
+            bus.speed = 0.6;
+            // NO reposicionar - dejar que llegue naturalmente
           }
           
-          // Siempre reanudar el movimiento cuando tenemos datos frescos
+          // Reanudar movimiento
           bus.isAtStop = false;
           bus.departureTime = null;
         }
@@ -313,8 +304,8 @@ class BusSimulationService {
           bus.isAtStop = false;
           bus.departureTime = null;
           bus.targetProgress = 0;
-          // Cargar la ruta para el siguiente tramo
-          _loadRouteForBus(bus);
+          // Actualizar segmento del track para el siguiente tramo
+          _updateBusTrackSegment(bus);
         }
         continue;
       }
@@ -354,22 +345,31 @@ class BusSimulationService {
         bus.currentStopIndex = bus.nextStopIndex;
         bus.nextStopIndex = (bus.nextStopIndex + 1) % stops.length;
         bus.isAtStop = true;
-        bus.currentRoute = null; // Limpiar ruta al llegar
         bus.lastApiUpdate = null; // Forzar nueva consulta
+        // Actualizar segmento del track para el próximo tramo
+        _updateBusTrackSegment(bus);
       }
       
-      // Si tenemos una ruta cacheada, seguirla
-      if (bus.currentRoute != null && bus.currentRoute!.length > 1) {
-        bus.currentPosition = RoutingService.interpolateAlongRoute(
-          bus.currentRoute!,
+      // Usar el track GPS si está disponible y los índices son válidos
+      if (bus.gpsTrack != null && 
+          bus.gpsTrack!.isNotEmpty && 
+          bus.trackFromIndex < bus.gpsTrack!.length &&
+          bus.trackToIndex < bus.gpsTrack!.length &&
+          bus.trackToIndex > bus.trackFromIndex) {
+        bus.currentPosition = GpsTrackService.interpolateOnTrack(
+          bus.gpsTrack!,
+          bus.trackFromIndex,
+          bus.trackToIndex,
           bus.progress,
         );
-        bus.heading = RoutingService.getHeadingAtProgress(
-          bus.currentRoute!,
+        bus.heading = GpsTrackService.getHeadingOnTrack(
+          bus.gpsTrack!,
+          bus.trackFromIndex,
+          bus.trackToIndex,
           bus.progress,
         );
       } else {
-        // Fallback a línea recta si no hay ruta
+        // Fallback a línea recta si no hay track GPS
         final from = _getStopPosition(stops[bus.currentStopIndex]);
         final to = _getStopPosition(stops[bus.nextStopIndex]);
         
@@ -383,16 +383,18 @@ class BusSimulationService {
     }
   }
   
-  /// Carga la ruta entre paradas para un bus
-  Future<void> _loadRouteForBus(SimulatedBus bus) async {
+  /// Actualiza los índices del segmento del track para un bus
+  void _updateBusTrackSegment(SimulatedBus bus) {
     final stops = _lineStops[bus.lineId];
     if (stops == null || stops.length < 2) return;
+    if (bus.gpsTrack == null || bus.gpsTrack!.isEmpty) return;
     
     final from = _getStopPosition(stops[bus.currentStopIndex]);
     final to = _getStopPosition(stops[bus.nextStopIndex]);
     
-    final route = await RoutingService.getRoute(from, to);
-    bus.currentRoute = route;
+    final segment = GpsTrackService.findSegmentBetweenStops(bus.gpsTrack!, from, to);
+    bus.trackFromIndex = segment.fromIndex;
+    bus.trackToIndex = segment.toIndex;
   }
   
   LatLng _getStopPosition(Map<String, dynamic> stop) {
