@@ -62,9 +62,11 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+
       - name: Fix nfc_manager Kotlin deprecation (toLowerCase → lowercase)
         run: |
-          find ~/.pub-cache/hosted/pub.dev/nfc_manager-*/android/src/main/kotlin/io/flutter/plugins/nfcmanager/Translator.kt -type f -exec sed -i 's/\.toLowerCase(/.lowercase(/g' {} +
+          find ~/.pub-cache/hosted/pub.dev/nfc_manager-*/android/src/main/kotlin/io/flutter/plugins/nfcmanager/Translator.kt -type f -exec sed -i 's/\.toLowerCase(/.lowercase(/g' {} + || true
+          find /home/runner/.pub-cache/hosted/pub.dev/nfc_manager-*/android/src/main/kotlin/io/flutter/plugins/nfcmanager/Translator.kt -type f -exec sed -i 's/\.toLowerCase(/.lowercase(/g' {} + || true
 
       - name: Build APK (debug)
         run: flutter build apk --debug
