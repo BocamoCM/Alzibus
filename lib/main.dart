@@ -16,8 +16,10 @@ import 'pages/map_page.dart';
 import 'pages/nfc_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/routes_page.dart';
+import 'pages/login_page.dart';
 import 'screens/trip_history_screen.dart';
 import 'screens/active_alerts_screen.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +43,7 @@ void main() async {
   // Cargar y guardar paradas para el servicio de fondo
   final stopsService = StopsService();
   final stops = await stopsService.loadStops();
+  print('Main: Paradas cargadas: ${stops.length}');
   final stopsData = stops.map((stop) => {
     'name': stop.name,
     'lat': stop.lat,
@@ -62,7 +65,11 @@ void main() async {
     }
   }
   
-  runApp(const AlzibusApp());
+  // Comprobar si el usuario ya está logueado
+  final authService = AuthService();
+  final isLoggedIn = await authService.isLoggedIn();
+  
+  runApp(AlzibusApp(isLoggedIn: isLoggedIn));
 }
 
 /// Solicita todos los permisos necesarios para el foreground service
@@ -101,7 +108,9 @@ void _onBackgroundNotificationResponse(NotificationResponse response) async {
 }
 
 class AlzibusApp extends StatelessWidget {
-  const AlzibusApp({super.key});
+  final bool isLoggedIn;
+  
+  const AlzibusApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +118,10 @@ class AlzibusApp extends StatelessWidget {
       title: 'Alzibus',
       theme: AlzibusTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: const SplashPage(),
+      home: isLoggedIn ? const HomePage() : const LoginPage(),
       routes: {
         '/home': (context) => const HomePage(),
+        '/login': (context) => const LoginPage(),
       },
     );
   }

@@ -145,8 +145,16 @@ class MapPageState extends State<MapPage> {
   }
 
   Future<void> _loadStops() async {
+    print('Intentando cargar paradas...');
     final loadedStops = await _stopsService.loadStops();
-    setState(() => stops = loadedStops);
+    print('Paradas cargadas: ${loadedStops.length}');
+    
+    if (mounted) {
+      setState(() {
+        stops = loadedStops;
+      });
+    }
+    
     // Inicializar buses despues de cargar paradas
     await _initializeBuses();
   }

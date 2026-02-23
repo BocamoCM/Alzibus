@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 class ApiService {
   // Singleton
@@ -7,12 +8,31 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
+  // Cambia esto por la IP de tu ordenador en la red local
+  static const String baseUrl = 'http://10.196.241.62:3000/api';
+
   // Cache de datos
   List<Map<String, dynamic>>? _stopsCache;
   Map<String, List<Map<String, dynamic>>>? _routesCache;
 
-  // Cargar paradas desde assets
+  // Cargar paradas desde la API
   Future<List<Map<String, dynamic>>> getStops() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/stops'));
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        _stopsCache = jsonList.map((e) {
+          final map = Map<String, dynamic>.from(e);
+          map['active'] = true;
+          return map;
+        }).toList();
+        return _stopsCache!;
+      }
+    } catch (e) {
+      print('Error cargando paradas desde la API: $e');
+    }
+    
+    // Fallback a assets si falla la API
     if (_stopsCache != null) return _stopsCache!;
     
     final data = await rootBundle.loadString('assets/stops.json');
@@ -86,28 +106,47 @@ class ApiService {
 
   // Dashboard Stats basado en datos reales
   Future<Map<String, dynamic>> getDashboardStats() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/stats'));
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) {
+      print('Error cargando stats: $e');
+    }
+    
+    // Fallback
     final stops = await getStops();
     final routes = await getRoutes();
-    
     return {
       'totalStops': stops.length,
       'totalRoutes': routes.length,
-      'activeUsers': 1250,
-      'todayQueries': 3420,
-      'weeklyGrowth': 12.5,
-      'avgResponseTime': 0.8,
+      'activeUsers': 0,
+      'todayQueries': 0,
+      'weeklyGrowth': 0.0,
+      'avgResponseTime': 0.0,
     };
   }
 
   Future<List<Map<String, dynamic>>> getUsageData() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/stats/usage'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+    } catch (e) {
+      print('Error cargando usage data: $e');
+    }
+    
     return [
-      {'day': 'Lun', 'queries': 450},
-      {'day': 'Mar', 'queries': 520},
-      {'day': 'Mie', 'queries': 480},
-      {'day': 'Jue', 'queries': 610},
-      {'day': 'Vie', 'queries': 580},
-      {'day': 'Sab', 'queries': 320},
-      {'day': 'Dom', 'queries': 280},
+      {'day': 'Lun', 'queries': 0},
+      {'day': 'Mar', 'queries': 0},
+      {'day': 'Mie', 'queries': 0},
+      {'day': 'Jue', 'queries': 0},
+      {'day': 'Vie', 'queries': 0},
+      {'day': 'Sab', 'queries': 0},
+      {'day': 'Dom', 'queries': 0},
     ];
   }
 
@@ -116,7 +155,7 @@ class ApiService {
     final total = routes.fold<int>(0, (sum, r) => sum + (r['stops'] as int));
     
     return routes.map((route) {
-      final percentage = (route['stops'] as int) / total * 100;
+      final percentage = total > 0 ? (route['stops'] as int) / total * 100 : 0.0;
       return {
         'line': route['code'],
         'percentage': percentage,
@@ -126,29 +165,68 @@ class ApiService {
   }
 
   Future<List<Map<String, dynamic>>> getRecentActivity() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/stats/activity'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+    } catch (e) {
+      print('Error cargando actividad reciente: $e');
+    }
+    
     return [
-      {'action': 'Panel admin iniciado', 'user': 'Admin', 'time': 'Ahora', 'type': 'system'},
-      {'action': 'Datos cargados', 'user': 'Sistema', 'time': 'Hace 1 min', 'type': 'update'},
-      {'action': 'Cache actualizado', 'user': 'Sistema', 'time': 'Hace 5 min', 'type': 'system'},
+      {'action': 'Sin conexión', 'user': '-', 'time': '-', 'type': 'system'},
     ];
   }
 
-  // CRUD (los cambios no persisten sin backend)
+  // CRUD (ahora con backend)
   Future<void> createStop(Map<String, dynamic> stop) async {
-    _stopsCache?.add(stop);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/stops'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(stop),
+      );
+      if (response.statusCode == 201) {
+        final newStop = json.decode(response.body);
+        newStop['active'] = true;
+        _stopsCache?.add(newStop);
+      }
+    } catch (e) {
+      print('Error creando parada: $e');
+    }
   }
 
   Future<void> updateStop(int id, Map<String, dynamic> stop) async {
-    if (_stopsCache != null) {
-      final index = _stopsCache!.indexWhere((s) => s['id'] == id);
-      if (index != -1) {
-        _stopsCache![index] = {..._stopsCache![index], ...stop};
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/stops/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(stop),
+      );
+      if (response.statusCode == 200) {
+        if (_stopsCache != null) {
+          final index = _stopsCache!.indexWhere((s) => s['id'] == id);
+          if (index != -1) {
+            _stopsCache![index] = {..._stopsCache![index], ...stop};
+          }
+        }
       }
+    } catch (e) {
+      print('Error actualizando parada: $e');
     }
   }
 
   Future<void> deleteStop(int id) async {
-    _stopsCache?.removeWhere((s) => s['id'] == id);
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/stops/$id'));
+      if (response.statusCode == 200) {
+        _stopsCache?.removeWhere((s) => s['id'] == id);
+      }
+    } catch (e) {
+      print('Error eliminando parada: $e');
+    }
   }
 
   Future<void> createRoute(Map<String, dynamic> route) async {}
