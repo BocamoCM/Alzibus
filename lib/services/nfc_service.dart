@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import '../models/bus_card.dart';
 
@@ -99,7 +98,6 @@ class NfcService {
       // [8]: Contador/viajes
       // [10-13]: Fecha
 
-      final opType = block[1];
       final amount = (block[2] << 8) | block[3];
       final lineCode = block[4];
       final tripCount = block[8];

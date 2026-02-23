@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart' show Color;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart' show AndroidNotificationChannel;
 
 class NotificationService {

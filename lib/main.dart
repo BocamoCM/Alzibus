@@ -1,3 +1,4 @@
+// No action needed: 'pages/splash_page.dart' is not imported.
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -11,7 +12,6 @@ import 'services/bus_alert_service.dart';
 import 'services/trip_history_service.dart';
 import 'services/assistant_service.dart';
 import 'theme/app_theme.dart';
-import 'pages/splash_page.dart';
 import 'pages/map_page.dart';
 import 'pages/nfc_page.dart';
 import 'pages/settings_page.dart';

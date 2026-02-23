@@ -138,7 +138,6 @@ class TripRecord {
 
       // Fecha codificada (bytes 10-13 parecen contener timestamp)
       // Formato: parece ser días desde época + hora
-      final dateBytes = (block[10] << 8) | block[11];
       
       // Aproximación: usar fecha actual si no se puede decodificar
       final timestamp = DateTime.now();
