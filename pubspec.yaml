@@ -27,8 +27,7 @@ dependencies:
   flutter_background_service_android: ^6.2.7
   home_widget: ^0.8.1
   package_info_plus: ^8.0.0
-  nfc_manager: ^3.5.0
-
+  nfc_manager: ^4.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

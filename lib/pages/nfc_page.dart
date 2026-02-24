@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
-import 'package:nfc_manager/platform_tags.dart';
+import 'package:nfc_manager/src/nfc_manager_android/tags/nfc_a.dart';
+import 'package:nfc_manager/src/nfc_manager_android/tags/iso_dep.dart';
+import 'package:nfc_manager/src/nfc_manager_android/tags/mifare_classic.dart';
+import 'package:nfc_manager/src/nfc_manager_android/tags/tag.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
@@ -174,26 +177,26 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
       String? uid;
       
       // Intentar obtener UID de NfcA (común en Mifare)
-      final nfca = NfcA.from(tag);
+      final nfca = NfcAAndroid.from(tag);
       if (nfca != null) {
-        uid = nfca.identifier.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+        uid = nfca.tag.id.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
       }
       
       // Si no, intentar IsoDep
       if (uid == null) {
-        final isodep = IsoDep.from(tag);
+        final isodep = IsoDepAndroid.from(tag);
         if (isodep != null) {
-          uid = isodep.identifier.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+          uid = isodep.tag.id.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
         }
       }
       
       // Intentar Mifare Classic - usando claves reales de las tarjetas de bus
-      final mifareClassic = MifareClassic.from(tag);
+      final mifareClassic = MifareClassicAndroid.from(tag);
       BusCard? cardData;
       
       if (mifareClassic != null) {
         if (uid == null) {
-          uid = mifareClassic.identifier.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+          uid = mifareClassic.tag.id.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
         }
         
         // Claves Mifare de las tarjetas de bus de Alzira
