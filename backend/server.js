@@ -316,50 +316,37 @@ app.get('/api/stats/activity', async (req, res) => {
     }
 });
 
-// 10. Paradas más visitadas (desde api_logs)
+// 10. Paradas más visitadas (desde trips — cada viaje confirmado cuenta como visita)
 app.get('/api/stats/top-stops', async (req, res) => {
     try {
-        // Extraemos el ID de parada de las rutas tipo GET /api/stops/42
         const result = await pool.query(`
             SELECT
-                REGEXP_REPLACE(endpoint, '^/api/stops/', '') AS stop_id,
-                COUNT(*) AS visits
-            FROM api_logs
-            WHERE endpoint ~ '^/api/stops/[0-9]+$'
-              AND method = 'GET'
-            GROUP BY stop_id
+                stop_id   AS "stopId",
+                stop_name AS name,
+                COUNT(*)  AS visits
+            FROM trips
+            GROUP BY stop_id, stop_name
             ORDER BY visits DESC
             LIMIT 10
         `);
 
         if (result.rows.length === 0) {
-            // Si no hay logs de paradas individuales, devolver las primeras paradas generales
-            const stops = await pool.query(
-                'SELECT id, name FROM stops ORDER BY id ASC LIMIT 10'
-            );
-            return res.json(stops.rows.map(s => ({
-                stopId: s.id,
-                name: s.name,
-                visits: 0,
-            })));
+            // Sin viajes aún, devolver paradas existentes con 0 visitas
+            const stops = await pool.query('SELECT id, name FROM stops ORDER BY id ASC LIMIT 10');
+            return res.json(stops.rows.map(s => ({ stopId: s.id, name: s.name, visits: 0 })));
         }
 
-        // Enriquecer con el nombre de la parada
-        const enriched = await Promise.all(result.rows.map(async (row) => {
-            const stop = await pool.query('SELECT name FROM stops WHERE id = $1', [row.stop_id]);
-            return {
-                stopId: parseInt(row.stop_id),
-                name: stop.rows[0]?.name ?? `Parada ${row.stop_id}`,
-                visits: parseInt(row.visits),
-            };
-        }));
-
-        res.json(enriched);
+        res.json(result.rows.map(r => ({
+            stopId: parseInt(r.stopId),
+            name: r.name,
+            visits: parseInt(r.visits),
+        })));
     } catch (error) {
         console.error('Error top-stops:', error);
         res.status(500).json({ error: 'Error al obtener paradas más visitadas' });
     }
 });
+
 
 // 11. Horas pico (desde api_logs, agrupado por hora)
 app.get('/api/stats/peak-hours', async (req, res) => {
