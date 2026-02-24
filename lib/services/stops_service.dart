@@ -1,18 +1,21 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../models/bus_stop.dart';
+import '../constants/app_config.dart';
 
 class StopsService {
-  // Cambia esto por la IP de tu ordenador en la red local si pruebas en un móvil físico
-  // Si usas el emulador de Android, usa 'http://10.0.2.2:3000'
-  static const String baseUrl = 'http://10.196.241.62:3000/api';
-
   Future<List<BusStop>> loadStops() async {
     try {
       // 1. Intentar cargar desde la API (Base de datos)
-      final response = await http.get(Uri.parse('$baseUrl/stops'));
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/stops'),
+            headers: AppConfig.headers,
+          )
+          .timeout(AppConfig.httpTimeout);
       
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
@@ -31,11 +34,11 @@ class StopsService {
         )).toList();
       }
     } catch (e) {
-      print('Error cargando paradas desde la API: $e');
+      debugPrint('Error cargando paradas desde la API: $e');
     }
 
     // 2. Fallback: Si la API falla, cargar desde el archivo local (assets/stops.json)
-    print('Usando paradas locales (fallback)');
+    debugPrint('Usando paradas locales (fallback)');
     final data = await rootBundle.loadString('assets/stops.json');
     final List<dynamic> jsonList = json.decode(data);
     
@@ -51,7 +54,7 @@ class StopsService {
       final List<dynamic> jsonList = json.decode(data);
       return jsonList.map((e) => Map<String, dynamic>.from(e)).toList();
     } catch (e) {
-      print('Error cargando ruta $lineId: $e');
+      debugPrint('Error cargando ruta $lineId: $e');
       return [];
     }
   }

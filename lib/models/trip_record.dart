@@ -1,12 +1,14 @@
 class TripRecord {
+  final int? serverId;  // ID en la base de datos del servidor
   final String line;
   final String destination;
   final String stopName;
   final int stopId;
   final DateTime timestamp;
-  final bool confirmed; // true = confirmó que lo cogió, false = asumido
+  final bool confirmed;
 
   TripRecord({
+    this.serverId,
     required this.line,
     required this.destination,
     required this.stopName,
@@ -25,6 +27,7 @@ class TripRecord {
   };
 
   factory TripRecord.fromJson(Map<String, dynamic> json) => TripRecord(
+    serverId: json['id'] as int?,
     line: json['line'] ?? '',
     destination: json['destination'] ?? '',
     stopName: json['stopName'] ?? '',
@@ -166,6 +169,9 @@ class MonthlyStats {
     const months = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return months[month];
   }
+
+  /// Etiqueta corta para el gráfico: "Ene 25", "Feb 25", etc.
+  String get label => '$monthName ${year.toString().substring(2)}';
   
   String get fullMonthName {
     const months = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 

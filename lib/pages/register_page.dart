@@ -2,44 +2,65 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
   String _message = '';
+  bool _success = false;
 
-  void _register() async {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _isLoading = true;
       _message = '';
+      _success = false;
     });
 
-    final success = await _authService.register(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    try {
+      final ok = await _authService.register(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-    setState(() {
-      _isLoading = false;
-    });
+      if (!mounted) return;
 
-    if (success) {
+      if (ok) {
+        setState(() {
+          _isLoading = false;
+          _success = true;
+          _message = '¡Registro exitoso! Ahora puedes iniciar sesión.';
+        });
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) Navigator.of(context).pop();
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _message = 'El email ya está registrado. Prueba con otro.';
+        });
+      }
+    } on AuthNetworkException {
+      if (!mounted) return;
       setState(() {
-        _message = 'Registro exitoso. Ahora puedes iniciar sesión.';
-      });
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.of(context).pop();
-      });
-    } else {
-      setState(() {
-        _message = 'Error al registrar. El usuario podría ya existir.';
+        _isLoading = false;
+        _message = 'Sin conexión al servidor. Comprueba tu red.';
       });
     }
   }
@@ -50,36 +71,73 @@ class _RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(title: const Text('Registro en Alzibus')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Contraseña'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            if (_message.isNotEmpty)
-              Text(
-                _message,
-                style: TextStyle(
-                  color: _message.contains('exitoso') ? Colors.green : Colors.red,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Introduce tu email';
+                  }
+                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                  if (!emailRegex.hasMatch(value.trim())) {
+                    return 'El email no tiene un formato válido';
+                  }
+                  return null;
+                },
               ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _register,
-                    child: const Text('Registrarse'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Contraseña',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _register(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Introduce tu contraseña';
+                  }
+                  if (value.length < 6) {
+                    return 'La contraseña debe tener al menos 6 caracteres';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              if (_message.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    _message,
+                    style: TextStyle(
+                      color: _success ? Colors.green : Colors.red,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-          ],
+                ),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _register,
+                        child: const Text('Registrarse'),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
     );

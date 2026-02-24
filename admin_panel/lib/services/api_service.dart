@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -8,33 +9,47 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // Cambia esto por la IP de tu ordenador en la red local
-  static const String baseUrl = 'http://10.196.241.62:3000/api';
+  static const String _baseUrl = 'http://10.196.241.62:3000/api';
+  static const String _apiKey = 'alzibus-secret-key-2024';
+
+  static Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'X-API-Key': _apiKey,
+  };
+
+  static const Duration _timeout = Duration(seconds: 10);
 
   // Cache de datos
   List<Map<String, dynamic>>? _stopsCache;
   Map<String, List<Map<String, dynamic>>>? _routesCache;
 
+  // Helper para GET
+  Future<http.Response?> _get(String path) async {
+    try {
+      return await http
+          .get(Uri.parse('$_baseUrl$path'), headers: _headers)
+          .timeout(_timeout);
+    } catch (e) {
+      debugPrint('ApiService GET $path error: $e');
+      return null;
+    }
+  }
+
   // Cargar paradas desde la API
   Future<List<Map<String, dynamic>>> getStops() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/stops'));
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
-        _stopsCache = jsonList.map((e) {
-          final map = Map<String, dynamic>.from(e);
-          map['active'] = true;
-          return map;
-        }).toList();
-        return _stopsCache!;
-      }
-    } catch (e) {
-      print('Error cargando paradas desde la API: $e');
+    final response = await _get('/stops');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> jsonList = json.decode(response.body);
+      _stopsCache = jsonList.map((e) {
+        final map = Map<String, dynamic>.from(e);
+        map['active'] = true;
+        return map;
+      }).toList();
+      return _stopsCache!;
     }
-    
-    // Fallback a assets si falla la API
+
+    // Fallback a cache o assets
     if (_stopsCache != null) return _stopsCache!;
-    
     final data = await rootBundle.loadString('assets/stops.json');
     final List<dynamic> jsonList = json.decode(data);
     _stopsCache = jsonList.map((e) {
@@ -48,11 +63,7 @@ class ApiService {
   // Cargar ruta especifica
   Future<List<Map<String, dynamic>>> getRouteStops(String lineId) async {
     _routesCache ??= {};
-    
-    if (_routesCache!.containsKey(lineId)) {
-      return _routesCache![lineId]!;
-    }
-    
+    if (_routesCache!.containsKey(lineId)) return _routesCache![lineId]!;
     try {
       final data = await rootBundle.loadString('assets/routes/$lineId.json');
       final List<dynamic> jsonList = json.decode(data);
@@ -66,30 +77,20 @@ class ApiService {
   // Obtener rutas (lineas)
   Future<List<Map<String, dynamic>>> getRoutes() async {
     final stops = await getStops();
-    
-    // Extraer lineas unicas de las paradas
     final Set<String> lines = {};
     for (final stop in stops) {
       final stopLines = stop['lines'] as List;
-      for (final line in stopLines) {
-        lines.add(line as String);
-      }
+      for (final line in stopLines) lines.add(line as String);
     }
-    
-    // Colores para cada linea
     final lineColors = {
       'L1': 0xFF6B1B3D,
       'L2': 0xFF4A90A4,
       'L3': 0xFFE85A4F,
     };
-    
     final routes = <Map<String, dynamic>>[];
     for (final line in lines.toList()..sort()) {
       final routeStops = await getRouteStops(line);
-      final stopsInLine = stops.where((s) => 
-        (s['lines'] as List).contains(line)
-      ).length;
-      
+      final stopsInLine = stops.where((s) => (s['lines'] as List).contains(line)).length;
       routes.add({
         'id': lines.toList().indexOf(line) + 1,
         'name': 'Linea ${line.substring(1)}',
@@ -100,22 +101,15 @@ class ApiService {
         'active': true,
       });
     }
-    
     return routes;
   }
 
-  // Dashboard Stats basado en datos reales
+  // Dashboard Stats
   Future<Map<String, dynamic>> getDashboardStats() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/stats'));
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      }
-    } catch (e) {
-      print('Error cargando stats: $e');
+    final response = await _get('/stats');
+    if (response != null && response.statusCode == 200) {
+      return json.decode(response.body);
     }
-    
-    // Fallback
     final stops = await getStops();
     final routes = await getRoutes();
     return {
@@ -129,23 +123,15 @@ class ApiService {
   }
 
   Future<List<Map<String, dynamic>>> getUsageData() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/stats/usage'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((e) => Map<String, dynamic>.from(e)).toList();
-      }
-    } catch (e) {
-      print('Error cargando usage data: $e');
+    final response = await _get('/stats/usage');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
     }
-    
     return [
-      {'day': 'Lun', 'queries': 0},
-      {'day': 'Mar', 'queries': 0},
-      {'day': 'Mie', 'queries': 0},
-      {'day': 'Jue', 'queries': 0},
-      {'day': 'Vie', 'queries': 0},
-      {'day': 'Sab', 'queries': 0},
+      {'day': 'Lun', 'queries': 0}, {'day': 'Mar', 'queries': 0},
+      {'day': 'Mie', 'queries': 0}, {'day': 'Jue', 'queries': 0},
+      {'day': 'Vie', 'queries': 0}, {'day': 'Sab', 'queries': 0},
       {'day': 'Dom', 'queries': 0},
     ];
   }
@@ -153,86 +139,94 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getLinesDistribution() async {
     final routes = await getRoutes();
     final total = routes.fold<int>(0, (sum, r) => sum + (r['stops'] as int));
-    
     return routes.map((route) {
       final percentage = total > 0 ? (route['stops'] as int) / total * 100 : 0.0;
-      return {
-        'line': route['code'],
-        'percentage': percentage,
-        'color': route['color'],
-      };
+      return {'line': route['code'], 'percentage': percentage, 'color': route['color']};
     }).toList();
   }
 
   Future<List<Map<String, dynamic>>> getRecentActivity() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/stats/activity'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((e) => Map<String, dynamic>.from(e)).toList();
-      }
-    } catch (e) {
-      print('Error cargando actividad reciente: $e');
+    final response = await _get('/stats/activity');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
     }
-    
-    return [
-      {'action': 'Sin conexión', 'user': '-', 'time': '-', 'type': 'system'},
-    ];
+    return [{'action': 'Sin conexión', 'user': '-', 'time': '-', 'type': 'system'}];
   }
 
-  // CRUD (ahora con backend)
+  /// Paradas más visitadas — datos reales desde api_logs del servidor.
+  Future<List<Map<String, dynamic>>> getTopStops() async {
+    final response = await _get('/stats/top-stops');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return [];
+  }
+
+  /// Horas pico — datos reales desde api_logs del servidor.
+  Future<List<Map<String, dynamic>>> getPeakHours() async {
+    final response = await _get('/stats/peak-hours');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return [];
+  }
+
+  // CRUD
   Future<void> createStop(Map<String, dynamic> stop) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/stops'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(stop),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/stops'),
+            headers: _headers,
+            body: json.encode(stop),
+          )
+          .timeout(_timeout);
       if (response.statusCode == 201) {
         final newStop = json.decode(response.body);
         newStop['active'] = true;
         _stopsCache?.add(newStop);
       }
     } catch (e) {
-      print('Error creando parada: $e');
+      debugPrint('Error creando parada: $e');
     }
   }
 
   Future<void> updateStop(int id, Map<String, dynamic> stop) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/stops/$id'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(stop),
-      );
-      if (response.statusCode == 200) {
-        if (_stopsCache != null) {
-          final index = _stopsCache!.indexWhere((s) => s['id'] == id);
-          if (index != -1) {
-            _stopsCache![index] = {..._stopsCache![index], ...stop};
-          }
-        }
+      final response = await http
+          .put(
+            Uri.parse('$_baseUrl/stops/$id'),
+            headers: _headers,
+            body: json.encode(stop),
+          )
+          .timeout(_timeout);
+      if (response.statusCode == 200 && _stopsCache != null) {
+        final index = _stopsCache!.indexWhere((s) => s['id'] == id);
+        if (index != -1) _stopsCache![index] = {..._stopsCache![index], ...stop};
       }
     } catch (e) {
-      print('Error actualizando parada: $e');
+      debugPrint('Error actualizando parada: $e');
     }
   }
 
   Future<void> deleteStop(int id) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/stops/$id'));
+      final response = await http
+          .delete(Uri.parse('$_baseUrl/stops/$id'), headers: _headers)
+          .timeout(_timeout);
       if (response.statusCode == 200) {
         _stopsCache?.removeWhere((s) => s['id'] == id);
       }
     } catch (e) {
-      print('Error eliminando parada: $e');
+      debugPrint('Error eliminando parada: $e');
     }
   }
 
   Future<void> createRoute(Map<String, dynamic> route) async {}
-
   Future<void> updateRoute(int id, Map<String, dynamic> route) async {}
-
   Future<void> deleteRoute(int id) async {}
 
   void clearCache() {

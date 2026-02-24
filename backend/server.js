@@ -11,6 +11,21 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // Para poder leer JSON en el body de las peticiones
 
+// ==========================================
+// MIDDLEWARE: VALIDACIÓN DE API KEY
+// ==========================================
+// Todas las rutas /api/* requieren el header X-API-Key correcto.
+const validateApiKey = (req, res, next) => {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== process.env.API_KEY) {
+        console.warn(`[API Key] Petición rechazada desde ${req.ip} — clave inválida o ausente`);
+        return res.status(401).json({ error: 'API Key inválida o no proporcionada' });
+    }
+    next();
+};
+
+app.use('/api', validateApiKey);
+
 // Middleware para registrar las peticiones a la API
 app.use((req, res, next) => {
     const start = Date.now();
@@ -30,8 +45,21 @@ app.use((req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // ==========================================
-// RUTAS DE AUTENTICACIÓN (LOGIN / REGISTRO)
+// MIDDLEWARE: AUTENTICACIÓN JWT
 // ==========================================
+// Protege rutas que requieren usuario autenticado.
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
+        req.user = user;
+        next();
+    });
+};
+
+
 
 // 1. Registro de usuario
 app.post('/api/register', async (req, res) => {
@@ -58,9 +86,9 @@ app.post('/api/register', async (req, res) => {
             [email, passwordHash]
         );
 
-        res.status(201).json({ 
-            message: 'Usuario registrado con éxito', 
-            user: newUser.rows[0] 
+        res.status(201).json({
+            message: 'Usuario registrado con éxito',
+            user: newUser.rows[0]
         });
     } catch (error) {
         console.error('Error en registro:', error);
@@ -93,13 +121,13 @@ app.post('/api/login', async (req, res) => {
 
         // Generar el token JWT
         const token = jwt.sign(
-            { id: user.id, email: user.email }, 
-            process.env.JWT_SECRET, 
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
             { expiresIn: '24h' } // El token caduca en 24 horas
         );
 
-        res.json({ 
-            message: 'Login exitoso', 
+        res.json({
+            message: 'Login exitoso',
             token: token,
             user: { id: user.id, email: user.email }
         });
@@ -186,7 +214,20 @@ app.get('/api/stats', async (req, res) => {
         const usersCount = await pool.query('SELECT COUNT(*) FROM users');
         const todayQueries = await pool.query('SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE');
         const avgResponseTime = await pool.query('SELECT AVG(duration_ms) FROM api_logs');
-        
+
+        // Calcular crecimiento semanal REAL comparando esta semana vs la anterior
+        const thisWeek = await pool.query(
+            `SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'`
+        );
+        const lastWeek = await pool.query(
+            `SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE - INTERVAL '13 days' AND created_at < CURRENT_DATE - INTERVAL '6 days'`
+        );
+        const thisWeekCount = parseInt(thisWeek.rows[0].count);
+        const lastWeekCount = parseInt(lastWeek.rows[0].count);
+        const weeklyGrowth = lastWeekCount > 0
+            ? parseFloat(((thisWeekCount - lastWeekCount) / lastWeekCount * 100).toFixed(1))
+            : 0;
+
         // Calcular rutas únicas (L1, L2, L3)
         const routesResult = await pool.query(`
             SELECT DISTINCT jsonb_array_elements_text(lines) as line 
@@ -199,7 +240,7 @@ app.get('/api/stats', async (req, res) => {
             totalRoutes: routesResult.rows.length,
             activeUsers: parseInt(usersCount.rows[0].count),
             todayQueries: parseInt(todayQueries.rows[0].count),
-            weeklyGrowth: 5.2, // Simulado por ahora
+            weeklyGrowth,
             avgResponseTime: parseFloat(avgResponseTime.rows[0].avg || 0).toFixed(2),
         });
     } catch (error) {
@@ -220,24 +261,24 @@ app.get('/api/stats/usage', async (req, res) => {
             GROUP BY to_char(created_at, 'Dy'), DATE(created_at)
             ORDER BY DATE(created_at) ASC
         `);
-        
+
         // Si no hay datos suficientes, rellenar con 0
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const esDays = {'Sun': 'Dom', 'Mon': 'Lun', 'Tue': 'Mar', 'Wed': 'Mie', 'Thu': 'Jue', 'Fri': 'Vie', 'Sat': 'Sab'};
-        
+        const esDays = { 'Sun': 'Dom', 'Mon': 'Lun', 'Tue': 'Mar', 'Wed': 'Mie', 'Thu': 'Jue', 'Fri': 'Vie', 'Sat': 'Sab' };
+
         const usageData = result.rows.map(row => ({
             day: esDays[row.day] || row.day,
             queries: parseInt(row.queries)
         }));
 
         res.json(usageData.length > 0 ? usageData : [
-            {'day': 'Lun', 'queries': 0},
-            {'day': 'Mar', 'queries': 0},
-            {'day': 'Mie', 'queries': 0},
-            {'day': 'Jue', 'queries': 0},
-            {'day': 'Vie', 'queries': 0},
-            {'day': 'Sab', 'queries': 0},
-            {'day': 'Dom', 'queries': 0},
+            { 'day': 'Lun', 'queries': 0 },
+            { 'day': 'Mar', 'queries': 0 },
+            { 'day': 'Mie', 'queries': 0 },
+            { 'day': 'Jue', 'queries': 0 },
+            { 'day': 'Vie', 'queries': 0 },
+            { 'day': 'Sab', 'queries': 0 },
+            { 'day': 'Dom', 'queries': 0 },
         ]);
     } catch (error) {
         console.error('Error al obtener uso:', error);
@@ -258,7 +299,7 @@ app.get('/api/stats/activity', async (req, res) => {
             ORDER BY created_at DESC
             LIMIT 5
         `);
-        
+
         const activity = result.rows.map(row => ({
             action: `Petición ${row.action}`,
             user: row.user,
@@ -267,11 +308,172 @@ app.get('/api/stats/activity', async (req, res) => {
         }));
 
         res.json(activity.length > 0 ? activity : [
-            {'action': 'Sin actividad reciente', 'user': '-', 'time': '-', 'type': 'system'}
+            { 'action': 'Sin actividad reciente', 'user': '-', 'time': '-', 'type': 'system' }
         ]);
     } catch (error) {
         console.error('Error al obtener actividad:', error);
         res.status(500).json({ error: 'Error al obtener actividad' });
+    }
+});
+
+// 10. Paradas más visitadas (desde api_logs)
+app.get('/api/stats/top-stops', async (req, res) => {
+    try {
+        // Extraemos el ID de parada de las rutas tipo GET /api/stops/42
+        const result = await pool.query(`
+            SELECT
+                REGEXP_REPLACE(endpoint, '^/api/stops/', '') AS stop_id,
+                COUNT(*) AS visits
+            FROM api_logs
+            WHERE endpoint ~ '^/api/stops/[0-9]+$'
+              AND method = 'GET'
+            GROUP BY stop_id
+            ORDER BY visits DESC
+            LIMIT 10
+        `);
+
+        if (result.rows.length === 0) {
+            // Si no hay logs de paradas individuales, devolver las primeras paradas generales
+            const stops = await pool.query(
+                'SELECT id, name FROM stops ORDER BY id ASC LIMIT 10'
+            );
+            return res.json(stops.rows.map(s => ({
+                stopId: s.id,
+                name: s.name,
+                visits: 0,
+            })));
+        }
+
+        // Enriquecer con el nombre de la parada
+        const enriched = await Promise.all(result.rows.map(async (row) => {
+            const stop = await pool.query('SELECT name FROM stops WHERE id = $1', [row.stop_id]);
+            return {
+                stopId: parseInt(row.stop_id),
+                name: stop.rows[0]?.name ?? `Parada ${row.stop_id}`,
+                visits: parseInt(row.visits),
+            };
+        }));
+
+        res.json(enriched);
+    } catch (error) {
+        console.error('Error top-stops:', error);
+        res.status(500).json({ error: 'Error al obtener paradas más visitadas' });
+    }
+});
+
+// 11. Horas pico (desde api_logs, agrupado por hora)
+app.get('/api/stats/peak-hours', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT
+                EXTRACT(HOUR FROM created_at)::int AS hour,
+                COUNT(*) AS requests
+            FROM api_logs
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY hour
+            ORDER BY hour ASC
+        `);
+
+        if (result.rows.length === 0) {
+            return res.json([]);
+        }
+
+        const maxRequests = Math.max(...result.rows.map(r => parseInt(r.requests)));
+
+        const peaks = result.rows.map(row => {
+            const h = parseInt(row.hour);
+            const count = parseInt(row.requests);
+            const level = maxRequests > 0 ? count / maxRequests : 0;
+            let label;
+            if (level >= 0.85) label = 'Pico';
+            else if (level >= 0.6) label = 'Alto';
+            else if (level >= 0.35) label = 'Medio';
+            else label = 'Bajo';
+
+            return {
+                hour: `${String(h).padStart(2, '0')}:00`,
+                requests: count,
+                level: parseFloat(level.toFixed(2)),
+                label,
+            };
+        });
+
+        res.json(peaks);
+    } catch (error) {
+        console.error('Error peak-hours:', error);
+        res.status(500).json({ error: 'Error al obtener horas pico' });
+    }
+});
+
+// ==========================================
+// RUTAS DE HISTORIAL DE VIAJES
+// ==========================================
+// Todas protegidas por JWT (el usuario solo ve sus propios viajes)
+
+// 12. Obtener historial de viajes del usuario
+app.get('/api/trips', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, line, destination, stop_name AS "stopName", stop_id AS "stopId",
+             timestamp, confirmed
+             FROM trips
+             WHERE user_id = $1
+             ORDER BY timestamp DESC`,
+            [req.user.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener viajes:', error);
+        res.status(500).json({ error: 'Error al obtener el historial' });
+    }
+});
+
+// 13. Guardar un nuevo viaje
+app.post('/api/trips', authenticateToken, async (req, res) => {
+    const { line, destination, stopName, stopId, timestamp, confirmed } = req.body;
+    if (!line || !destination || !stopName || stopId === undefined || !timestamp) {
+        return res.status(400).json({ error: 'Datos del viaje incompletos' });
+    }
+    try {
+        const result = await pool.query(
+            `INSERT INTO trips (user_id, line, destination, stop_name, stop_id, timestamp, confirmed)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, line, destination, stop_name AS "stopName", stop_id AS "stopId", timestamp, confirmed`,
+            [req.user.id, line, destination, stopName, stopId, timestamp, confirmed ?? false]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error al guardar viaje:', error);
+        res.status(500).json({ error: 'Error al guardar el viaje' });
+    }
+});
+
+// 14. Eliminar un viaje por ID
+app.delete('/api/trips/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'DELETE FROM trips WHERE id = $1 AND user_id = $2 RETURNING id',
+            [id, req.user.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Viaje no encontrado' });
+        }
+        res.json({ message: 'Viaje eliminado' });
+    } catch (error) {
+        console.error('Error al eliminar viaje:', error);
+        res.status(500).json({ error: 'Error al eliminar el viaje' });
+    }
+});
+
+// 15. Borrar todo el historial del usuario
+app.delete('/api/trips', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM trips WHERE user_id = $1', [req.user.id]);
+        res.json({ message: 'Historial borrado' });
+    } catch (error) {
+        console.error('Error al borrar historial:', error);
+        res.status(500).json({ error: 'Error al borrar el historial' });
     }
 });
 

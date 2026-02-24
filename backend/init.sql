@@ -11,14 +11,31 @@ CREATE TABLE IF NOT EXISTS stops (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     lat DOUBLE PRECISION NOT NULL,
-    lng DOUBLE PRECISION NOT NULL
+    lng DOUBLE PRECISION NOT NULL,
+    lines JSONB DEFAULT '[]'::jsonb
 );
 
--- Insertar algunas paradas de prueba (solo si la tabla está vacía)
-INSERT INTO stops (name, lat, lng) 
-SELECT 'Parada Central', 39.1234, -0.1234
-WHERE NOT EXISTS (SELECT 1 FROM stops WHERE name = 'Parada Central');
+-- Crear tabla de logs de API
+CREATE TABLE IF NOT EXISTS api_logs (
+    id SERIAL PRIMARY KEY,
+    endpoint VARCHAR(500),
+    method VARCHAR(10),
+    duration_ms INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-INSERT INTO stops (name, lat, lng) 
-SELECT 'Estación Norte', 39.1245, -0.1245
-WHERE NOT EXISTS (SELECT 1 FROM stops WHERE name = 'Estación Norte');
+-- Crear tabla de historial de viajes (asociada a usuario)
+CREATE TABLE IF NOT EXISTS trips (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    line VARCHAR(20) NOT NULL,
+    destination VARCHAR(255) NOT NULL,
+    stop_name VARCHAR(255) NOT NULL,
+    stop_id INTEGER NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
+    confirmed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
+CREATE INDEX IF NOT EXISTS idx_trips_timestamp ON trips(timestamp DESC);

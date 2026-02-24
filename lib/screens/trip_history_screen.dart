@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/trip_history_service.dart';
+import '../services/auth_service.dart';
 import '../models/trip_record.dart';
 import '../theme/app_theme.dart';
 
@@ -15,6 +16,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
   TripHistoryService? _historyService;
   late TabController _tabController;
   bool _isLoading = true;
+  String? _token;
 
   @override
   void initState() {
@@ -25,8 +27,16 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
 
   Future<void> _loadService() async {
     final prefs = await SharedPreferences.getInstance();
+    final authService = AuthService();
+    final token = await authService.getToken();
+    final service = TripHistoryService(prefs);
+    if (token != null) {
+      await service.loadFromApi(token);
+    }
+    if (!mounted) return;
     setState(() {
-      _historyService = TripHistoryService(prefs);
+      _historyService = service;
+      _token = token;
       _isLoading = false;
     });
   }
@@ -72,8 +82,8 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                       ],
                     ),
                   );
-                  if (confirm == true) {
-                    await _historyService!.clearHistory();
+                  if (confirm == true && _token != null) {
+                    await _historyService!.clearHistory(_token!);
                     setState(() {});
                   }
                 }
@@ -767,7 +777,9 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) async {
-        await _historyService!.deleteTrip(trip.timestamp);
+        if (_token != null) {
+          await _historyService!.deleteTrip(_token!, trip.timestamp);
+        }
         setState(() {});
       },
       child: Card(

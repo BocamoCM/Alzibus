@@ -13,6 +13,8 @@ class _StatsScreenState extends State<StatsScreen> {
   final ApiService _api = ApiService();
   Map<String, dynamic> _stats = {};
   List<Map<String, dynamic>> _usageData = [];
+  List<Map<String, dynamic>> _topStops = [];
+  List<Map<String, dynamic>> _peakHours = [];
   bool _isLoading = true;
   String _selectedPeriod = 'week';
 
@@ -28,10 +30,14 @@ class _StatsScreenState extends State<StatsScreen> {
       final results = await Future.wait([
         _api.getDashboardStats(),
         _api.getUsageData(),
+        _api.getTopStops(),
+        _api.getPeakHours(),
       ]);
       setState(() {
         _stats = results[0] as Map<String, dynamic>;
         _usageData = results[1] as List<Map<String, dynamic>>;
+        _topStops = results[2] as List<Map<String, dynamic>>;
+        _peakHours = results[3] as List<Map<String, dynamic>>;
         _isLoading = false;
       });
     } catch (e) {
@@ -118,34 +124,36 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildSummaryCards(ThemeData theme) {
+    final weeklyGrowth = (_stats['weeklyGrowth'] ?? 0.0);
+    final weeklyGrowthStr = weeklyGrowth >= 0 ? '+$weeklyGrowth%' : '$weeklyGrowth%';
     final summaryData = [
       {
         'title': 'Consultas Totales',
         'value': '${_stats['todayQueries'] ?? 0}',
-        'change': '+${_stats['weeklyGrowth'] ?? 0}%',
-        'isPositive': true,
+        'change': weeklyGrowthStr,
+        'isPositive': weeklyGrowth >= 0,
         'icon': Icons.query_stats,
       },
       {
-        'title': 'Usuarios Activos',
+        'title': 'Usuarios Registrados',
         'value': '${_stats['activeUsers'] ?? 0}',
-        'change': '+8.2%',
+        'change': '—',
         'isPositive': true,
         'icon': Icons.people,
       },
       {
-        'title': 'Tiempo Respuesta',
-        'value': '${_stats['avgResponseTime'] ?? 0}s',
-        'change': '-0.1s',
+        'title': 'Tiempo Respuesta (ms)',
+        'value': '${_stats['avgResponseTime'] ?? 0}',
+        'change': '—',
         'isPositive': true,
         'icon': Icons.speed,
       },
       {
-        'title': 'Errores',
-        'value': '12',
-        'change': '+3',
-        'isPositive': false,
-        'icon': Icons.error_outline,
+        'title': 'Paradas en sistema',
+        'value': '${_stats['totalStops'] ?? 0}',
+        'change': '—',
+        'isPositive': true,
+        'icon': Icons.location_on,
       },
     ];
 
@@ -332,14 +340,6 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildTopStops(ThemeData theme) {
-    final topStops = [
-      {'name': 'Plaza Mayor', 'queries': 856},
-      {'name': 'Centro Comercial', 'queries': 742},
-      {'name': 'Hospital', 'queries': 651},
-      {'name': 'Universidad', 'queries': 589},
-      {'name': 'Estacion de Tren', 'queries': 534},
-    ];
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -347,63 +347,74 @@ class _StatsScreenState extends State<StatsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Paradas Mas Consultadas',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              'Paradas Más Consultadas',
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ...topStops.asMap().entries.map((entry) {
-              final index = entry.key;
-              final stop = entry.value;
-              final percentage = (stop['queries'] as int) / 856;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            if (_topStops.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'Sin datos suficientes aún.\nLas paradas aparecerán aquí según se usen.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              )
+            else
+              ...() {
+                final maxVisits = (_topStops.first['visits'] as int).toDouble();
+                return _topStops.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final stop = entry.value;
+                  final visits = (stop['visits'] as int).toDouble();
+                  final percentage = maxVisits > 0 ? visits / maxVisits : 0.0;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            CircleAvatar(
-                              radius: 12,
-                              backgroundColor: const Color(0xFF6B1B3D),
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: const Color(0xFF6B1B3D),
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
+                                Text(stop['name'] as String),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Text(stop['name'] as String),
+                            Text(
+                              '${stop['visits']} visitas',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
-                        Text(
-                          '${stop['queries']}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        const SizedBox(height: 4),
+                        LinearProgressIndicator(
+                          value: percentage,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color.lerp(
+                              const Color(0xFFE85A4F),
+                              const Color(0xFF6B1B3D),
+                              percentage,
+                            )!,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(
-                      value: percentage,
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color.lerp(
-                          const Color(0xFFE85A4F),
-                          const Color(0xFF6B1B3D),
-                          percentage,
-                        )!,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                  );
+                }).toList();
+              }(),
           ],
         ),
       ),
@@ -411,13 +422,6 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildPeakHours(ThemeData theme) {
-    final peakHours = [
-      {'hour': '07:00-09:00', 'level': 0.9, 'label': 'Muy alto'},
-      {'hour': '12:00-14:00', 'level': 0.7, 'label': 'Alto'},
-      {'hour': '17:00-19:00', 'level': 0.95, 'label': 'Pico'},
-      {'hour': '20:00-22:00', 'level': 0.5, 'label': 'Medio'},
-    ];
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -426,65 +430,68 @@ class _StatsScreenState extends State<StatsScreen> {
           children: [
             Text(
               'Horas Pico',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ...peakHours.map((peak) {
-              final level = peak['level'] as double;
-              Color color;
-              if (level >= 0.9) {
-                color = Colors.red;
-              } else if (level >= 0.7) {
-                color = Colors.orange;
-              } else {
-                color = Colors.green;
-              }
+            if (_peakHours.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'Sin datos suficientes aún.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              )
+            else
+              ..._peakHours.map((peak) {
+                final level = (peak['level'] as num).toDouble();
+                Color color;
+                if (level >= 0.85) color = Colors.red;
+                else if (level >= 0.6) color = Colors.orange;
+                else if (level >= 0.35) color = Colors.amber;
+                else color = Colors.green;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      child: Text(
-                        peak['hour'] as String,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: level,
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation<Color>(color),
-                        minHeight: 12,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        peak['label'] as String,
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 56,
+                        child: Text(
+                          peak['hour'] as String,
+                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: level,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                          minHeight: 12,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 56,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            peak['label'] as String,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
           ],
         ),
       ),

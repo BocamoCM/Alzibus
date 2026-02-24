@@ -38,12 +38,16 @@ void main() async {
   // Auto-confirmar viajes pendientes expirados
   final prefs = await SharedPreferences.getInstance();
   final historyService = TripHistoryService(prefs);
-  await historyService.autoConfirmIfExpired();
+  final authService = AuthService();
+  final token = await authService.getToken();
+  if (token != null) {
+    await historyService.autoConfirmIfExpired(token);
+  }
   
   // Cargar y guardar paradas para el servicio de fondo
   final stopsService = StopsService();
   final stops = await stopsService.loadStops();
-  print('Main: Paradas cargadas: ${stops.length}');
+  debugPrint('Main: Paradas cargadas: ${stops.length}');
   final stopsData = stops.map((stop) => {
     'name': stop.name,
     'lat': stop.lat,
@@ -65,8 +69,7 @@ void main() async {
     }
   }
   
-  // Comprobar si el usuario ya está logueado
-  final authService = AuthService();
+  // Comprobar si el usuario ya está logueado (reutilizamos authService ya declarado arriba)
   final isLoggedIn = await authService.isLoggedIn();
   
   runApp(AlzibusApp(isLoggedIn: isLoggedIn));
@@ -86,7 +89,7 @@ Future<void> _requestPermissions() async {
     final bgStatus = await Permission.locationAlways.request();
     
     if (!bgStatus.isGranted) {
-      print('⚠️ Permiso de ubicación en segundo plano denegado');
+      debugPrint('⚠️ Permiso de ubicación en segundo plano denegado');
     }
   }
 }
@@ -96,12 +99,12 @@ Future<void> _requestPermissions() async {
 void _onBackgroundNotificationResponse(NotificationResponse response) async {
   final action = response.actionId;
   if (action == null) return;
-  
   final prefs = await SharedPreferences.getInstance();
   final historyService = TripHistoryService(prefs);
-  
-  if (action == 'confirm_trip') {
-    await historyService.confirmTrip();
+  final authService = AuthService();
+  final token = await authService.getToken();
+  if (action == 'confirm_trip' && token != null) {
+    await historyService.confirmTrip(token);
   } else if (action == 'reject_trip') {
     await historyService.rejectTrip();
   }
@@ -225,9 +228,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final historyService = TripHistoryService(prefs);
     final pending = historyService.getPendingTrip();
     
-    print('[TripDialog] Checking pending trip: ${pending != null ? "FOUND" : "none"}');
+    debugPrint('[TripDialog] Checking pending trip: ${pending != null ? "FOUND" : "none"}');
     if (pending != null) {
-      print('[TripDialog] Pending trip data: $pending');
+      debugPrint('[TripDialog] Pending trip data: $pending');
       
       final tripData = pending; // Capturar en variable local para el callback
       // Hay un viaje pendiente, mostrar diálogo después de que se construya el widget
@@ -389,7 +392,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         _isShowingTripDialog = false;
                         final prefs = await SharedPreferences.getInstance();
                         final historyService = TripHistoryService(prefs);
-                        await historyService.confirmTrip();
+                        final authService = AuthService();
+                        final token = await authService.getToken();
+                        if (token != null) {
+                          await historyService.confirmTrip(token);
+                        }
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -463,7 +470,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final historyService = TripHistoryService(prefs);
     
     if (action == 'confirm_trip') {
-      await historyService.confirmTrip();
+      final authService = AuthService();
+      final token = await authService.getToken();
+      if (token != null) await historyService.confirmTrip(token);
     } else if (action == 'reject_trip') {
       await historyService.rejectTrip();
     }
