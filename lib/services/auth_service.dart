@@ -71,7 +71,8 @@ class AuthService {
   }
 
   /// Verifica el código OTP enviado al correo. Lanza [AuthNetworkException].
-  Future<bool> verifyEmail(String email, String code) async {
+  /// Devuelve null si tuvo éxito, o el mensaje de error si falló.
+  Future<String?> verifyEmail(String email, String code) async {
     try {
       final response = await http
           .post(
@@ -81,9 +82,32 @@ class AuthService {
           )
           .timeout(AppConfig.httpTimeout);
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) return null; // éxito
+      final body = jsonDecode(response.body);
+      return body['error'] as String? ?? 'Error de verificación';
     } catch (e) {
       debugPrint('Error en verificación de email: $e');
+      throw AuthNetworkException(e);
+    }
+  }
+
+  /// Reenvía un nuevo código OTP al correo.
+  /// Devuelve null si tuvo éxito, o el mensaje de error si falló.
+  Future<String?> resendOtp(String email) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/resend-otp'),
+            headers: AppConfig.headers,
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(AppConfig.httpTimeout);
+
+      if (response.statusCode == 200) return null; // éxito
+      final body = jsonDecode(response.body);
+      return body['error'] as String? ?? 'Error al reenviar código';
+    } catch (e) {
+      debugPrint('Error al reenviar OTP: $e');
       throw AuthNetworkException(e);
     }
   }

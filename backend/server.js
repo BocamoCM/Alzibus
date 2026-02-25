@@ -86,8 +86,8 @@ const registerLimiter = rateLimit({
 // ==========================================
 // HELPER: Enviar email de verificación y responder al cliente
 // ==========================================
-function sendVerificationAndRespond(res, email, verificationCode, newUser) {
-    // Log del código para desarrollo (QUITAR EN PRODUCCIÓN)
+async function sendOtpEmail(email, verificationCode) {
+    // Log del código para desarrollo
     console.log(`[OTP] Código de verificación para ${email}: ${verificationCode}`);
 
     const transporter = nodemailer.createTransport({
@@ -105,16 +105,17 @@ function sendVerificationAndRespond(res, email, verificationCode, newUser) {
         from: 'AlziTrans <bcarreres55@gmail.com>',
         to: email,
         subject: 'Verifica tu cuenta de Alzibus',
-        text: `Tu código de verificación es: ${verificationCode}`
+        text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.`
     };
 
-    // Enviar email sin bloquear la respuesta
+    // Enviar sin bloquear
     transporter.sendMail(mailOptions)
         .then(() => console.log('Correo OTP enviado a', email))
-        .catch(emailError => {
-            console.error('Error enviando correo (ignorado en desarrollo):', emailError.message);
-        });
+        .catch(err => console.error('Error enviando correo:', err.message));
+}
 
+function sendVerificationAndRespond(res, email, verificationCode, newUser) {
+    sendOtpEmail(email, verificationCode);
     return res.status(201).json({
         message: 'Usuario registrado. Por favor verifica tu email.',
         user: newUser.rows[0],
@@ -162,13 +163,15 @@ app.post('/api/register', registerLimiter, async (req, res) => {
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
-        // Generar código de 6 dígitos
+        // Generar código OTP y fecha de expiración (15 minutos)
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
         // Guardar en la base de datos de manera INACTIVA y con el código
         const newUser = await pool.query(
-            'INSERT INTO users (email, password_hash, is_verified, verification_code) VALUES ($1, $2, false, $3) RETURNING id, email',
-            [email, passwordHash, verificationCode]
+            `INSERT INTO users (email, password_hash, is_verified, verification_code, otp_expires_at, otp_attempts, otp_resend_count)
+             VALUES ($1, $2, false, $3, $4, 0, 0) RETURNING id, email`,
+            [email, passwordHash, verificationCode, otpExpiresAt]
         );
 
         return sendVerificationAndRespond(res, email, verificationCode, newUser);
@@ -179,7 +182,7 @@ app.post('/api/register', registerLimiter, async (req, res) => {
 });
 
 // 1.5. Verificación de Correo (OTP)
-app.post('/api/verify-email', registerLimiter, async (req, res) => {
+app.post('/api/verify-email', async (req, res) => {
     const { email, code } = req.body;
 
     if (!email || !code) {
@@ -198,13 +201,44 @@ app.post('/api/verify-email', registerLimiter, async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya está verificado' });
         }
 
-        if (user.verification_code !== code) {
-            return res.status(400).json({ error: 'Código de verificación incorrecto' });
+        // Comprobar penalización por demasiados intentos fallidos
+        if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
+            const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
+            return res.status(429).json({
+                error: `Demasiados intentos incorrectos. Espera ${minutesLeft} minuto(s) antes de intentarlo de nuevo.`
+            });
         }
 
-        // Marcar como verificado y borrar el código
+        // Comprobar si el código ha caducado
+        if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
+            return res.status(400).json({ error: 'El código ha caducado. Solicita uno nuevo.' });
+        }
+
+        // Comprobar si el código es correcto
+        if (user.verification_code !== code) {
+            const newAttempts = (user.otp_attempts || 0) + 1;
+
+            if (newAttempts >= 3) {
+                // Penalizar durante 30 minutos
+                const penaltyUntil = new Date(Date.now() + 30 * 60 * 1000);
+                await pool.query(
+                    'UPDATE users SET otp_attempts = $1, otp_penalty_until = $2 WHERE id = $3',
+                    [newAttempts, penaltyUntil, user.id]
+                );
+                return res.status(429).json({
+                    error: 'Demasiados intentos fallidos. Cuenta bloqueada 30 minutos. Solicita un nuevo código.'
+                });
+            }
+
+            await pool.query('UPDATE users SET otp_attempts = $1 WHERE id = $2', [newAttempts, user.id]);
+            return res.status(400).json({
+                error: `Código incorrecto. Te quedan ${3 - newAttempts} intento(s).`
+            });
+        }
+
+        // Marcar como verificado y limpiar el código
         await pool.query(
-            'UPDATE users SET is_verified = true, verification_code = NULL WHERE id = $1',
+            'UPDATE users SET is_verified = true, verification_code = NULL, otp_expires_at = NULL, otp_attempts = 0, otp_penalty_until = NULL WHERE id = $1',
             [user.id]
         );
 
@@ -212,6 +246,66 @@ app.post('/api/verify-email', registerLimiter, async (req, res) => {
 
     } catch (error) {
         console.error('Error al verificar email:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 1.6. Reenviar código OTP
+app.post('/api/resend-otp', registerLimiter, async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email es obligatorio' });
+    }
+
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = result.rows[0];
+
+        if (user.is_verified) {
+            return res.status(400).json({ error: 'El usuario ya está verificado' });
+        }
+
+        // Comprobar penalización activa (por intentos fallidos)
+        if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
+            const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
+            return res.status(429).json({
+                error: `Tu cuenta está bloqueada. Espera ${minutesLeft} minuto(s).`
+            });
+        }
+
+        // Máximo 3 reenvíos antes de penalizar 1 hora
+        const resendCount = user.otp_resend_count || 0;
+        if (resendCount >= 3) {
+            const penaltyUntil = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+            await pool.query('UPDATE users SET otp_penalty_until = $1 WHERE id = $2', [penaltyUntil, user.id]);
+            return res.status(429).json({
+                error: 'Has solicitado demasiados códigos. Inicia el registro de nuevo en 1 hora.'
+            });
+        }
+
+        // Generar nuevo código con nueva expiración
+        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const newExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+        await pool.query(
+            'UPDATE users SET verification_code = $1, otp_expires_at = $2, otp_attempts = 0, otp_resend_count = $3 WHERE id = $4',
+            [newCode, newExpiry, resendCount + 1, user.id]
+        );
+
+        await sendOtpEmail(email, newCode);
+
+        res.json({
+            message: 'Nuevo código enviado. Expira en 15 minutos.',
+            resendsLeft: 3 - (resendCount + 1)
+        });
+
+    } catch (error) {
+        console.error('Error al reenviar OTP:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
