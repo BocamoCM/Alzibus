@@ -105,7 +105,6 @@ app.post('/api/login', async (req, res) => {
     }
 
     try {
-        // Buscar al usuario por email
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length === 0) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
@@ -113,17 +112,24 @@ app.post('/api/login', async (req, res) => {
 
         const user = result.rows[0];
 
-        // Comparar la contraseña enviada con el hash guardado
+        // Verificar que la cuenta está activa
+        if (user.active === false) {
+            return res.status(403).json({ error: 'Cuenta desactivada. Contacta con el administrador.' });
+        }
+
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // Generar el token JWT
+        // Actualizar last_access (no bloqueante — puede fallar si columna aún no existe)
+        pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [user.id])
+            .catch(err => console.warn('[Login] No se pudo actualizar last_access:', err.message));
+
         const token = jwt.sign(
             { id: user.id, email: user.email },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' } // El token caduca en 24 horas
+            { expiresIn: '24h' }
         );
 
         res.json({
@@ -138,8 +144,209 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==========================================
+// RUTAS DE PERFIL DE USUARIO
+// ==========================================
+
+// 16. Obtener perfil del usuario + estadísticas de viajes
+app.get('/api/users/profile', authenticateToken, async (req, res) => {
+    try {
+        const userResult = await pool.query(
+            'SELECT id, email, created_at, last_access FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        const user = userResult.rows[0];
+
+        // Stats de viajes
+        const totalTrips = await pool.query('SELECT COUNT(*) FROM trips WHERE user_id = $1', [req.user.id]);
+        const lineUsage = await pool.query(
+            `SELECT line, COUNT(*) as count FROM trips WHERE user_id = $1 GROUP BY line ORDER BY count DESC LIMIT 1`,
+            [req.user.id]
+        );
+        const thisMonthTrips = await pool.query(
+            `SELECT COUNT(*) FROM trips WHERE user_id = $1 AND timestamp >= date_trunc('month', NOW())`,
+            [req.user.id]
+        );
+
+        res.json({
+            id: user.id,
+            email: user.email,
+            createdAt: user.created_at,
+            lastAccess: user.last_access,
+            stats: {
+                totalTrips: parseInt(totalTrips.rows[0].count),
+                mostUsedLine: lineUsage.rows[0]?.line || null,
+                thisMonthTrips: parseInt(thisMonthTrips.rows[0].count),
+            }
+        });
+    } catch (error) {
+        console.error('Error en perfil:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 17. Actualizar email del usuario
+app.put('/api/users/profile', authenticateToken, async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requerido' });
+    try {
+        const exists = await pool.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, req.user.id]);
+        if (exists.rows.length > 0) return res.status(400).json({ error: 'El email ya está en uso' });
+        await pool.query('UPDATE users SET email = $1 WHERE id = $2', [email, req.user.id]);
+        res.json({ message: 'Email actualizado' });
+    } catch (error) {
+        console.error('Error actualizando email:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 18. Cambiar contraseña del usuario
+app.put('/api/users/password', authenticateToken, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Contraseñas requeridas' });
+    }
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+    try {
+        const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+        const user = result.rows[0];
+        const valid = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!valid) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+        const newHash = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+        res.json({ message: 'Contraseña actualizada' });
+    } catch (error) {
+        console.error('Error cambiando contraseña:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ==========================================
+// RUTAS DE ADMINISTRACIÓN DE USUARIOS
+// ==========================================
+
+// 19. Listar todos los usuarios (solo admin — protegido por API key)
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT
+                u.id, u.email, u.active, u.created_at, u.last_access,
+                COUNT(t.id)::int AS trip_count
+            FROM users u
+            LEFT JOIN trips t ON t.user_id = u.id
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error listando usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 20. Activar/desactivar usuario (solo admin)
+app.patch('/api/admin/users/:id/toggle', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'UPDATE users SET active = NOT active WHERE id = $1 RETURNING id, email, active',
+            [id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error toggling usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ==========================================
+// RUTAS DE AVISOS / INCIDENCIAS
+// ==========================================
+
+// 21. Obtener avisos activos (público)
+app.get('/api/notices', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, title, body, line, active, expires_at, created_at
+            FROM notices
+            WHERE active = TRUE
+              AND (expires_at IS NULL OR expires_at > NOW())
+            ORDER BY created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo avisos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 22. Obtener TODOS los avisos (admin)
+app.get('/api/admin/notices', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM notices ORDER BY created_at DESC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo avisos admin:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 23. Crear aviso
+app.post('/api/admin/notices', async (req, res) => {
+    const { title, body, line, expiresAt } = req.body;
+    if (!title || !body) return res.status(400).json({ error: 'Título y cuerpo requeridos' });
+    try {
+        const result = await pool.query(
+            'INSERT INTO notices (title, body, line, expires_at) VALUES ($1, $2, $3, $4) RETURNING *',
+            [title, body, line || null, expiresAt || null]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creando aviso:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 24. Activar/desactivar aviso
+app.patch('/api/admin/notices/:id/toggle', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'UPDATE notices SET active = NOT active WHERE id = $1 RETURNING *',
+            [id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Aviso no encontrado' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error toggling aviso:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 25. Eliminar aviso
+app.delete('/api/admin/notices/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('DELETE FROM notices WHERE id = $1 RETURNING id', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Aviso no encontrado' });
+        res.json({ message: 'Aviso eliminado' });
+    } catch (error) {
+        console.error('Error eliminando aviso:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ==========================================
 // RUTAS DE PARADAS DE AUTOBÚS
 // ==========================================
+
 
 // 3. Obtener todas las paradas
 app.get('/api/stops', async (req, res) => {

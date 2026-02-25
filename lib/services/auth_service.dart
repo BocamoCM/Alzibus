@@ -34,6 +34,7 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token);
         await prefs.setString('user_email', data['user']['email'] as String);
+        await prefs.setInt('user_id', data['user']['id'] as int);
         // Guardar expiración del token para validación futura
         final expiry = _extractExpiry(token);
         if (expiry != null) {
@@ -73,6 +74,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
     await prefs.remove('user_email');
+    await prefs.remove('user_id');
     await prefs.remove('token_expiry');
   }
 
@@ -98,6 +100,83 @@ class AuthService {
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('jwt_token');
+  }
+
+  Future<String?> getSavedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_email');
+  }
+
+  /// Obtiene el perfil del usuario desde la API.
+  Future<Map<String, dynamic>?> getProfile(String token) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/users/profile'),
+            headers: {
+              ...AppConfig.headers,
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(AppConfig.httpTimeout);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error obteniendo perfil: $e');
+    }
+    return null;
+  }
+
+  /// Actualiza el email del usuario.
+  Future<bool> updateEmail(String token, String newEmail) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('${AppConfig.baseUrl}/users/profile'),
+            headers: {
+              ...AppConfig.headers,
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'email': newEmail}),
+          )
+          .timeout(AppConfig.httpTimeout);
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_email', newEmail);
+        return true;
+      }
+      final error = jsonDecode(response.body)['error'] ?? 'Error desconocido';
+      throw Exception(error);
+    } catch (e) {
+      debugPrint('Error actualizando email: $e');
+      rethrow;
+    }
+  }
+
+  /// Cambia la contraseña del usuario.
+  Future<bool> updatePassword(String token, String currentPassword, String newPassword) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('${AppConfig.baseUrl}/users/password'),
+            headers: {
+              ...AppConfig.headers,
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'currentPassword': currentPassword,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(AppConfig.httpTimeout);
+      if (response.statusCode == 200) return true;
+      final error = jsonDecode(response.body)['error'] ?? 'Error desconocido';
+      throw Exception(error);
+    } catch (e) {
+      debugPrint('Error cambiando contraseña: $e');
+      rethrow;
+    }
   }
 
   /// Extrae el campo `exp` del payload de un JWT (sin verificar firma).

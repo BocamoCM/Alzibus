@@ -2,6 +2,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,6 +13,7 @@ import 'services/stops_service.dart';
 import 'services/bus_alert_service.dart';
 import 'services/trip_history_service.dart';
 import 'services/assistant_service.dart';
+import 'services/notices_service.dart';
 import 'theme/app_theme.dart';
 import 'pages/map_page.dart';
 import 'pages/nfc_page.dart';
@@ -19,6 +22,8 @@ import 'pages/routes_page.dart';
 import 'pages/login_page.dart';
 import 'screens/trip_history_screen.dart';
 import 'screens/active_alerts_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/notices_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
@@ -110,10 +115,33 @@ void _onBackgroundNotificationResponse(NotificationResponse response) async {
   }
 }
 
-class AlzibusApp extends StatelessWidget {
+class AlzibusApp extends StatefulWidget {
   final bool isLoggedIn;
   
   const AlzibusApp({super.key, required this.isLoggedIn});
+
+  @override
+  State<AlzibusApp> createState() => _AlzibusAppState();
+}
+
+class _AlzibusAppState extends State<AlzibusApp> {
+  Locale _currentLocale = const Locale('es');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLocale();
+  }
+
+  Future<void> _loadSavedLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString('app_locale') ?? 'es';
+    if (mounted) setState(() => _currentLocale = Locale(code));
+  }
+
+  void _onLocaleChanged(Locale locale) {
+    setState(() => _currentLocale = locale);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,9 +149,22 @@ class AlzibusApp extends StatelessWidget {
       title: 'Alzibus',
       theme: AlzibusTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: isLoggedIn ? const HomePage() : const LoginPage(),
+      locale: _currentLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'),
+        Locale('en'),
+        Locale('ca'),
+      ],
+      home: widget.isLoggedIn
+          ? HomePage(onLocaleChanged: _onLocaleChanged, currentLocale: _currentLocale)
+          : const LoginPage(),
       routes: {
-        '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
       },
     );
@@ -131,7 +172,14 @@ class AlzibusApp extends StatelessWidget {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function(Locale)? onLocaleChanged;
+  final Locale currentLocale;
+
+  const HomePage({
+    super.key,
+    this.onLocaleChanged,
+    this.currentLocale = const Locale('es'),
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -144,6 +192,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   double _notificationDistance = 80.0;
   int _notificationCooldown = 5;
   bool _isShowingTripDialog = false; // Para evitar mostrar múltiples diálogos
+  int _noticesCount = 0; // Número de avisos activos
   
   // Nuevos ajustes
   bool _showSimulatedBuses = true;
@@ -156,9 +205,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // Observar ciclo de vida
+    WidgetsBinding.instance.addObserver(this);
     _initNotifications();
     _loadPreferences();
+    _loadNoticesCount();
     
     // Verificar viaje pendiente después de que el widget esté completamente construido
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -167,6 +217,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _checkPendingTrip();
       });
     });
+  }
+
+  Future<void> _loadNoticesCount() async {
+    final service = NoticesService();
+    final notices = await service.loadNotices();
+    final prefs = await SharedPreferences.getInstance();
+    final lastSeenStr = prefs.getString('last_seen_notices_at');
+    final lastSeen = lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null;
+
+    final unseenCount = lastSeen == null
+        ? notices.length
+        : notices.where((n) => n.createdAt.isAfter(lastSeen)).length;
+
+    if (mounted) setState(() => _noticesCount = unseenCount);
   }
   
   @override
@@ -542,25 +606,64 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           setState(() => _vibrationEnabled = value);
           _savePreferences();
         },
+        currentLocale: widget.currentLocale,
+        onLocaleChanged: (locale) {
+          widget.onLocaleChanged?.call(locale);
+        },
       ),
     ];
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alzibus — Alzira'),
+        title: Text(l.appTitle),
         actions: [
+          // Avisos activos
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.campaign_outlined),
+                tooltip: l.notices,
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NoticesScreen()),
+                  );
+                  _loadNoticesCount();
+                },
+              ),
+              if (_noticesCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$_noticesCount',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           // Alertas activas
           IconButton(
             icon: const Icon(Icons.notifications_active),
-            tooltip: 'Alertas activas',
+            tooltip: l.activeAlerts,
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => ActiveAlertsScreen(
                     onViewStop: (stopId, stopName) {
-                      // Cambiar al mapa
                       setState(() => _index = 0);
-                      // TODO: centrar en la parada
                     },
                   ),
                 ),
@@ -570,11 +673,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // Historial de viajes
           IconButton(
             icon: const Icon(Icons.bar_chart),
-            tooltip: 'Historial de viajes',
+            tooltip: l.tripHistory,
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TripHistoryScreen()),
+              );
+            },
+          ),
+          // Perfil de usuario
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: l.profile,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
             },
           ),
@@ -584,11 +698,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: _index,
           type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
-            BottomNavigationBarItem(icon: Icon(Icons.route), label: 'Rutas'),
-            BottomNavigationBarItem(icon: Icon(Icons.nfc), label: 'NFC'),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Ajustes'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.map), label: l.tabMap),
+            BottomNavigationBarItem(icon: const Icon(Icons.route), label: l.tabRoutes),
+            BottomNavigationBarItem(icon: const Icon(Icons.nfc), label: l.tabNfc),
+            BottomNavigationBarItem(icon: const Icon(Icons.settings), label: l.tabSettings),
           ],
           onTap: (i) => setState(() => _index = i)),
     );

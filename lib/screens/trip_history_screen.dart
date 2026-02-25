@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alzibus/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/trip_history_service.dart';
 import '../services/auth_service.dart';
@@ -49,14 +50,15 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('📊 Historial de Viajes'),
+        title: Text('📊 \${l.tripHistoryTitle}'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.bar_chart), text: 'Estadísticas'),
-            Tab(icon: Icon(Icons.history), text: 'Historial'),
+          tabs: [
+            Tab(icon: const Icon(Icons.bar_chart), text: l.tabStats),
+            Tab(icon: const Icon(Icons.history), text: l.tabHistory),
           ],
         ),
         actions: [
@@ -67,17 +69,17 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: const Text('¿Borrar historial?'),
-                      content: const Text('Se eliminarán todos los viajes guardados.'),
+                      title: Text(l.clearHistoryConfirmTitle),
+                      content: Text(l.clearHistoryConfirmBody),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancelar'),
+                          child: Text(l.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
                           style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: const Text('Borrar'),
+                          child: Text(l.delete),
                         ),
                       ],
                     ),
@@ -89,13 +91,13 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                 }
               },
               itemBuilder: (ctx) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'clear',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_forever, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Borrar historial'),
+                      const Icon(Icons.delete_forever, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Text(l.clearHistory),
                     ],
                   ),
                 ),
@@ -119,6 +121,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
     final stats = _historyService!.getStats();
     
     if (stats.totalTrips == 0) {
+      final l = AppLocalizations.of(context)!;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -126,12 +129,12 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
             Icon(Icons.directions_bus, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Sin viajes registrados',
+              l.noTripsRegistered,
               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
-              'Activa alertas de bus para empezar\na registrar tus viajes',
+              l.noTripsHint,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[500]),
             ),
@@ -200,9 +203,14 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '🔥 Rachas y Progreso',
+              '🔥 ',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            Builder(builder: (ctx) {
+              final l = AppLocalizations.of(ctx)!;
+              return Text(l.streakTitle,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+            }),
             const Divider(),
             Row(
               children: [
@@ -231,10 +239,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             color: currentStreak > 0 ? Colors.orange[800] : Colors.grey,
                           ),
                         ),
-                        Text(
-                          'Racha',
+                        Builder(builder: (ctx) => Text(
+                          AppLocalizations.of(ctx)!.streak,
                           style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                        ),
+                        )),
                       ],
                     ),
                   ),
@@ -259,10 +267,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             color: Colors.amber[800],
                           ),
                         ),
-                        Text(
-                          'Mejor',
+                        Builder(builder: (ctx) => Text(
+                          AppLocalizations.of(ctx)!.bestStreak,
                           style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                        ),
+                        )),
                       ],
                     ),
                   ),
@@ -290,11 +298,11 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             color: isUp ? Colors.green[800] : (isDown ? Colors.red[800] : Colors.grey),
                           ),
                         ),
-                        Text(
-                          'vs mes ant.',
+                        Builder(builder: (ctx) => Text(
+                          AppLocalizations.of(ctx)!.vsPrevMonth,
                           style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                           overflow: TextOverflow.ellipsis,
-                        ),
+                        )),
                       ],
                     ),
                   ),
@@ -313,11 +321,14 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    '¡$currentStreak días seguidos viajando! 🎉',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
+                  child: Builder(builder: (ctx) {
+                    final l = AppLocalizations.of(ctx)!;
+                    return Text(
+                      l.streakMessage(currentStreak),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    );
+                  }),
                 ),
               ),
           ],
@@ -339,10 +350,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '📊 Viajes por Mes',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Builder(builder: (ctx) => Text(
+              AppLocalizations.of(ctx)!.tripsPerMonth,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            )),
             const Divider(),
             SizedBox(
               height: 140,
@@ -417,10 +428,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '📅 Días de la Semana',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Builder(builder: (ctx) => Text(
+              AppLocalizations.of(ctx)!.weekdaysTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            )),
             const Divider(),
             SizedBox(
               height: 110,
@@ -481,9 +492,16 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _legendItem(AlzibusColors.coral.withOpacity(0.6), 'Entre semana'),
-                const SizedBox(width: 16),
-                _legendItem(AlzibusColors.lightPurple, 'Fin de semana'),
+                Builder(builder: (ctx) {
+                  final l = AppLocalizations.of(ctx)!;
+                  return Row(
+                    children: [
+                      _legendItem(AlzibusColors.coral.withOpacity(0.6), l.weekdays),
+                      const SizedBox(width: 16),
+                      _legendItem(AlzibusColors.lightPurple, l.weekends),
+                    ],
+                  );
+                }),
               ],
             ),
           ],
@@ -517,19 +535,22 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '📈 Resumen',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Builder(builder: (ctx) => Text(
+              AppLocalizations.of(ctx)!.summaryTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            )),
             const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('🚌', '${stats.totalTrips}', 'Viajes totales'),
-                _buildStatItem('🚏', stats.mostUsedStop ?? '-', 'Parada favorita'),
-                _buildStatItem('⏰', stats.mostFrequentTimeRange, 'Horario habitual'),
-              ],
-            ),
+            Builder(builder: (ctx) {
+              final l = AppLocalizations.of(ctx)!;
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem('🚌', '${stats.totalTrips}', l.totalTripsLabel),
+                  _buildStatItem('🚏', stats.mostUsedStop ?? '-', l.favouriteStop),
+                  _buildStatItem('⏰', stats.mostFrequentTimeRange, l.usualTime),
+                ],
+              );
+            }),
           ],
         ),
       ),
@@ -570,10 +591,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '🚌 Líneas más usadas',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Builder(builder: (ctx) => Text(
+              AppLocalizations.of(ctx)!.topLines,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            )),
             const Divider(),
             ...topLines.asMap().entries.map((entry) {
               final index = entry.key;
@@ -588,11 +609,11 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                     Text(medals[index], style: const TextStyle(fontSize: 20)),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        'Línea ${line.key}',
+                      child: Builder(builder: (ctx) => Text(
+                        '${AppLocalizations.of(ctx)!.line} ${line.key}',
                         style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
                         overflow: TextOverflow.ellipsis,
-                      ),
+                      )),
                     ),
                     Text(
                       '${line.value}',
@@ -630,10 +651,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '🚏 Paradas más frecuentes',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Builder(builder: (ctx) => Text(
+              AppLocalizations.of(ctx)!.topStops,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            )),
             const Divider(),
             ...topStops.map((stop) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -677,10 +698,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '📅 Actividad reciente',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Builder(builder: (ctx) => Text(
+              AppLocalizations.of(ctx)!.recentActivity,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            )),
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -691,7 +712,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                       '${stats7days.totalTrips}',
                       style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AlzibusColors.burgundy),
                     ),
-                    Text('Últimos 7 días', style: TextStyle(color: Colors.grey[600])),
+                    Builder(builder: (ctx) => Text(
+                      AppLocalizations.of(ctx)!.last7days,
+                      style: TextStyle(color: Colors.grey[600]),
+                    )),
                   ],
                 ),
                 Container(width: 1, height: 50, color: Colors.grey[300]),
@@ -701,7 +725,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                       '${stats30days.totalTrips}',
                       style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green),
                     ),
-                    Text('Últimos 30 días', style: TextStyle(color: Colors.grey[600])),
+                    Builder(builder: (ctx) => Text(
+                      AppLocalizations.of(ctx)!.last30days,
+                      style: TextStyle(color: Colors.grey[600]),
+                    )),
                   ],
                 ),
               ],
@@ -716,6 +743,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
     final records = _historyService!.allRecords;
     
     if (records.isEmpty) {
+      final l = AppLocalizations.of(context)!;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -723,7 +751,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
             Icon(Icons.history, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Sin viajes en el historial',
+              l.noTripsHistory,
               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
           ],

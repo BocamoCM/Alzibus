@@ -3,8 +3,14 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    last_access TIMESTAMPTZ,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Añadir columnas si ya existe la tabla (migraciones)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_access TIMESTAMPTZ;
 
 -- Crear tabla de paradas
 CREATE TABLE IF NOT EXISTS stops (
@@ -39,3 +45,17 @@ CREATE TABLE IF NOT EXISTS trips (
 
 CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
 CREATE INDEX IF NOT EXISTS idx_trips_timestamp ON trips(timestamp DESC);
+
+-- Crear tabla de avisos/incidencias
+CREATE TABLE IF NOT EXISTS notices (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    line VARCHAR(20),
+    active BOOLEAN DEFAULT TRUE,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_notices_active ON notices(active);
+CREATE INDEX IF NOT EXISTS idx_notices_expires ON notices(expires_at);

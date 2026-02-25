@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alzibus/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/bus_alert_service.dart';
 import '../services/bus_times_service.dart';
@@ -52,20 +53,21 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
   }
 
   Future<void> _cancelAlert(BusAlert alert) async {
+    final l = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Cancelar alerta?'),
-        content: Text('Dejarás de recibir avisos para la línea ${alert.line} en ${alert.stopName}'),
+        title: Text(l.cancelAlert),
+        content: Text(l.cancelAlertBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('No'),
+            child: Text(l.no),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sí, cancelar'),
+            child: Text(l.cancelAlertYes),
           ),
         ],
       ),
@@ -109,14 +111,15 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🔔 Alertas Activas'),
+        title: Text('🔔 \${l.activeAlertsTitle}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadAlerts,
-            tooltip: 'Actualizar',
+            tooltip: l.refreshButton,
           ),
         ],
       ),
@@ -129,6 +132,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -136,12 +140,12 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
           Icon(Icons.notifications_off, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'Sin alertas activas',
+            l.noActiveAlerts,
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Pulsa "🔔 Avisar" en una parada\npara recibir notificaciones',
+            l.noActiveAlertsHint,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey[500]),
           ),
@@ -149,7 +153,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.map),
-            label: const Text('Ir al mapa'),
+            label: Text(l.goToMap),
           ),
         ],
       ),
@@ -240,7 +244,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.red),
                     onPressed: () => _cancelAlert(alert),
-                    tooltip: 'Cancelar alerta',
+                    tooltip: AppLocalizations.of(context)!.cancelAlertTooltip,
                   ),
                 ],
               ),
@@ -288,7 +292,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
               // Tiempo desde que se activó
               const SizedBox(height: 8),
               Text(
-                'Activada hace $timeAgo min',
+                AppLocalizations.of(context)!.alertActivatedMinAgo(timeAgo),
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 12,
@@ -306,7 +310,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
                       widget.onViewStop!(alert.stopId, alert.stopName);
                     },
                     icon: const Icon(Icons.location_on, size: 18),
-                    label: const Text('Ver parada en mapa'),
+                    label: Text(AppLocalizations.of(context)!.viewStopOnMap),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),

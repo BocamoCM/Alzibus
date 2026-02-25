@@ -9,7 +9,7 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  static const String _baseUrl = 'http://10.196.241.62:3000/api';
+  static const String _baseUrl = 'http://10.155.227.62:3000/api';
   static const String _apiKey = 'alzibus-secret-key-2024';
 
   static Map<String, String> get _headers => {
@@ -228,6 +228,103 @@ class ApiService {
   Future<void> createRoute(Map<String, dynamic> route) async {}
   Future<void> updateRoute(int id, Map<String, dynamic> route) async {}
   Future<void> deleteRoute(int id) async {}
+
+  // ==========================================
+  // GESTIÓN DE USUARIOS (ADMIN)
+  // ==========================================
+
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    final response = await _get('/admin/users');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> toggleUserStatus(int userId) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse('$_baseUrl/admin/users/$userId/toggle'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error toggling user: $e');
+    }
+    return null;
+  }
+
+  // ==========================================
+  // AVISOS E INCIDENCIAS (ADMIN)
+  // ==========================================
+
+  Future<List<Map<String, dynamic>>> getAdminNotices() async {
+    final response = await _get('/admin/notices');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> createNotice({
+    required String title,
+    required String body,
+    String? line,
+    DateTime? expiresAt,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/admin/notices'),
+            headers: _headers,
+            body: json.encode({
+              'title': title,
+              'body': body,
+              if (line != null) 'line': line,
+              if (expiresAt != null) 'expiresAt': expiresAt.toIso8601String(),
+            }),
+          )
+          .timeout(_timeout);
+      if (response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error creando aviso: $e');
+    }
+    return null;
+  }
+
+  Future<void> toggleNotice(int noticeId) async {
+    try {
+      await http
+          .patch(
+            Uri.parse('$_baseUrl/admin/notices/$noticeId/toggle'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+    } catch (e) {
+      debugPrint('Error toggling aviso: $e');
+    }
+  }
+
+  Future<void> deleteNotice(int noticeId) async {
+    try {
+      await http
+          .delete(
+            Uri.parse('$_baseUrl/admin/notices/$noticeId'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+    } catch (e) {
+      debugPrint('Error eliminando aviso: $e');
+    }
+  }
 
   void clearCache() {
     _stopsCache = null;

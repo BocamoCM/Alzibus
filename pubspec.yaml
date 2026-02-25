@@ -28,6 +28,9 @@ dependencies:
   home_widget: ^0.8.1
   package_info_plus: ^8.0.0
   nfc_manager: ^4.0.0
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -41,6 +44,7 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/stops.json

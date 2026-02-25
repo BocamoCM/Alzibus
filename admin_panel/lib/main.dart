@@ -4,6 +4,8 @@ import 'screens/stops_screen.dart';
 import 'screens/routes_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/users_screen.dart';
+import 'screens/notices_admin_screen.dart';
 import 'theme/admin_theme.dart';
 
 void main() {
@@ -62,6 +64,8 @@ class _AdminHomeState extends State<AdminHome> {
     NavigationItem(icon: Icons.location_on, label: 'Paradas'),
     NavigationItem(icon: Icons.route, label: 'Rutas'),
     NavigationItem(icon: Icons.bar_chart, label: 'Estadísticas'),
+    NavigationItem(icon: Icons.people, label: 'Usuarios'),
+    NavigationItem(icon: Icons.campaign, label: 'Avisos'),
     NavigationItem(icon: Icons.settings, label: 'Configuración'),
   ];
 
@@ -135,6 +139,10 @@ class _AdminHomeState extends State<AdminHome> {
       case 3:
         return const StatsScreen();
       case 4:
+        return const UsersScreen();
+      case 5:
+        return const NoticesAdminScreen();
+      case 6:
         return SettingsScreen(
           isDarkMode: widget.isDarkMode,
           onThemeToggle: widget.onThemeToggle,

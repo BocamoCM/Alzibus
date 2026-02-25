@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alzibus/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import 'register_page.dart';
 
@@ -26,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+    final l = AppLocalizations.of(context)!;
 
     setState(() {
       _isLoading = true;
@@ -44,21 +46,22 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Email o contraseña incorrectos.';
+        _errorMessage = l.incorrectCredentials;
       });
     } on AuthNetworkException {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Sin conexión al servidor. Comprueba tu red.';
+        _errorMessage = l.noServerConnection;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar Sesión en Alzibus')),
+      appBar: AppBar(title: Text(l.loginTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -68,19 +71,19 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  labelText: l.email,
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Introduce tu email';
+                    return l.enterEmail;
                   }
                   final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
                   if (!emailRegex.hasMatch(value.trim())) {
-                    return 'El email no tiene un formato válido';
+                    return l.invalidEmail;
                   }
                   return null;
                 },
@@ -88,19 +91,19 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Contraseña',
-                  prefixIcon: Icon(Icons.lock_outline),
+                decoration: InputDecoration(
+                  labelText: l.password,
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 obscureText: true,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _login(),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Introduce tu contraseña';
+                    return l.enterPassword;
                   }
                   if (value.length < 6) {
-                    return 'La contraseña debe tener al menos 6 caracteres';
+                    return l.passwordTooShort;
                   }
                   return null;
                 },
@@ -121,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _login,
-                        child: const Text('Entrar'),
+                        child: Text(l.loginButton),
                       ),
                     ),
               TextButton(
@@ -130,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (_) => const RegisterPage()),
                   );
                 },
-                child: const Text('¿No tienes cuenta? Regístrate'),
+                child: Text(l.noAccount),
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:alzibus/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -19,6 +20,8 @@ class SettingsPage extends StatefulWidget {
   final Function(bool) onShowSimulatedBusesChanged;
   final Function(bool) onAutoRefreshTimesChanged;
   final Function(bool) onVibrationChanged;
+  final Function(Locale) onLocaleChanged;
+  final Locale currentLocale;
 
   const SettingsPage({
     super.key,
@@ -34,6 +37,8 @@ class SettingsPage extends StatefulWidget {
     required this.onShowSimulatedBusesChanged,
     required this.onAutoRefreshTimesChanged,
     required this.onVibrationChanged,
+    required this.onLocaleChanged,
+    required this.currentLocale,
   });
 
   @override
@@ -146,26 +151,46 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Widget _languageTile({
+    required String flag,
+    required String name,
+    required Locale locale,
+  }) {
+    final isSelected = widget.currentLocale.languageCode == locale.languageCode;
+    return ListTile(
+      leading: Text(flag, style: const TextStyle(fontSize: 24)),
+      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+      trailing: isSelected
+          ? const Icon(Icons.check_circle, color: AlzibusColors.burgundy)
+          : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onTap: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('app_locale', locale.languageCode);
+        widget.onLocaleChanged(locale);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        const Text(
-          'Notificaciones',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        Text(l.notifications,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         SwitchListTile(
-          title: const Text('Activar notificaciones'),
-          subtitle: const Text('Recibir avisos al acercarse a paradas'),
+          title: Text(l.activateNotifications),
+          subtitle: Text(l.notificationsSubtitle),
           value: widget.notificationsEnabled,
           onChanged: widget.onNotificationsChanged,
         ),
         const Divider(),
         ListTile(
-          title: const Text('Distancia de aviso'),
-          subtitle: Text('${widget.notificationDistance.toInt()} metros'),
+          title: Text(l.alertDistance),
+          subtitle: Text('${widget.notificationDistance.toInt()} m'),
         ),
         Slider(
           value: widget.notificationDistance,
@@ -177,8 +202,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const Divider(),
         ListTile(
-          title: const Text('Tiempo entre notificaciones'),
-          subtitle: Text('${widget.notificationCooldown} minutos'),
+          title: Text(l.timeBetweenNotifications),
+          subtitle: Text('${widget.notificationCooldown} min'),
         ),
         Slider(
           value: widget.notificationCooldown.toDouble(),
@@ -190,47 +215,60 @@ class _SettingsPageState extends State<SettingsPage> {
               ? (value) => widget.onCooldownChanged(value.toInt())
               : null,
         ),
-        
         SwitchListTile(
-          title: const Text('Vibración'),
-          subtitle: const Text('Vibrar con las notificaciones'),
+          title: Text(l.vibration),
+          subtitle: Text(l.vibrationSubtitle),
           value: widget.vibrationEnabled,
           onChanged: widget.notificationsEnabled ? widget.onVibrationChanged : null,
           secondary: const Icon(Icons.vibration),
         ),
         
         const SizedBox(height: 24),
-        
-        // Sección de Mapa
-        const Text(
-          'Mapa',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+        // Idioma
+        Text(l.language,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Column(
+              children: [
+                _languageTile(flag: '🇪🇸', name: 'Español', locale: const Locale('es')),
+                _languageTile(flag: '🏳️', name: 'Valencià', locale: const Locale('ca')),
+                _languageTile(flag: '🇬🇧', name: 'English', locale: const Locale('en')),
+              ],
+            ),
+          ),
         ),
+
+        const SizedBox(height: 24),
+
+        // Mapa
+        Text(l.map,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        
         SwitchListTile(
-          title: const Text('Mostrar buses en el mapa'),
-          subtitle: const Text('Ver posición simulada de los autobuses'),
+          title: Text(l.showSimulatedBuses),
+          subtitle: Text(l.showSimulatedBusesSubtitle),
           value: widget.showSimulatedBuses,
           onChanged: widget.onShowSimulatedBusesChanged,
           secondary: const Icon(Icons.directions_bus),
         ),
-        
         SwitchListTile(
-          title: const Text('Actualizar tiempos automáticamente'),
-          subtitle: const Text('Refrescar cada 30 segundos'),
+          title: Text(l.autoRefreshTimes),
+          subtitle: Text(l.autoRefreshTimesSubtitle),
           value: widget.autoRefreshTimes,
           onChanged: widget.onAutoRefreshTimesChanged,
           secondary: const Icon(Icons.refresh),
         ),
         
         const SizedBox(height: 24),
-        
-        // Sección de depuración
-        const Text(
-          'Estado del servicio',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+
+        // Estado del servicio
+        Text(l.serviceStatus,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         Card(
           color: _serviceRunning ? Colors.green[50] : Colors.red[50],
@@ -247,7 +285,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _serviceRunning ? 'Servicio activo' : 'Servicio detenido',
+                      _serviceRunning ? l.serviceActive : l.serviceStopped,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: _serviceRunning ? Colors.green[800] : Colors.red[800],
@@ -259,27 +297,29 @@ class _SettingsPageState extends State<SettingsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Último chequeo:'),
-                    Text(_lastBackgroundCheck, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(l.lastCheck),
+                    Text(_lastBackgroundCheck,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Alertas activas:'),
-                    Text('$_alertsCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(l.activeAlertsCount),
+                    Text('$_alertsCount',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Último bus:'),
+                    Text(l.lastBus),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _lastBusCheck, 
+                        _lastBusCheck,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                         textAlign: TextAlign.right,
                       ),
@@ -294,24 +334,21 @@ class _SettingsPageState extends State<SettingsPage> {
                         onPressed: () {
                           _loadDebugInfo();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Actualizado'), duration: Duration(seconds: 1)),
+                            SnackBar(content: Text(l.refreshButton),
+                                duration: const Duration(seconds: 1)),
                           );
                         },
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Actualizar'),
+                        label: Text(l.refreshButton),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () async {
-                          await _testNotification();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                        ),
+                        onPressed: () async { await _testNotification(); },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                         icon: const Icon(Icons.notifications),
-                        label: const Text('Probar'),
+                        label: Text(l.testNotification),
                       ),
                     ),
                   ],
@@ -387,10 +424,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         
         const SizedBox(height: 24),
-        const Text(
-          'Información',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        Text(l.information,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         Card(
           child: Padding(
@@ -402,10 +437,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     const Icon(Icons.directions_bus, color: AlzibusColors.burgundy, size: 28),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Alzibus',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Alzibus',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -425,10 +458,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Aplicación para ver paradas de bus en Alzira, Valencia.',
-                  style: TextStyle(color: Colors.grey),
-                ),
+                Text(l.appDescription,
+                    style: const TextStyle(color: Colors.grey)),
               ],
             ),
           ),
