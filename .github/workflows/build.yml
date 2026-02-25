@@ -40,14 +40,30 @@ jobs:
       - name: Fix Kotlin deprecation in nfc_manager
         run: sed -i 's/toLowerCase(/lowercase(/g' ~/.pub-cache/hosted/pub.dev/nfc_manager-*/android/src/main/kotlin/io/flutter/plugins/nfcmanager/Translator.kt || true
 
+      - name: Get Base Version
+        id: version
+        run: |
+          BASE=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d'.' -f1,2)
+          FULL_VERSION="${BASE}.${{ github.run_number }}"
+          echo "VERSION=$FULL_VERSION" >> $GITHUB_OUTPUT
+
       - name: Build APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Pass Version to Release Job
+        run: echo "${{ steps.version.outputs.VERSION }}" > version.txt
+        
+      - name: Upload Version Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-info
+          path: version.txt
 
   tag-and-release:
     runs-on: ubuntu-latest
@@ -67,9 +83,15 @@ jobs:
           name: app-debug
           path: release
 
-      - name: Get version
+      - name: Download Version
+        uses: actions/download-artifact@v4
+        with:
+          name: version-info
+          path: version_dir
+
+      - name: Read Version
         id: version
-        run: echo "VERSION=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d'+' -f1)" >> $GITHUB_OUTPUT
+        run: echo "VERSION=$(cat version_dir/version.txt)" >> $GITHUB_OUTPUT
 
       - name: Check tag
         id: check_tag
@@ -89,6 +111,7 @@ jobs:
           git push origin v${{ steps.version.outputs.VERSION }}
 
       - name: Create Release
+        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
