@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+/// Marcador de autobús en el mapa.
+/// Diseño: círculo de color + icono bus + badge de línea.
 class AnimatedBusMarker extends StatefulWidget {
   final double heading;
   final String lineId;
@@ -12,7 +14,7 @@ class AnimatedBusMarker extends StatefulWidget {
     required this.heading,
     required this.lineId,
     this.isAtStop = false,
-    this.size = 48,
+    this.size = 56,
   });
 
   @override
@@ -20,243 +22,203 @@ class AnimatedBusMarker extends StatefulWidget {
 }
 
 class _AnimatedBusMarkerState extends State<AnimatedBusMarker>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
-  late AnimationController _bounceController;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _bounceAnimation;
 
   @override
   void initState() {
     super.initState();
-
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1600),
       vsync: this,
     )..repeat(reverse: true);
 
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
+    _pulseAnimation = Tween<double>(begin: 0.92, end: 1.08).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _bounceAnimation = Tween<double>(begin: 0, end: -8).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
-    );
-
-    if (!widget.isAtStop) {
-      _bounceController.repeat(reverse: true);
-    }
+    if (widget.isAtStop) _pulseController.stop();
   }
 
   @override
-  void didUpdateWidget(AnimatedBusMarker oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isAtStop != oldWidget.isAtStop) {
-      if (widget.isAtStop) {
-        _bounceController.stop();
-        _bounceController.reset();
-      } else {
-        _bounceController.repeat(reverse: true);
-      }
+  void didUpdateWidget(AnimatedBusMarker old) {
+    super.didUpdateWidget(old);
+    if (widget.isAtStop != old.isAtStop) {
+      widget.isAtStop
+          ? _pulseController.stop()
+          : _pulseController.repeat(reverse: true);
     }
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
-    _bounceController.dispose();
     super.dispose();
   }
 
-  Color _getLineColor() {
+  Color _lineColor() {
     switch (widget.lineId) {
       case 'L1':
-        return const Color(0xFF1565C0); // Azul
+        return const Color(0xFF1565C0);
       case 'L2':
-        return const Color(0xFF2E7D32); // Verde oscuro
+        return const Color(0xFF2E7D32);
       case 'L3':
-        return const Color(0xFFE65100); // Naranja
+        return const Color(0xFFE65100);
       default:
-        return const Color(0xFF6B2D5B);
+        return const Color(0xFF6B1A3A);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = _getLineColor();
+    final color = _lineColor();
+    final s = widget.size;
+
+    // Ángulo de la flecha de dirección (apunta en la dirección del bus)
+    final arrowAngle = widget.heading * math.pi / 180;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_pulseAnimation, _bounceAnimation]),
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, _bounceAnimation.value),
-          child: Transform.scale(
-            scale: _pulseAnimation.value,
-            child: Transform.rotate(
-              angle: (widget.heading - 90) * math.pi / 180,
-              child: _buildBus3D(color),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBus3D(Color color) {
-    return SizedBox(
-      width: widget.size,
-      height: widget.size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Sombra
-          Positioned(
-            bottom: 0,
-            child: Container(
-              width: widget.size * 0.7,
-              height: widget.size * 0.15,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(widget.size * 0.1),
-              ),
-            ),
-          ),
-          // Cuerpo del autobus
-          Container(
-            width: widget.size * 0.8,
-            height: widget.size * 0.45,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  color.withOpacity(0.9),
-                  color,
-                  color.withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(widget.size * 0.1),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+      animation: _pulseAnimation,
+      builder: (_, __) => Transform.scale(
+        scale: widget.isAtStop ? 1.0 : _pulseAnimation.value,
+        child: SizedBox(
+          width: s,
+          height: s,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // ── Sombra ──────────────────────────────
+              Container(
+                width: s * 0.82,
+                height: s * 0.82,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.5),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Ventanas
-                Positioned(
-                  top: widget.size * 0.08,
-                  left: widget.size * 0.08,
-                  right: widget.size * 0.08,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      3,
-                      (i) => Container(
-                        width: widget.size * 0.15,
-                        height: widget.size * 0.12,
-                        decoration: BoxDecoration(
-                          color: Colors.lightBlue.shade100,
-                          borderRadius: BorderRadius.circular(2),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.5),
-                            width: 1,
-                          ),
+              ),
+
+              // ── Círculo principal ────────────────────
+              Container(
+                width: s * 0.82,
+                height: s * 0.82,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    center: Alignment(-0.3, -0.3),
+                    radius: 0.85,
+                    colors: [
+                      Color.lerp(color, Colors.white, 0.25)!,
+                      color,
+                    ],
+                  ),
+                  border: Border.all(color: Colors.white, width: 2.5),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Icono del bus
+                    Icon(
+                      Icons.directions_bus_rounded,
+                      color: Colors.white,
+                      size: s * 0.34,
+                    ),
+                    // Badge de línea
+                    Container(
+                      margin: EdgeInsets.only(top: s * 0.02),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: s * 0.07,
+                        vertical: s * 0.01,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.28),
+                        borderRadius: BorderRadius.circular(s * 0.1),
+                      ),
+                      child: Text(
+                        widget.lineId,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: s * 0.16,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ),
-                  ),
-                ),
-                // Frente del autobus
-                Positioned(
-                  right: 0,
-                  top: widget.size * 0.1,
-                  bottom: widget.size * 0.1,
-                  child: Container(
-                    width: widget.size * 0.12,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(4),
-                        bottomRight: Radius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-                // Numero de linea
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      widget.lineId,
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: widget.size * 0.2,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Ruedas
-          Positioned(
-            bottom: widget.size * 0.12,
-            left: widget.size * 0.15,
-            child: _buildWheel(),
-          ),
-          Positioned(
-            bottom: widget.size * 0.12,
-            right: widget.size * 0.15,
-            child: _buildWheel(),
-          ),
-          // Indicador de parada
-          if (widget.isAtStop)
-            Positioned(
-              top: 0,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.orange,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.stop,
-                  size: widget.size * 0.2,
-                  color: Colors.white,
+                  ],
                 ),
               ),
-            ),
-        ],
+
+              // ── Flecha de dirección ──────────────────
+              Transform.rotate(
+                angle: arrowAngle,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: CustomPaint(
+                    size: Size(s * 0.2, s * 0.16),
+                    painter: _DirectionArrow(color: color),
+                  ),
+                ),
+              ),
+
+              // ── Indicador de parada ──────────────────
+              if (widget.isAtStop)
+                Positioned(
+                  top: -s * 0.05,
+                  right: -s * 0.05,
+                  child: Container(
+                    width: s * 0.3,
+                    height: s * 0.3,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade700,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Icon(
+                      Icons.pause_rounded,
+                      size: s * 0.17,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+}
+
+class _DirectionArrow extends CustomPainter {
+  final Color color;
+  const _DirectionArrow({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    final path = Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(0, size.height)
+      ..lineTo(size.width, size.height)
+      ..close();
+
+    canvas.drawPath(path, paint);
+    canvas.drawPath(path, borderPaint);
   }
 
-  Widget _buildWheel() {
-    return Container(
-      width: widget.size * 0.12,
-      height: widget.size * 0.12,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade800,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade600, width: 2),
-      ),
-    );
-  }
+  @override
+  bool shouldRepaint(_DirectionArrow old) => old.color != color;
 }

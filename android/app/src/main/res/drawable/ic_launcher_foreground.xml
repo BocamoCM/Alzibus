@@ -3,72 +3,92 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    
-    <!-- Fondo circular con gradiente visual -->
+
+    <!-- Fondo circular exterior (burdeos oscuro) -->
     <path
-        android:fillColor="#6B2D5B"
-        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
-    
-    <!-- Círculo interior más claro -->
+        android:fillColor="#3D0E22"
+        android:pathData="M54,54m-46,0a46,46 0,1 1,92 0a46,46 0,1 1,-92 0"/>
+
+    <!-- Círculo interno (burdeos medio - efecto profundidad) -->
     <path
-        android:fillColor="#8B3A6E"
-        android:pathData="M54,54m-32,0a32,32 0,1 1,64 0a32,32 0,1 1,-64 0"/>
-    
-    <!-- Cuerpo del autobús - forma principal -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,42 L78,42 Q82,42 82,46 L82,62 Q82,66 78,66 L30,66 Q26,66 26,62 L26,46 Q26,42 30,42 Z"/>
-    
-    <!-- Ventanas del bus -->
-    <path
-        android:fillColor="#6B2D5B"
-        android:pathData="M32,46 L42,46 L42,54 L32,54 Z"/>
-    <path
-        android:fillColor="#6B2D5B"
-        android:pathData="M46,46 L56,46 L56,54 L46,54 Z"/>
-    <path
-        android:fillColor="#6B2D5B"
-        android:pathData="M60,46 L70,46 L70,54 L60,54 Z"/>
-    
-    <!-- Parabrisas delantero -->
-    <path
-        android:fillColor="#9B4D7D"
-        android:pathData="M74,46 L78,46 L78,58 L74,58 Z"/>
-    
-    <!-- Rueda trasera -->
-    <path
-        android:fillColor="#4A1D3D"
-        android:pathData="M36,66m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+        android:fillColor="#6B1A3A"
+        android:pathData="M54,54m-38,0a38,38 0,1 1,76 0a38,38 0,1 1,-76 0"/>
+
+    <!-- Brillo superior (gloss) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M36,66m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-    
-    <!-- Rueda delantera -->
-    <path
-        android:fillColor="#4A1D3D"
-        android:pathData="M68,66m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+        android:fillAlpha="0.08"
+        android:pathData="M25,28 Q54,14 83,28 Q83,42 54,40 Q25,42 25,28 Z"/>
+
+    <!-- Cuerpo del autobús (redondeado, moderno) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M68,66m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-    
-    <!-- Línea decorativa lateral -->
+        android:pathData="M28,44 Q28,38 34,38 L74,38 Q80,38 80,44 L80,62 Q80,68 74,68 L34,68 Q28,68 28,62 Z"/>
+
+    <!-- Ventana 1 -->
     <path
-        android:fillColor="#6B2D5B"
-        android:pathData="M28,58 L80,58 L80,60 L28,60 Z"/>
-    
-    <!-- Faro delantero -->
+        android:fillColor="#6B1A3A"
+        android:pathData="M33,43 L43,43 Q44,43 44,44 L44,55 Q44,56 43,56 L33,56 Q32,56 32,55 L32,44 Q32,43 33,43 Z"/>
+
+    <!-- Ventana 2 -->
+    <path
+        android:fillColor="#6B1A3A"
+        android:pathData="M48,43 L58,43 Q59,43 59,44 L59,55 Q59,56 58,56 L48,56 Q47,56 47,55 L47,44 Q47,43 48,43 Z"/>
+
+    <!-- Ventana 3 (más estrecha - zona delantera) -->
+    <path
+        android:fillColor="#6B1A3A"
+        android:pathData="M63,43 L71,43 Q72,43 72,44 L72,55 Q72,56 71,56 L63,56 Q62,56 62,55 L62,44 Q62,43 63,43 Z"/>
+
+    <!-- Frente del bus (parabrisas redondeado) -->
+    <path
+        android:fillColor="#8B2850"
+        android:pathData="M73,44 L78,44 Q80,44 80,46 L80,60 Q80,62 78,62 L73,62 Z"/>
+
+    <!-- Faro delantero (dorado) -->
     <path
         android:fillColor="#FFD700"
-        android:pathData="M80,52m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-    
-    <!-- Señal WiFi/Conectividad encima del bus -->
+        android:pathData="M78,56m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"/>
+
+    <!-- Franja lateral decorativa -->
+    <path
+        android:fillColor="#6B1A3A"
+        android:fillAlpha="0.4"
+        android:pathData="M29,59 L79,59 L79,62 L29,62 Z"/>
+
+    <!-- Rueda trasera -->
+    <path
+        android:fillColor="#2D0A17"
+        android:pathData="M38,68m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
     <path
         android:fillColor="#FFFFFF"
-        android:strokeWidth="1.5"
+        android:fillAlpha="0.3"
+        android:pathData="M38,68m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"/>
+
+    <!-- Rueda delantera -->
+    <path
+        android:fillColor="#2D0A17"
+        android:pathData="M66,68m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.3"
+        android:pathData="M66,68m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0"/>
+
+    <!-- Punto de conexión WiFi/señal (pequeño detalle moderno) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,26m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
         android:strokeColor="#FFFFFF"
-        android:pathData="M54,32 Q60,36 54,40 Q48,36 54,32"/>
+        android:strokeWidth="1.8"
+        android:pathData="M47,31 Q54,25 61,31"/>
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,28m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-        
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillAlpha="0.4"
+        android:pathData="M44,34.5 Q54,27 64,34.5"/>
+
 </vector>
