@@ -175,7 +175,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return ListView(
+    return Scaffold(
+      appBar: AppBar(title: Text(l.tabSettings)),
+      body: ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
         Text(l.notifications,
@@ -521,6 +523,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ],
-    );
+    ),   // body: ListView
+  );   // Scaffold
   }
 }

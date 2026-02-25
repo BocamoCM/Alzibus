@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:alzibus/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../screens/trip_history_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onSettingsTap;
+  const ProfileScreen({super.key, this.onSettingsTap});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -234,6 +236,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
+          ListTile(
+            leading: const Icon(Icons.bar_chart, color: AlzibusColors.burgundy),
+            title: Text(l.tripHistory),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TripHistoryScreen()),
+            ),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined, color: AlzibusColors.burgundy),
+            title: Text(l.tabSettings),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: widget.onSettingsTap,
+          ),
+          const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.edit_outlined, color: AlzibusColors.burgundy),
             title: Text(l.editEmail),

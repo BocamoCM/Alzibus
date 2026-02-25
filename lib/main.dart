@@ -560,7 +560,59 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
+    void pushSettings() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SettingsPage(
+            notificationsEnabled: _notificationsEnabled,
+            notificationDistance: _notificationDistance,
+            notificationCooldown: _notificationCooldown,
+            showSimulatedBuses: _showSimulatedBuses,
+            autoRefreshTimes: _autoRefreshTimes,
+            vibrationEnabled: _vibrationEnabled,
+            onNotificationsChanged: (value) async {
+              setState(() => _notificationsEnabled = value);
+              await _savePreferences();
+              if (value) {
+                await ForegroundService.start();
+              } else {
+                await ForegroundService.stop();
+              }
+            },
+            onDistanceChanged: (value) {
+              setState(() => _notificationDistance = value);
+              _savePreferences();
+            },
+            onCooldownChanged: (value) {
+              setState(() => _notificationCooldown = value);
+              _savePreferences();
+            },
+            onShowSimulatedBusesChanged: (value) {
+              setState(() => _showSimulatedBuses = value);
+              _savePreferences();
+            },
+            onAutoRefreshTimesChanged: (value) {
+              setState(() => _autoRefreshTimes = value);
+              _savePreferences();
+            },
+            onVibrationChanged: (value) {
+              setState(() => _vibrationEnabled = value);
+              _savePreferences();
+            },
+            currentLocale: widget.currentLocale,
+            onLocaleChanged: (locale) {
+              widget.onLocaleChanged?.call(locale);
+            },
+          ),
+        ),
+      );
+    }
+
     final pages = [
+      // 0 — Mapa
       MapPage(
         key: _mapPageKey,
         notif: _notif,
@@ -569,106 +621,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         notificationCooldown: _notificationCooldown,
         showSimulatedBuses: _showSimulatedBuses,
       ),
+      // 1 — Rutas
       RoutesPage(
         onStopTapped: (stop) {
-          // Cambiar a la pestaña del mapa
           setState(() => _index = 0);
-          // Ir a la parada
           Future.delayed(const Duration(milliseconds: 100), () {
             _mapPageKey.currentState?.goToStop(stop);
           });
         },
       ),
+      // 2 — NFC
       const NfcPage(),
-      SettingsPage(
-        notificationsEnabled: _notificationsEnabled,
-        notificationDistance: _notificationDistance,
-        notificationCooldown: _notificationCooldown,
-        showSimulatedBuses: _showSimulatedBuses,
-        autoRefreshTimes: _autoRefreshTimes,
-        vibrationEnabled: _vibrationEnabled,
-        onNotificationsChanged: (value) async {
-          setState(() => _notificationsEnabled = value);
-          await _savePreferences();
-          
-          // Iniciar o detener foreground service
-          if (value) {
-            await ForegroundService.start();
-          } else {
-            await ForegroundService.stop();
-          }
-        },
-        onDistanceChanged: (value) {
-          setState(() => _notificationDistance = value);
-          _savePreferences();
-        },
-        onCooldownChanged: (value) {
-          setState(() => _notificationCooldown = value);
-          _savePreferences();
-        },
-        onShowSimulatedBusesChanged: (value) {
-          setState(() => _showSimulatedBuses = value);
-          _savePreferences();
-        },
-        onAutoRefreshTimesChanged: (value) {
-          setState(() => _autoRefreshTimes = value);
-          _savePreferences();
-        },
-        onVibrationChanged: (value) {
-          setState(() => _vibrationEnabled = value);
-          _savePreferences();
-        },
-        currentLocale: widget.currentLocale,
-        onLocaleChanged: (locale) {
-          widget.onLocaleChanged?.call(locale);
-        },
-      ),
+      // 3 — Avisos
+      const NoticesScreen(),
+      // 4 — Perfil
+      ProfileScreen(onSettingsTap: pushSettings),
     ];
-    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l.appTitle),
         actions: [
-          // Avisos activos
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.campaign_outlined),
-                tooltip: l.notices,
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NoticesScreen()),
-                  );
-                  _loadNoticesCount();
-                },
-              ),
-              if (_noticesCount > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$_noticesCount',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          // Alertas activas
+          // Único botón en AppBar: alertas activas (operacional, tiempo real)
           IconButton(
             icon: const Icon(Icons.notifications_active),
             tooltip: l.activeAlerts,
+            iconSize: 28,
             onPressed: () {
               Navigator.push(
                 context,
@@ -682,41 +660,53 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               );
             },
           ),
-          // Historial de viajes
-          IconButton(
-            icon: const Icon(Icons.bar_chart),
-            tooltip: l.tripHistory,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TripHistoryScreen()),
-              );
-            },
-          ),
-          // Perfil de usuario
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            tooltip: l.profile,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            },
-          ),
         ],
       ),
       body: pages[_index],
-      bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _index,
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.map), label: l.tabMap),
-            BottomNavigationBarItem(icon: const Icon(Icons.route), label: l.tabRoutes),
-            BottomNavigationBarItem(icon: const Icon(Icons.nfc), label: l.tabNfc),
-            BottomNavigationBarItem(icon: const Icon(Icons.settings), label: l.tabSettings),
-          ],
-          onTap: (i) => setState(() => _index = i)),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) {
+          setState(() => _index = i);
+          // Refrescar contador de avisos al volver a la pestaña
+          if (i == 3) _loadNoticesCount();
+        },
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.map_outlined),
+            selectedIcon: const Icon(Icons.map),
+            label: l.tabMap,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.route_outlined),
+            selectedIcon: const Icon(Icons.route),
+            label: l.tabRoutes,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.nfc_outlined),
+            selectedIcon: const Icon(Icons.nfc),
+            label: l.tabNfc,
+          ),
+          NavigationDestination(
+            icon: Badge(
+              isLabelVisible: _noticesCount > 0,
+              label: Text('$_noticesCount'),
+              child: const Icon(Icons.campaign_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: _noticesCount > 0,
+              label: Text('$_noticesCount'),
+              child: const Icon(Icons.campaign),
+            ),
+            label: l.notices,
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Perfil',
+          ),
+        ],
+      ),
     );
   }
 }
+

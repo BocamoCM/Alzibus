@@ -265,7 +265,7 @@ abstract class AppLocalizations {
   /// No description provided for @notices.
   ///
   /// In es, this message translates to:
-  /// **'Avisos e Incidencias'**
+  /// **'Avisos'**
   String get notices;
 
   /// No description provided for @noActiveNotices.

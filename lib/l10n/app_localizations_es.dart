@@ -90,7 +90,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get thisMonth => 'Este mes';
 
   @override
-  String get notices => 'Avisos e Incidencias';
+  String get notices => 'Avisos';
 
   @override
   String get noActiveNotices => 'Sin avisos activos';
