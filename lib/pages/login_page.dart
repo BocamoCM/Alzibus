@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alzibus/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../main.dart'; // import for HomePage
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -41,7 +42,9 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } on AuthInvalidCredentialsException {
       if (!mounted) return;
       setState(() {

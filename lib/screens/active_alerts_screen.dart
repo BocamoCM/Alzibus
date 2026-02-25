@@ -114,7 +114,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
     final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('🔔 \${l.activeAlertsTitle}'),
+        title: Text('🔔 ${l.activeAlertsTitle}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

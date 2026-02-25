@@ -7,9 +7,8 @@ import '../theme/app_theme.dart';
 
 class RoutesPage extends StatefulWidget {
   final Function(BusStop stop)? onStopTapped;
-  final BusSimulationService? busSimulationService;
   
-  const RoutesPage({super.key, this.onStopTapped, this.busSimulationService});
+  const RoutesPage({super.key, this.onStopTapped});
 
   @override
   State<RoutesPage> createState() => _RoutesPageState();
@@ -42,14 +41,13 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
   }
   
   void _subscribeToBuses() {
-    if (widget.busSimulationService != null) {
-      _buses = widget.busSimulationService!.buses;
-      _busSubscription = widget.busSimulationService!.busStream.listen((buses) {
-        if (mounted) {
-          setState(() => _buses = buses);
-        }
-      });
-    }
+    final busService = BusSimulationService(); // Usa el Singleton
+    _buses = busService.buses;
+    _busSubscription = busService.busStream.listen((buses) {
+      if (mounted) {
+        setState(() => _buses = buses);
+      }
+    });
   }
 
   Future<void> _loadRoutes() async {

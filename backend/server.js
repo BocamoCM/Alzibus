@@ -1,11 +1,22 @@
 const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const nodemailer = require('nodemailer');
 const pool = require('./db');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 
 // Middlewares
 app.use(cors());
@@ -61,8 +72,20 @@ const authenticateToken = (req, res, next) => {
 
 
 
+// ==========================================
+// LIMITADOR DE FRECUENCIA (ANTI-SPAM)
+// ==========================================
+// Bloquea IPs que intenten crear muchas cuentas seguidas
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 3, // Límite de 3 cuentas por hora por IP
+    message: { error: 'Demasiadas cuentas creadas desde esta red. Por favor, inténtalo más tarde.' },
+    standardHeaders: true, // Devuelve info del límite en los headers `RateLimit-*`
+    legacyHeaders: false, // Desactiva los headers antiguos `X-RateLimit-*`
+});
+
 // 1. Registro de usuario
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', registerLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -80,18 +103,83 @@ app.post('/api/register', async (req, res) => {
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
-        // Guardar en la base de datos
+        // Generar código de 6 dígitos
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Guardar en la base de datos de manera INACTIVA y con el código
         const newUser = await pool.query(
-            'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email',
-            [email, passwordHash]
+            'INSERT INTO users (email, password_hash, is_verified, verification_code) VALUES ($1, $2, false, $3) RETURNING id, email',
+            [email, passwordHash, verificationCode]
         );
 
+        // Configurar envío de email (Usando Gmail como pediste)
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Verifica tu cuenta de Alzibus',
+            text: `Tu código de verificación es: ${verificationCode}`
+        };
+
+        // Enviar email sin bloquear la respuesta de la API usando .then().catch()
+        transporter.sendMail(mailOptions)
+            .then(() => console.log('Correo OTP enviado a', email))
+            .catch(emailError => {
+                console.error('Error enviando el correo de verificación (Ignorado para desarrollo):', emailError.message);
+            });
+
         res.status(201).json({
-            message: 'Usuario registrado con éxito',
-            user: newUser.rows[0]
+            message: 'Usuario registrado. Por favor verifica tu email.',
+            user: newUser.rows[0],
+            requiresVerification: true
         });
     } catch (error) {
         console.error('Error en registro:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 1.5. Verificación de Correo (OTP)
+app.post('/api/verify-email', registerLimiter, async (req, res) => {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+        return res.status(400).json({ error: 'Email y código son obligatorios' });
+    }
+
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = result.rows[0];
+
+        if (user.is_verified) {
+            return res.status(400).json({ error: 'El usuario ya está verificado' });
+        }
+
+        if (user.verification_code !== code) {
+            return res.status(400).json({ error: 'Código de verificación incorrecto' });
+        }
+
+        // Marcar como verificado y borrar el código
+        await pool.query(
+            'UPDATE users SET is_verified = true, verification_code = NULL WHERE id = $1',
+            [user.id]
+        );
+
+        res.json({ message: 'Cuenta verificada correctamente' });
+
+    } catch (error) {
+        console.error('Error al verificar email:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
@@ -111,6 +199,11 @@ app.post('/api/login', async (req, res) => {
         }
 
         const user = result.rows[0];
+
+        // Verificar si confirmó el correo (OTP)
+        if (user.is_verified === false) {
+            return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.' });
+        }
 
         // Verificar que la cuenta está activa
         if (user.active === false) {
@@ -307,7 +400,12 @@ app.post('/api/admin/notices', async (req, res) => {
             'INSERT INTO notices (title, body, line, expires_at) VALUES ($1, $2, $3, $4) RETURNING *',
             [title, body, line || null, expiresAt || null]
         );
-        res.status(201).json(result.rows[0]);
+        const newNotice = result.rows[0];
+
+        // Emitir evento por WebSockets a todos los clientes conectados
+        io.emit('new_notice', newNotice);
+
+        res.status(201).json(newNotice);
     } catch (error) {
         console.error('Error creando aviso:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -672,6 +770,6 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
 });
 
 // Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor y WebSockets corriendo en puerto ${PORT}`);
 });

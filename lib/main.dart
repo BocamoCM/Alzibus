@@ -25,59 +25,59 @@ import 'screens/active_alerts_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/notices_screen.dart';
 import 'services/auth_service.dart';
+import 'services/socket_service.dart';
+import 'services/bus_simulation_service.dart'; // import para simulación global
+
+// Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar foreground service (solo Android/iOS)
-  if (!kIsWeb) {
-    await ForegroundService.initialize();
-    
-    // Inicializar servicio de alertas de bus
-    await BusAlertService().initialize();
-    
-    // Inicializar servicio de Google Assistant
-    AssistantService.initialize();
-  }
-  
-  // Auto-confirmar viajes pendientes expirados
+  // 1. Inicialización crítica (rápida)
   final prefs = await SharedPreferences.getInstance();
-  final historyService = TripHistoryService(prefs);
   final authService = AuthService();
-  final token = await authService.getToken();
-  if (token != null) {
-    await historyService.autoConfirmIfExpired(token);
-  }
-  
-  // Cargar y guardar paradas para el servicio de fondo
-  final stopsService = StopsService();
-  final stops = await stopsService.loadStops();
-  debugPrint('Main: Paradas cargadas: ${stops.length}');
-  final stopsData = stops.map((stop) => {
-    'name': stop.name,
-    'lat': stop.lat,
-    'lng': stop.lng,
-    'lines': stop.lines,
-  }).toList();
-  
-  // Guardar paradas en preferences para el foreground service (en JSON)
-  await prefs.setString('bus_stops', jsonEncode(stopsData));
-  
-  // Solicitar permisos necesarios (solo móvil)
-  if (!kIsWeb) {
-    await _requestPermissions();
-    
-    // Iniciar foreground service si las notificaciones están habilitadas
-    final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-    if (notificationsEnabled) {
-      await ForegroundService.start();
-    }
-  }
-  
-  // Comprobar si el usuario ya está logueado (reutilizamos authService ya declarado arriba)
   final isLoggedIn = await authService.isLoggedIn();
   
+  // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
   runApp(AlzibusApp(isLoggedIn: isLoggedIn));
+  
+  // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
+  Future.microtask(() async {
+    if (!kIsWeb) {
+      await ForegroundService.initialize();
+      await BusAlertService().initialize();
+      AssistantService.initialize();
+      SocketService().initialize();
+    }
+
+    final stopsService = StopsService();
+    final stops = await stopsService.loadStops();
+    debugPrint('Main: Paradas cargadas en segundo plano: ${stops.length}');
+    
+    final stopsData = stops.map((stop) => {
+      'id': stop.id,
+      'name': stop.name,
+      'lat': stop.lat,
+      'lng': stop.lng,
+      'lines': stop.lines,
+    }).toList();
+    
+    await prefs.setString('bus_stops', jsonEncode(stopsData));
+    
+    // Iniciar simulación global
+    final busSimService = BusSimulationService();
+    await busSimService.initialScan(stopsData);
+    busSimService.startSimulation();
+    
+    if (!kIsWeb) {
+      await _requestPermissions();
+      final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+      if (notificationsEnabled) {
+        await ForegroundService.start();
+      }
+    }
+  });
 }
 
 /// Solicita todos los permisos necesarios para el foreground service
@@ -146,6 +146,7 @@ class _AlzibusAppState extends State<AlzibusApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Alzibus',
       theme: AlzibusTheme.lightTheme,
       debugShowCheckedModeBanner: false,
@@ -544,9 +545,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Obtener el servicio de simulación del MapPage si está disponible
-    final busService = _mapPageKey.currentState?.busSimulationService;
-    
     final pages = [
       MapPage(
         key: _mapPageKey,
@@ -557,7 +555,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         showSimulatedBuses: _showSimulatedBuses,
       ),
       RoutesPage(
-        busSimulationService: busService,
         onStopTapped: (stop) {
           // Cambiar a la pestaña del mapa
           setState(() => _index = 0);

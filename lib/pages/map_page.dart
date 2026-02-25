@@ -102,7 +102,7 @@ class MapPageState extends State<MapPage> {
   @override
   void dispose() {
     _locationService.stopTracking();
-    _busSimulationService.dispose();
+    // NO destruir el singleton _busSimulationService.dispose();
     _busUpdateTimer?.cancel();
     _searchController.dispose();
     super.dispose();
@@ -110,39 +110,21 @@ class MapPageState extends State<MapPage> {
   
   void _setupBusSimulation() {
     _busSimulationService.busStream.listen((buses) {
-      setState(() {
-        _simulatedBuses = buses;
-      });
+      if (mounted) {
+        setState(() {
+          _simulatedBuses = buses;
+        });
+      }
     });
     
-    _busSimulationService.startSimulation();
+    // Obtener estado actual INMEDIATO
+    if (mounted) {
+      setState(() {
+        _simulatedBuses = _busSimulationService.buses;
+      });
+    }
   }
   
-  Future<void> _initializeBuses() async {
-    if (stops.isEmpty) return;
-    
-    print('Configurando lineas...');
-    
-    // Cargar rutas de cada linea desde archivos separados
-    for (final line in ['L1', 'L2', 'L3']) {
-      final routeStops = await _stopsService.loadLineRoute(line);
-      if (routeStops.isNotEmpty) {
-        print('$line: ${routeStops.length} paradas cargadas');
-        _busSimulationService.setLineStops(line, routeStops);
-      }
-    }
-    
-    // Escaneo inicial de todas las paradas
-    final allStopsData = stops.map((s) => {
-      'id': s.id,
-      'name': s.name,
-      'lat': s.lat,
-      'lng': s.lng,
-      'lines': s.lines,
-    }).toList();
-    
-    await _busSimulationService.initialScan(allStopsData);
-  }
 
   Future<void> _loadStops() async {
     print('Intentando cargar paradas...');
@@ -154,9 +136,6 @@ class MapPageState extends State<MapPage> {
         stops = loadedStops;
       });
     }
-    
-    // Inicializar buses despues de cargar paradas
-    await _initializeBuses();
   }
 
   void _checkProximity(LatLng myPos) async {

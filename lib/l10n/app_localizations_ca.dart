@@ -307,6 +307,12 @@ class AppLocalizationsCa extends AppLocalizations {
   String get statusArriving => '🔔 Arribant';
 
   @override
+  String get newNoticePopupTitle => 'Nou Avís';
+
+  @override
+  String get understood => 'Entesos';
+
+  @override
   String get tripHistoryTitle => 'Historial de Viatges';
 
   @override

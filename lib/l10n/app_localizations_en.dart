@@ -305,6 +305,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusArriving => '🔔 Arriving';
 
   @override
+  String get newNoticePopupTitle => 'New Notice';
+
+  @override
+  String get understood => 'Got it';
+
+  @override
   String get tripHistoryTitle => 'Trip History';
 
   @override

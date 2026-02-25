@@ -53,7 +53,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
     final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('📊 \${l.tripHistoryTitle}'),
+        title: Text('📊 ${l.tripHistoryTitle}'),
         bottom: TabBar(
           controller: _tabController,
           tabs: [

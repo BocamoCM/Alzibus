@@ -45,17 +45,35 @@ class SimulatedBus {
 }
 
 class BusSimulationService {
+  // --- Singleton Setup ---
+  static final BusSimulationService _instance = BusSimulationService._internal();
+
+  factory BusSimulationService() {
+    return _instance;
+  }
+
+  BusSimulationService._internal();
+  // -----------------------
+
   final BusTimesService _busTimesService = BusTimesService();
   final Map<String, SimulatedBus> _buses = {};
   final Map<String, List<Map<String, dynamic>>> _lineStops = {};
   
   Timer? _updateTimer;
   Timer? _trackingTimer;
+  // Behavior-like logic so new listeners get the current buses immediately
   StreamController<Map<String, SimulatedBus>>? _busStreamController;
   bool _isDisposed = false;
   
   Stream<Map<String, SimulatedBus>> get busStream {
-    _busStreamController ??= StreamController<Map<String, SimulatedBus>>.broadcast();
+    _busStreamController ??= StreamController<Map<String, SimulatedBus>>.broadcast(
+      onListen: () {
+        // Al conectar un nuevo listener (pantalla), mandarle el estado actual enseguida
+        if (_buses.isNotEmpty && !_isDisposed) {
+          _busStreamController?.add(_buses);
+        }
+      }
+    );
     return _busStreamController!.stream;
   }
   
@@ -102,7 +120,9 @@ class BusSimulationService {
     final Map<String, Map<String, dynamic>> closestBusByLine = {};
     
     for (final stop in allStops) {
-      final stopId = stop['id'] as int;
+      final stopId = stop['id'] as int? ?? 0;
+      if (stopId == 0) continue;
+      
       final lines = List<String>.from(stop['lines'] as List);
       
       try {

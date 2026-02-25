@@ -676,6 +676,18 @@ abstract class AppLocalizations {
   /// **'🔔 Llegando'**
   String get statusArriving;
 
+  /// No description provided for @newNoticePopupTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nuevo Aviso'**
+  String get newNoticePopupTitle;
+
+  /// No description provided for @understood.
+  ///
+  /// In es, this message translates to:
+  /// **'Entendido'**
+  String get understood;
+
   /// No description provided for @tripHistoryTitle.
   ///
   /// In es, this message translates to:

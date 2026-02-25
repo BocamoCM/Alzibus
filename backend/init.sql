@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- Añadir columnas si ya existe la tabla (migraciones)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_access TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_code VARCHAR(10);
 
 -- Crear tabla de paradas
 CREATE TABLE IF NOT EXISTS stops (

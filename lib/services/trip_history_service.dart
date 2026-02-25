@@ -101,24 +101,7 @@ class TripHistoryService {
     await _prefs.remove(_pendingTripKey);
   }
 
-  /// Auto-confirmar tras 5 minutos sin respuesta del usuario.
-  Future<void> autoConfirmIfExpired(String token) async {
-    final pending = getPendingTrip();
-    if (pending == null) return;
-    final timestamp = DateTime.parse(pending['timestamp']);
-    if (DateTime.now().difference(timestamp).inMinutes >= 5) {
-      await _saveToApi(
-        token: token,
-        line: pending['line'],
-        destination: pending['destination'],
-        stopName: pending['stopName'],
-        stopId: pending['stopId'],
-        timestamp: timestamp,
-        confirmed: false,
-      );
-      await _prefs.remove(_pendingTripKey);
-    }
-  }
+
 
   // ─────────────────────────────────────────────────────────────
   // ESCRITURA EN LA API

@@ -70,6 +70,24 @@ class AuthService {
     }
   }
 
+  /// Verifica el código OTP enviado al correo. Lanza [AuthNetworkException].
+  Future<bool> verifyEmail(String email, String code) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/verify-email'),
+            headers: AppConfig.headers,
+            body: jsonEncode({'email': email, 'code': code}),
+          )
+          .timeout(AppConfig.httpTimeout);
+
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error en verificación de email: $e');
+      throw AuthNetworkException(e);
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');

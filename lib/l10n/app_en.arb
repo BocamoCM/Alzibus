@@ -113,6 +113,8 @@
   "statusNotified": "✅ Notified",
   "statusClose": "⚠️ Very close",
   "statusArriving": "🔔 Arriving",
+  "newNoticePopupTitle": "New Notice",
+  "understood": "Got it",
 
   "tripHistoryTitle": "Trip History",
   "tabStats": "Statistics",

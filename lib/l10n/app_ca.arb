@@ -113,6 +113,8 @@
   "statusNotified": "✅ Avisat",
   "statusClose": "⚠️ Molt a prop",
   "statusArriving": "🔔 Arribant",
+  "newNoticePopupTitle": "Nou Avís",
+  "understood": "Entesos",
 
   "tripHistoryTitle": "Historial de Viatges",
   "tabStats": "Estadístiques",

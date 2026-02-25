@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alzibus/pages/otp_verification_page.dart';
 import '../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -44,12 +45,19 @@ class _RegisterPageState extends State<RegisterPage> {
       if (ok) {
         setState(() {
           _isLoading = false;
-          _success = true;
-          _message = '¡Registro exitoso! Ahora puedes iniciar sesión.';
         });
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.of(context).pop();
-        });
+        
+        // Redirigir a verificación
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OtpVerificationPage(
+                email: _emailController.text.trim(),
+              ),
+            ),
+          );
+        }
       } else {
         setState(() {
           _isLoading = false;
