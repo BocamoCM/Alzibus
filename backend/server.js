@@ -83,6 +83,44 @@ const registerLimiter = rateLimit({
     standardHeaders: true, // Devuelve info del límite en los headers `RateLimit-*`
     legacyHeaders: false, // Desactiva los headers antiguos `X-RateLimit-*`
 });
+// ==========================================
+// HELPER: Enviar email de verificación y responder al cliente
+// ==========================================
+function sendVerificationAndRespond(res, email, verificationCode, newUser) {
+    // Log del código para desarrollo (QUITAR EN PRODUCCIÓN)
+    console.log(`[OTP] Código de verificación para ${email}: ${verificationCode}`);
+
+    const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'localhost',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+        tls: { rejectUnauthorized: false }
+    });
+
+    const mailOptions = {
+        from: 'AlziTrans <bcarreres55@gmail.com>',
+        to: email,
+        subject: 'Verifica tu cuenta de Alzibus',
+        text: `Tu código de verificación es: ${verificationCode}`
+    };
+
+    // Enviar email sin bloquear la respuesta
+    transporter.sendMail(mailOptions)
+        .then(() => console.log('Correo OTP enviado a', email))
+        .catch(emailError => {
+            console.error('Error enviando correo (ignorado en desarrollo):', emailError.message);
+        });
+
+    return res.status(201).json({
+        message: 'Usuario registrado. Por favor verifica tu email.',
+        user: newUser.rows[0],
+        requiresVerification: true
+    });
+}
 
 // 1. Registro de usuario
 app.post('/api/register', registerLimiter, async (req, res) => {
@@ -93,10 +131,31 @@ app.post('/api/register', registerLimiter, async (req, res) => {
     }
 
     try {
+        // Limpiar cuentas no verificadas de más de 5 minutos (anti-basura)
+        await pool.query(
+            "DELETE FROM users WHERE is_verified = false AND created_at < NOW() - INTERVAL '5 minutes'"
+        );
+
         // Verificar si el usuario ya existe
         const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userExists.rows.length > 0) {
-            return res.status(400).json({ error: 'El usuario ya existe' });
+            const existingUser = userExists.rows[0];
+            // Si ya está verificado, rechazar
+            if (existingUser.is_verified) {
+                return res.status(400).json({ error: 'El usuario ya existe' });
+            }
+            // Si NO está verificado, permitir re-registro (actualizar contraseña y código)
+            const saltRounds = 10;
+            const passwordHash = await bcrypt.hash(password, saltRounds);
+            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            await pool.query(
+                'UPDATE users SET password_hash = $1, verification_code = $2, created_at = NOW() WHERE id = $3',
+                [passwordHash, verificationCode, existingUser.id]
+            );
+            // Enviar nuevo correo (más abajo)
+            const newUser = { rows: [{ id: existingUser.id, email: existingUser.email }] };
+            // Saltar al envío de email ↓
+            return sendVerificationAndRespond(res, email, verificationCode, newUser);
         }
 
         // Encriptar la contraseña (10 rondas de sal)
@@ -112,34 +171,7 @@ app.post('/api/register', registerLimiter, async (req, res) => {
             [email, passwordHash, verificationCode]
         );
 
-        // Configurar envío de email (Usando Gmail como pediste)
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Verifica tu cuenta de Alzibus',
-            text: `Tu código de verificación es: ${verificationCode}`
-        };
-
-        // Enviar email sin bloquear la respuesta de la API usando .then().catch()
-        transporter.sendMail(mailOptions)
-            .then(() => console.log('Correo OTP enviado a', email))
-            .catch(emailError => {
-                console.error('Error enviando el correo de verificación (Ignorado para desarrollo):', emailError.message);
-            });
-
-        res.status(201).json({
-            message: 'Usuario registrado. Por favor verifica tu email.',
-            user: newUser.rows[0],
-            requiresVerification: true
-        });
+        return sendVerificationAndRespond(res, email, verificationCode, newUser);
     } catch (error) {
         console.error('Error en registro:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
