@@ -282,6 +282,30 @@ class MapPageState extends State<MapPage> {
     }
   }
 
+  void goToStopById(int stopId) {
+    try {
+      final stop = stops.firstWhere((s) => s.id == stopId);
+      
+      // Move map logic similar to the search logic
+      _mapController.move(LatLng(stop.lat, stop.lng), 17.0);
+      
+      // Select the lines of this stop so it appears
+      setState(() {
+        for (final line in stop.lines) {
+          if (!selectedLines.contains(line)) {
+            selectedLines.add(line);
+          }
+        }
+      });
+      
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _showStopInfo(stop);
+      });
+    } catch (e) {
+      debugPrint('Parada ID $stopId no encontrada en la lista.');
+    }
+  }
+
   void _showSearchDialog() {
     showModalBottomSheet(
       context: context,

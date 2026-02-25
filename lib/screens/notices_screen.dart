@@ -43,8 +43,17 @@ class _NoticesScreenState extends State<NoticesScreen> {
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
+    if (diff.inSeconds < 0) return _formatFutureDate(dt, now); // Future date
+    
     if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
     if (diff.inHours < 24) return 'Hace ${diff.inHours}h';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  String _formatFutureDate(DateTime dt, DateTime now) {
+    final diff = dt.difference(now);
+    if (diff.inMinutes < 60) return 'En ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'En ${diff.inHours}h';
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 

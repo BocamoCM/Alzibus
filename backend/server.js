@@ -895,7 +895,95 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
     }
 });
 
+// ==========================================
+// ANALYTICS: Dashboard de estadísticas
+// (sin API key para acceso desde dashboard web local)
+// ==========================================
+app.get('/stats', async (req, res) => {
+    try {
+        const [
+            usersTotal,
+            usersVerified,
+            usersThisWeek,
+            usersActive7d,
+            tripsTotal,
+            tripsConfirmed,
+            tripsByLine,
+            tripsByHour,
+            topStops,
+            dailyRegistrations,
+            dailyTrips,
+            apiPerf,
+            noticesTotal,
+            noticesActive,
+            noticesByLine,
+        ] = await Promise.all([
+            pool.query("SELECT COUNT(*) FROM users"),
+            pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true"),
+            pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
+            pool.query("SELECT COUNT(DISTINCT id) FROM users WHERE last_access >= NOW() - INTERVAL '7 days'"),
+            pool.query("SELECT COUNT(*) FROM trips"),
+            pool.query("SELECT COUNT(*) FROM trips WHERE confirmed = true"),
+            pool.query("SELECT line, COUNT(*) as cnt FROM trips GROUP BY line ORDER BY cnt DESC"),
+            pool.query("SELECT EXTRACT(HOUR FROM timestamp) as hour, COUNT(*) as cnt FROM trips GROUP BY hour ORDER BY hour"),
+            pool.query("SELECT stop_name, COUNT(*) as cnt FROM trips GROUP BY stop_name ORDER BY cnt DESC LIMIT 10"),
+            pool.query(`SELECT DATE(created_at) as day, COUNT(*) as cnt FROM users
+                        WHERE created_at >= NOW() - INTERVAL '30 days'
+                        GROUP BY day ORDER BY day`),
+            pool.query(`SELECT DATE(timestamp) as day, COUNT(*) as cnt FROM trips
+                        WHERE timestamp >= NOW() - INTERVAL '30 days'
+                        GROUP BY day ORDER BY day`),
+            pool.query(`SELECT endpoint,
+                         ROUND(AVG(duration_ms)) as avg_ms,
+                         COUNT(*) as calls,
+                         ROUND(MAX(duration_ms)) as max_ms
+                        FROM api_logs
+                        WHERE created_at >= NOW() - INTERVAL '7 days'
+                        GROUP BY endpoint ORDER BY calls DESC LIMIT 10`),
+            pool.query("SELECT COUNT(*) FROM notices"),
+            pool.query("SELECT COUNT(*) FROM notices WHERE active = true AND (expires_at IS NULL OR expires_at > NOW())"),
+            pool.query("SELECT COALESCE(line, 'General') as line, COUNT(*) as cnt FROM notices GROUP BY line ORDER BY cnt DESC"),
+        ]);
+
+        res.json({
+            users: {
+                total: parseInt(usersTotal.rows[0].count),
+                verified: parseInt(usersVerified.rows[0].count),
+                thisWeek: parseInt(usersThisWeek.rows[0].count),
+                active7d: parseInt(usersActive7d.rows[0].count),
+                verificationRate: usersTotal.rows[0].count > 0
+                    ? Math.round((usersVerified.rows[0].count / usersTotal.rows[0].count) * 100)
+                    : 0,
+            },
+            trips: {
+                total: parseInt(tripsTotal.rows[0].count),
+                confirmed: parseInt(tripsConfirmed.rows[0].count),
+                confirmationRate: tripsTotal.rows[0].count > 0
+                    ? Math.round((tripsConfirmed.rows[0].count / tripsTotal.rows[0].count) * 100)
+                    : 0,
+                byLine: tripsByLine.rows,
+                byHour: tripsByHour.rows,
+                topStops: topStops.rows,
+                dailyTrips: dailyTrips.rows,
+            },
+            users_daily: dailyRegistrations.rows,
+            api: {
+                endpoints: apiPerf.rows,
+            },
+            notices: {
+                total: parseInt(noticesTotal.rows[0].count),
+                active: parseInt(noticesActive.rows[0].count),
+                byLine: noticesByLine.rows,
+            },
+        });
+    } catch (error) {
+        console.error('Error en /stats:', error);
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+});
+
 // Iniciar el servidor
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor y WebSockets corriendo en puerto ${PORT}`);
 });
+

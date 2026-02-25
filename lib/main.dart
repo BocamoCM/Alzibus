@@ -654,6 +654,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   builder: (_) => ActiveAlertsScreen(
                     onViewStop: (stopId, stopName) {
                       setState(() => _index = 0);
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        _mapPageKey.currentState?.goToStopById(stopId);
+                      });
                     },
                   ),
                 ),

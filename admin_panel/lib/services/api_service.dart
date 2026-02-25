@@ -9,7 +9,7 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  static const String _baseUrl = 'http://10.155.227.62:3000/api';
+  static const String _baseUrl = 'http://localhost:3000/api';
   static const String _apiKey = 'alzibus-secret-key-2024';
 
   static Map<String, String> get _headers => {
