@@ -23,10 +23,21 @@ const io = socketIo(server, {
     }
 });
 
+// Middleware de depuración: Registrar TODAS las peticiones entrantes
+app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.url} desde ${req.ip}`);
+    next();
+});
+
 // Middlewares
-app.use(helmet()); // Seguridad de cabeceras HTTP
+// Desactivamos helmet temporalmente o lo configuramos para permitir CORS
+app.use(helmet({
+    crossOriginResourcePolicy: false,
+}));
 app.use(cors({
-    origin: allowedOrigins
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
 }));
 app.use(express.json()); // Para poder leer JSON en el body de las peticiones
 
@@ -35,15 +46,26 @@ app.use(express.json()); // Para poder leer JSON en el body de las peticiones
 // ==========================================
 // Todas las rutas /api/* requieren el header X-API-Key correcto.
 const validateApiKey = (req, res, next) => {
+    // Las peticiones OPTIONS (preflight de CORS) no llevan headers personalizados
+    // y deben permitirse para que el navegador pueda validar la conexión.
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
+
     const apiKey = req.headers['x-api-key'];
     if (!apiKey || apiKey !== process.env.API_KEY) {
-        console.warn(`[API Key] Petición rechazada desde ${req.ip} — clave inválida o ausente`);
+        console.warn(`[API Key] Petición rechazada desde ${req.ip}`);
         return res.status(401).json({ error: 'API Key inválida o no proporcionada' });
     }
     next();
 };
 
 app.use('/api', validateApiKey);
+
+// Endpoint de salud para verificar conectividad sin base de datos
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Backend Alzibus alcanzable' });
+});
 
 // Middleware para registrar las peticiones a la API
 app.use((req, res, next) => {
@@ -61,7 +83,7 @@ app.use((req, res, next) => {
     next();
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // ==========================================
 // MIDDLEWARE: AUTENTICACIÓN JWT
@@ -110,7 +132,7 @@ async function sendOtpEmail(email, verificationCode) {
     });
 
     const mailOptions = {
-        from: 'AlziTrans <bcarreres55@gmail.com>',
+        from: process.env.EMAIL_FROM || 'AlziTrans <bcarreres55@gmail.com>',
         to: email,
         subject: 'Verifica tu cuenta de Alzibus',
         text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.`
@@ -917,9 +939,8 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
 
 // ==========================================
 // ANALYTICS: Dashboard de estadísticas
-// (sin API key para acceso desde dashboard web local)
 // ==========================================
-app.get('/stats', async (req, res) => {
+app.get('/api/stats', async (req, res) => {
     try {
         const [
             usersTotal,
@@ -999,6 +1020,33 @@ app.get('/stats', async (req, res) => {
     } catch (error) {
         console.error('Error en /stats:', error);
         res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+});
+
+app.get('/api/stats/usage', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DATE(created_at) as day, COUNT(*) as queries 
+            FROM api_logs 
+            WHERE created_at >= NOW() - INTERVAL '7 days'
+            GROUP BY day ORDER BY day
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
+app.get('/api/stats/activity', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT endpoint as action, 'System' as user, created_at as time, 'system' as type
+            FROM api_logs
+            ORDER BY created_at DESC LIMIT 10
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Error' });
     }
 });
 

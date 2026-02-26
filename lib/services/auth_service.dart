@@ -51,9 +51,9 @@ class AuthService {
     }
   }
 
-  /// Intenta registrar un nuevo usuario. Lanza [AuthNetworkException] si
-  /// el servidor no responde, o devuelve false si el usuario ya existe.
-  Future<bool> register(String email, String password) async {
+  /// Intenta registrar un nuevo usuario. 
+  /// Devuelve null si tuvo éxito, o el mensaje de error si falló.
+  Future<String?> register(String email, String password) async {
     try {
       final response = await http
           .post(
@@ -63,7 +63,10 @@ class AuthService {
           )
           .timeout(AppConfig.httpTimeout);
 
-      return response.statusCode == 201;
+      if (response.statusCode == 201) return null; // Éxito
+      
+      final body = jsonDecode(response.body);
+      return body['error'] as String? ?? 'Error en el servidor (${response.statusCode})';
     } catch (e) {
       debugPrint('Error en registro: $e');
       throw AuthNetworkException(e);

@@ -35,14 +35,14 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      final ok = await _authService.register(
+      final errorMessage = await _authService.register(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
       if (!mounted) return;
 
-      if (ok) {
+      if (errorMessage == null) {
         setState(() {
           _isLoading = false;
         });
@@ -61,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
       } else {
         setState(() {
           _isLoading = false;
-          _message = 'El email ya está registrado. Prueba con otro.';
+          _message = errorMessage;
         });
       }
     } on AuthNetworkException {
