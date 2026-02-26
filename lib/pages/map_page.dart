@@ -177,8 +177,19 @@ class MapPageState extends State<MapPage> {
     String nextStopName = 'Desconocida';
     String estimatedTime = '--';
     
-    if (lineStops != null && bus.nextStopIndex < lineStops.length) {
-      nextStopName = lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
+    if (lineStops != null && lineStops.isNotEmpty) {
+      if (bus.trackingStopId != null) {
+        try {
+          final stop = lineStops.firstWhere((s) => s['id'] == bus.trackingStopId);
+          nextStopName = stop['name'] ?? 'Desconocida';
+        } catch (_) {
+          if (bus.nextStopIndex < lineStops.length) {
+            nextStopName = lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
+          }
+        }
+      } else if (bus.nextStopIndex < lineStops.length) {
+        nextStopName = lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
+      }
     }
     
     if (bus.lastKnownMinutes != null) {

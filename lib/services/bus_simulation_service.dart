@@ -18,6 +18,7 @@ class SimulatedBus {
   DateTime? departureTime;
   int? lastKnownMinutes;
   int? trackingStopId;
+  int? trackingStopIndex;
   List<LatLng>? gpsTrack;
   int trackFromIndex;
   int trackToIndex;
@@ -37,6 +38,7 @@ class SimulatedBus {
     this.departureTime,
     this.lastKnownMinutes,
     this.trackingStopId,
+    this.trackingStopIndex,
     this.gpsTrack,
     this.trackFromIndex = 0,
     this.trackToIndex = 0,
@@ -188,6 +190,7 @@ class BusSimulationService {
         targetProgress: initialProgress,
         lastKnownMinutes: minutes,
         trackingStopId: data['stopId'] as int,
+        trackingStopIndex: data['stopIndex'] as int,
         lastApiUpdate: DateTime.now(),
         speed: 1.0,
       );
@@ -252,6 +255,7 @@ class BusSimulationService {
           bus.lastApiUpdate = DateTime.now();
           bus.lastKnownMinutes = minutes;
           bus.trackingStopId = stopId;
+          bus.trackingStopIndex = idx;
 
           // Mejora 4: targetProgress solo avanza, nunca retrocede
           final newTarget = _computeTargetProgress(bus.progress, minutes);

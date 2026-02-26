@@ -24,6 +24,7 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
   // Info de buses en tiempo real
   Map<String, SimulatedBus> _buses = {};
   StreamSubscription? _busSubscription;
+  Timer? _uiRefreshTimer;
 
   @override
   void initState() {
@@ -31,12 +32,18 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
     _tabController = TabController(length: 3, vsync: this);
     _loadRoutes();
     _subscribeToBuses();
+    
+    // Timer para forzar refresco de UI y animar progreso de buses
+    _uiRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _busSubscription?.cancel();
+    _uiRefreshTimer?.cancel();
     super.dispose();
   }
   
@@ -219,7 +226,16 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
                       Text(
                         bus.isAtStop
                           ? stops[busAtStopIndex ?? 0]['name'] ?? 'Parada'
-                          : 'Hacia ${stops[busNextStopIndex ?? 0]['name'] ?? 'siguiente'}',
+                          : 'Hacia ${() {
+                              if (bus.trackingStopIndex != null && bus.trackingStopIndex! < stops.length) {
+                                return stops[bus.trackingStopIndex!]['name'] ?? 'siguiente';
+                              } else if (bus.trackingStopId != null) {
+                                try {
+                                  return stops.firstWhere((s) => s['id'] == bus.trackingStopId)['name'] ?? 'siguiente';
+                                } catch (_) {}
+                              }
+                              return stops[busNextStopIndex ?? 0]['name'] ?? 'siguiente';
+                            }()}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

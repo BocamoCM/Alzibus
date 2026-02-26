@@ -4,7 +4,7 @@ class AppConfig {
   AppConfig._();
 
   /// URL base de la API. Cámbiala por la IP/dominio real de tu servidor.
-  static const String baseUrl = 'http://192.168.50.84:3000/api';
+  static const String baseUrl = 'http://10.196.241.62:3000/api';
 
   /// API Key que el servidor debe validar en el header [X-API-Key].
   /// Debe coincidir con la que configures en tu servidor Node.js.

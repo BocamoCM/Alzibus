@@ -69,17 +69,12 @@ void main() async {
     final busSimService = BusSimulationService();
     
     // CRÍTICO: Registrar las paradas de cada línea ANTES del escaneo inicial
-    // Sin esto, initialScan no puede crear buses (comprueba _lineStops primero)
-    final Map<String, List<Map<String, dynamic>>> stopsByLine = {};
-    for (final stop in stopsData) {
-      final lines = List<String>.from(stop['lines'] as List);
-      for (final line in lines) {
-        stopsByLine.putIfAbsent(line, () => []).add(stop);
-      }
-    }
-    for (final entry in stopsByLine.entries) {
-      busSimService.setLineStops(entry.key, entry.value);
-      debugPrint('Main: Registradas ${entry.value.length} paradas para línea ${entry.key}');
+    // Usamos loadLineRoute para que el orden y las paradas repetidas (circulares)
+    // coincidan exactamente con el JSON de la ruta, igual que en RoutesPage.
+    for (final line in ['L1', 'L2', 'L3']) {
+      final routeStops = await stopsService.loadLineRoute(line);
+      busSimService.setLineStops(line, routeStops);
+      debugPrint('Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
     }
     
     await busSimService.initialScan(stopsData);
