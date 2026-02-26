@@ -6,20 +6,28 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
+const helmet = require('helmet');
 const pool = require('./db');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Configuración de CORS dinámica
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
+
 const io = socketIo(server, {
     cors: {
-        origin: "*",
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
     }
 });
 
 // Middlewares
-app.use(cors());
+app.use(helmet()); // Seguridad de cabeceras HTTP
+app.use(cors({
+    origin: allowedOrigins
+}));
 app.use(express.json()); // Para poder leer JSON en el body de las peticiones
 
 // ==========================================
