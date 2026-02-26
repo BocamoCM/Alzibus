@@ -53,9 +53,25 @@ class _SettingsPageState extends State<SettingsPage> {
   String _appVersion = '';
   String _buildNumber = '';
 
+  late bool _notificationsEnabled;
+  late double _notificationDistance;
+  late int _notificationCooldown;
+  late bool _showSimulatedBuses;
+  late bool _autoRefreshTimes;
+  late bool _vibrationEnabled;
+  late Locale _currentLocale;
+
   @override
   void initState() {
     super.initState();
+    _notificationsEnabled = widget.notificationsEnabled;
+    _notificationDistance = widget.notificationDistance;
+    _notificationCooldown = widget.notificationCooldown;
+    _showSimulatedBuses = widget.showSimulatedBuses;
+    _autoRefreshTimes = widget.autoRefreshTimes;
+    _vibrationEnabled = widget.vibrationEnabled;
+    _currentLocale = widget.currentLocale;
+    
     _loadDebugInfo();
     _loadAppVersion();
   }
@@ -156,7 +172,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required String name,
     required Locale locale,
   }) {
-    final isSelected = widget.currentLocale.languageCode == locale.languageCode;
+    final isSelected = _currentLocale.languageCode == locale.languageCode;
     return ListTile(
       leading: Text(flag, style: const TextStyle(fontSize: 24)),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -167,6 +183,7 @@ class _SettingsPageState extends State<SettingsPage> {
       onTap: () async {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('app_locale', locale.languageCode);
+        setState(() => _currentLocale = locale);
         widget.onLocaleChanged(locale);
       },
     );
@@ -186,42 +203,54 @@ class _SettingsPageState extends State<SettingsPage> {
         SwitchListTile(
           title: Text(l.activateNotifications),
           subtitle: Text(l.notificationsSubtitle),
-          value: widget.notificationsEnabled,
-          onChanged: widget.onNotificationsChanged,
+          value: _notificationsEnabled,
+          onChanged: (val) {
+            setState(() => _notificationsEnabled = val);
+            widget.onNotificationsChanged(val);
+          },
         ),
         const Divider(),
         ListTile(
           title: Text(l.alertDistance),
-          subtitle: Text('${widget.notificationDistance.toInt()} m'),
+          subtitle: Text('${_notificationDistance.toInt()} m'),
         ),
         Slider(
-          value: widget.notificationDistance,
+          value: _notificationDistance,
           min: 20,
           max: 200,
           divisions: 18,
-          label: '${widget.notificationDistance.toInt()}m',
-          onChanged: widget.notificationsEnabled ? widget.onDistanceChanged : null,
+          label: '${_notificationDistance.toInt()}m',
+          onChanged: _notificationsEnabled ? (val) {
+            setState(() => _notificationDistance = val);
+            widget.onDistanceChanged(val);
+          } : null,
         ),
         const Divider(),
         ListTile(
           title: Text(l.timeBetweenNotifications),
-          subtitle: Text('${widget.notificationCooldown} min'),
+          subtitle: Text('${_notificationCooldown} min'),
         ),
         Slider(
-          value: widget.notificationCooldown.toDouble(),
+          value: _notificationCooldown.toDouble(),
           min: 1,
           max: 30,
           divisions: 29,
-          label: '${widget.notificationCooldown} min',
-          onChanged: widget.notificationsEnabled
-              ? (value) => widget.onCooldownChanged(value.toInt())
+          label: '${_notificationCooldown} min',
+          onChanged: _notificationsEnabled
+              ? (val) {
+                  setState(() => _notificationCooldown = val.toInt());
+                  widget.onCooldownChanged(val.toInt());
+                }
               : null,
         ),
         SwitchListTile(
           title: Text(l.vibration),
           subtitle: Text(l.vibrationSubtitle),
-          value: widget.vibrationEnabled,
-          onChanged: widget.notificationsEnabled ? widget.onVibrationChanged : null,
+          value: _vibrationEnabled,
+          onChanged: _notificationsEnabled ? (val) {
+            setState(() => _vibrationEnabled = val);
+            widget.onVibrationChanged(val);
+          } : null,
           secondary: const Icon(Icons.vibration),
         ),
         
@@ -254,15 +283,21 @@ class _SettingsPageState extends State<SettingsPage> {
         SwitchListTile(
           title: Text(l.showSimulatedBuses),
           subtitle: Text(l.showSimulatedBusesSubtitle),
-          value: widget.showSimulatedBuses,
-          onChanged: widget.onShowSimulatedBusesChanged,
+          value: _showSimulatedBuses,
+          onChanged: (val) {
+            setState(() => _showSimulatedBuses = val);
+            widget.onShowSimulatedBusesChanged(val);
+          },
           secondary: const Icon(Icons.directions_bus),
         ),
         SwitchListTile(
           title: Text(l.autoRefreshTimes),
           subtitle: Text(l.autoRefreshTimesSubtitle),
-          value: widget.autoRefreshTimes,
-          onChanged: widget.onAutoRefreshTimesChanged,
+          value: _autoRefreshTimes,
+          onChanged: (val) {
+            setState(() => _autoRefreshTimes = val);
+            widget.onAutoRefreshTimesChanged(val);
+          },
           secondary: const Icon(Icons.refresh),
         ),
         
