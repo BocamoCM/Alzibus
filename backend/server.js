@@ -366,7 +366,18 @@ app.post('/api/login', async (req, res) => {
 // RUTAS DE PERFIL DE USUARIO
 // ==========================================
 
-// 16. Obtener perfil del usuario + estadísticas de viajes
+// 16. Heartbeat: Actualizar last_access (vía polling desde la app)
+app.post('/api/users/heartbeat', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [req.user.id]);
+        res.json({ message: 'Heartbeat recibido' });
+    } catch (error) {
+        console.error('Error en heartbeat:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 17. Obtener perfil del usuario + estadísticas de viajes
 app.get('/api/users/profile', authenticateToken, async (req, res) => {
     try {
         const userResult = await pool.query(
@@ -454,6 +465,7 @@ app.get('/api/admin/users', async (req, res) => {
         const result = await pool.query(`
             SELECT
                 u.id, u.email, u.active, u.created_at, u.last_access,
+                (u.last_access >= NOW() - INTERVAL '5 minutes') as is_online,
                 COUNT(t.id)::int AS trip_count
             FROM users u
             LEFT JOIN trips t ON t.user_id = u.id

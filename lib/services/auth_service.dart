@@ -221,6 +221,24 @@ class AuthService {
     }
   }
 
+  /// Envía un pulso de actividad al servidor para indicar que el usuario está en línea.
+  Future<void> sendHeartbeat() async {
+    try {
+      final token = await getToken();
+      if (token == null) return;
+
+      await http.post(
+        Uri.parse('${AppConfig.baseUrl}/users/heartbeat'),
+        headers: {
+          ...AppConfig.headers,
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('Error en heartbeat: $e');
+    }
+  }
+
   /// Extrae el campo `exp` del payload de un JWT (sin verificar firma).
   int? _extractExpiry(String token) {
     try {

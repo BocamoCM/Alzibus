@@ -27,6 +27,7 @@ import 'screens/notices_screen.dart';
 import 'services/auth_service.dart';
 import 'services/socket_service.dart';
 import 'services/bus_simulation_service.dart'; // import para simulación global
+import 'dart:async';
 
 // Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -205,6 +206,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isShowingTripDialog = false; // Para evitar mostrar múltiples diálogos
   int _noticesCount = 0; // Número de avisos activos
   
+  // Heartbeat timer
+  Timer? _heartbeatTimer;
+  final AuthService _authService = AuthService();
+  
   // Nuevos ajustes
   bool _showSimulatedBuses = true;
   bool _autoRefreshTimes = true;
@@ -220,6 +225,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _initNotifications();
     _loadPreferences();
     _loadNoticesCount();
+    
+    // Iniciar heartbeat cada 2 minutos
+    _startHeartbeat();
     
     // Verificar viaje pendiente después de que el widget esté completamente construido
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -246,15 +254,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   
   @override
   void dispose() {
+    _heartbeatTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    // Primer pulso inmediato
+    _authService.sendHeartbeat();
+    
+    // Pulsos periódicos cada 2 minutos
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      _authService.sendHeartbeat();
+    });
+  }
   
-  // Cuando la app vuelve al frente, comprobar viaje pendiente
+  // Cuando la app vuelve al frente, comprobar viaje pendiente y reanudar heartbeat
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkPendingTrip();
+      _startHeartbeat();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _heartbeatTimer?.cancel();
     }
   }
 

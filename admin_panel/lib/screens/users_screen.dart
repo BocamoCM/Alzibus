@@ -309,6 +309,8 @@ class _UsersScreenState extends State<UsersScreen> {
                   const SizedBox(width: 4),
                   Text('Último acceso: $lastAccess',
                       style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  const SizedBox(width: 16),
+                  _buildOnlineBadge(user['is_online'] == true),
                 ],
               ),
               Row(
@@ -331,6 +333,42 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           isThreeLine: true,
         ),
+      ),
+    );
+  }
+
+  Widget _buildOnlineBadge(bool isOnline) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isOnline ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isOnline ? Colors.green.withOpacity(0.5) : Colors.grey.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: isOnline ? Colors.green : Colors.grey,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isOnline ? 'En línea' : 'No en línea',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isOnline ? Colors.green : Colors.grey[700],
+            ),
+          ),
+        ],
       ),
     );
   }
