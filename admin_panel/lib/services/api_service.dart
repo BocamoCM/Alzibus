@@ -35,6 +35,12 @@ class ApiService {
     }
   }
 
+  // Verificar conectividad básica
+  Future<bool> checkConnection() async {
+    final response = await _get('/health');
+    return response != null && response.statusCode == 200;
+  }
+
   // Cargar paradas desde la API
   Future<List<Map<String, dynamic>>> getStops() async {
     final response = await _get('/stops');
