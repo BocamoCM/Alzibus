@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.alzitrans.app"
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -17,9 +18,9 @@
     <uses-feature android:name="android.hardware.nfc" android:required="true" />
 
     <application
-        android:label="alzibus"
+        android:label="Alzitrans"
         android:name="${applicationName}"
-        android:icon="@drawable/ic_launcher_foreground"
+        android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
@@ -43,7 +44,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="alzibus" />
+                <data android:scheme="alzitrans" />
             </intent-filter>
             
             <!-- Shortcuts para Google Assistant -->

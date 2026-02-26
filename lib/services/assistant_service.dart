@@ -5,7 +5,7 @@ import 'bus_times_service.dart';
 
 /// Servicio para integrar con Google Assistant
 class AssistantService {
-  static const MethodChannel _channel = MethodChannel('com.example.alzibus/assistant');
+  static const MethodChannel _channel = MethodChannel('com.alzitrans.app/assistant');
   
   /// Inicializa el manejador del method channel para Assistant
   static void initialize() {

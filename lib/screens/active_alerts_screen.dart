@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/bus_alert_service.dart';
 import '../services/bus_times_service.dart';
@@ -105,8 +105,8 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
   Color _getStatusColor(BusAlert alert) {
     if (alert.notifiedArriving) return Colors.red;
     if (alert.notified2min) return Colors.orange;
-    if (alert.notified5min) return AlzibusColors.success;
-    return AlzibusColors.burgundy;
+    if (alert.notified5min) return AlzitransColors.success;
+    return AlzitransColors.burgundy;
   }
 
   @override
@@ -203,7 +203,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AlzibusColors.burgundy,
+                      color: AlzitransColors.burgundy,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -258,7 +258,7 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
                   // Tiempo de llegada
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 18, color: AlzibusColors.burgundy),
+                      const Icon(Icons.access_time, size: 18, color: AlzitransColors.burgundy),
                       const SizedBox(width: 6),
                       Text(
                         time,

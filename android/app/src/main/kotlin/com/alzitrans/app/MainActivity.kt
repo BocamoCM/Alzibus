@@ -1,4 +1,4 @@
-package com.example.alzibus
+package com.alzitrans.app
 
 import android.content.Intent
 import android.net.Uri
@@ -15,11 +15,11 @@ import es.antonborri.home_widget.HomeWidgetPlugin
 import java.util.Locale
 
 class MainActivity: FlutterActivity(), TextToSpeech.OnInitListener {
-    private val CHANNEL = "com.example.alzibus/maps"
-    private val ASSISTANT_CHANNEL = "com.example.alzibus/assistant"
+    private val CHANNEL = "com.alzitrans.app/maps"
+    private val ASSISTANT_CHANNEL = "com.alzitrans.app/assistant"
     private var tts: TextToSpeech? = null
     private var ttsReady = false
-    private val TAG = "AlzibusAssistant"
+    private val TAG = "AlzitransAssistant"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -138,7 +138,7 @@ class MainActivity: FlutterActivity(), TextToSpeech.OnInitListener {
         val arrivalTime = widgetData.getString("widget_arrival_time", null)
         
         if (stopName == null || stopName == "Sin parada favorita") {
-            return "No tienes paradas favoritas. Abre Alzibus y añade una parada."
+            return "No tienes paradas favoritas. Abre Alzitrans y añade una parada."
         }
         
         if (lineDestination == null || lineDestination == "Sin datos") {
@@ -160,7 +160,7 @@ class MainActivity: FlutterActivity(), TextToSpeech.OnInitListener {
         val data = intent.data
         Log.d(TAG, "handleIntent - data: $data, scheme: ${data?.scheme}, host: ${data?.host}")
         
-        if (data != null && data.scheme == "alzibus") {
+        if (data != null && data.scheme == "alzitrans") {
             // Deep link desde Google Assistant
             when (data.host) {
                 "bus_times" -> {

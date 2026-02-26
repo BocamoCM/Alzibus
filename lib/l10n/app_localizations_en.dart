@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Alzibus — Alzira';
+  String get appTitle => 'Alzitrans — Alzira';
 
   @override
   String get tabMap => 'Map';
@@ -223,7 +223,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get never => 'Never';
 
   @override
-  String get loginTitle => 'Sign in to Alzibus';
+  String get loginTitle => 'Sign in to Alzitrans';
 
   @override
   String get enterEmail => 'Enter your email';

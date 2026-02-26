@@ -1,8 +1,8 @@
 
-name: alzibus
+name: alzitrans
 description: Aplicación para ver paradas de bus en Alzira y leer tarjetas NFC MIFARE Classic 1K
 publish_to: 'none'
-version: 1.8.8+1
+version: 2.0.0+1
 
 environment:
   sdk: '>=2.18.0 <4.0.0'

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/trip_history_service.dart';
 import '../services/auth_service.dart';
@@ -377,7 +377,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isCurrentMonth ? AlzibusColors.burgundy : Colors.grey[700],
+                              color: isCurrentMonth ? AlzitransColors.burgundy : Colors.grey[700],
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -385,7 +385,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             height: (heightPercent * 95).toDouble(),
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: isCurrentMonth ? AlzibusColors.burgundy : AlzibusColors.wine.withOpacity(0.4),
+                              color: isCurrentMonth ? AlzitransColors.burgundy : AlzitransColors.wine.withOpacity(0.4),
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                             ),
                           ),
@@ -395,7 +395,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: isCurrentMonth ? FontWeight.bold : FontWeight.normal,
-                              color: isCurrentMonth ? AlzibusColors.burgundy : Colors.grey[600],
+                              color: isCurrentMonth ? AlzitransColors.burgundy : Colors.grey[600],
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -458,7 +458,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
-                                color: isToday ? AlzibusColors.burgundy : Colors.grey[700],
+                                color: isToday ? AlzitransColors.burgundy : Colors.grey[700],
                               ),
                             ),
                           const SizedBox(height: 2),
@@ -467,8 +467,8 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: isToday 
-                                  ? AlzibusColors.burgundy 
-                                  : (isWeekend ? AlzibusColors.lightPurple : AlzibusColors.coral.withOpacity(0.6)),
+                                  ? AlzitransColors.burgundy 
+                                  : (isWeekend ? AlzitransColors.lightPurple : AlzitransColors.coral.withOpacity(0.6)),
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                             ),
                           ),
@@ -478,7 +478,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isToday ? AlzibusColors.burgundy : (isWeekend ? AlzibusColors.purple : Colors.grey[700]),
+                              color: isToday ? AlzitransColors.burgundy : (isWeekend ? AlzitransColors.purple : Colors.grey[700]),
                             ),
                           ),
                         ],
@@ -496,9 +496,9 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                   final l = AppLocalizations.of(ctx)!;
                   return Row(
                     children: [
-                      _legendItem(AlzibusColors.coral.withOpacity(0.6), l.weekdays),
+                      _legendItem(AlzitransColors.coral.withOpacity(0.6), l.weekdays),
                       const SizedBox(width: 16),
-                      _legendItem(AlzibusColors.lightPurple, l.weekends),
+                      _legendItem(AlzitransColors.lightPurple, l.weekends),
                     ],
                   );
                 }),
@@ -671,13 +671,13 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AlzibusColors.burgundy.withOpacity(0.15),
+                      color: AlzitransColors.burgundy.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${stop.value}',
                       style: const TextStyle(
-                        color: AlzibusColors.burgundy,
+                        color: AlzitransColors.burgundy,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -710,7 +710,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
                   children: [
                     Text(
                       '${stats7days.totalTrips}',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AlzibusColors.burgundy),
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy),
                     ),
                     Builder(builder: (ctx) => Text(
                       AppLocalizations.of(ctx)!.last7days,
@@ -814,7 +814,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: ListTile(
           leading: CircleAvatar(
-            backgroundColor: AlzibusColors.burgundy,
+            backgroundColor: AlzitransColors.burgundy,
             radius: 18,
             child: Text(
               trip.line,

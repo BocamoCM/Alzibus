@@ -3,11 +3,14 @@
 class AppConfig {
   AppConfig._();
 
+  /// URL base de la API de producción.
+  static const String _productionBaseUrl = 'http://149.74.26.171:3000/api';
+
   /// URL base de la API.
   /// TODO: Cambiar por la URL real de producción antes del despliegue final.
   static const String baseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://192.168.50.84:3000/api',
+    defaultValue: _productionBaseUrl,
   );
 
   /// API Key que el servidor debe validar en el header [X-API-Key].

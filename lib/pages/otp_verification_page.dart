@@ -1,5 +1,5 @@
-import 'package:alzibus/services/auth_service.dart';
-import 'package:alzibus/theme/app_theme.dart';
+import 'package:alzitrans/services/auth_service.dart';
+import 'package:alzitrans/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class OtpVerificationPage extends StatefulWidget {
@@ -38,7 +38,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AlzibusColors.success,
+        backgroundColor: AlzitransColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -113,7 +113,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               const Icon(
                 Icons.mark_email_unread_rounded,
                 size: 80,
-                color: AlzibusColors.burgundy,
+                color: AlzitransColors.burgundy,
               ),
               const SizedBox(height: 24),
               Text(
@@ -121,7 +121,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AlzibusColors.burgundy,
+                  color: AlzitransColors.burgundy,
                 ),
               ),
               const SizedBox(height: 12),
@@ -162,7 +162,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _verifyCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AlzibusColors.burgundy,
+                  backgroundColor: AlzitransColors.burgundy,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

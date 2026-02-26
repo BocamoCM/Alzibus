@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Alzibus</string>
+    <string name="app_name">Alzitrans</string>
     <string name="widget_description">Muestra el próximo bus de tu parada favorita</string>
-    <string name="widget_name">Alzibus Widget</string>
+    <string name="widget_name">Alzitrans Widget</string>
     
     <!-- Shortcuts para Google Assistant -->
     <string name="shortcut_bus_times_short">Ver buses</string>

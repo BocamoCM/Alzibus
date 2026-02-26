@@ -68,11 +68,11 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
   Color _getLineColor(String lineId) {
     switch (lineId) {
       case 'L1':
-        return AlzibusColors.lineL1;
+        return AlzitransColors.lineL1;
       case 'L2':
-        return AlzibusColors.lineL2;
+        return AlzitransColors.lineL2;
       case 'L3':
-        return AlzibusColors.lineL3;
+        return AlzitransColors.lineL3;
       default:
         return Colors.grey;
     }

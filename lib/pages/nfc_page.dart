@@ -319,7 +319,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.nfc, color: AlzibusColors.burgundy),
+            Icon(Icons.nfc, color: AlzitransColors.burgundy),
             const SizedBox(width: 8),
             const Text('Tarjeta detectada'),
           ],
@@ -427,7 +427,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.analytics, color: AlzibusColors.burgundy),
+            Icon(Icons.analytics, color: AlzitransColors.burgundy),
             const SizedBox(width: 8),
             const Text('Información de tarjetas'),
           ],
@@ -522,7 +522,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                 width: double.infinity,
                 height: 200,
                 decoration: BoxDecoration(
-                  gradient: AlzibusColors.primaryGradient,
+                  gradient: AlzitransColors.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -680,7 +680,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                       style: const TextStyle(fontSize: 18),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AlzibusColors.burgundy,
+                      backgroundColor: AlzitransColors.burgundy,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: Colors.grey,
                       shape: RoundedRectangleBorder(
@@ -732,7 +732,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                 icon: const Icon(Icons.analytics_outlined),
                 label: const Text('Ver análisis de tarjetas'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AlzibusColors.burgundy,
+                  foregroundColor: AlzitransColors.burgundy,
                 ),
               ),
             ],
@@ -741,7 +741,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSettingsDialog,
-        backgroundColor: AlzibusColors.burgundy,
+        backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
         tooltip: 'Ajustes de advertencias',
         child: const Icon(Icons.settings),

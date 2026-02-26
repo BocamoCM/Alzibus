@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Colores basados en la Targeta Transport d'Alzira
-class AlzibusColors {
+class AlzitransColors {
   // Colores principales de la tarjeta
   static const Color burgundy = Color(0xFF6B1B3D);      // Granate/Burdeos oscuro
   static const Color wine = Color(0xFF8B2252);          // Vino/Granate medio
@@ -53,7 +53,7 @@ class AlzibusColors {
   );
 }
 
-class AlzibusTheme {
+class AlzitransTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -61,51 +61,51 @@ class AlzibusTheme {
       
       // Esquema de colores
       colorScheme: ColorScheme.light(
-        primary: AlzibusColors.burgundy,
-        primaryContainer: AlzibusColors.wine,
-        secondary: AlzibusColors.coral,
-        secondaryContainer: AlzibusColors.crimson,
-        tertiary: AlzibusColors.purple,
-        surface: AlzibusColors.surface,
-        error: AlzibusColors.error,
-        onPrimary: AlzibusColors.textOnPrimary,
-        onSecondary: AlzibusColors.textOnPrimary,
-        onSurface: AlzibusColors.textPrimary,
+        primary: AlzitransColors.burgundy,
+        primaryContainer: AlzitransColors.wine,
+        secondary: AlzitransColors.coral,
+        secondaryContainer: AlzitransColors.crimson,
+        tertiary: AlzitransColors.purple,
+        surface: AlzitransColors.surface,
+        error: AlzitransColors.error,
+        onPrimary: AlzitransColors.textOnPrimary,
+        onSecondary: AlzitransColors.textOnPrimary,
+        onSurface: AlzitransColors.textPrimary,
       ),
       
       // Scaffold
-      scaffoldBackgroundColor: AlzibusColors.background,
+      scaffoldBackgroundColor: AlzitransColors.background,
       
       // AppBar - Estilo limpio con fondo blanco
       appBarTheme: const AppBarTheme(
         elevation: 1,
         centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: AlzibusColors.burgundy,
+        foregroundColor: AlzitransColors.burgundy,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: TextStyle(
-          color: AlzibusColors.burgundy,
+          color: AlzitransColors.burgundy,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: IconThemeData(color: AlzibusColors.burgundy),
+        iconTheme: IconThemeData(color: AlzitransColors.burgundy),
       ),
       
       // Cards
       cardTheme: CardThemeData(
         elevation: 2,
-        shadowColor: AlzibusColors.burgundy.withOpacity(0.2),
+        shadowColor: AlzitransColors.burgundy.withOpacity(0.2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        color: AlzibusColors.cardBackground,
+        color: AlzitransColors.cardBackground,
       ),
       
       // Botones elevados
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AlzibusColors.burgundy,
-          foregroundColor: AlzibusColors.textOnPrimary,
+          backgroundColor: AlzitransColors.burgundy,
+          foregroundColor: AlzitransColors.textOnPrimary,
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
@@ -117,21 +117,21 @@ class AlzibusTheme {
       // Botones de texto
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AlzibusColors.burgundy,
+          foregroundColor: AlzitransColors.burgundy,
         ),
       ),
       
       // FAB
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AlzibusColors.coral,
-        foregroundColor: AlzibusColors.textOnPrimary,
+        backgroundColor: AlzitransColors.coral,
+        foregroundColor: AlzitransColors.textOnPrimary,
         elevation: 4,
       ),
       
       // Bottom Navigation
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
-        selectedItemColor: AlzibusColors.burgundy,
+        selectedItemColor: AlzitransColors.burgundy,
         unselectedItemColor: Colors.grey[400],
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
@@ -141,16 +141,16 @@ class AlzibusTheme {
       
       // TabBar - Para AppBars con fondo blanco
       tabBarTheme: const TabBarThemeData(
-        labelColor: AlzibusColors.burgundy,
-        unselectedLabelColor: AlzibusColors.textSecondary,
-        indicatorColor: AlzibusColors.burgundy,
+        labelColor: AlzitransColors.burgundy,
+        unselectedLabelColor: AlzitransColors.textSecondary,
+        indicatorColor: AlzitransColors.burgundy,
         indicatorSize: TabBarIndicatorSize.label,
       ),
       
       // Chips
       chipTheme: ChipThemeData(
-        backgroundColor: AlzibusColors.burgundy.withOpacity(0.1),
-        labelStyle: const TextStyle(color: AlzibusColors.burgundy),
+        backgroundColor: AlzitransColors.burgundy.withOpacity(0.1),
+        labelStyle: const TextStyle(color: AlzitransColors.burgundy),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -159,23 +159,23 @@ class AlzibusTheme {
       
       // Sliders
       sliderTheme: SliderThemeData(
-        activeTrackColor: AlzibusColors.burgundy,
-        inactiveTrackColor: AlzibusColors.burgundy.withOpacity(0.3),
-        thumbColor: AlzibusColors.burgundy,
-        overlayColor: AlzibusColors.burgundy.withOpacity(0.2),
+        activeTrackColor: AlzitransColors.burgundy,
+        inactiveTrackColor: AlzitransColors.burgundy.withOpacity(0.3),
+        thumbColor: AlzitransColors.burgundy,
+        overlayColor: AlzitransColors.burgundy.withOpacity(0.2),
       ),
       
       // Switch
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AlzibusColors.burgundy;
+            return AlzitransColors.burgundy;
           }
           return Colors.grey;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AlzibusColors.burgundy.withOpacity(0.5);
+            return AlzitransColors.burgundy.withOpacity(0.5);
           }
           return Colors.grey.withOpacity(0.3);
         }),
@@ -183,18 +183,18 @@ class AlzibusTheme {
       
       // Divider
       dividerTheme: DividerThemeData(
-        color: AlzibusColors.burgundy.withOpacity(0.1),
+        color: AlzitransColors.burgundy.withOpacity(0.1),
         thickness: 1,
       ),
       
       // ListTile
       listTileTheme: const ListTileThemeData(
-        iconColor: AlzibusColors.burgundy,
+        iconColor: AlzitransColors.burgundy,
       ),
       
       // SnackBar
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AlzibusColors.burgundy,
+        backgroundColor: AlzitransColors.burgundy,
         contentTextStyle: const TextStyle(color: Colors.white),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -215,17 +215,17 @@ class AlzibusTheme {
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AlzibusColors.burgundy.withOpacity(0.3)),
+          borderSide: BorderSide(color: AlzitransColors.burgundy.withOpacity(0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AlzibusColors.burgundy.withOpacity(0.3)),
+          borderSide: BorderSide(color: AlzitransColors.burgundy.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AlzibusColors.burgundy, width: 2),
+          borderSide: const BorderSide(color: AlzitransColors.burgundy, width: 2),
         ),
-        prefixIconColor: AlzibusColors.burgundy,
+        prefixIconColor: AlzitransColors.burgundy,
       ),
     );
   }
@@ -234,13 +234,13 @@ class AlzibusTheme {
   static Color getLineColor(String line) {
     switch (line.toUpperCase()) {
       case 'L1':
-        return AlzibusColors.lineL1;
+        return AlzitransColors.lineL1;
       case 'L2':
-        return AlzibusColors.lineL2;
+        return AlzitransColors.lineL2;
       case 'L3':
-        return AlzibusColors.lineL3;
+        return AlzitransColors.lineL3;
       default:
-        return AlzibusColors.burgundy;
+        return AlzitransColors.burgundy;
     }
   }
 }
@@ -264,7 +264,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: AlzibusColors.appBarGradient,
+        gradient: AlzitransColors.appBarGradient,
       ),
       child: AppBar(
         title: Text(title),
@@ -284,11 +284,11 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 /// Widget decorativo con el patrón de la tarjeta
-class AlzibusCardDecoration extends StatelessWidget {
+class AlzitransCardDecoration extends StatelessWidget {
   final Widget child;
   final bool showPattern;
   
-  const AlzibusCardDecoration({
+  const AlzitransCardDecoration({
     super.key,
     required this.child,
     this.showPattern = true,
@@ -298,7 +298,7 @@ class AlzibusCardDecoration extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AlzibusColors.cardGradient,
+        gradient: AlzitransColors.cardGradient,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Stack(

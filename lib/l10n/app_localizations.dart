@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In es, this message translates to:
-  /// **'Alzibus — Alzira'**
+  /// **'Alzitrans — Alzira'**
   String get appTitle;
 
   /// No description provided for @tabMap.
@@ -523,7 +523,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginTitle.
   ///
   /// In es, this message translates to:
-  /// **'Iniciar Sesión en Alzibus'**
+  /// **'Iniciar Sesión en Alzitrans'**
   String get loginTitle;
 
   /// No description provided for @enterEmail.

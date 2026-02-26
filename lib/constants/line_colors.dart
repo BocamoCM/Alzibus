@@ -4,9 +4,9 @@ import '../theme/app_theme.dart';
 class LineColors {
   // Colores de líneas basados en el tema de Alzira
   static const Map<String, Color> colors = {
-    'L1': AlzibusColors.lineL1,  // Vino
-    'L2': AlzibusColors.lineL2,  // Carmesí
-    'L3': AlzibusColors.lineL3,  // Burdeos
+    'L1': AlzitransColors.lineL1,  // Vino
+    'L2': AlzitransColors.lineL2,  // Carmesí
+    'L3': AlzitransColors.lineL3,  // Burdeos
   };
 
   static Color getColor(String line) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alzibus/pages/otp_verification_page.dart';
+import 'package:alzitrans/pages/otp_verification_page.dart';
 import '../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {

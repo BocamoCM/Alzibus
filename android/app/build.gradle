@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.alzibus"
+    namespace "com.alzitrans.app"
     compileSdk 36
 
     compileOptions {
@@ -41,7 +41,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.alzibus"
+        applicationId "com.alzitrans.app"
         minSdkVersion 24
         targetSdk 34
         versionCode flutterVersionCode.toInteger()
@@ -54,6 +54,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

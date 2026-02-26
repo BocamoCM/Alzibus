@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
@@ -106,14 +106,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height: 90,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AlzibusColors.burgundy, AlzibusColors.wine],
+              colors: [AlzitransColors.burgundy, AlzitransColors.wine],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AlzibusColors.burgundy.withOpacity(0.3),
+                color: AlzitransColors.burgundy.withOpacity(0.3),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -152,9 +152,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Row(
       children: [
-        _statCard(theme, Icons.directions_bus, l.totalTrips, '$totalTrips', AlzibusColors.burgundy),
+        _statCard(theme, Icons.directions_bus, l.totalTrips, '$totalTrips', AlzitransColors.burgundy),
         const SizedBox(width: 12),
-        _statCard(theme, Icons.route, l.mostUsedLine, mostUsedLine, AlzibusColors.coral),
+        _statCard(theme, Icons.route, l.mostUsedLine, mostUsedLine, AlzitransColors.coral),
         const SizedBox(width: 12),
         _statCard(theme, Icons.calendar_month, l.thisMonth, '$thisMonthTrips', Colors.teal),
       ],
@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.bar_chart, color: AlzibusColors.burgundy),
+            leading: const Icon(Icons.bar_chart, color: AlzitransColors.burgundy),
             title: Text(l.tripHistory),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(
@@ -247,21 +247,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.settings_outlined, color: AlzibusColors.burgundy),
+            leading: const Icon(Icons.settings_outlined, color: AlzitransColors.burgundy),
             title: Text(l.tabSettings),
             trailing: const Icon(Icons.chevron_right),
             onTap: widget.onSettingsTap,
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.edit_outlined, color: AlzibusColors.burgundy),
+            leading: const Icon(Icons.edit_outlined, color: AlzitransColors.burgundy),
             title: Text(l.editEmail),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showChangeEmailDialog(l),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.lock_outline, color: AlzibusColors.burgundy),
+            leading: const Icon(Icons.lock_outline, color: AlzitransColors.burgundy),
             title: Text(l.changePassword),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showChangePasswordDialog(l),

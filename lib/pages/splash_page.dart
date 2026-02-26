@@ -72,7 +72,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: AlzibusColors.primaryGradient,
+          gradient: AlzitransColors.primaryGradient,
         ),
         child: Center(
           child: FadeTransition(
@@ -86,7 +86,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: AlzibusColors.background,
+                      color: AlzitransColors.background,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -99,7 +99,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     child: const Icon(
                       Icons.directions_bus,
                       size: 80,
-                      color: AlzibusColors.burgundy,
+                      color: AlzitransColors.burgundy,
                     ),
                   ),
                   const SizedBox(height: 30),

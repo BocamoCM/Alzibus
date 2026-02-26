@@ -1,6 +1,6 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../constants/app_config.dart';
 import '../theme/app_theme.dart';
 import '../main.dart'; // Para navigatorKey
@@ -54,7 +54,7 @@ class SocketService {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.campaign, color: AlzibusColors.burgundy, size: 28),
+            const Icon(Icons.campaign, color: AlzitransColors.burgundy, size: 28),
             const SizedBox(width: 8),
             Expanded(child: Text(title)),
           ],
@@ -67,7 +67,7 @@ class SocketService {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AlzibusColors.coral,
+                  color: AlzitransColors.coral,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

@@ -462,7 +462,7 @@ class MapPageState extends State<MapPage> {
           point: myLocation!,
           child: Transform.rotate(
             angle: (myHeading ?? 0) * 3.14159 / 180,
-            child: const Icon(Icons.navigation, color: AlzibusColors.burgundy, size: 40),
+            child: const Icon(Icons.navigation, color: AlzitransColors.burgundy, size: 40),
           ),
         ),
       );
@@ -505,7 +505,7 @@ class MapPageState extends State<MapPage> {
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.alzibus',
+              userAgentPackageName: 'com.alzitrans.app',
               maxZoom: 19,
             ),
             if (myLocation != null)
@@ -515,8 +515,8 @@ class MapPageState extends State<MapPage> {
                     point: myLocation!,
                     radius: widget.notificationDistance,
                     useRadiusInMeter: true,
-                    color: AlzibusColors.wine.withOpacity(0.15),
-                    borderColor: AlzibusColors.wine.withOpacity(0.7),
+                    color: AlzitransColors.wine.withOpacity(0.15),
+                    borderColor: AlzitransColors.wine.withOpacity(0.7),
                     borderStrokeWidth: 2,
                   ),
                 ],
@@ -575,7 +575,7 @@ class MapPageState extends State<MapPage> {
             backgroundColor: Colors.white,
             child: Icon(
               Icons.my_location,
-              color: myLocation != null ? AlzibusColors.burgundy : Colors.grey,
+              color: myLocation != null ? AlzitransColors.burgundy : Colors.grey,
             ),
           ),
         ),

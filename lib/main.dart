@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,7 +41,7 @@ void main() async {
   final isLoggedIn = await authService.isLoggedIn();
   
   // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
-  runApp(AlzibusApp(isLoggedIn: isLoggedIn));
+  runApp(AlzitransApp(isLoggedIn: isLoggedIn));
   
   // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
   Future.microtask(() async {
@@ -126,16 +126,16 @@ void _onBackgroundNotificationResponse(NotificationResponse response) async {
   }
 }
 
-class AlzibusApp extends StatefulWidget {
+class AlzitransApp extends StatefulWidget {
   final bool isLoggedIn;
   
-  const AlzibusApp({super.key, required this.isLoggedIn});
+  const AlzitransApp({super.key, required this.isLoggedIn});
 
   @override
-  State<AlzibusApp> createState() => _AlzibusAppState();
+  State<AlzitransApp> createState() => _AlzitransAppState();
 }
 
-class _AlzibusAppState extends State<AlzibusApp> {
+class _AlzitransAppState extends State<AlzitransApp> {
   Locale _currentLocale = const Locale('es');
 
   @override
@@ -158,8 +158,8 @@ class _AlzibusAppState extends State<AlzibusApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      title: 'Alzibus',
-      theme: AlzibusTheme.lightTheme,
+      title: 'Alzitrans',
+      theme: AlzitransTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       locale: _currentLocale,
       localizationsDelegates: const [
@@ -372,10 +372,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AlzibusColors.burgundy.withOpacity(0.1),
+                  color: AlzitransColors.burgundy.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.directions_bus, size: 50, color: AlzibusColors.burgundy),
+                child: const Icon(Icons.directions_bus, size: 50, color: AlzitransColors.burgundy),
               ),
               const SizedBox(height: 20),
               
@@ -390,7 +390,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AlzibusColors.background,
+                  color: AlzitransColors.background,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -400,7 +400,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AlzibusColors.burgundy,
+                            color: AlzitransColors.burgundy,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -417,7 +417,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, color: AlzibusColors.coral, size: 20),
+                        const Icon(Icons.location_on, color: AlzitransColors.coral, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -505,7 +505,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   Text('¡Viaje registrado!'),
                                 ],
                               ),
-                              backgroundColor: AlzibusColors.success,
+                              backgroundColor: AlzitransColors.success,
                               duration: const Duration(seconds: 2),
                               action: SnackBarAction(
                                 label: 'Ver historial',
@@ -524,7 +524,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       icon: const Icon(Icons.check),
                       label: const Text('¡Sí!'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AlzibusColors.success,
+                        backgroundColor: AlzitransColors.success,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

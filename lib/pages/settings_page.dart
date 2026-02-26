@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -177,7 +177,7 @@ class _SettingsPageState extends State<SettingsPage> {
       leading: Text(flag, style: const TextStyle(fontSize: 24)),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: isSelected
-          ? const Icon(Icons.check_circle, color: AlzibusColors.burgundy)
+          ? const Icon(Icons.check_circle, color: AlzitransColors.burgundy)
           : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onTap: () async {
@@ -448,7 +448,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AlzibusColors.burgundy,
+                      backgroundColor: AlzitransColors.burgundy,
                       foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.search),
@@ -472,7 +472,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.directions_bus, color: AlzibusColors.burgundy, size: 28),
+                    const Icon(Icons.directions_bus, color: AlzitransColors.burgundy, size: 28),
                     const SizedBox(width: 12),
                     const Text('Alzibus',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -480,13 +480,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AlzibusColors.burgundy.withOpacity(0.15),
+                        color: AlzitransColors.burgundy.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'v$_appVersion${_buildNumber.isNotEmpty && _buildNumber != '1' ? '+$_buildNumber' : ''}',
                         style: const TextStyle(
-                          color: AlzibusColors.burgundy,
+                          color: AlzitransColors.burgundy,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -505,7 +505,7 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 16),
         // Información sobre foreground service
         Card(
-          color: AlzibusColors.burgundy.withOpacity(0.08),
+          color: AlzitransColors.burgundy.withOpacity(0.08),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -513,7 +513,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.info_outline, color: AlzibusColors.burgundy),
+                    Icon(Icons.info_outline, color: AlzitransColors.burgundy),
                     SizedBox(width: 8),
                     Text('Servicio en primer plano', style: TextStyle(fontWeight: FontWeight.bold)),
                   ],

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alzibus/l10n/app_localizations.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../main.dart'; // import for HomePage
 import 'register_page.dart';

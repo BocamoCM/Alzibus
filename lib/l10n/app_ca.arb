@@ -1,7 +1,7 @@
 {
   "@@locale": "ca",
 
-  "appTitle": "Alzibus — Alzira",
+  "appTitle": "Alzitrans — Alzira",
   "tabMap": "Mapa",
   "tabRoutes": "Rutes",
   "tabNfc": "NFC",
@@ -85,7 +85,7 @@
   "confirm": "Confirmar",
   "never": "Mai",
 
-  "loginTitle": "Inicia sessió a Alzibus",
+  "loginTitle": "Inicia sessió a Alzitrans",
   "enterEmail": "Introdueix el teu correu",
   "invalidEmail": "El correu no té un format vàlid",
   "enterPassword": "Introdueix la teua contrasenya",

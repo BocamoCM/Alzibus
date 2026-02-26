@@ -10,9 +10,9 @@
         android:shortcutLongLabel="@string/shortcut_bus_times_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.example.alzibus"
-            android:targetClass="com.example.alzibus.MainActivity"
-            android:data="alzibus://bus_times" />
+            android:targetPackage="com.alzitrans.app"
+            android:targetClass="com.alzitrans.app.MainActivity"
+            android:data="alzitrans://bus_times" />
         <capability-binding android:key="actions.intent.GET_BUS_TIME" />
     </shortcut>
     
@@ -25,9 +25,9 @@
         android:shortcutLongLabel="@string/shortcut_favorites_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.example.alzibus"
-            android:targetClass="com.example.alzibus.MainActivity"
-            android:data="alzibus://favorites" />
+            android:targetPackage="com.alzitrans.app"
+            android:targetClass="com.alzitrans.app.MainActivity"
+            android:data="alzitrans://favorites" />
     </shortcut>
 
 </shortcuts>

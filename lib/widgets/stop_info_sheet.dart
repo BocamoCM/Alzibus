@@ -223,7 +223,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
 
   Future<void> _openInGoogleMaps() async {
     try {
-      const platform = MethodChannel('com.example.alzibus/maps');
+      const platform = MethodChannel('com.alzitrans.app/maps');
       await platform.invokeMethod('openMaps', {
         'latitude': widget.stop.lat,
         'longitude': widget.stop.lng,
@@ -347,7 +347,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                           Icon(
                             _showStreetView ? Icons.map : Icons.streetview,
                             size: 20,
-                            color: AlzibusColors.burgundy,
+                            color: AlzitransColors.burgundy,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -355,7 +355,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: AlzibusColors.burgundy,
+                              color: AlzitransColors.burgundy,
                             ),
                           ),
                         ],
@@ -442,10 +442,10 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                color: hasAlert ? Colors.orange[50] : AlzibusColors.burgundy.withOpacity(0.08),
+                color: hasAlert ? Colors.orange[50] : AlzitransColors.burgundy.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: hasAlert ? Colors.orange[300]! : AlzibusColors.burgundy.withOpacity(0.3), 
+                    color: hasAlert ? Colors.orange[300]! : AlzitransColors.burgundy.withOpacity(0.3), 
                     width: 1
                 ),
                 ),
@@ -478,7 +478,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                           arrival.time,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AlzibusColors.burgundy,
+                            color: AlzitransColors.burgundy,
                             fontSize: 15,
                           ),
                         ),
@@ -704,7 +704,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
             const SizedBox(height: 8),
             Text(
               'Distancia: ${distance(widget.userLocation!, LatLng(widget.stop.lat, widget.stop.lng)).toStringAsFixed(0)}m',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AlzibusColors.burgundy),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AlzitransColors.burgundy),
             ),
           ],
           const SizedBox(height: 12),

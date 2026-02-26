@@ -6,7 +6,7 @@
         <parameter name="thing.name">
             <entity-set-reference entitySetId="BusQueryEntitySet" />
         </parameter>
-        <fulfillment urlTemplate="alzibus://bus_times" />
+        <fulfillment urlTemplate="alzitrans://bus_times" />
     </action>
     
     <!-- Definición de entidades para consultas de bus -->
@@ -27,7 +27,7 @@
         <parameter name="feature">
             <entity-set-reference entitySetId="FeatureEntitySet" />
         </parameter>
-        <fulfillment urlTemplate="alzibus://{feature}" />
+        <fulfillment urlTemplate="alzitrans://{feature}" />
     </action>
     
     <!-- Funcionalidades de la app -->
