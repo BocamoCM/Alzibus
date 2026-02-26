@@ -4,7 +4,7 @@ class AppConfig {
   AppConfig._();
 
   /// URL base de la API de producción.
-  static const String _productionBaseUrl = 'http://149.74.26.171:3000/api';
+  static const String _productionBaseUrl = 'http://149.74.26.171:4000/api';
 
   /// URL base de la API.
   /// TODO: Cambiar por la URL real de producción antes del despliegue final.
