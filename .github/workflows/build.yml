@@ -65,10 +65,43 @@ jobs:
           name: version-info
           path: version.txt
 
+  build-ios:
+    runs-on: macos-latest
+    name: Build iOS (No Sign)
+    needs: build-android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.2'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS
+        run: flutter build ios --no-codesign --debug
+
+      - name: Zip iOS Build
+        run: |
+          cd build/ios/iphoneos
+          zip -r ../../../ios-debug-app.zip Runner.app
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-debug-app
+          path: ios-debug-app.zip
+
   tag-and-release:
     runs-on: ubuntu-latest
     name: Tag & Release
-    needs: build-android
+    needs: [build-android, build-ios]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -81,6 +114,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-debug
+          path: release
+
+      - name: Download iOS Build
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-debug-app
           path: release
 
       - name: Download Version
@@ -116,6 +155,8 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           name: Release v${{ steps.version.outputs.VERSION }}
-          files: release/app-debug.apk
+          files: |
+            release/app-debug.apk
+            release/ios-debug-app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

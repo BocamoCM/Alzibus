@@ -81,10 +81,12 @@ class TripHistoryService {
     return jsonDecode(json);
   }
 
-  /// El usuario confirmó que cogió el bus → guardar en API.
+  /// El usuario confirmó que cogió el bus → guardar en API y descontar local si aplica.
   Future<void> confirmTrip(String token) async {
     final pending = getPendingTrip();
     if (pending == null) return;
+    
+    // 1. Guardar en API
     await _saveToApi(
       token: token,
       line: pending['line'],
@@ -94,6 +96,17 @@ class TripHistoryService {
       timestamp: DateTime.parse(pending['timestamp']),
       confirmed: true,
     );
+
+    // 2. Gestionar descuento de viaje NFC si existe tarjeta local
+    final isUnlimited = _prefs.getBool('is_unlimited') ?? false;
+    final storedTrips = _prefs.getInt('stored_trips') ?? 0;
+    
+    if (!isUnlimited && storedTrips > 0) {
+      final newTrips = storedTrips - 1;
+      await _prefs.setInt('stored_trips', newTrips);
+      debugPrint('[TripHistory] Auto-descuento NFC: $storedTrips -> $newTrips');
+    }
+
     await _prefs.remove(_pendingTripKey);
   }
 

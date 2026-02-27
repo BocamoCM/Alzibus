@@ -30,15 +30,27 @@ class NfcService {
       DateTime? lastUse;
       final tripHistory = <TripRecord>[];
 
-      // Leer estado actual de Block 5
-      if (blocks.length > 5 && blocks[5].length >= 16) {
-        final block = blocks[5];
-        cardType = block[1]; // Tipo de bono
-        balance = (block[2] << 8) | block[3]; // Saldo
-        trips = block[8]; // Viajes
+      // Leer saldo real de Block 8 (Value Block - Little Endian)
+      if (blocks.length > 8 && blocks[8].length >= 16) {
+        final block8 = blocks[8];
+        // Los Value Blocks en Mifare almacenan el saldo en los primeros 4 bytes
+        balance = block8[0] | (block8[1] << 8) | (block8[2] << 16) | (block8[3] << 24);
         
-        // Decodificar fecha (bytes 10-13)
-        lastUse = _decodeDate(block.sublist(10, 14));
+        // El número de viajes se deriva del saldo (Tarifa 1.50€, Remanente 0.50€)
+        if (balance >= 50) {
+          trips = (balance - 50) ~/ 150;
+        } else {
+          trips = 0;
+        }
+      }
+
+      // Leer tipo y otros metadatos de Block 5
+      if (blocks.length > 5 && blocks[5].length >= 16) {
+        final block5 = blocks[5];
+        cardType = block5[1]; // Tipo de bono
+        
+        // Decodificar fecha del último uso (bytes 10-13)
+        lastUse = _decodeDate(block5.sublist(10, 14));
       }
 
       // Leer historial de transacciones (blocks 20-26)

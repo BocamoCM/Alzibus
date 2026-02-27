@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -37,10 +38,13 @@ class NfcPage extends StatefulWidget {
   State<NfcPage> createState() => _NfcPageState();
 }
 
-class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
+class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   String _status = 'Acerca tu tarjeta para leer el saldo';
   bool _scanning = false;
   BusCard? _cardData;
+  int _storedTrips = 0;
+  bool _isUnlimited = false;
+  String? _lastCardUid;
   bool _nfcAvailable = true;
   bool _lowBalanceWarningsEnabled = true;
   int _lowBalanceThreshold = 5;
@@ -48,14 +52,23 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
   
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initAnimations();
     _initNotifications();
     _loadPreferences();
     _checkNfcAvailability();
+    
+    // Timer para refrescar datos (por si se descuenta desde el diálogo global)
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (mounted && !_scanning) {
+        _loadPreferences();
+      }
+    });
   }
 
   void _initAnimations() {
@@ -71,8 +84,17 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadPreferences();
+    }
   }
 
   Future<void> _checkNfcAvailability() async {
@@ -96,7 +118,85 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
     setState(() {
       _lowBalanceWarningsEnabled = prefs.getBool('low_balance_warnings') ?? true;
       _lowBalanceThreshold = prefs.getInt('low_balance_threshold') ?? 5;
+      _storedTrips = prefs.getInt('stored_trips') ?? 0;
+      _isUnlimited = prefs.getBool('is_unlimited') ?? false;
+      _lastCardUid = prefs.getString('last_card_uid');
+      if (_isUnlimited) {
+        _status = 'Tienes viajes ILIMITADOS';
+      } else if (_storedTrips > 0) {
+        _status = 'Tienes $_storedTrips viajes guardados';
+      }
     });
+  }
+
+  Future<void> _saveTrips(int trips, String uid, bool isUnlimited) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('stored_trips', trips);
+    await prefs.setString('last_card_uid', uid);
+    await prefs.setBool('is_unlimited', isUnlimited);
+    setState(() {
+      _storedTrips = trips;
+      _lastCardUid = uid;
+      _isUnlimited = isUnlimited;
+    });
+  }
+
+  Future<void> _validateTrip() async {
+    if (_storedTrips <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No te quedan viajes disponibles')),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar viaje'),
+        content: const Text('¿Deseas validar un viaje ahora? Se restará 1 de tu contador.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AlzitransColors.burgundy),
+            child: const Text('Validar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final newTrips = _storedTrips - 1;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('stored_trips', newTrips);
+      
+      setState(() {
+        _storedTrips = newTrips;
+        if (_cardData != null) {
+          _cardData = BusCard(
+            uid: _cardData!.uid,
+            balance: _cardData!.balance,
+            trips: newTrips,
+            cardType: _cardData!.cardType,
+            isUnlimited: _cardData!.isUnlimited,
+          );
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Viaje validado. Te quedan $newTrips viajes.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      await _checkLowBalance(newTrips);
+    }
   }
 
   Future<void> _savePreferences() async {
@@ -208,82 +308,81 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
         ];
         
         // Intentar leer bloques con autenticación
-        try {
-          bool authenticated = false;
-          
-          // Intentar cada clave hasta que una funcione
-          for (final key in keysToTry) {
+        // Función auxiliar para autenticar un sector
+        Future<bool> authenticateSector(int sector, Uint8List key) async {
+          try {
+            return await mifareClassic.authenticateSectorWithKeyA(sectorIndex: sector, key: key);
+          } catch (e) {
             try {
-              authenticated = await mifareClassic.authenticateSectorWithKeyA(
-                sectorIndex: 1,
-                key: key,
-              );
-              if (authenticated) {
-                debugPrint('Autenticación exitosa con clave: ${key.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
-                break;
-              }
-            } catch (e) {
-              debugPrint('Clave fallida: ${key.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
-              // Probar siguiente clave
-            }
-            
-            // También probar con KeyB
-            if (!authenticated) {
-              try {
-                authenticated = await mifareClassic.authenticateSectorWithKeyB(
-                  sectorIndex: 1,
-                  key: key,
-                );
-                if (authenticated) {
-                  debugPrint('Autenticación exitosa con KeyB: ${key.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
-                  break;
-                }
-              } catch (e) {
-                // Probar siguiente
-              }
+              return await mifareClassic.authenticateSectorWithKeyB(sectorIndex: sector, key: key);
+            } catch (_) {
+              return false;
             }
           }
-          
-          if (authenticated) {
-            // Leer block 5 (estado actual)
-            final block5 = await mifareClassic.readBlock(blockIndex: 5);
-            debugPrint('Block 5 leído: ${block5.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
-            
-            // Parsear datos según estructura analizada:
-            // Byte 1: tipo de tarjeta
-            // Bytes 2-3: saldo en céntimos (big-endian)
-            // Byte 8: contador de viajes
-            final balance = (block5[2] << 8) | block5[3];
-            final trips = block5[8];
+        }
+
+        try {
+          bool authSector2 = await authenticateSector(2, BusCardKeys.keyA[2]!);
+          Uint8List? block8;
+          if (authSector2) {
+            block8 = await mifareClassic.readBlock(blockIndex: 8);
+          } else {
+            // Reintentar con clave por defecto
+            if (await authenticateSector(2, BusCardKeys.defaultKey)) {
+              block8 = await mifareClassic.readBlock(blockIndex: 8);
+            }
+          }
+
+          bool authSector1 = await authenticateSector(1, BusCardKeys.keyA[1]!);
+          Uint8List? block5;
+          if (authSector1) {
+            block5 = await mifareClassic.readBlock(blockIndex: 5);
+          } else {
+            // Reintentar con clave por defecto
+            if (await authenticateSector(1, BusCardKeys.defaultKey)) {
+              block5 = await mifareClassic.readBlock(blockIndex: 5);
+            }
+          }
+
+          if (block8 != null && block5 != null) {
+            final balance = block8[0] | (block8[1] << 8) | (block8[2] << 16) | (block8[3] << 24);
             final cardType = block5[1];
             
+            // Calcular viajes (Tarifa 1.50€, Remanente 0.50€)
+            int trips = 0;
+            if (balance >= 50) {
+              trips = (balance - 50) ~/ 150;
+            }
+            
+            final bool isCardUnlimited = (block5[2] == 0 && block5[3] == 0) || block5[6] == 0x01 || cardType == 5;
             cardData = BusCard(
               uid: uid,
               balance: balance,
               trips: trips,
-              cardType: cardType,
+              cardType: isCardUnlimited ? 5 : cardType,
+              isUnlimited: isCardUnlimited,
             );
             
             setState(() {
-              _status = 'Tarjeta leída correctamente';
+              _status = cardData!.isUnlimited ? 'Bono Ilimitado Detectado' : 'Tarjeta leída correctamente';
               _cardData = cardData;
+              _storedTrips = trips;
+              _isUnlimited = cardData.isUnlimited;
               _scanning = false;
             });
             
+            await _saveTrips(trips, uid, cardData.isUnlimited);
             await _checkLowBalance(trips);
           } else {
-            // No se pudo autenticar
             setState(() {
-              _status = 'No se pudo autenticar la tarjeta';
-              _cardData = BusCard(uid: uid!, balance: 0, trips: 0, cardType: 0);
+              _status = 'Error al leer bloques de la tarjeta';
               _scanning = false;
             });
           }
         } catch (e) {
-          debugPrint('Mifare auth error: $e');
+          debugPrint('Error en lectura multi-sector: $e');
           setState(() {
-            _status = 'Error de autenticación Mifare';
-            _cardData = BusCard(uid: uid ?? 'Desconocido', balance: 0, trips: 0, cardType: 0);
+            _status = 'Error de comunicación con la tarjeta';
             _scanning = false;
           });
         }
@@ -292,7 +391,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
         uid ??= 'Desconocido';
         setState(() {
           _status = 'Tarjeta detectada (no es Mifare Classic)';
-          _cardData = BusCard(uid: uid!, balance: 0, trips: 0, cardType: 0);
+          _cardData = BusCard(uid: uid!, balance: 0, trips: 0, cardType: 0, isUnlimited: false);
           _scanning = false;
         });
       }
@@ -504,11 +603,39 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
     final trips = _cardData?.trips;
     final balance = _cardData?.balanceFormatted;
     final isLowBalance = trips != null && trips > 0 && trips <= _lowBalanceThreshold;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('NFC Alzibus')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.phonelink_erase, size: 80, color: Colors.grey.shade400),
+                const SizedBox(height: 24),
+                const Text(
+                  'Función exclusiva de Android',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -520,9 +647,18 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
               // Tarjeta visual
               Container(
                 width: double.infinity,
-                height: 200,
+                height: 220, // Aumentado ligeramente para seguridad
                 decoration: BoxDecoration(
-                  gradient: AlzitransColors.primaryGradient,
+                  gradient: _isUnlimited 
+                      ? AlzitransColors.primaryGradient 
+                      : const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF4CAF50),
+                            Color(0xFFFF9800),
+                          ],
+                        ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -547,123 +683,126 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                         ),
                       ),
                     ),
-                    // Info de la tarjeta
-                    Positioned(
-                      top: 20,
-                      left: 20,
+                    // Contenido Principal
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Padding vertical reducido
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.credit_card, color: Colors.white.withOpacity(0.9), size: 40),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Tarjeta Alzibus',
+                          // Header
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.directions_bus, color: Colors.white.withOpacity(0.9), size: 24),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Alzitrans NFC',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                _cardData?.cardTypeName ?? 'Transporte Público Alzira',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          // Etiquetas a la izquierda
+                          Text(
+                            _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.1,
                             ),
                           ),
-                          if (_cardData != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'UID: ${_cardData!.uid}',
+                          
+                          // Contador Centralizado
+                          Center(
+                            child: Text(
+                              _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 10,
-                                fontFamily: 'monospace',
+                                color: Colors.white,
+                                fontSize: _isUnlimited ? 36 : 48,
+                                fontWeight: FontWeight.w900,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
+
+                          // Footer
+                          if (_lastCardUid != null)
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: Text(
+                                'ID: $_lastCardUid',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 9,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                    // Saldo y viajes
+                    // Icono NFC decorativo (esquina superior derecha)
                     Positioned(
-                      bottom: 20,
-                      left: 20,
-                      child: Row(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Saldo',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 12,
+                      top: 15,
+                      right: 15,
+                      child: Opacity(
+                        opacity: 0.8,
+                        child: _scanning
+                            ? AnimatedBuilder(
+                                animation: _pulseAnimation,
+                                builder: (context, child) => Transform.scale(
+                                  scale: _pulseAnimation.value,
+                                  child: const Icon(Icons.nfc, color: Colors.white, size: 36),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                balance ?? '--',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 40),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Viajes',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                trips != null ? '$trips' : '--',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              )
+                            : const Icon(Icons.nfc, color: Colors.white, size: 36),
                       ),
-                    ),
-                    // Icono NFC
-                    Positioned(
-                      top: 20,
-                      right: 20,
-                      child: _scanning
-                          ? AnimatedBuilder(
-                              animation: _pulseAnimation,
-                              builder: (context, child) => Transform.scale(
-                                scale: _pulseAnimation.value,
-                                child: Icon(
-                                  Icons.nfc,
-                                  color: Colors.white.withOpacity(0.9),
-                                  size: 50,
-                                ),
-                              ),
-                            )
-                          : Icon(
-                              Icons.nfc,
-                              color: Colors.white.withOpacity(0.9),
-                              size: 50,
-                            ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
               // Estado
-              Text(
-                _status,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isLowBalance ? Colors.orange : Colors.grey[700],
-                  fontWeight: FontWeight.w500,
+              // Estado
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isLowBalance ? Colors.orange.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  _status,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isLowBalance ? Colors.orange.shade900 : Colors.grey[800],
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -673,16 +812,16 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton.icon(
-                    onPressed: _nfcAvailable ? _startScan : null,
-                    icon: const Icon(Icons.nfc, size: 28),
+                    onPressed: (_storedTrips > 0 && !_isUnlimited) ? _validateTrip : null,
+                    icon: Icon(_isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
                     label: Text(
-                      _nfcAvailable ? 'Escanear tarjeta' : 'NFC no disponible',
+                      _isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
                       style: const TextStyle(fontSize: 18),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AlzitransColors.burgundy,
+                      backgroundColor: _isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey,
+                      disabledBackgroundColor: _isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -699,6 +838,28 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                       child: const Text('Cancelar'),
                     ),
                   ],
+                ),
+              const SizedBox(height: 16),
+              // Botón de re-escaneo
+              if (!_scanning)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: _nfcAvailable ? _startScan : null,
+                    icon: const Icon(Icons.nfc),
+                    label: Text(
+                      _storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AlzitransColors.burgundy,
+                      side: const BorderSide(color: AlzitransColors.burgundy),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
               const SizedBox(height: 24),
               // Info adicional
@@ -725,16 +886,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
-              // Botón de info de dumps
-              OutlinedButton.icon(
-                onPressed: _showFlipperDumpInfo,
-                icon: const Icon(Icons.analytics_outlined),
-                label: const Text('Ver análisis de tarjetas'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AlzitransColors.burgundy,
-                ),
-              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

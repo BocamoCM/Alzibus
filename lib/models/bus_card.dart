@@ -12,12 +12,17 @@ class BusCard {
     required this.balance,
     required this.trips,
     required this.cardType,
+    required this.isUnlimited,
     this.lastUse,
     this.tripHistory = const [],
   });
 
   /// Saldo formateado en euros
-  String get balanceFormatted => '${(balance / 100).toStringAsFixed(2)}€';
+  String get balanceFormatted => isUnlimited ? 'Ilimitado' : '${(balance / 100).toStringAsFixed(2)}€';
+
+  /// ¿La tarjeta tiene viajes ilimitados?
+  /// Se detecta si el precio por viaje es 0 o si tiene el flag de ilimitado (byte 6)
+  final bool isUnlimited;
 
   /// Tipo de tarjeta como texto
   String get cardTypeName {
@@ -26,6 +31,7 @@ class BusCard {
       case 2: return 'Bono 20 viajes';
       case 3: return 'Bono mensual';
       case 4: return 'Bono estudiante';
+      case 5: return 'Bono Ilimitado';
       default: return 'Tarjeta estándar';
     }
   }
@@ -35,21 +41,34 @@ class BusCard {
     // Block 5/6 contiene datos actuales (duplicado como backup)
     // Block 22 contiene el registro más reciente
     // Block 8 parece ser un contador de transacciones
-
     int balance = 0;
     int trips = 0;
     int cardType = 0;
+    bool isUnlimited = false;
     final tripHistory = <TripRecord>[];
 
-    // Intentar leer de Block 5 (o 6 como backup)
+    // Leer saldo real de Block 8 (Value Block - Little Endian)
+    if (blocks.length > 8 && blocks[8].length >= 16) {
+      final block8 = blocks[8];
+      balance = block8[0] | (block8[1] << 8) | (block8[2] << 16) | (block8[3] << 24);
+      
+      // Calcular viajes (Tarifa 1.50€, Remanente 0.50€)
+      if (balance >= 50) {
+        trips = (balance - 50) ~/ 150;
+      }
+    }
+
+    // Leer tipo de tarjeta de Block 5
     if (blocks.length > 5 && blocks[5].length >= 16) {
       final block5 = blocks[5];
-      // Bytes 0-1: tipo de tarjeta/bono
-      cardType = (block5[0] << 8) | block5[1];
-      // Bytes 2-3: saldo en céntimos (big endian)
-      balance = (block5[2] << 8) | block5[3];
-      // Byte 8: viajes restantes
-      trips = block5[8];
+      cardType = block5[1]; // Tipo de bono
+      
+      // La tarjeta es ilimitada si el precio/viaje (bytes 2-3) es 0 
+      // o si el byte 6 tiene el flag de ilimitado (0x01)
+      if ((block5[2] == 0 && block5[3] == 0) || block5[6] == 0x01) {
+        isUnlimited = true;
+        cardType = 5; // Forzar tipo ilimitado
+      }
     }
 
     // Leer historial de viajes de bloques 20-26
@@ -71,6 +90,7 @@ class BusCard {
       balance: balance,
       trips: trips,
       cardType: cardType,
+      isUnlimited: isUnlimited,
       tripHistory: tripHistory,
     );
   }
