@@ -48,13 +48,13 @@ jobs:
           echo "VERSION=$FULL_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build APK
-        run: flutter build apk --debug --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Pass Version to Release Job
         run: echo "${{ steps.version.outputs.VERSION }}" > version.txt
@@ -85,7 +85,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS
-        run: flutter build ios --no-codesign --debug
+        run: flutter build ios --no-codesign --release
 
       - name: Zip iOS Build
         run: |
@@ -95,8 +95,8 @@ jobs:
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-debug-app
-          path: ios-debug-app.zip
+          name: ios-release-app
+          path: ios-release-app.zip
 
   tag-and-release:
     runs-on: ubuntu-latest
@@ -113,13 +113,13 @@ jobs:
       - name: Download APK
         uses: actions/download-artifact@v4
         with:
-          name: app-debug
+          name: app-release
           path: release
 
       - name: Download iOS Build
         uses: actions/download-artifact@v4
         with:
-          name: ios-debug-app
+          name: ios-release-app
           path: release
 
       - name: Download Version
@@ -156,7 +156,7 @@ jobs:
           tag_name: v${{ steps.version.outputs.VERSION }}
           name: Release v${{ steps.version.outputs.VERSION }}
           files: |
-            release/app-debug.apk
-            release/ios-debug-app.zip
+            release/app-release.apk
+            release/ios-release-app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

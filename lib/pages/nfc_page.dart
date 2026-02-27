@@ -612,8 +612,9 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
     return Scaffold(
       appBar: AppBar(
         title: const Text('NFC Alzibus'),
-        backgroundColor: AlzitransColors.wine,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AlzitransColors.burgundy,
+        elevation: 1, // Añadido para un poco de profundidad sobre el fondo claro
       ),
       body: isIOS
           ? Center(
