@@ -606,45 +606,15 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
   @override
   Widget build(BuildContext context) {
     final trips = _cardData?.trips;
-    final balance = _cardData?.balanceFormatted;
     final isLowBalance = trips != null && trips > 0 && trips <= _lowBalanceThreshold;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
-    if (isIOS) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('NFC Alzibus')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.phonelink_erase, size: 80, color: Colors.grey.shade400),
-                const SizedBox(height: 24),
-                const Text(
-                  'Función exclusiva de Android',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-      appBar: AppBar(title: const Text('NFC Alzibus')),
+      appBar: AppBar(
+        title: const Text('NFC Alzibus'),
+        backgroundColor: AlzitransColors.wine,
+        foregroundColor: Colors.white,
+      ),
       body: isIOS
           ? Center(
               child: Padding(
@@ -678,7 +648,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                     // Tarjeta visual
                     Container(
                       width: double.infinity,
-                      height: 220, // Aumentado ligeramente para seguridad
+                      height: 220,
                       decoration: BoxDecoration(
                         gradient: _isUnlimited
                             ? AlzitransColors.primaryGradient
@@ -701,7 +671,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                       ),
                       child: Stack(
                         children: [
-                          // Patrón decorativo
                           Positioned(
                             right: -30,
                             bottom: -30,
@@ -714,14 +683,12 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                               ),
                             ),
                           ),
-                          // Contenido Principal
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Padding vertical reducido
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Header
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -750,8 +717,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                     ),
                                   ],
                                 ),
-
-                                // Etiquetas a la izquierda
                                 Text(
                                   _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
                                   style: TextStyle(
@@ -761,8 +726,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                     letterSpacing: 1.1,
                                   ),
                                 ),
-
-                                // Contador Centralizado
                                 Center(
                                   child: Text(
                                     _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
@@ -780,8 +743,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                     ),
                                   ),
                                 ),
-
-                                // Footer
                                 if (_lastCardUid != null)
                                   Align(
                                     alignment: Alignment.bottomRight,
@@ -797,7 +758,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                               ],
                             ),
                           ),
-                          // Icono NFC decorativo (esquina superior derecha)
                           Positioned(
                             top: 15,
                             right: 15,
@@ -818,7 +778,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // Estado
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
@@ -836,7 +795,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // Botón de escaneo
                     if (!_scanning)
                       SizedBox(
                         width: double.infinity,
@@ -870,7 +828,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                         ],
                       ),
                     const SizedBox(height: 16),
-                    // Botón de re-escaneo
                     if (!_scanning)
                       SizedBox(
                         width: double.infinity,
@@ -892,7 +849,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                         ),
                       ),
                     const SizedBox(height: 24),
-                    // Info adicional
                     if (_cardData != null && isLowBalance) ...[
                       Card(
                         color: Colors.orange.shade50,
@@ -913,28 +869,14 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                               ),
                             ],
                           ),
-                      children: [
-                        const Icon(Icons.warning_amber, color: Colors.orange),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            '¡Recarga tu tarjeta pronto!',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
                 ),
-              ],
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
+              ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSettingsDialog,
         backgroundColor: AlzitransColors.burgundy,
