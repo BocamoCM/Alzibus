@@ -1,96 +1,59 @@
-# Alzibus — Prototipo Flutter
+# Alzitrans — Sistema Integral de Gestión de Transporte
 
-Aplicación Flutter para Android que muestra el mapa de Alzira (Valencia) con paradas de bus y notificaciones de proximidad. Incluye funcionalidad básica para escanear tarjetas NFC.
+Alzitrans es un ecosistema tecnológico completo diseñado para el transporte público de Alzira (Valencia). El proyecto abarca desde la lectura avanzada de tarjetas NFC hasta una infraestructura de backend persistente y un panel de administración web.
 
-## Características
+## 🚀 Componentes del Proyecto
 
-- **Mapa interactivo**: Visualiza paradas de bus en Alzira usando OpenStreetMap
-- **Notificaciones de proximidad**: Recibe alertas cuando te acercas a una parada (≤80m)
-- **Lector NFC básico**: Escanea tarjetas NFC y muestra información del tag
+### 1. App Móvil (Flutter)
+- **Mapa en tiempo real**: Visualización de paradas y rutas de bus integradas con OpenStreetMap.
+- **Lectura NFC Avanzada**: Soporte completo para tarjetas **MIFARE Classic 1K**.
+  - Lectura de saldo y viajes restantes (Bloque 8).
+  - Validación de integridad mediante checksum XOR (Bloque 10).
+  - Detección automática de tarjetas **Ilimitadas (Contrato JP)**.
+- **Validación de Viajes**: Sistema de validación local con sincronización inteligente.
+- **Compatibilidad Multiplataforma**: Optimizada para Android (NFC completo) e iOS (aviso de hardware restringido).
+- **Notificaciones Geofencing**: Alertas de proximidad al acercarse a las paradas.
 
-## Instalación
+### 2. Backend (Node.js & Raspberry Pi)
+- **Servidor de Producción**: Desplegado en una Raspberry Pi con persistencia mediante **PM2**.
+- **API REST**: Gestión de usuarios, validación de dispositivos y logs financieros.
+- **Seguridad**: Implementación de Helmet, CORS securizado y validación de API Keys.
+- **Despliegue Automatizado**: Scripts de control (`start.sh`, `stop.sh`) para una gestión eficiente del servicio.
 
-### Requisitos previos
-- Flutter SDK instalado (https://flutter.dev/docs/get-started/install)
-- Dispositivo Android con NFC habilitado
-- Cable USB para conectar el dispositivo
+### 3. Panel de Administración (Web)
+- Visualización de estadísticas de uso en tiempo real.
+- Gestión de flotas y monitoreo de validaciones.
+- Interfaz moderna integrada con el backend de producción.
 
-### Pasos de instalación
+## 🛠️ Detalles Técnicos NFC
 
-1. Abre PowerShell en la carpeta del proyecto:
-```powershell
-cd C:\Users\borji\Alzibus
-```
+El proyecto ha realizado ingeniería inversa de las tarjetas de transporte de Alzira, identificando la siguiente estructura de datos:
+- **Sector 2, Bloque 8**: Almacena el saldo de viajes en formato Little Endian.
+- **Sector 2, Bloque 10**: Checksum de seguridad basado en una operación XOR del bloque de datos.
+- **Autenticación**: Manejo de llaves sectoriales específicas para acceso seguro a los datos del operador.
 
-2. Obtén las dependencias:
-```powershell
-flutter pub get
-```
+## 📦 CI/CD y Compilación
 
-3. Conecta tu dispositivo Android y habilita la depuración USB
+Contamos con una canalización de **GitHub Actions** que automatiza la generación de binarios:
+- **Android**: Generación de APK optimizada en modo `--release`.
+- **iOS**: Compilación en nube (`macos-latest`) para verificación de integridad y generación de artefactos empaquetados.
 
-4. Ejecuta la aplicación:
-```powershell
-flutter run
-```
+## 🔧 Instalación y Desarrollo
 
-## Uso
+1. **Dependencias**:
+   ```bash
+   flutter pub get
+   ```
+2. **Ejecución**:
+   ```bash
+   flutter run --release
+   ```
 
-### Mapa
-- La aplicación se abre mostrando el mapa de Alzira
-- Los marcadores rojos indican las paradas de bus
-- Si te acercas a menos de 80 metros de una parada, recibirás una notificación
+## 🔐 Requisitos de Seguridad
+Para el despliegue en producción, asegúrese de configurar las variables de entorno (`.env`) en el backend, incluyendo:
+- `API_KEY`: Para la validación de la App.
+- `PORT`: Puerto de escucha del servidor.
+- `DATABASE_URL`: Conexión a la base de datos persistente.
 
-### NFC
-- Pulsa la pestaña "NFC" en la parte inferior
-- Pulsa "Iniciar escaneo NFC"
-- Acerca la tarjeta NFC al teléfono
-- Verás la información del tag detectado
-
-## Personalización
-
-### Añadir más paradas
-Edita el archivo `assets/stops.json`:
-```json
-[
-  {
-    "id": 1,
-    "name": "Nombre de la parada",
-    "lat": 39.1478,
-    "lng": -0.4505,
-    "lines": ["L1", "L2"]
-  }
-]
-```
-
-### Cambiar distancia de notificación
-En `lib/main.dart`, línea ~122, modifica:
-```dart
-const double thresholdMeters = 80; // Cambiar este valor
-```
-
-## Limitaciones actuales
-
-- **Lectura MIFARE Classic 1K**: La lectura completa de tarjetas MIFARE Classic (para ver viajes restantes) requiere código nativo Android adicional y conocer las claves de autenticación del operador de transporte
-- **Notificaciones en background**: Actualmente funcionan solo con la app en primer plano
-- **Paradas de ejemplo**: Las coordenadas son aproximadas, debes actualizarlas con datos reales
-
-## Próximos pasos
-
-Para implementar la lectura completa de tarjetas MIFARE Classic 1K:
-1. Añadir código nativo en `MainActivity.kt` usando `android.nfc.tech.MifareClassic`
-2. Implementar autenticación con claves sectoriales
-3. Parsear el formato específico del operador de transporte
-
-## Permisos
-
-La aplicación solicita:
-- **Ubicación**: Para detectar proximidad a paradas
-- **NFC**: Para leer tarjetas
-- **Notificaciones**: Para alertas de proximidad
-
-## Problemas comunes
-
-- **"No se detecta el dispositivo"**: Asegúrate de tener la depuración USB habilitada
-- **"NFC no disponible"**: Verifica que tu teléfono tenga NFC y esté activado
-- **Las notificaciones no llegan**: Revisa los permisos de la app en Configuración > Aplicaciones
+---
+**Desarrollado para la modernización del transporte público de Alzira.** Ver documentación técnica detallada en la carpeta `brain/` para análisis profundos del protocolo NFC y arquitectura del sistema.
