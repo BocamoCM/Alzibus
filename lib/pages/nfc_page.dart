@@ -661,138 +661,145 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
-                    // Tarjeta visual
-                    Container(
-                      width: double.infinity,
-                      height: 220,
-                      decoration: BoxDecoration(
-                        gradient: _isUnlimited
-                            ? AlzitransColors.primaryGradient
-                            : const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF4CAF50),
-                                  Color(0xFFFF9800),
-                                ],
-                              ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            right: -30,
-                            bottom: -30,
-                            child: Container(
-                              width: 150,
-                              height: 150,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.1),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.directions_bus, color: Colors.white.withOpacity(0.9), size: 24),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          'Alzitrans NFC',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
-                                      _cardData?.cardTypeName ?? 'Transporte Público Alzira',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.8),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                    // Tarjeta visual — ignoramos textScaler para mantener las proporciones fijas
+                    MediaQuery(
+                      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                      child: Container(
+                        width: double.infinity,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          gradient: _isUnlimited
+                              ? AlzitransColors.primaryGradient
+                              : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF4CAF50),
+                                    Color(0xFFFF9800),
                                   ],
                                 ),
-                                Text(
-                                  _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.1,
-                                  ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -30,
+                              bottom: -30,
+                              child: Container(
+                                width: 150,
+                                height: 150,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.1),
                                 ),
-                                Center(
-                                  child: Text(
-                                    _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: _isUnlimited ? 36 : 48,
-                                      fontWeight: FontWeight.w900,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withOpacity(0.2),
-                                          offset: const Offset(0, 2),
-                                          blurRadius: 4,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.directions_bus, color: Colors.white.withOpacity(0.9), size: 24),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Alzitrans NFC',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        _cardData?.cardTypeName ?? 'Transporte Público Alzira',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ],
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.7),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
-                                ),
-                                if (_lastCardUid != null)
-                                  Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: Text(
-                                      'ID: $_lastCardUid',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.5),
-                                        fontSize: 9,
-                                        fontFamily: 'monospace',
+                                  Center(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: _isUnlimited ? 36 : 48,
+                                          fontWeight: FontWeight.w900,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.2),
+                                              offset: const Offset(0, 2),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                              ],
-                            ),
-                          ),
-                          Positioned(
-                            top: 15,
-                            right: 15,
-                            child: Opacity(
-                              opacity: 0.8,
-                              child: _scanning
-                                  ? AnimatedBuilder(
-                                      animation: _pulseAnimation,
-                                      builder: (context, child) => Transform.scale(
-                                        scale: _pulseAnimation.value,
-                                        child: const Icon(Icons.nfc, color: Colors.white, size: 36),
+                                  if (_lastCardUid != null)
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Text(
+                                        'ID: $_lastCardUid',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontSize: 9,
+                                          fontFamily: 'monospace',
+                                        ),
                                       ),
-                                    )
-                                  : const Icon(Icons.nfc, color: Colors.white, size: 36),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              top: 15,
+                              right: 15,
+                              child: Opacity(
+                                opacity: 0.8,
+                                child: _scanning
+                                    ? AnimatedBuilder(
+                                        animation: _pulseAnimation,
+                                        builder: (context, child) => Transform.scale(
+                                          scale: _pulseAnimation.value,
+                                          child: const Icon(Icons.nfc, color: Colors.white, size: 36),
+                                        ),
+                                      )
+                                    : const Icon(Icons.nfc, color: Colors.white, size: 36),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 32),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -814,14 +821,9 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                     if (!_scanning)
                       SizedBox(
                         width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton.icon(
+                        // Quitamos el height fijo para permitir que crezca con el modo mayor
+                        child: ElevatedButton(
                           onPressed: (_storedTrips > 0 && !_isUnlimited) ? _validateTrip : null,
-                          icon: Icon(_isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
-                          label: Text(
-                            _isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
-                            style: const TextStyle(fontSize: 18),
-                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
                             foregroundColor: Colors.white,
@@ -829,6 +831,22 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            minimumSize: const Size(double.infinity, 56),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  _isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
+                                  style: const TextStyle(fontSize: 18),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       )
@@ -847,20 +865,30 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                     if (!_scanning)
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           onPressed: _nfcAvailable ? _startScan : null,
-                          icon: const Icon(Icons.nfc),
-                          label: Text(
-                            _storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
-                            style: const TextStyle(fontSize: 16),
-                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AlzitransColors.burgundy,
                             side: const BorderSide(color: AlzitransColors.burgundy),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.nfc),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  _storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
+                                  style: const TextStyle(fontSize: 16),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

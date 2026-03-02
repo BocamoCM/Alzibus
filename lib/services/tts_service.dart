@@ -142,10 +142,33 @@ class TtsService {
     // Parar cualquier lectura anterior antes de empezar
     if (_isSpeaking) {
       await _flutterTts.stop();
+      _isSpeaking = false;
       // Pequeña pausa para asegurar que paró
       await Future.delayed(const Duration(milliseconds: 150));
     }
 
+    _isSpeaking = true;
+    await _flutterTts.speak(cleanText);
+  }
+
+  /// Habla el texto DESPUÉS de que termine la locución actual (no la interrumpe).
+  /// Útil para encadenar frases: nombre de parada → "no hay buses".
+  Future<void> speakQueued(String text) async {
+    if (!_enabled) return;
+
+    final cleanText = _cleanTextForSpeech(text);
+    if (cleanText.isEmpty) return;
+
+    // Si acabamos de llamar a speak(), puede que _isSpeaking tarde unos ms en ser true.
+    // Damos un margen mínimo si se llama muy rápido.
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // Esperar a que termine la locución actual
+    while (_isSpeaking) {
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    _isSpeaking = true;
     await _flutterTts.speak(cleanText);
   }
 

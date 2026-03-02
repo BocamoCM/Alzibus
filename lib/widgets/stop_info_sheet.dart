@@ -173,24 +173,22 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
       final l = AppLocalizations.of(context)!;
       final tts = TtsService();
       
-      // Anunciar nombre de la parada
+      // Anunciar nombre de la parada (primera locución)
       tts.speak(l.stopAnnounce(widget.stop.name));
       
       if (arrivals.isEmpty) {
-        // Sin buses: anunciar después de un momento para no solaparse
-        Future.delayed(const Duration(seconds: 2), () {
-          tts.speak('No hay buses disponibles en este momento en esta parada.');
-        });
+        // Sin buses: esperar a que termine el nombre de la parada y luego anunciar
+        tts.speakQueued('No hay buses disponibles en este momento en esta parada.');
       } else {
-        // Anunciar primer bus
+        // Anunciar primer bus después del nombre de la parada (queued)
         final first = arrivals.first;
         if (first.time.contains('<<<') || first.time.toLowerCase().contains('llegando')) {
-          tts.speak(l.busArrivingAnnounce(first.line, first.destination, widget.stop.name));
+          tts.speakQueued(l.busArrivingAnnounce(first.line, first.destination, widget.stop.name));
         } else {
           final minMatch = RegExp(r'(\d+)').firstMatch(first.time);
           if (minMatch != null) {
             final mins = int.tryParse(minMatch.group(1)!) ?? 0;
-            tts.speak(l.busArrivalAnnounce(first.line, first.destination, widget.stop.name, mins));
+            tts.speakQueued(l.busArrivalAnnounce(first.line, first.destination, widget.stop.name, mins));
           }
         }
       }
@@ -502,14 +500,24 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                           child: Text(
                             arrival.destination,
                             style: const TextStyle(fontSize: 13),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(
-                          arrival.time,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AlzitransColors.burgundy,
-                            fontSize: 15,
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 80),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              arrival.time,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AlzitransColors.burgundy,
+                                fontSize: 15,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -521,7 +529,12 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                         child: OutlinedButton.icon(
                           onPressed: () => _setAlert(arrival),
                           icon: const Icon(Icons.notifications_active, size: 18),
-                          label: const Text('Avisar cuando llegue', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'Avisar cuando llegue',
+                            style: TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             foregroundColor: Colors.orange[700],
@@ -573,7 +586,14 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                   child: const Icon(Icons.train, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Text('🚆 Trenes Cercanías C2:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Expanded(
+                  child: Text(
+                    '🚆 Trenes Cercanías C2:', 
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 20),
@@ -681,34 +701,49 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                         ),
                       ),
                       // Tiempo restante
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            minutesUntil <= 0 ? 'Llegando' : '$minutesUntil min',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: minutesUntil <= 5 ? Colors.red : const Color(0xFFF79529),
-                              fontSize: 15,
-                            ),
-                          ),
-                          if (isDelayed)
-                            Text(
-                              '+${train.delayMinutes} min',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.red,
-                              ),
-                            )
-                          else
-                            Text(
-                              train.statusText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.green[700],
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 80),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                minutesUntil <= 0 ? 'Llegando' : '$minutesUntil min',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: minutesUntil <= 5 ? Colors.red : const Color(0xFFF79529),
+                                  fontSize: 15,
+                                ),
                               ),
                             ),
-                        ],
+                            if (isDelayed)
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  '+${train.delayMinutes} min',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              )
+                            else
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  train.statusText,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.green[700],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
