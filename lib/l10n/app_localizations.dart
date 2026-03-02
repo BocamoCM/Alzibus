@@ -855,6 +855,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Últimos 30 días'**
   String get last30days;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In es, this message translates to:
+  /// **'Olvidé mi contraseña'**
+  String get forgotPassword;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuperar Contraseña'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordInstructions.
+  ///
+  /// In es, this message translates to:
+  /// **'Introduce tu email para recibir un código de recuperación.'**
+  String get forgotPasswordInstructions;
+
+  /// No description provided for @sendCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar código'**
+  String get sendCode;
+
+  /// No description provided for @enterCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Introduce el código'**
+  String get enterCode;
+
+  /// No description provided for @codeSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Código enviado a tu email'**
+  String get codeSent;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva Contraseña'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Restablecer Contraseña'**
+  String get resetPasswordButton;
+
+  /// No description provided for @passwordResetSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña actualizada correctamente'**
+  String get passwordResetSuccess;
+
+  /// No description provided for @verifyCode.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar código'**
+  String get verifyCode;
 }
 
 class _AppLocalizationsDelegate

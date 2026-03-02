@@ -399,4 +399,35 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get last30days => 'Últims 30 dies';
+
+  @override
+  String get forgotPassword => 'He oblidat la contrasenya';
+
+  @override
+  String get forgotPasswordTitle => 'Recuperar Contrasenya';
+
+  @override
+  String get forgotPasswordInstructions =>
+      'Introdueix el teu correu per a rebre un codi de recuperació.';
+
+  @override
+  String get sendCode => 'Enviar codi';
+
+  @override
+  String get enterCode => 'Introdueix el codi';
+
+  @override
+  String get codeSent => 'Codi enviat al teu correu';
+
+  @override
+  String get resetPasswordTitle => 'Nova Contrasenya';
+
+  @override
+  String get resetPasswordButton => 'Restablir Contrasenya';
+
+  @override
+  String get passwordResetSuccess => 'Contrasenya actualitzada correctament';
+
+  @override
+  String get verifyCode => 'Verificar codi';
 }

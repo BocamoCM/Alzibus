@@ -253,11 +253,17 @@ class AuthService {
           )
           .timeout(AppConfig.httpTimeout);
 
+      if (response.statusCode == 404) {
+        return 'Endpoint no encontrado (404). Verifica que el servidor está actualizado.';
+      }
+
       final body = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return null; // Éxito
       }
-      return body['error'] as String? ?? 'Error al solicitar código';
+      return body['error'] as String? ?? 'Error al solicitar código (${response.statusCode})';
+    } on FormatException {
+      return 'Error de formato en la respuesta del servidor. ¿Se ha actualizado el backend?';
     } catch (e) {
       debugPrint('Error en requestPasswordReset: $e');
       throw AuthNetworkException(e);
@@ -279,9 +285,15 @@ class AuthService {
           )
           .timeout(AppConfig.httpTimeout);
 
-      if (response.statusCode == 200) return null; // Éxito
+      if (response.statusCode == 404) {
+        return 'Endpoint no encontrado (404). Verifica que el servidor está actualizado.';
+      }
+
       final body = jsonDecode(response.body);
-      return body['error'] as String? ?? 'Error al restablecer contraseña';
+      if (response.statusCode == 200) return null; // Éxito
+      return body['error'] as String? ?? 'Error al restablecer contraseña (${response.statusCode})';
+    } on FormatException {
+      return 'Error de formato en la respuesta. ¿Se ha actualizado el backend?';
     } catch (e) {
       debugPrint('Error en resetPassword: $e');
       throw AuthNetworkException(e);

@@ -395,4 +395,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get last30days => 'Last 30 days';
+
+  @override
+  String get forgotPassword => 'Forgot my password';
+
+  @override
+  String get forgotPasswordTitle => 'Recover Password';
+
+  @override
+  String get forgotPasswordInstructions =>
+      'Enter your email to receive a recovery code.';
+
+  @override
+  String get sendCode => 'Send code';
+
+  @override
+  String get enterCode => 'Enter the code';
+
+  @override
+  String get codeSent => 'Code sent to your email';
+
+  @override
+  String get resetPasswordTitle => 'New Password';
+
+  @override
+  String get resetPasswordButton => 'Reset Password';
+
+  @override
+  String get passwordResetSuccess => 'Password updated successfully';
+
+  @override
+  String get verifyCode => 'Verify code';
 }
