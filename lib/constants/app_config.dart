@@ -15,7 +15,8 @@ class AppConfig {
 
   /// API Key que el servidor debe validar en el header [X-API-Key].
   /// Debe coincidir con la que configures en tu servidor Node.js.
-  static const String apiKey = 'alzibus-secret-key-2024';
+  // API Key para validación básica (se debe pasar como --dart-define=API_KEY=...)
+  static const String apiKey = String.fromEnvironment('API_KEY', defaultValue: 'alzibus-secret-key-2024');
 
   /// Timeout para peticiones HTTP.
   static const Duration httpTimeout = Duration(seconds: 10);

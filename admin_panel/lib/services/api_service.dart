@@ -12,9 +12,12 @@ class ApiService {
   static final String _baseUrl = 'http://149.74.26.171:4000/api';
   static const String _apiKey = 'alzibus-secret-key-2024';
 
+  static String? _token;
+
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'X-API-Key': _apiKey,
+    if (_token != null) 'Authorization': 'Bearer $_token',
   };
 
   static const Duration _timeout = Duration(seconds: 10);
@@ -23,17 +26,57 @@ class ApiService {
   List<Map<String, dynamic>>? _stopsCache;
   Map<String, List<Map<String, dynamic>>>? _routesCache;
 
+  // Helper para manejar respuestas y errores de auth
+  void _handleResponse(http.Response response) {
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _token = null;
+    }
+  }
+
   // Helper para GET
   Future<http.Response?> _get(String path) async {
     try {
-      return await http
+      final response = await http
           .get(Uri.parse('$_baseUrl$path'), headers: _headers)
           .timeout(_timeout);
+      _handleResponse(response);
+      return response;
     } catch (e) {
       debugPrint('ApiService GET $path error: $e');
       return null;
     }
   }
+
+  // Login de administrador
+  Future<bool> login(String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/admin/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': _apiKey,
+        },
+        body: json.encode({'password': password}),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _token = data['token'];
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('ApiService login error: $e');
+      return false;
+    }
+  }
+
+  void logout() {
+    _token = null;
+    clearCache();
+  }
+
+  bool get isAuthenticated => _token != null;
 
   // Verificar conectividad básica
   Future<bool> checkConnection() async {
@@ -110,9 +153,9 @@ class ApiService {
     return routes;
   }
 
-  // Dashboard Stats
+  // Dashboard Stats (Admin Protected)
   Future<Map<String, dynamic>> getDashboardStats() async {
-    final response = await _get('/stats');
+    final response = await _get('/stats/dashboard');
     if (response != null && response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -190,6 +233,7 @@ class ApiService {
             body: json.encode(stop),
           )
           .timeout(_timeout);
+      _handleResponse(response);
       if (response.statusCode == 201) {
         final newStop = json.decode(response.body);
         newStop['active'] = true;
@@ -209,6 +253,7 @@ class ApiService {
             body: json.encode(stop),
           )
           .timeout(_timeout);
+      _handleResponse(response);
       if (response.statusCode == 200 && _stopsCache != null) {
         final index = _stopsCache!.indexWhere((s) => s['id'] == id);
         if (index != -1) _stopsCache![index] = {..._stopsCache![index], ...stop};
@@ -223,6 +268,7 @@ class ApiService {
       final response = await http
           .delete(Uri.parse('$_baseUrl/stops/$id'), headers: _headers)
           .timeout(_timeout);
+      _handleResponse(response);
       if (response.statusCode == 200) {
         _stopsCache?.removeWhere((s) => s['id'] == id);
       }
@@ -256,6 +302,7 @@ class ApiService {
             headers: _headers,
           )
           .timeout(_timeout);
+      _handleResponse(response);
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
@@ -297,6 +344,7 @@ class ApiService {
             }),
           )
           .timeout(_timeout);
+      _handleResponse(response);
       if (response.statusCode == 201) {
         return json.decode(response.body) as Map<String, dynamic>;
       }
@@ -308,12 +356,13 @@ class ApiService {
 
   Future<void> toggleNotice(int noticeId) async {
     try {
-      await http
+      final response = await http
           .patch(
             Uri.parse('$_baseUrl/admin/notices/$noticeId/toggle'),
             headers: _headers,
           )
           .timeout(_timeout);
+      _handleResponse(response);
     } catch (e) {
       debugPrint('Error toggling aviso: $e');
     }
@@ -321,12 +370,13 @@ class ApiService {
 
   Future<void> deleteNotice(int noticeId) async {
     try {
-      await http
+      final response = await http
           .delete(
             Uri.parse('$_baseUrl/admin/notices/$noticeId'),
             headers: _headers,
           )
           .timeout(_timeout);
+      _handleResponse(response);
     } catch (e) {
       debugPrint('Error eliminando aviso: $e');
     }

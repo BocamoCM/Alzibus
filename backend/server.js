@@ -103,15 +103,63 @@ const authenticateToken = (req, res, next) => {
 
 
 // ==========================================
-// LIMITADOR DE FRECUENCIA (ANTI-SPAM)
+// LIMITADORES DE FRECUENCIA (SECURITY)
 // ==========================================
-// Bloquea IPs que intenten crear muchas cuentas seguidas
+
+// Limita creación de cuentas
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hora
-    max: 3, // Límite de 3 cuentas por hora por IP
-    message: { error: 'Demasiadas cuentas creadas desde esta red. Por favor, inténtalo más tarde.' },
-    standardHeaders: true, // Devuelve info del límite en los headers `RateLimit-*`
-    legacyHeaders: false, // Desactiva los headers antiguos `X-RateLimit-*`
+    max: 5,
+    message: { error: 'Demasiadas cuentas creadas. Reinténtalo en una hora.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Limita intentos de login (Anti Bruteforce)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 10,
+    message: { error: 'Demasiados intentos de inicio de sesión. Reinténtalo en 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const authenticateAdmin = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Token de administrador requerido' });
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err || user.role !== 'admin') {
+            return res.status(403).json({ error: 'Acceso denegado: Se requieren privilegios de administrador' });
+        }
+        req.user = user;
+        next();
+    });
+};
+
+// ==========================================
+// ENDPOINT: LOGIN ADMINISTRADOR
+// ==========================================
+app.post('/api/admin/login', loginLimiter, async (req, res) => {
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ error: 'Contraseña requerida' });
+    }
+
+    // Comparamos con la contraseña de admin en .env
+    if (password === process.env.ADMIN_PASSWORD) {
+        const token = jwt.sign(
+            { id: 'admin', email: 'admin@alzitrans.com', role: 'admin' },
+            process.env.JWT_SECRET,
+            { expiresIn: '12h' }
+        );
+        return res.json({ token });
+    } else {
+        return res.status(401).json({ error: 'Contraseña de administrador incorrecta' });
+    }
 });
 // ==========================================
 // HELPER: Enviar email de verificación y responder al cliente
@@ -341,7 +389,7 @@ app.post('/api/resend-otp', registerLimiter, async (req, res) => {
 });
 
 // 2. Login de usuario
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -489,8 +537,8 @@ app.put('/api/users/password', authenticateToken, async (req, res) => {
 // RUTAS DE ADMINISTRACIÓN DE USUARIOS
 // ==========================================
 
-// 19. Listar todos los usuarios (solo admin — protegido por API key)
-app.get('/api/admin/users', async (req, res) => {
+// 19. Listar todos los usuarios (solo admin)
+app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT
@@ -510,7 +558,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // 20. Activar/desactivar usuario (solo admin)
-app.patch('/api/admin/users/:id/toggle', async (req, res) => {
+app.patch('/api/admin/users/:id/toggle', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
@@ -547,7 +595,7 @@ app.get('/api/notices', async (req, res) => {
 });
 
 // 22. Obtener TODOS los avisos (admin)
-app.get('/api/admin/notices', async (req, res) => {
+app.get('/api/admin/notices', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(
             'SELECT * FROM notices ORDER BY created_at DESC'
@@ -560,7 +608,7 @@ app.get('/api/admin/notices', async (req, res) => {
 });
 
 // 23. Crear aviso
-app.post('/api/admin/notices', async (req, res) => {
+app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
     const { title, body, line, expiresAt } = req.body;
     if (!title || !body) return res.status(400).json({ error: 'Título y cuerpo requeridos' });
     try {
@@ -581,7 +629,7 @@ app.post('/api/admin/notices', async (req, res) => {
 });
 
 // 24. Activar/desactivar aviso
-app.patch('/api/admin/notices/:id/toggle', async (req, res) => {
+app.patch('/api/admin/notices/:id/toggle', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
@@ -597,7 +645,7 @@ app.patch('/api/admin/notices/:id/toggle', async (req, res) => {
 });
 
 // 25. Eliminar aviso
-app.delete('/api/admin/notices/:id', async (req, res) => {
+app.delete('/api/admin/notices/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query('DELETE FROM notices WHERE id = $1 RETURNING id', [id]);
@@ -614,7 +662,7 @@ app.delete('/api/admin/notices/:id', async (req, res) => {
 // ==========================================
 
 
-// 3. Obtener todas las paradas
+// 3. Obtener todas las paradas (Público)
 app.get('/api/stops', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM stops ORDER BY id ASC');
@@ -626,7 +674,7 @@ app.get('/api/stops', async (req, res) => {
 });
 
 // 4. Crear una nueva parada
-app.post('/api/stops', async (req, res) => {
+app.post('/api/stops', authenticateAdmin, async (req, res) => {
     const { name, lat, lng, lines } = req.body;
     try {
         const linesJson = JSON.stringify(lines || []);
@@ -642,7 +690,7 @@ app.post('/api/stops', async (req, res) => {
 });
 
 // 5. Actualizar una parada existente
-app.put('/api/stops/:id', async (req, res) => {
+app.put('/api/stops/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const { name, lat, lng, lines } = req.body;
     try {
@@ -662,7 +710,7 @@ app.put('/api/stops/:id', async (req, res) => {
 });
 
 // 6. Eliminar una parada
-app.delete('/api/stops/:id', async (req, res) => {
+app.delete('/api/stops/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query('DELETE FROM stops WHERE id = $1 RETURNING *', [id]);
@@ -681,7 +729,7 @@ app.delete('/api/stops/:id', async (req, res) => {
 // ==========================================
 
 // 7. Obtener estadísticas generales
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
         const stopsCount = await pool.query('SELECT COUNT(*) FROM stops');
         const usersCount = await pool.query('SELECT COUNT(*) FROM users');
@@ -937,10 +985,8 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
     }
 });
 
-// ==========================================
-// ANALYTICS: Dashboard de estadísticas
-// ==========================================
-app.get('/api/stats', async (req, res) => {
+// ANALYTICS: Dashboard de estadísticas (Admin Only)
+app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
     try {
         const [
             usersTotal,
@@ -1023,7 +1069,7 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-app.get('/api/stats/usage', async (req, res) => {
+app.get('/api/stats/usage', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT DATE(created_at) as day, COUNT(*) as queries 
@@ -1037,7 +1083,7 @@ app.get('/api/stats/usage', async (req, res) => {
     }
 });
 
-app.get('/api/stats/activity', async (req, res) => {
+app.get('/api/stats/activity', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT endpoint as action, 'System' as user, created_at as time, 'system' as type
@@ -1046,6 +1092,46 @@ app.get('/api/stats/activity', async (req, res) => {
         `);
         res.json(result.rows);
     } catch (error) {
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
+// 12. Top paradas (Admin)
+app.get('/api/stats/top-stops', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT stop_name as name, COUNT(*) as visits 
+            FROM trips 
+            GROUP BY stop_name 
+            ORDER BY visits DESC 
+            LIMIT 10
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error en /stats/top-stops:', error);
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
+// 13. Horas pico (Admin)
+app.get('/api/stats/peak-hours', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                EXTRACT(HOUR FROM timestamp) || 'h' as hour, 
+                COUNT(*)::float / NULLIF((SELECT MAX(cnt) FROM (SELECT COUNT(*) as cnt FROM trips GROUP BY EXTRACT(HOUR FROM timestamp)) s), 0) as level,
+                CASE 
+                    WHEN COUNT(*) > 50 THEN 'ALTA'
+                    WHEN COUNT(*) > 20 THEN 'MEDIA'
+                    ELSE 'BAJA'
+                END as label
+            FROM trips 
+            GROUP BY hour 
+            ORDER BY hour
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error en /stats/peak-hours:', error);
         res.status(500).json({ error: 'Error' });
     }
 });

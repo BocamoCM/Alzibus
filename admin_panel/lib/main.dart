@@ -6,6 +6,8 @@ import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/users_screen.dart';
 import 'screens/notices_admin_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/api_service.dart';
 import 'theme/admin_theme.dart';
 
 void main() {
@@ -34,10 +36,12 @@ class _AlzibusAdminAppState extends State<AlzibusAdminApp> {
       theme: AdminTheme.lightTheme,
       darkTheme: AdminTheme.darkTheme,
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: AdminHome(
-        isDarkMode: _isDarkMode,
-        onThemeToggle: _toggleTheme,
-      ),
+      home: ApiService().isAuthenticated
+          ? AdminHome(
+              isDarkMode: _isDarkMode,
+              onThemeToggle: _toggleTheme,
+            )
+          : LoginScreen(onLoginSuccess: () => setState(() {})),
     );
   }
 }
@@ -67,6 +71,7 @@ class _AdminHomeState extends State<AdminHome> {
     NavigationItem(icon: Icons.people, label: 'Usuarios'),
     NavigationItem(icon: Icons.campaign, label: 'Avisos'),
     NavigationItem(icon: Icons.settings, label: 'Configuración'),
+    NavigationItem(icon: Icons.logout, label: 'Cerrar Sesión'),
   ];
 
   @override
@@ -82,7 +87,16 @@ class _AdminHomeState extends State<AdminHome> {
             minExtendedWidth: 200,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (index) {
-              setState(() => _selectedIndex = index);
+              if (index == 7) {
+                // Logout logic
+                ApiService().logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const AlzibusAdminApp()),
+                  (route) => false,
+                );
+              } else {
+                setState(() => _selectedIndex = index);
+              }
             },
             leading: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -147,6 +161,9 @@ class _AdminHomeState extends State<AdminHome> {
           isDarkMode: widget.isDarkMode,
           onThemeToggle: widget.onThemeToggle,
         );
+      case 7:
+        // Logout handled in NavigationRail
+        return const Center(child: CircularProgressIndicator());
       default:
         return const DashboardScreen();
     }
