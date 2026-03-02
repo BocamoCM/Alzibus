@@ -391,6 +391,88 @@ app.post('/api/resend-otp', registerLimiter, async (req, res) => {
     }
 });
 
+// 1.7. Olvido de contraseña - Enviar código
+app.post('/api/forgot-password', registerLimiter, async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email es obligatorio' });
+    }
+
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            // Por seguridad, no decimos si el email existe o no
+            return res.json({ message: 'Si el correo está registrado, recibirás un código de recuperación.' });
+        }
+
+        const user = result.rows[0];
+        if (!user.is_verified) {
+            return res.status(400).json({ error: 'La cuenta no ha sido verificada aún.' });
+        }
+
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        await pool.query(
+            'UPDATE users SET verification_code = $1, otp_expires_at = $2, otp_attempts = 0 WHERE id = $3',
+            [verificationCode, otpExpiresAt, user.id]
+        );
+
+        // Reutilizamos el helper de envío de email
+        await sendOtpEmail(email, verificationCode);
+        console.log('Correo de recuperación enviado a', email);
+
+        res.json({ message: 'Si el correo está registrado, recibirás un código de recuperación.' });
+    } catch (error) {
+        console.error('Error en forgot-password:', error);
+        res.status(500).json({ error: 'Error interno' });
+    }
+});
+
+// 1.8. Restablecer contraseña con código
+app.post('/api/reset-password', registerLimiter, async (req, res) => {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = result.rows[0];
+
+        // Validar expiración
+        if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
+            return res.status(400).json({ error: 'El código ha caducado' });
+        }
+
+        // Validar código
+        if (user.verification_code !== code) {
+            return res.status(400).json({ error: 'Código de recuperación incorrecto' });
+        }
+
+        // Encriptar nueva contraseña
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+        // Actualizar y limpiar tokens
+        await pool.query(
+            'UPDATE users SET password_hash = $1, verification_code = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE id = $2',
+            [passwordHash, user.id]
+        );
+
+        res.json({ message: 'Contraseña actualizada correctamente' });
+    } catch (error) {
+        console.error('Error en reset-password:', error);
+        res.status(500).json({ error: 'Error interno' });
+    }
+});
+
 // 2. Login de usuario
 app.post('/api/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
