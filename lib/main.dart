@@ -1,12 +1,14 @@
 // No action needed: 'pages/splash_page.dart' is not imported.
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'services/foreground_service.dart';
 import 'services/stops_service.dart';
@@ -14,6 +16,7 @@ import 'services/bus_alert_service.dart';
 import 'services/trip_history_service.dart';
 import 'services/assistant_service.dart';
 import 'services/notices_service.dart';
+import 'constants/app_config.dart';
 import 'theme/app_theme.dart';
 import 'pages/map_page.dart';
 import 'pages/nfc_page.dart';
@@ -34,63 +37,105 @@ import 'dart:async';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
+  // Asegurar inicialización antes de nada para usar PackageInfo
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 1. Inicialización crítica (rápida)
-  final prefs = await SharedPreferences.getInstance();
-  final authService = AuthService();
-  final isLoggedIn = await authService.isLoggedIn();
-  
-  // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
-  runApp(AlzitransApp(isLoggedIn: isLoggedIn));
-  
-  // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
-  Future.microtask(() async {
-    if (!kIsWeb) {
-      await ForegroundService.initialize();
-      await BusAlertService().initialize();
-      AssistantService.initialize();
-      SocketService().initialize();
-      await TtsService().init();
-    }
+  final packageInfo = await PackageInfo.fromPlatform();
+  final version = packageInfo.version;
+  final buildNumber = packageInfo.buildNumber;
+  final packageName = packageInfo.packageName;
 
-    final stopsService = StopsService();
-    final stops = await stopsService.loadStops();
-    debugPrint('Main: Paradas cargadas en segundo plano: ${stops.length}');
-    
-    final stopsData = stops.map((stop) => {
-      'id': stop.id,
-      'name': stop.name,
-      'lat': stop.lat,
-      'lng': stop.lng,
-      'lines': stop.lines,
-    }).toList();
-    
-    await prefs.setString('bus_stops', jsonEncode(stopsData));
-    
-    // Iniciar simulación global
-    final busSimService = BusSimulationService();
-    
-    // CRÍTICO: Registrar las paradas de cada línea ANTES del escaneo inicial
-    // Usamos loadLineRoute para que el orden y las paradas repetidas (circulares)
-    // coincidan exactamente con el JSON de la ruta, igual que en RoutesPage.
-    for (final line in ['L1', 'L2', 'L3']) {
-      final routeStops = await stopsService.loadLineRoute(line);
-      busSimService.setLineStops(line, routeStops);
-      debugPrint('Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
-    }
-    
-    await busSimService.initialScan(stopsData);
-    busSimService.startSimulation();
-    
-    if (!kIsWeb) {
-      await _requestPermissions();
-      final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-      if (notificationsEnabled) {
-        await ForegroundService.start();
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = AppConfig.sentryDsn;
+      
+      // Configuración de Releases y Entornos
+      options.environment = kDebugMode ? 'debug' : (kReleaseMode ? 'production' : 'staging');
+      
+      // Formato de release: package@version+build (y commit si existe)
+      String releaseName = '$packageName@$version+$buildNumber';
+      if (AppConfig.commitHash != 'none') {
+        releaseName += '-${AppConfig.commitHash}';
       }
+      options.release = releaseName;
+      
+      // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+      options.tracesSampleRate = 1.0;
+      
+      options.enableAppLifecycleBreadcrumbs = true;
+      options.enableWindowMetricBreadcrumbs = true;
+      
+      // Habilitar logs en consola para depuración
+      if (kDebugMode) {
+        options.debug = true;
+      }
+    },
+    appRunner: () async {
+      // 1. Inicialización crítica (rápida)
+      final prefs = await SharedPreferences.getInstance();
+      final authService = AuthService();
+      final isLoggedIn = await authService.isLoggedIn();
+      
+      // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
+  runApp(AlzitransApp(isLoggedIn: isLoggedIn));
+
+  // Establecer identidad en Sentry si ya ha iniciado sesión
+  if (isLoggedIn) {
+    final userEmail = prefs.getString('user_email');
+    final userId = prefs.getInt('user_id');
+    if (userEmail != null && userId != null) {
+      Sentry.configureScope((scope) {
+        scope.setUser(SentryUser(id: userId.toString(), email: userEmail));
+      });
     }
-  });
+  }
+      
+      // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
+      Future.microtask(() async {
+        if (!kIsWeb) {
+          await ForegroundService.initialize();
+          await BusAlertService().initialize();
+          AssistantService.initialize();
+          SocketService().initialize();
+          await TtsService().init();
+        }
+
+        final stopsService = StopsService();
+        final stops = await stopsService.loadStops();
+        debugPrint('Main: Paradas cargadas en segundo plano: ${stops.length}');
+        
+        final stopsData = stops.map((stop) => {
+          'id': stop.id,
+          'name': stop.name,
+          'lat': stop.lat,
+          'lng': stop.lng,
+          'lines': stop.lines,
+        }).toList();
+        
+        await prefs.setString('bus_stops', jsonEncode(stopsData));
+        
+        // Iniciar simulación global
+        final busSimService = BusSimulationService();
+        
+        // CRÍTICO: Registrar las paradas de cada línea ANTES del escaneo inicial
+        for (final line in ['L1', 'L2', 'L3']) {
+          final routeStops = await stopsService.loadLineRoute(line);
+          busSimService.setLineStops(line, routeStops);
+          debugPrint('Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
+        }
+        
+        await busSimService.initialScan(stopsData);
+        busSimService.startSimulation();
+        
+        if (!kIsWeb) {
+          await _requestPermissions();
+          final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+          if (notificationsEnabled) {
+            await ForegroundService.start();
+          }
+        }
+      });
+    },
+  );
 }
 
 /// Solicita todos los permisos necesarios para el foreground service
@@ -171,6 +216,9 @@ class _AlzitransAppState extends State<AlzitransApp> {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
+      ],
+      navigatorObservers: [
+        SentryNavigatorObserver(),
       ],
       supportedLocales: const [
         Locale('es'),

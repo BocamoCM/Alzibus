@@ -4,6 +4,7 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/foreground_service.dart';
 import '../theme/app_theme.dart';
 
@@ -324,163 +325,6 @@ class _SettingsPageState extends State<SettingsPage> {
         
         const SizedBox(height: 24),
 
-        // Estado del servicio
-        Text(l.serviceStatus,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        Card(
-          color: _serviceRunning ? Colors.green[50] : Colors.red[50],
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      _serviceRunning ? Icons.check_circle : Icons.error,
-                      color: _serviceRunning ? Colors.green : Colors.red,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _serviceRunning ? l.serviceActive : l.serviceStopped,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: _serviceRunning ? Colors.green[800] : Colors.red[800],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(l.lastCheck),
-                    Text(_lastBackgroundCheck,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(l.activeAlertsCount),
-                    Text('$_alertsCount',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l.lastBus),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _lastBusCheck,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _loadDebugInfo();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l.refreshButton),
-                                duration: const Duration(seconds: 1)),
-                          );
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: Text(l.refreshButton),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async { await _testNotification(); },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                        icon: const Icon(Icons.notifications),
-                        label: Text(l.testNotification),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      final alertsJson = prefs.getString('bus_alerts');
-                      if (alertsJson != null && alertsJson.isNotEmpty) {
-                        final List<dynamic> alerts = jsonDecode(alertsJson);
-                        for (var alert in alerts) {
-                          alert['notified5min'] = false;
-                          alert['notified2min'] = false;
-                          alert['notifiedArriving'] = false;
-                        }
-                        await prefs.setString('bus_alerts', jsonEncode(alerts));
-                        _loadDebugInfo();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('✅ Alertas reiniciadas - volverás a recibir notificaciones'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('No hay alertas activas')),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.restart_alt),
-                    label: const Text('Reiniciar alertas (volver a notificar)'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Verificando alertas...')),
-                      );
-                      await ForegroundService.checkAlertsNow();
-                      await _loadDebugInfo();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('✅ Verificación completada - revisa los logs'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AlzitransColors.burgundy,
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.search),
-                    label: const Text('Verificar buses AHORA'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
         const SizedBox(height: 24),
         Text(l.information,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -524,31 +368,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         
         const SizedBox(height: 16),
-        // Información sobre foreground service
-        Card(
-          color: AlzitransColors.burgundy.withOpacity(0.08),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, color: AlzitransColors.burgundy),
-                    SizedBox(width: 8),
-                    Text('Servicio en primer plano', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Alzibus usa un servicio en primer plano para garantizar que las notificaciones funcionen correctamente incluso en Samsung y Xiaomi. '
-                  'Verás una notificación permanente mientras esté activo.',
-                  style: TextStyle(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-        ),
         const SizedBox(height: 16),
         // Instrucciones para Samsung/MIUI
         Card(
@@ -578,6 +397,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
+        const SizedBox(height: 32),
       ],
     ),   // body: ListView
   );   // Scaffold

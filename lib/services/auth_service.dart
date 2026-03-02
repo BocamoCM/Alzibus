@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../constants/app_config.dart';
 
 /// Excepción lanzada cuando las credenciales son incorrectas.
@@ -35,6 +36,15 @@ class AuthService {
         await prefs.setString('jwt_token', token);
         await prefs.setString('user_email', data['user']['email'] as String);
         await prefs.setInt('user_id', data['user']['id'] as int);
+        
+        // Establecer identidad en Sentry
+        await Sentry.configureScope((scope) {
+          scope.setUser(SentryUser(
+            id: (data['user']['id'] as int).toString(),
+            email: data['user']['email'] as String,
+          ));
+        });
+
         // Guardar expiración del token para validación futura
         final expiry = _extractExpiry(token);
         if (expiry != null) {
@@ -121,6 +131,11 @@ class AuthService {
     await prefs.remove('user_email');
     await prefs.remove('user_id');
     await prefs.remove('token_expiry');
+    
+    // Limpiar identidad en Sentry
+    await Sentry.configureScope((scope) {
+      scope.setUser(null);
+    });
   }
 
   /// Comprueba si hay sesión activa Y el token no ha expirado.

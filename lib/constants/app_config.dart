@@ -17,6 +17,15 @@ class AppConfig {
   /// Debe coincidir con la que configures en tu servidor Node.js.
   // API Key para validación básica (se debe pasar como --dart-define=API_KEY=...)
   static const String apiKey = String.fromEnvironment('API_KEY', defaultValue: 'alzibus-secret-key-2024');
+  
+  /// DSN de Sentry para el monitoreo de errores.
+  static const String sentryDsn = String.fromEnvironment(
+    'SENTRY_DSN',
+    defaultValue: 'https://b2bd0df7d8dfeb7fa13a08e0377d1898@o4510974925406208.ingest.de.sentry.io/4510974939299920',
+  );
+
+  /// Hash del commit actual (opcional, vía --dart-define=COMMIT_HASH=...)
+  static const String commitHash = String.fromEnvironment('COMMIT_HASH', defaultValue: 'none');
 
   /// Timeout para peticiones HTTP.
   static const Duration httpTimeout = Duration(seconds: 10);
