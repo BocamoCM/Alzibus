@@ -17,6 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   String _message = '';
   bool _success = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -106,11 +107,21 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Contraseña',
-                  prefixIcon: Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
-                obscureText: true,
+                obscureText: _obscurePassword,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _register(),
                 validator: (value) {

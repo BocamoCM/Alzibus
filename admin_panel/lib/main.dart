@@ -10,7 +10,9 @@ import 'screens/login_screen.dart';
 import 'services/api_service.dart';
 import 'theme/admin_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiService().init();
   runApp(const AlzibusAdminApp());
 }
 
@@ -63,6 +65,12 @@ class AdminHome extends StatefulWidget {
 class _AdminHomeState extends State<AdminHome> {
   int _selectedIndex = 0;
   
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = ApiService().getLastIndex();
+  }
+
   final List<NavigationItem> _navItems = [
     NavigationItem(icon: Icons.dashboard, label: 'Dashboard'),
     NavigationItem(icon: Icons.location_on, label: 'Paradas'),
@@ -96,6 +104,7 @@ class _AdminHomeState extends State<AdminHome> {
                 );
               } else {
                 setState(() => _selectedIndex = index);
+                ApiService().saveLastIndex(index);
               }
             },
             leading: Padding(

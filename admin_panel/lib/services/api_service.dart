@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Singleton
@@ -13,6 +14,14 @@ class ApiService {
   static const String _apiKey = 'alzibus-secret-key-2024';
 
   static String? _token;
+  static SharedPreferences? _prefs;
+
+  // Inicializar SharedPreferences y cargar token
+  Future<void> init() async {
+    _prefs = await SharedPreferences.getInstance();
+    _token = _prefs?.getString('admin_token');
+    debugPrint('ApiService initialized. Token present: ${_token != null}');
+  }
 
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
@@ -30,6 +39,7 @@ class ApiService {
   void _handleResponse(http.Response response) {
     if (response.statusCode == 401 || response.statusCode == 403) {
       _token = null;
+      _prefs?.remove('admin_token');
     }
   }
 
@@ -62,6 +72,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         _token = data['token'];
+        _prefs?.setString('admin_token', _token!);
         return true;
       }
       return false;
@@ -73,6 +84,8 @@ class ApiService {
 
   void logout() {
     _token = null;
+    _prefs?.remove('admin_token');
+    _prefs?.remove('last_admin_index');
     clearCache();
   }
 
@@ -385,5 +398,14 @@ class ApiService {
   void clearCache() {
     _stopsCache = null;
     _routesCache = null;
+  }
+
+  // Persistencia de la última página visitada
+  void saveLastIndex(int index) {
+    _prefs?.setInt('last_admin_index', index);
+  }
+
+  int getLastIndex() {
+    return _prefs?.getInt('last_admin_index') ?? 0;
   }
 }

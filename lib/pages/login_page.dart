@@ -18,6 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String _errorMessage = '';
 
   @override
@@ -98,8 +99,18 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   labelText: l.password,
                   prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
-                obscureText: true,
+                obscureText: _obscurePassword,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _login(),
                 validator: (value) {

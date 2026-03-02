@@ -17,6 +17,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String _errorMessage = '';
 
   @override
@@ -111,11 +112,21 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   decoration: InputDecoration(
                     labelText: l.newPassword,
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return l.enterPassword;
