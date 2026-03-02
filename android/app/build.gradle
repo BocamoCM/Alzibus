@@ -33,12 +33,6 @@ android {
     compileSdk 36
     ndkVersion "27.0.12077973"
 
-    // Fix for "failed to strip debug symbols" error
-    packaging {
-        jniLibs {
-            doNotStrip "**/*.so"
-        }
-    }
 
     // Fix for FileSystemException during lint analysis
     lint {
@@ -77,9 +71,6 @@ android {
         targetSdk 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
-        }
     }
 
     buildTypes {

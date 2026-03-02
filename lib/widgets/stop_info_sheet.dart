@@ -176,8 +176,13 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
       // Anunciar nombre de la parada
       tts.speak(l.stopAnnounce(widget.stop.name));
       
-      // Opcional: Anunciar primer bus si hay
-      if (arrivals.isNotEmpty) {
+      if (arrivals.isEmpty) {
+        // Sin buses: anunciar después de un momento para no solaparse
+        Future.delayed(const Duration(seconds: 2), () {
+          tts.speak('No hay buses disponibles en este momento en esta parada.');
+        });
+      } else {
+        // Anunciar primer bus
         final first = arrivals.first;
         if (first.time.contains('<<<') || first.time.toLowerCase().contains('llegando')) {
           tts.speak(l.busArrivingAnnounce(first.line, first.destination, widget.stop.name));

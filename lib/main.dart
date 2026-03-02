@@ -31,6 +31,7 @@ import 'services/auth_service.dart';
 import 'services/socket_service.dart';
 import 'services/bus_simulation_service.dart';
 import 'services/tts_service.dart';
+import 'providers/elderly_mode_provider.dart';
 import 'dart:async';
 
 // Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
@@ -39,6 +40,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // Asegurar inicialización antes de nada para usar PackageInfo
   WidgetsFlutterBinding.ensureInitialized();
+  await elderlyModeNotifier.init();
   final packageInfo = await PackageInfo.fromPlatform();
   final version = packageInfo.version;
   final buildNumber = packageInfo.buildNumber;
@@ -205,31 +207,61 @@ class _AlzitransAppState extends State<AlzitransApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Alzitrans',
-      theme: AlzitransTheme.lightTheme,
-      debugShowCheckedModeBanner: false,
-      locale: _currentLocale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      navigatorObservers: [
-        SentryNavigatorObserver(),
-      ],
-      supportedLocales: const [
-        Locale('es'),
-        Locale('en'),
-        Locale('ca'),
-      ],
-      home: widget.isLoggedIn
-          ? HomePage(onLocaleChanged: _onLocaleChanged, currentLocale: _currentLocale)
-          : const LoginPage(),
-      routes: {
-        '/login': (context) => const LoginPage(),
+    return AnimatedBuilder(
+      animation: elderlyModeNotifier,
+      builder: (context, _) {
+        final isElderly = elderlyModeNotifier.enabled;
+        // El TextScaler de MediaQuery (abajo) ya escala todos los textos.
+        // Aquí solo ampliamos botones e iconos para el modo personas mayores.
+        final theme = isElderly
+            ? AlzitransTheme.lightTheme.copyWith(
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AlzitransColors.burgundy,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+                    textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+                iconTheme: const IconThemeData(size: 32, color: AlzitransColors.burgundy),
+              )
+            : AlzitransTheme.lightTheme;
+
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: isElderly
+                ? const TextScaler.linear(1.6)
+                : const TextScaler.linear(1.0),
+          ),
+          child: MaterialApp(
+            navigatorKey: navigatorKey,
+            title: 'Alzitrans',
+            theme: theme,
+            debugShowCheckedModeBanner: false,
+            locale: _currentLocale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            navigatorObservers: [
+              SentryNavigatorObserver(),
+            ],
+            supportedLocales: const [
+              Locale('es'),
+              Locale('en'),
+              Locale('ca'),
+            ],
+            home: widget.isLoggedIn
+                ? HomePage(onLocaleChanged: _onLocaleChanged, currentLocale: _currentLocale)
+                : const LoginPage(),
+            routes: {
+              '/login': (context) => const LoginPage(),
+            },
+          ),
+        );
       },
     );
   }

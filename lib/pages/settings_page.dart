@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/foreground_service.dart';
 import '../theme/app_theme.dart';
+import '../providers/elderly_mode_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   final bool notificationsEnabled;
@@ -66,6 +67,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late bool _vibrationEnabled;
   late bool _ttsEnabled;
   late Locale _currentLocale;
+  late bool _elderlyMode;
 
   @override
   void initState() {
@@ -78,6 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _vibrationEnabled = widget.vibrationEnabled;
     _ttsEnabled = widget.ttsEnabled;
     _currentLocale = widget.currentLocale;
+    _elderlyMode = elderlyModeNotifier.enabled;
     
     _loadDebugInfo();
     _loadAppVersion();
@@ -274,6 +277,39 @@ class _SettingsPageState extends State<SettingsPage> {
             widget.onTtsChanged(val);
           },
           secondary: const Icon(Icons.record_voice_over),
+        ),
+
+        const SizedBox(height: 4),
+
+        // --- MODO PERSONAS MAYORES ---
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AlzitransColors.burgundy.withOpacity(0.08), AlzitransColors.wine.withOpacity(0.05)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _elderlyMode ? AlzitransColors.burgundy.withOpacity(0.4) : Colors.transparent),
+          ),
+          child: SwitchListTile(
+            title: const Text(
+              'Modo Personas Mayores 👵🏼',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text('Aumenta el tamaño de textos y botones en toda la app'),
+            value: _elderlyMode,
+            onChanged: (val) {
+              setState(() => _elderlyMode = val);
+              elderlyModeNotifier.toggle(val);
+            },
+            secondary: Icon(
+              Icons.accessibility_new,
+              color: _elderlyMode ? AlzitransColors.burgundy : Colors.grey,
+              size: _elderlyMode ? 32 : 24,
+            ),
+          ),
         ),
         
         const SizedBox(height: 24),
