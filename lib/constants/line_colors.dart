@@ -21,4 +21,14 @@ class LineColors {
     }
     return Colors.grey;
   }
+
+  static List<Color> getStopColors(List<String> lines, Set<String> selectedLines) {
+    final List<Color> activeColors = [];
+    for (final line in lines) {
+      if (selectedLines.contains(line) && colors.containsKey(line)) {
+        activeColors.add(colors[line]!);
+      }
+    }
+    return activeColors.isEmpty ? [Colors.grey] : activeColors;
+  }
 }

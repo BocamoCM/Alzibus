@@ -10,8 +10,10 @@ import '../services/notification_service.dart';
 import '../services/location_service.dart';
 import '../services/stops_service.dart';
 import '../services/bus_simulation_service.dart';
+import '../services/foreground_service.dart';
 import '../widgets/line_filter.dart';
 import '../widgets/stop_info_sheet.dart';
+import '../widgets/multi_line_stop_marker.dart';
 import '../widgets/animated_bus_marker.dart';
 import '../theme/app_theme.dart';
 
@@ -428,28 +430,10 @@ class MapPageState extends State<MapPage> {
         width: 50,
         height: 50,
         point: LatLng(stop.lat, stop.lng),
-        child: GestureDetector(
+        child: MultiLineStopMarker(
+          colors: LineColors.getStopColors(stop.lines, selectedLines),
+          size: 44, // Un poco más grande para mejor visibilidad
           onTap: () => _showStopInfo(stop),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                Icons.directions_bus_rounded,
-                color: LineColors.getStopColor(stop.lines, selectedLines),
-                size: 28,
-              ),
-            ),
-          ),
         ),
       );
     }).toList();
