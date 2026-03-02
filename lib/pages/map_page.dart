@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -88,6 +89,11 @@ class MapPageState extends State<MapPage> {
         goToStop(widget.initialStop!);
       });
     }
+
+    // Mostrar disclaimer de estudiante
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showDisclaimer();
+    });
   }
   
   /// Método público para ir a una parada desde otras pantallas
@@ -99,6 +105,80 @@ class MapPageState extends State<MapPage> {
     Future.delayed(const Duration(milliseconds: 300), () {
       _showStopInfo(stop);
     });
+  }
+
+  /// Muestra un mensaje de agradecimiento y aviso de errores al iniciar
+  Future<void> _showDisclaimer() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShown = prefs.getBool('disclaimer_shown') ?? false;
+
+    if (!hasShown && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(Icons.school, color: AlzitransColors.burgundy),
+              const SizedBox(width: 10),
+              const Text('¡Hola! 👋'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Gracias por descargar Alzi Trans.',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Soy un estudiante de 2º de DAM y he creado esta app de forma independiente para mejorar nuestro transporte.',
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Ten en cuenta que es un proyecto en desarrollo y puede contener errores.',
+                        style: TextStyle(fontSize: 13, color: Colors.brown),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '¡Espero que te sea de mucha utilidad!',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await prefs.setBool('disclaimer_shown', true);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: Text(
+                'ENTENDIDO',
+                style: TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
