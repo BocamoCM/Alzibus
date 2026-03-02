@@ -426,4 +426,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verifyCode => 'Verify code';
+
+  @override
+  String get accessibilityVoice => 'Accessibility Mode (Voice)';
+
+  @override
+  String get accessibilityVoiceSubtitle => 'Announce balance and bus arrivals';
+
+  @override
+  String get nfcCardReadSuccess => 'Card read successfully';
+
+  @override
+  String nfcBalanceAnnounce(String balance, int trips) {
+    return 'Balance of $balance euros. You have $trips trips left.';
+  }
+
+  @override
+  String get nfcUnlimitedAnnounce => 'Unlimited pass active.';
+
+  @override
+  String busArrivalAnnounce(
+      String line, String destination, String stop, int minutes) {
+    return 'The line $line bus to $destination will arrive at $stop in $minutes minutes.';
+  }
+
+  @override
+  String busArrivingAnnounce(Object destination, Object line, Object stop) {
+    return 'The line $line bus to $destination is arriving at $stop.';
+  }
+
+  @override
+  String stopAnnounce(Object name) {
+    return 'Stop $name.';
+  }
 }

@@ -154,5 +154,27 @@
   "resetPasswordTitle": "Nova Contrasenya",
   "resetPasswordButton": "Restablir Contrasenya",
   "passwordResetSuccess": "Contrasenya actualitzada correctament",
-  "verifyCode": "Verificar codi"
+  "verifyCode": "Verificar codi",
+  "accessibilityVoice": "Mode Accessibilitat (Veu)",
+  "accessibilityVoiceSubtitle": "Anunciar saldo i arribades de bus",
+  "nfcCardReadSuccess": "Targeta llegida correctament",
+  "nfcBalanceAnnounce": "Saldo de {balance} euros. Et queden {trips} viatges.",
+  "@nfcBalanceAnnounce": {
+    "placeholders": {
+      "balance": { "type": "String" },
+      "trips": { "type": "int" }
+    }
+  },
+  "nfcUnlimitedAnnounce": "Abonament il·limitat actiu.",
+  "busArrivalAnnounce": "L'autobús de la línia {line} amb destí {destination} arribarà a {stop} en {minutes} minuts.",
+  "@busArrivalAnnounce": {
+    "placeholders": {
+      "line": { "type": "String" },
+      "destination": { "type": "String" },
+      "stop": { "type": "String" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "busArrivingAnnounce": "L'autobús de la línia {line} amb destí {destination} està arribant a {stop}.",
+  "stopAnnounce": "Parada {name}."
 }

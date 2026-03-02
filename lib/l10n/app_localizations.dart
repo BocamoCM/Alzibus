@@ -915,6 +915,55 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Verificar código'**
   String get verifyCode;
+
+  /// No description provided for @accessibilityVoice.
+  ///
+  /// In es, this message translates to:
+  /// **'Modo Accesibilidad (Voz)'**
+  String get accessibilityVoice;
+
+  /// No description provided for @accessibilityVoiceSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Anunciar saldo y llegadas de bus'**
+  String get accessibilityVoiceSubtitle;
+
+  /// No description provided for @nfcCardReadSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjeta leída correctamente'**
+  String get nfcCardReadSuccess;
+
+  /// No description provided for @nfcBalanceAnnounce.
+  ///
+  /// In es, this message translates to:
+  /// **'Saldo de {balance} euros. Te quedan {trips} viajes.'**
+  String nfcBalanceAnnounce(String balance, int trips);
+
+  /// No description provided for @nfcUnlimitedAnnounce.
+  ///
+  /// In es, this message translates to:
+  /// **'Bono ilimitado activo.'**
+  String get nfcUnlimitedAnnounce;
+
+  /// No description provided for @busArrivalAnnounce.
+  ///
+  /// In es, this message translates to:
+  /// **'El autobús de la línea {line} con destino {destination} llegará a {stop} en {minutes} minutos.'**
+  String busArrivalAnnounce(
+      String line, String destination, String stop, int minutes);
+
+  /// No description provided for @busArrivingAnnounce.
+  ///
+  /// In es, this message translates to:
+  /// **'El autobús de la línea {line} con destino {destination} está llegando a {stop}.'**
+  String busArrivingAnnounce(Object destination, Object line, Object stop);
+
+  /// No description provided for @stopAnnounce.
+  ///
+  /// In es, this message translates to:
+  /// **'Parada {name}.'**
+  String stopAnnounce(Object name);
 }
 
 class _AppLocalizationsDelegate

@@ -20,7 +20,9 @@ class SettingsPage extends StatefulWidget {
   final Function(bool) onShowSimulatedBusesChanged;
   final Function(bool) onAutoRefreshTimesChanged;
   final Function(bool) onVibrationChanged;
+  final bool ttsEnabled;
   final Function(Locale) onLocaleChanged;
+  final Function(bool) onTtsChanged;
   final Locale currentLocale;
 
   const SettingsPage({
@@ -31,12 +33,14 @@ class SettingsPage extends StatefulWidget {
     required this.showSimulatedBuses,
     required this.autoRefreshTimes,
     required this.vibrationEnabled,
+    required this.ttsEnabled,
     required this.onNotificationsChanged,
     required this.onDistanceChanged,
     required this.onCooldownChanged,
     required this.onShowSimulatedBusesChanged,
     required this.onAutoRefreshTimesChanged,
     required this.onVibrationChanged,
+    required this.onTtsChanged,
     required this.onLocaleChanged,
     required this.currentLocale,
   });
@@ -59,6 +63,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late bool _showSimulatedBuses;
   late bool _autoRefreshTimes;
   late bool _vibrationEnabled;
+  late bool _ttsEnabled;
   late Locale _currentLocale;
 
   @override
@@ -70,6 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _showSimulatedBuses = widget.showSimulatedBuses;
     _autoRefreshTimes = widget.autoRefreshTimes;
     _vibrationEnabled = widget.vibrationEnabled;
+    _ttsEnabled = widget.ttsEnabled;
     _currentLocale = widget.currentLocale;
     
     _loadDebugInfo();
@@ -252,6 +258,21 @@ class _SettingsPageState extends State<SettingsPage> {
             widget.onVibrationChanged(val);
           } : null,
           secondary: const Icon(Icons.vibration),
+        ),
+        
+        const Divider(),
+        Text(l.information.toUpperCase(), // Usando una etiqueta existente o similar para agrupar
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          title: Text(l.accessibilityVoice),
+          subtitle: Text(l.accessibilityVoiceSubtitle),
+          value: _ttsEnabled,
+          onChanged: (val) {
+            setState(() => _ttsEnabled = val);
+            widget.onTtsChanged(val);
+          },
+          secondary: const Icon(Icons.record_voice_over),
         ),
         
         const SizedBox(height: 24),

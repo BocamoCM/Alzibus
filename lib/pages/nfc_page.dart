@@ -9,8 +9,10 @@ import 'package:nfc_manager/src/nfc_manager_android/tags/tag.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../models/bus_card.dart';
+import '../services/tts_service.dart';
 
 /// Claves Mifare para tarjetas de bus de Alzira
 /// Extraídas de los dumps de las tarjetas reales
@@ -135,10 +137,19 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
     await prefs.setString('last_card_uid', uid);
     await prefs.setBool('is_unlimited', isUnlimited);
     setState(() {
-      _storedTrips = trips;
-      _lastCardUid = uid;
       _isUnlimited = isUnlimited;
     });
+    
+    // Anuncio por voz si está habilitado
+    if (mounted) {
+      final l = AppLocalizations.of(context)!;
+      if (isUnlimited) {
+        TtsService().speak(l.nfcUnlimitedAnnounce);
+      } else {
+        final balanceStr = (trips * 1.5).toStringAsFixed(2); // Estimación basada en tarifa 1.50€
+        TtsService().speak(l.nfcBalanceAnnounce(balanceStr, trips));
+      }
+    }
   }
 
   Future<void> _validateTrip() async {
@@ -187,6 +198,10 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
       });
 
       if (mounted) {
+        final l = AppLocalizations.of(context)!;
+        final balanceStr = (newTrips * 1.5).toStringAsFixed(2);
+        TtsService().speak(l.nfcBalanceAnnounce(balanceStr, newTrips));
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Viaje validado. Te quedan $newTrips viajes.'),

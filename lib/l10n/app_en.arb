@@ -154,5 +154,27 @@
   "resetPasswordTitle": "New Password",
   "resetPasswordButton": "Reset Password",
   "passwordResetSuccess": "Password updated successfully",
-  "verifyCode": "Verify code"
+  "verifyCode": "Verify code",
+  "accessibilityVoice": "Accessibility Mode (Voice)",
+  "accessibilityVoiceSubtitle": "Announce balance and bus arrivals",
+  "nfcCardReadSuccess": "Card read successfully",
+  "nfcBalanceAnnounce": "Balance of {balance} euros. You have {trips} trips left.",
+  "@nfcBalanceAnnounce": {
+    "placeholders": {
+      "balance": { "type": "String" },
+      "trips": { "type": "int" }
+    }
+  },
+  "nfcUnlimitedAnnounce": "Unlimited pass active.",
+  "busArrivalAnnounce": "The line {line} bus to {destination} will arrive at {stop} in {minutes} minutes.",
+  "@busArrivalAnnounce": {
+    "placeholders": {
+      "line": { "type": "String" },
+      "destination": { "type": "String" },
+      "stop": { "type": "String" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "busArrivingAnnounce": "The line {line} bus to {destination} is arriving at {stop}.",
+  "stopAnnounce": "Stop {name}."
 }

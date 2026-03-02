@@ -45,5 +45,23 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>Esta aplicación requiere acceso al lector NFC para leer tu tarjeta de bus.</string>
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>NDEF</string>
+		<string>TAG</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>location</string>
+		<string>audio</string>
+	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Esta aplicación necesita tu ubicación para mostrarte las paradas más cercanas.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Necesitamos tu ubicación en segundo plano para avisarte cuando tu bus esté llegando a la parada independientemente de si tienes la app abierta o no.</string>
 </dict>
 </plist>

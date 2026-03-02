@@ -154,5 +154,27 @@
   "resetPasswordTitle": "Nueva Contraseña",
   "resetPasswordButton": "Restablecer Contraseña",
   "passwordResetSuccess": "Contraseña actualizada correctamente",
-  "verifyCode": "Verificar código"
+  "verifyCode": "Verificar código",
+  "accessibilityVoice": "Modo Accesibilidad (Voz)",
+  "accessibilityVoiceSubtitle": "Anunciar saldo y llegadas de bus",
+  "nfcCardReadSuccess": "Tarjeta leída correctamente",
+  "nfcBalanceAnnounce": "Saldo de {balance} euros. Te quedan {trips} viajes.",
+  "@nfcBalanceAnnounce": {
+    "placeholders": {
+      "balance": { "type": "String" },
+      "trips": { "type": "int" }
+    }
+  },
+  "nfcUnlimitedAnnounce": "Bono ilimitado activo.",
+  "busArrivalAnnounce": "El autobús de la línea {line} con destino {destination} llegará a {stop} en {minutes} minutos.",
+  "@busArrivalAnnounce": {
+    "placeholders": {
+      "line": { "type": "String" },
+      "destination": { "type": "String" },
+      "stop": { "type": "String" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "busArrivingAnnounce": "El autobús de la línea {line} con destino {destination} está llegando a {stop}.",
+  "stopAnnounce": "Parada {name}."
 }

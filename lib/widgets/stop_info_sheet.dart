@@ -10,7 +10,9 @@ import '../services/bus_alert_service.dart';
 import '../services/foreground_service.dart';
 import '../services/favorite_stops_service.dart';
 import '../services/renfe_service.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
+import '../services/tts_service.dart';
 import 'simple_map_widget.dart';
 
 class StopInfoSheet extends StatefulWidget {
@@ -50,7 +52,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   @override
   void initState() {
     super.initState();
-    _loadArrivalTimes();
+    _loadArrivalTimes(shouldSpeak: true);
     _startAutoRefresh();
     _checkFavorite();
     if (_isRenfeStation) {
@@ -127,7 +129,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   void _startAutoRefresh() {
     _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
-        _loadArrivalTimes();
+        _loadArrivalTimes(shouldSpeak: false);
       }
     });
   }
@@ -142,7 +144,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     return ((1 - math.log(math.tan(latRad) + (1 / math.cos(latRad))) / math.pi) / 2 * (1 << zoom)).floor();
   }
 
-  Future<void> _loadArrivalTimes() async {
+  Future<void> _loadArrivalTimes({bool shouldSpeak = false}) async {
     if (!mounted) return;
     setState(() => _loading = true);
     
@@ -165,6 +167,29 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
       _arrivals = arrivals;
       _loading = false;
     });
+    
+    // Anunciar por voz la parada y buses si hay datos (solo la primera vez)
+    if (mounted && shouldSpeak) {
+      final l = AppLocalizations.of(context)!;
+      final tts = TtsService();
+      
+      // Anunciar nombre de la parada
+      tts.speak(l.stopAnnounce(widget.stop.name));
+      
+      // Opcional: Anunciar primer bus si hay
+      if (arrivals.isNotEmpty) {
+        final first = arrivals.first;
+        if (first.time.contains('<<<') || first.time.toLowerCase().contains('llegando')) {
+          tts.speak(l.busArrivingAnnounce(first.line, first.destination, widget.stop.name));
+        } else {
+          final minMatch = RegExp(r'(\d+)').firstMatch(first.time);
+          if (minMatch != null) {
+            final mins = int.tryParse(minMatch.group(1)!) ?? 0;
+            tts.speak(l.busArrivalAnnounce(first.line, first.destination, widget.stop.name, mins));
+          }
+        }
+      }
+    }
   }
 
   Future<void> _setAlert(BusArrival arrival) async {

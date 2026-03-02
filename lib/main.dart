@@ -26,7 +26,8 @@ import 'screens/profile_screen.dart';
 import 'screens/notices_screen.dart';
 import 'services/auth_service.dart';
 import 'services/socket_service.dart';
-import 'services/bus_simulation_service.dart'; // import para simulación global
+import 'services/bus_simulation_service.dart';
+import 'services/tts_service.dart';
 import 'dart:async';
 
 // Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
@@ -50,6 +51,7 @@ void main() async {
       await BusAlertService().initialize();
       AssistantService.initialize();
       SocketService().initialize();
+      await TtsService().init();
     }
 
     final stopsService = StopsService();
@@ -148,10 +150,12 @@ class _AlzitransAppState extends State<AlzitransApp> {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString('app_locale') ?? 'es';
     if (mounted) setState(() => _currentLocale = Locale(code));
+    TtsService().setLanguage(code);
   }
 
   void _onLocaleChanged(Locale locale) {
     setState(() => _currentLocale = locale);
+    TtsService().setLanguage(locale.languageCode);
   }
 
   @override
@@ -214,6 +218,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _showSimulatedBuses = true;
   bool _autoRefreshTimes = true;
   bool _vibrationEnabled = true;
+  bool _ttsEnabled = false;
   
   // Para navegar a una parada desde Rutas
   final GlobalKey<MapPageState> _mapPageKey = GlobalKey<MapPageState>();
@@ -290,6 +295,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _showSimulatedBuses = prefs.getBool('show_simulated_buses') ?? true;
       _autoRefreshTimes = prefs.getBool('auto_refresh_times') ?? true;
       _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
+      _ttsEnabled = prefs.getBool('tts_enabled') ?? false;
     });
   }
 
@@ -301,6 +307,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await prefs.setBool('show_simulated_buses', _showSimulatedBuses);
     await prefs.setBool('auto_refresh_times', _autoRefreshTimes);
     await prefs.setBool('vibration_enabled', _vibrationEnabled);
+    await prefs.setBool('tts_enabled', _ttsEnabled);
+    TtsService().isEnabled = _ttsEnabled;
   }
 
   Future<void> _initNotifications() async {
@@ -591,6 +599,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             showSimulatedBuses: _showSimulatedBuses,
             autoRefreshTimes: _autoRefreshTimes,
             vibrationEnabled: _vibrationEnabled,
+            ttsEnabled: _ttsEnabled,
             onNotificationsChanged: (value) async {
               setState(() => _notificationsEnabled = value);
               await _savePreferences();
@@ -618,6 +627,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             },
             onVibrationChanged: (value) {
               setState(() => _vibrationEnabled = value);
+              _savePreferences();
+            },
+            onTtsChanged: (value) {
+              setState(() => _ttsEnabled = value);
               _savePreferences();
             },
             currentLocale: widget.currentLocale,
