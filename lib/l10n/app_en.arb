@@ -144,5 +144,15 @@
   "topStops": "🚏 Most frequent stops",
   "recentActivity": "📅 Recent activity",
   "last7days": "Last 7 days",
-  "last30days": "Last 30 days"
+  "last30days": "Last 30 days",
+  "forgotPassword": "Forgot my password",
+  "forgotPasswordTitle": "Recover Password",
+  "forgotPasswordInstructions": "Enter your email to receive a recovery code.",
+  "sendCode": "Send code",
+  "enterCode": "Enter the code",
+  "codeSent": "Code sent to your email",
+  "resetPasswordTitle": "New Password",
+  "resetPasswordButton": "Reset Password",
+  "passwordResetSuccess": "Password updated successfully",
+  "verifyCode": "Verify code"
 }

@@ -144,5 +144,15 @@
   "topStops": "🚏 Parades més freqüents",
   "recentActivity": "📅 Activitat recent",
   "last7days": "Últims 7 dies",
-  "last30days": "Últims 30 dies"
+  "last30days": "Últims 30 dies",
+  "forgotPassword": "He oblidat la contrasenya",
+  "forgotPasswordTitle": "Recuperar Contrasenya",
+  "forgotPasswordInstructions": "Introdueix el teu correu per a rebre un codi de recuperació.",
+  "sendCode": "Enviar codi",
+  "enterCode": "Introdueix el codi",
+  "codeSent": "Codi enviat al teu correu",
+  "resetPasswordTitle": "Nova Contrasenya",
+  "resetPasswordButton": "Restablir Contrasenya",
+  "passwordResetSuccess": "Contrasenya actualitzada correctament",
+  "verifyCode": "Verificar codi"
 }

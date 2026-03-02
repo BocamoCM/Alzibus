@@ -144,5 +144,15 @@
   "topStops": "🚏 Paradas más frecuentes",
   "recentActivity": "📅 Actividad reciente",
   "last7days": "Últimos 7 días",
-  "last30days": "Últimos 30 días"
+  "last30days": "Últimos 30 días",
+  "forgotPassword": "Olvidé mi contraseña",
+  "forgotPasswordTitle": "Recuperar Contraseña",
+  "forgotPasswordInstructions": "Introduce tu email para recibir un código de recuperación.",
+  "sendCode": "Enviar código",
+  "enterCode": "Introduce el código",
+  "codeSent": "Código enviado a tu email",
+  "resetPasswordTitle": "Nueva Contraseña",
+  "resetPasswordButton": "Restablecer Contraseña",
+  "passwordResetSuccess": "Contraseña actualizada correctamente",
+  "verifyCode": "Verificar código"
 }

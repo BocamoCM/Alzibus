@@ -242,6 +242,52 @@ class AuthService {
     }
   }
 
+  /// Solicita un código de recuperación de contraseña.
+  Future<String?> requestPasswordReset(String email) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/forgot-password'),
+            headers: AppConfig.headers,
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(AppConfig.httpTimeout);
+
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return null; // Éxito
+      }
+      return body['error'] as String? ?? 'Error al solicitar código';
+    } catch (e) {
+      debugPrint('Error en requestPasswordReset: $e');
+      throw AuthNetworkException(e);
+    }
+  }
+
+  /// Restablece la contraseña usando el código recibido por email.
+  Future<String?> resetPassword(String email, String code, String newPassword) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/reset-password'),
+            headers: AppConfig.headers,
+            body: jsonEncode({
+              'email': email,
+              'code': code,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(AppConfig.httpTimeout);
+
+      if (response.statusCode == 200) return null; // Éxito
+      final body = jsonDecode(response.body);
+      return body['error'] as String? ?? 'Error al restablecer contraseña';
+    } catch (e) {
+      debugPrint('Error en resetPassword: $e');
+      throw AuthNetworkException(e);
+    }
+  }
+
   /// Extrae el campo `exp` del payload de un JWT (sin verificar firma).
   int? _extractExpiry(String token) {
     try {

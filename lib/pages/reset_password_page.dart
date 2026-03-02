@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../services/auth_service.dart';
-import '../main.dart'; // import for HomePage
-import 'register_page.dart';
-import 'forgot_password_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class ResetPasswordPage extends StatefulWidget {
+  final String email;
+
+  const ResetPasswordPage({super.key, required this.email});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
@@ -22,12 +21,12 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _codeController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
     final l = AppLocalizations.of(context)!;
 
@@ -37,27 +36,31 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _authService.login(
-        _emailController.text.trim(),
+      final error = await _authService.resetPassword(
+        widget.email,
+        _codeController.text.trim(),
         _passwordController.text.trim(),
       );
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    } on AuthInvalidCredentialsException {
+
+      if (error == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.passwordResetSuccess)),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        setState(() {
+          _errorMessage = error;
+        });
+      }
+    } catch (e) {
       if (!mounted) return;
       setState(() {
-        _isLoading = false;
-        _errorMessage = l.incorrectCredentials;
-      });
-    } on AuthNetworkException {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
         _errorMessage = l.noServerConnection;
       });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -65,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l.loginTitle)),
+      appBar: AppBar(title: Text(l.resetPasswordTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -73,21 +76,23 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                '${l.codeSent} ${widget.email}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
-                controller: _emailController,
+                controller: _codeController,
                 decoration: InputDecoration(
-                  labelText: l.email,
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  labelText: l.enterCode,
+                  prefixIcon: const Icon(Icons.pin_outlined),
                 ),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l.enterEmail;
-                  }
-                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                  if (!emailRegex.hasMatch(value.trim())) {
-                    return l.invalidEmail;
+                  if (value == null || value.trim().length != 6) {
+                    return l.enterCode;
                   }
                   return null;
                 },
@@ -96,12 +101,10 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
-                  labelText: l.password,
+                  labelText: l.newPassword,
                   prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 obscureText: true,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _login(),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return l.enterPassword;
@@ -127,26 +130,10 @@ class _LoginPageState extends State<LoginPage> {
                   : SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _login,
-                        child: Text(l.loginButton),
+                        onPressed: _resetPassword,
+                        child: Text(l.resetPasswordButton),
                       ),
                     ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegisterPage()),
-                  );
-                },
-                child: Text(l.noAccount),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-                  );
-                },
-                child: Text(l.forgotPassword),
-              ),
             ],
           ),
         ),

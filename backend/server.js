@@ -1007,6 +1007,11 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             noticesTotal,
             noticesActive,
             noticesByLine,
+            todayQueries,
+            queries7d,
+            queriesPrev7d,
+            avgResponseTime,
+            totalStopsResult,
         ] = await Promise.all([
             pool.query("SELECT COUNT(*) FROM users"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true"),
@@ -1033,9 +1038,24 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             pool.query("SELECT COUNT(*) FROM notices"),
             pool.query("SELECT COUNT(*) FROM notices WHERE active = true AND (expires_at IS NULL OR expires_at > NOW())"),
             pool.query("SELECT COALESCE(line, 'General') as line, COUNT(*) as cnt FROM notices GROUP BY line ORDER BY cnt DESC"),
+            pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE"),
+            pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
+            pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at < NOW() - INTERVAL '7 days' AND created_at >= NOW() - INTERVAL '14 days'"),
+            pool.query("SELECT AVG(duration_ms) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
+            pool.query("SELECT COUNT(*) FROM stops"),
         ]);
 
+        const cur7 = parseInt(queries7d.rows[0].count);
+        const prev7 = parseInt(queriesPrev7d.rows[0].count);
+        const growth = prev7 > 0 ? ((cur7 - prev7) / prev7) * 100 : 0;
+        const totalStopsCount = parseInt(totalStopsResult.rows[0].count || 0);
+
         res.json({
+            todayQueries: parseInt(todayQueries.rows[0].count),
+            weeklyGrowth: parseFloat(growth.toFixed(1)),
+            avgResponseTime: Math.round(parseFloat(avgResponseTime.rows[0].avg || 0)),
+            activeUsers: parseInt(usersTotal.rows[0].count),
+            totalStops: totalStopsCount,
             users: {
                 total: parseInt(usersTotal.rows[0].count),
                 verified: parseInt(usersVerified.rows[0].count),
@@ -1051,19 +1071,25 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
                 confirmationRate: tripsTotal.rows[0].count > 0
                     ? Math.round((tripsConfirmed.rows[0].count / tripsTotal.rows[0].count) * 100)
                     : 0,
-                byLine: tripsByLine.rows,
-                byHour: tripsByHour.rows,
-                topStops: topStops.rows,
-                dailyTrips: dailyTrips.rows,
+                byLine: tripsByLine.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
+                byHour: tripsByHour.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
+                topStops: topStops.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
+                dailyTrips: dailyTrips.rows.map(r => ({ ...r, cnt: parseInt(r.cnt), day: r.day })),
             },
-            users_daily: dailyRegistrations.rows,
+            users_daily: dailyRegistrations.rows.map(r => ({ ...r, cnt: parseInt(r.cnt), day: r.day })),
             api: {
-                endpoints: apiPerf.rows,
+                endpoints: apiPerf.rows.map(r => ({
+                    ...r,
+                    avg_ms: parseInt(r.avg_ms),
+                    calls: parseInt(r.calls),
+                    max_ms: parseInt(r.max_ms)
+                })),
+                totalQueries7d: cur7,
             },
             notices: {
                 total: parseInt(noticesTotal.rows[0].count),
                 active: parseInt(noticesActive.rows[0].count),
-                byLine: noticesByLine.rows,
+                byLine: noticesByLine.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
             },
         });
     } catch (error) {
