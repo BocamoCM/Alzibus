@@ -38,7 +38,9 @@ app.use(cors({
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-    credentials: true
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 app.use(express.json()); // Para poder leer JSON en el body de las peticiones
 
