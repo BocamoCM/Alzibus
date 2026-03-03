@@ -504,9 +504,9 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
                         ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 80),
+                          constraints: const BoxConstraints(maxWidth: 90),
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerRight,

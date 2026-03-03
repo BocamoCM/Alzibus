@@ -131,7 +131,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Text(email, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(email, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ),
         const SizedBox(height: 4),
         Builder(builder: (context) {
           final l = AppLocalizations.of(context)!;
@@ -220,12 +223,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Icon(icon, size: 20, color: Colors.grey[600]),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+              ),
+            ],
+          ),
         ),
       ],
     );

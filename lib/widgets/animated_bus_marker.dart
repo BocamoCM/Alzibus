@@ -121,37 +121,43 @@ class _AnimatedBusMarkerState extends State<AnimatedBusMarker>
                   ),
                   border: Border.all(color: Colors.white, width: 2.5),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Icono del bus
-                    Icon(
-                      Icons.directions_bus_rounded,
-                      color: Colors.white,
-                      size: s * 0.34,
-                    ),
-                    // Badge de línea
-                    Container(
-                      margin: EdgeInsets.only(top: s * 0.02),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: s * 0.07,
-                        vertical: s * 0.01,
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Icono del bus
+                      Icon(
+                        Icons.directions_bus_rounded,
+                        color: Colors.white,
+                        size: s * 0.34,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.28),
-                        borderRadius: BorderRadius.circular(s * 0.1),
-                      ),
-                      child: Text(
-                        widget.lineId,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: s * 0.16,
-                          letterSpacing: 0.3,
+                      // Badge de línea
+                      Container(
+                        margin: EdgeInsets.only(top: s * 0.02),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: s * 0.07,
+                          vertical: s * 0.01,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.28),
+                          borderRadius: BorderRadius.circular(s * 0.1),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            widget.lineId,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: s * 0.16,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
