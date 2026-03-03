@@ -1,5 +1,5 @@
 const express = require('express');
-const https = require('https');
+const { sendDiscordNotification } = require('./utils/discord');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
@@ -59,6 +59,7 @@ const validateApiKey = (req, res, next) => {
     const apiKey = req.headers['x-api-key'];
     if (!apiKey || apiKey !== process.env.API_KEY) {
         console.warn(`[API Key] Petición rechazada desde ${req.ip}`);
+        sendDiscordNotification(`⚠️ **Petición rechazada**: API Key inválida desde ${req.ip} para \`${req.method} ${req.url}\``);
         return res.status(401).json({ error: 'API Key inválida o no proporcionada' });
     }
     next();
@@ -126,6 +127,10 @@ const loginLimiter = rateLimit({
     message: { error: 'Demasiados intentos de inicio de sesión. Reinténtalo en 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        sendDiscordNotification(`🛡️ **Brute Force bloqueado**: Múltiples fallos de login desde IP ${req.ip}`);
+        res.status(options.statusCode).send(options.message);
+    }
 });
 
 const authenticateAdmin = (req, res, next) => {
@@ -160,8 +165,10 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '12h' }
         );
+        sendDiscordNotification(`🔏 **Panel Admin**: Sesión iniciada correctamente.`);
         return res.json({ token });
     } else {
+        sendDiscordNotification(`❌ **Fallo de Admin**: Intento de login administrativo incorrecto desde ${req.ip}`);
         return res.status(401).json({ error: 'Contraseña de administrador incorrecta' });
     }
 });
@@ -194,40 +201,6 @@ async function sendOtpEmail(email, verificationCode) {
     transporter.sendMail(mailOptions)
         .then(() => console.log('Correo OTP enviado a', email))
         .catch(err => console.error('Error enviando correo:', err.message));
-}
-
-/**
- * Envía una notificación a Discord vía Webhook
- */
-async function sendDiscordNotification(content) {
-    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-    if (!webhookUrl) return;
-
-    const data = JSON.stringify({ content });
-    const url = new URL(webhookUrl);
-
-    const options = {
-        hostname: url.hostname,
-        path: url.pathname + url.search,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': data.length,
-        },
-    };
-
-    const req = https.request(options, (res) => {
-        if (res.statusCode >= 400) {
-            console.error(`[Discord] Error al enviar notificación: ${res.statusCode}`);
-        }
-    });
-
-    req.on('error', (error) => {
-        console.error('[Discord] Error de conexión:', error.message);
-    });
-
-    req.write(data);
-    req.end();
 }
 
 function sendVerificationAndRespond(res, email, verificationCode, newUser) {
@@ -625,7 +598,9 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
     try {
         const exists = await pool.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, req.user.id]);
         if (exists.rows.length > 0) return res.status(400).json({ error: 'El email ya está en uso' });
+        const oldEmail = req.user.email;
         await pool.query('UPDATE users SET email = $1 WHERE id = $2', [email, req.user.id]);
+        sendDiscordNotification(`📧 **Usuario**: \`${oldEmail}\` ha cambiado su email a \`${email}\``);
         res.json({ message: 'Email actualizado' });
     } catch (error) {
         console.error('Error actualizando email:', error);
@@ -649,6 +624,7 @@ app.put('/api/users/password', authenticateToken, async (req, res) => {
         if (!valid) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
         const newHash = await bcrypt.hash(newPassword, 10);
         await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+        sendDiscordNotification(`🔐 **Usuario**: \`${req.user.email}\` ha cambiado su contraseña.`);
         res.json({ message: 'Contraseña actualizada' });
     } catch (error) {
         console.error('Error cambiando contraseña:', error);
@@ -1036,6 +1012,13 @@ app.get('/api/stats/peak-hours', async (req, res) => {
     }
 });
 
+// 11.5. Registrar alerta de proximidad (desde la App)
+app.post('/api/stats/log-alert', async (req, res) => {
+    const { stopName, line, destination } = req.body;
+    sendDiscordNotification(`🔔 **Alerta Activada**: Usuario esperando \`${line} -> ${destination}\` en **${stopName}**`);
+    res.json({ success: true });
+});
+
 // ==========================================
 // RUTAS DE HISTORIAL DE VIAJES
 // ==========================================
@@ -1072,7 +1055,12 @@ app.post('/api/trips', authenticateToken, async (req, res) => {
              RETURNING id, line, destination, stop_name AS "stopName", stop_id AS "stopId", timestamp, confirmed`,
             [req.user.id, line, destination, stopName, stopId, timestamp, confirmed ?? false]
         );
-        res.status(201).json(result.rows[0]);
+
+        // Notificar a Discord
+        const trip = result.rows[0];
+        sendDiscordNotification(`🎫 **Viaje Validado**: \`${req.user.email}\` ha validado un viaje en la **${line}** hacia **${destination}** (Parada: ${stopName})`);
+
+        res.status(201).json(trip);
     } catch (error) {
         console.error('Error al guardar viaje:', error);
         res.status(500).json({ error: 'Error al guardar el viaje' });
@@ -1285,8 +1273,47 @@ app.get('/api/stats/peak-hours', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Reporte diario a medianoche
+let lastReportDate = '';
+
+setInterval(async () => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    // Ejecutar a las 00:00 (o poco después) si no se ha enviado hoy
+    if (now.getHours() === 0 && lastReportDate !== todayStr) {
+        lastReportDate = todayStr;
+        try {
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yStr = yesterday.toISOString().split('T')[0];
+
+            const usersRes = await pool.query("SELECT COUNT(*) FROM users WHERE created_at::date = $1", [yStr]);
+            const tripsRes = await pool.query("SELECT COUNT(*) FROM trips WHERE timestamp::date = $1", [yStr]);
+            const lineRes = await pool.query(
+                "SELECT line, COUNT(*) as cnt FROM trips WHERE timestamp::date = $1 GROUP BY line ORDER BY cnt DESC LIMIT 1",
+                [yStr]
+            );
+
+            const userCount = usersRes.rows[0].count;
+            const tripCount = tripsRes.rows[0].count;
+            const topLine = lineRes.rows[0]?.line || 'Ninguna';
+
+            const message = `📊 **RESUMEN DIARIO (${yStr})**\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
+                `👤 **Usuarios nuevos**: \`${userCount}\` \n` +
+                `🎫 **Viajes validados**: \`${tripCount}\` \n` +
+                `🚌 **Línea estrella**: \`${topLine}\` \n` +
+                `━━━━━━━━━━━━━━━━━━━━`;
+
+            sendDiscordNotification(message);
+        } catch (e) {
+            console.error('[Dashboard] Fallo al generar reporte diario:', e);
+        }
+    }
+}, 300000); // Revisar cada 5 minutos
+
 // Iniciar el servidor
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor y WebSockets corriendo en puerto ${PORT}`);
 });
-

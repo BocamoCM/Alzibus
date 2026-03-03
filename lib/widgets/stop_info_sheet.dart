@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
 import '../models/bus_stop.dart';
 import '../constants/line_colors.dart';
+import '../constants/app_config.dart';
 import '../services/bus_times_service.dart';
 import '../services/bus_alert_service.dart';
 import '../services/foreground_service.dart';
@@ -220,6 +223,20 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     
     // Chequear inmediatamente
     await ForegroundService.checkAlertsNow();
+
+    // Notificar al backend para Discord (estadísticas)
+    try {
+      final url = Uri.parse('${AppConfig.baseUrl}/stats/log-alert');
+      http.post(
+        url,
+        headers: AppConfig.headers,
+        body: jsonEncode({
+          'stopName': widget.stop.name,
+          'line': arrival.line,
+          'destination': arrival.destination,
+        }),
+      ).timeout(const Duration(seconds: 3)).catchError((_) => null);
+    } catch (_) {}
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
