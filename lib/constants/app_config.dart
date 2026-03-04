@@ -24,6 +24,25 @@ class AppConfig {
     defaultValue: 'https://b2bd0df7d8dfeb7fa13a08e0377d1898@o4510974925406208.ingest.de.sentry.io/4510974939299920',
   );
 
+  /// --- CONFIGURACIÓN DE MONETIZACIÓN (ADMOB) ---
+  
+  /// Permite desactivar todos los anuncios de la app de forma global.
+  static const bool showAds = true; 
+
+  /// ID de la Aplicación AdMob (Android)
+  static const String admobAppId = 'ca-app-pub-5215993257564469~3690891315';
+
+  /// ID del Banner Inferior
+  static const String bannerAdId = 'ca-app-pub-5215993257564469/4213160138';
+
+  /// ID del Anuncio Nativo (Ficha de Parada)
+  static const String nativeAdId = 'ca-app-pub-5215993257564469/1679805649';
+
+  /// ID del Anuncio Intersticial (Post-NFC)
+  static const String interstitialAdId = 'ca-app-pub-5215993257564469/8708248424';
+
+  /// --- FIN MONETIZACIÓN ---
+
   /// Hash del commit actual (opcional, vía --dart-define=COMMIT_HASH=...)
   static const String commitHash = String.fromEnvironment('COMMIT_HASH', defaultValue: 'none');
 

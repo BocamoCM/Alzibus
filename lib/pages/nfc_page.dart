@@ -13,6 +13,9 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../models/bus_card.dart';
 import '../services/tts_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../services/ad_service.dart';
+import '../constants/app_config.dart';
 
 /// Claves Mifare para tarjetas de bus de Alzira
 /// Extraídas de los dumps de las tarjetas reales
@@ -52,6 +55,10 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
   int _lowBalanceThreshold = 5;
   final FlutterLocalNotificationsPlugin _notif = FlutterLocalNotificationsPlugin();
   
+  BannerAd? _bannerAd;
+  bool _isBannerAdLoaded = false;
+  
+  int _scanCounter = 0;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   Timer? _refreshTimer;
@@ -65,12 +72,29 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
     _loadPreferences();
     _checkNfcAvailability();
     
+    // Pre-cargar anuncio intersticial
+    if (AppConfig.showAds) {
+      AdService.instance.loadInterstitialAd();
+      _initBannerAd();
+    }
+    
     // Timer para refrescar datos (por si se descuenta desde el diálogo global)
     _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (mounted && !_scanning) {
         _loadPreferences();
       }
     });
+  }
+
+  void _initBannerAd() {
+    _bannerAd = AdService.instance.createBannerAd(
+      onAdLoaded: (ad) {
+        setState(() => _isBannerAdLoaded = true);
+      },
+      onAdFailedToLoad: (ad, error) {
+        setState(() => _isBannerAdLoaded = false);
+      },
+    )..load();
   }
 
   void _initAnimations() {
@@ -89,6 +113,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
     _refreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -123,6 +148,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
       _storedTrips = prefs.getInt('stored_trips') ?? 0;
       _isUnlimited = prefs.getBool('is_unlimited') ?? false;
       _lastCardUid = prefs.getString('last_card_uid');
+      _scanCounter = prefs.getInt('nfc_scan_count') ?? 0;
       if (_isUnlimited) {
         _status = 'Tienes viajes ILIMITADOS';
       } else if (_storedTrips > 0) {
@@ -388,6 +414,15 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
             
             await _saveTrips(trips, uid, cardData.isUnlimited);
             await _checkLowBalance(trips);
+
+            // Gestión de frecuencia de anuncios intersticiales (1 de cada 5 lecturas)
+            final prefs = await SharedPreferences.getInstance();
+            _scanCounter++;
+            await prefs.setInt('nfc_scan_count', _scanCounter);
+
+            if (AppConfig.showAds && _scanCounter % 5 == 1) {
+              AdService.instance.showInterstitialAd();
+            }
           } else {
             setState(() {
               _status = 'Error al leer bloques de la tarjeta';
@@ -629,7 +664,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
         title: const Text('NFC Alzibus'),
         backgroundColor: Colors.white,
         foregroundColor: AlzitransColors.burgundy,
-        elevation: 1, // Añadido para un poco de profundidad sobre el fondo claro
+        elevation: 1,
       ),
       body: isIOS
           ? Center(
@@ -655,271 +690,283 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                 ),
               ),
             )
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
-                    // Tarjeta visual — ignoramos textScaler para mantener las proporciones fijas
-                    MediaQuery(
-                      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-                      child: Container(
-                        width: double.infinity,
-                        height: 220,
-                        decoration: BoxDecoration(
-                          gradient: _isUnlimited
-                              ? AlzitransColors.primaryGradient
-                              : const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF4CAF50),
-                                    Color(0xFFFF9800),
-                                  ],
-                                ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              right: -30,
-                              bottom: -30,
-                              child: Container(
-                                width: 150,
-                                height: 150,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.1),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(Icons.directions_bus, color: Colors.white.withOpacity(0.9), size: 24),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            'Alzitrans NFC',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 40),
+                          MediaQuery(
+                            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                            child: Container(
+                              width: double.infinity,
+                              height: 220,
+                              decoration: BoxDecoration(
+                                gradient: _isUnlimited
+                                    ? AlzitransColors.primaryGradient
+                                    : const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color(0xFF4CAF50),
+                                          Color(0xFFFF9800),
                                         ],
                                       ),
-                                      Text(
-                                        _cardData?.cardTypeName ?? 'Transporte Público Alzira',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
-                                  Text(
-                                    _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 1.1,
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    right: -30,
+                                    bottom: -30,
+                                    child: Container(
+                                      width: 150,
+                                      height: 150,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white.withOpacity(0.1),
+                                      ),
                                     ),
                                   ),
-                                  Center(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: _isUnlimited ? 36 : 48,
-                                          fontWeight: FontWeight.w900,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black.withOpacity(0.2),
-                                              offset: const Offset(0, 2),
-                                              blurRadius: 4,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(Icons.directions_bus, color: Colors.white.withOpacity(0.9), size: 24),
+                                                const SizedBox(width: 8),
+                                                const Text(
+                                                  'Alzitrans NFC',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w900,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Text(
+                                              _cardData?.cardTypeName ?? 'Transporte Público Alzira',
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(0.8),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      ),
+                                        Text(
+                                          _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.7),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 1.1,
+                                          ),
+                                        ),
+                                        Center(
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: _isUnlimited ? 36 : 48,
+                                                fontWeight: FontWeight.w900,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: Colors.black.withOpacity(0.2),
+                                                    offset: const Offset(0, 2),
+                                                    blurRadius: 4,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        if (_lastCardUid != null)
+                                          Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(
+                                              'ID: $_lastCardUid',
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(0.5),
+                                                fontSize: 9,
+                                                fontFamily: 'monospace',
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
-                                  if (_lastCardUid != null)
-                                    Align(
-                                      alignment: Alignment.bottomRight,
-                                      child: Text(
-                                        'ID: $_lastCardUid',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.5),
-                                          fontSize: 9,
-                                          fontFamily: 'monospace',
-                                        ),
-                                      ),
+                                  Positioned(
+                                    top: 15,
+                                    right: 15,
+                                    child: Opacity(
+                                      opacity: 0.8,
+                                      child: _scanning
+                                          ? AnimatedBuilder(
+                                              animation: _pulseAnimation,
+                                              builder: (context, child) => Transform.scale(
+                                                scale: _pulseAnimation.value,
+                                                child: const Icon(Icons.nfc, color: Colors.white, size: 36),
+                                              ),
+                                            )
+                                          : const Icon(Icons.nfc, color: Colors.white, size: 36),
                                     ),
+                                  ),
                                 ],
                               ),
                             ),
-                            Positioned(
-                              top: 15,
-                              right: 15,
-                              child: Opacity(
-                                opacity: 0.8,
-                                child: _scanning
-                                    ? AnimatedBuilder(
-                                        animation: _pulseAnimation,
-                                        builder: (context, child) => Transform.scale(
-                                          scale: _pulseAnimation.value,
-                                          child: const Icon(Icons.nfc, color: Colors.white, size: 36),
+                          ),
+                          const SizedBox(height: 32),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isLowBalance ? Colors.orange.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Text(
+                              _status,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isLowBalance ? Colors.orange.shade900 : Colors.grey[800],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          if (!_scanning)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: (_storedTrips > 0 && !_isUnlimited) ? _validateTrip : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: _isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  minimumSize: const Size(double.infinity, 56),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(_isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        _isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
+                                        style: const TextStyle(fontSize: 18),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: _stopScan,
+                                  child: const Text('Cancelar'),
+                                ),
+                              ],
+                            ),
+                          const SizedBox(height: 16),
+                          if (!_scanning)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: _nfcAvailable ? _startScan : null,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AlzitransColors.burgundy,
+                                  side: const BorderSide(color: AlzitransColors.burgundy),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  minimumSize: const Size(double.infinity, 50),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.nfc),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        _storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
+                                        style: const TextStyle(fontSize: 16),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+                          if (_cardData != null && isLowBalance) ...[
+                            Card(
+                              color: Colors.orange.shade50,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.warning_amber, color: Colors.orange),
+                                    const SizedBox(width: 12),
+                                    const Expanded(
+                                      child: Text(
+                                        '¡Recarga tu tarjeta pronto!',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      )
-                                    : const Icon(Icons.nfc, color: Colors.white, size: 36),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isLowBalance ? Colors.orange.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Text(
-                        _status,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isLowBalance ? Colors.orange.shade900 : Colors.grey[800],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    if (!_scanning)
-                      SizedBox(
-                        width: double.infinity,
-                        // Quitamos el height fijo para permitir que crezca con el modo mayor
-                        child: ElevatedButton(
-                          onPressed: (_storedTrips > 0 && !_isUnlimited) ? _validateTrip : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: _isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                            minimumSize: const Size(double.infinity, 56),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  _isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
-                                  style: const TextStyle(fontSize: 18),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      Column(
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 16),
-                          TextButton(
-                            onPressed: _stopScan,
-                            child: const Text('Cancelar'),
-                          ),
+                          const SizedBox(height: 24),
                         ],
                       ),
-                    const SizedBox(height: 16),
-                    if (!_scanning)
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: _nfcAvailable ? _startScan : null,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AlzitransColors.burgundy,
-                            side: const BorderSide(color: AlzitransColors.burgundy),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                            minimumSize: const Size(double.infinity, 50),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.nfc),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  _storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
-                                  style: const TextStyle(fontSize: 16),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    if (_cardData != null && isLowBalance) ...[
-                      Card(
-                        color: Colors.orange.shade50,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning_amber, color: Colors.orange),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text(
-                                  '¡Recarga tu tarjeta pronto!',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
+                // --- ANUNCIO BANNER PERSISTENTE AL FINAL ---
+                if (AppConfig.showAds && _bannerAd != null && _isBannerAdLoaded)
+                  Container(
+                    alignment: Alignment.center,
+                    width: _bannerAd!.size.width.toDouble(),
+                    height: _bannerAd!.size.height.toDouble(),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: AdWidget(ad: _bannerAd!),
+                  ),
+              ],
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSettingsDialog,

@@ -8,6 +8,9 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/foreground_service.dart';
 import '../theme/app_theme.dart';
 import '../providers/elderly_mode_provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../services/ad_service.dart';
+import '../constants/app_config.dart';
 
 class SettingsPage extends StatefulWidget {
   final bool notificationsEnabled;
@@ -58,6 +61,9 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _serviceRunning = false;
   String _appVersion = '';
   String _buildNumber = '';
+  
+  BannerAd? _bannerAd;
+  bool _isBannerAdLoaded = false;
 
   late bool _notificationsEnabled;
   late double _notificationDistance;
@@ -84,6 +90,20 @@ class _SettingsPageState extends State<SettingsPage> {
     
     _loadDebugInfo();
     _loadAppVersion();
+    _initBannerAd();
+  }
+
+  void _initBannerAd() {
+    if (!AppConfig.showAds) return;
+
+    _bannerAd = AdService.instance.createBannerAd(
+      onAdLoaded: (ad) {
+        setState(() => _isBannerAdLoaded = true);
+      },
+      onAdFailedToLoad: (ad, error) {
+        setState(() => _isBannerAdLoaded = false);
+      },
+    )..load();
   }
 
   Future<void> _loadAppVersion() async {
@@ -434,8 +454,25 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
         const SizedBox(height: 32),
+        
+        // --- ANUNCIO BANNER ---
+        if (AppConfig.showAds && _bannerAd != null && _isBannerAdLoaded)
+          Container(
+            alignment: Alignment.center,
+            width: _bannerAd!.size.width.toDouble(),
+            height: _bannerAd!.size.height.toDouble(),
+            child: AdWidget(ad: _bannerAd!),
+          ),
+          
+        const SizedBox(height: 16),
       ],
     ),   // body: ListView
   );   // Scaffold
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
   }
 }

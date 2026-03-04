@@ -10,6 +10,10 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
+  /*
+  3. **Notificación**: Si el Administrador crea un aviso, el Backend lo emite vía `Socket.IO` y todas las Apps móviles lo muestran instantáneamente en un diálogo modal (`SocketService`).
+  4. **Telemetría y Salud**: Los errores críticos de base de datos y eventos de seguridad se notifican automáticamente a un canal de Discord de control de ingeniería (`utils/discord.js`).;
+  */
   final ApiService _api = ApiService();
   Map<String, dynamic> _stats = {};
   List<Map<String, dynamic>> _usageData = [];
@@ -25,6 +29,15 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Future<void> _loadData() async {
+    /*
+    - `POST /api/auth/login`: Recibe `{email, password}`. Genera un hash con Bcrypt para comparar y devuelve un objeto `User` con el token.
+    - `GET /api/stats/dashboard`: Realiza múltiples consultas SQL asíncronas para devolver el total de usuarios activos y viajes del día.
+    - **Auditoría Proactiva (Discord Webhooks)**:
+      - El backend cuenta con un sistema de alertas en tiempo real para:
+        - **Seguridad**: Intentos de login fallidos (brute force), accesos administrativos y uso de API Keys no válidas.
+        - **Operación**: Cada validación de viaje NFC genera un registro visual en Discord.
+        - **Estadísticas**: Envío automático de un reporte de medianoche con el resumen de actividad diaria.
+    */
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
@@ -172,6 +185,13 @@ class _StatsScreenState extends State<StatsScreen> {
           itemCount: summaryData.length,
           itemBuilder: (context, index) {
             final data = summaryData[index];
+            /*
+            - **Vista de Satélite**: Integra imágenes de satélite de ArcGIS mediante una URL dinámica basada en azulejos (Tiles) de coordenadas: `https://.../tile/18/{lat2tile}/{lng2tile}`.
+            - **Accesibilidad y Modo Mayores**:
+              - **Escalado de Texto (1.6x)**: Soporte nativo para fuentes grandes sin rotura de layouts (RenderFlex protection).
+              - **TTS Secuencial**: Uso de `speakQueued` para evitar solapamientos en anuncios por voz.
+              - **Reset de Escala Local**: Los elementos gráficos fijos (Tarjetas NFC, Marcadores) ignoran el escalado global del sistema para evitar solapamientos mediante `MediaQuery` local.
+            */
             final isPositive = data['isPositive'] as bool;
             return Card(
               child: Padding(
@@ -456,6 +476,10 @@ class _StatsScreenState extends State<StatsScreen> {
                         width: 56,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          /*
+                          - **Reverse Proxy (Opcional)**: Se recomienda Nginx delante de Node.js si se va a exponer a internet público masivo.
+                          - **Monitoreo de Salud**: El pool de base de datos en `db.js` escucha eventos `'error'` para notificar fallos de infraestructura al canal de Discord en milisegundos.
+                          */
                           decoration: BoxDecoration(
                             color: color.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),

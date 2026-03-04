@@ -16,6 +16,8 @@ import '../services/renfe_service.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../services/tts_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../services/ad_service.dart';
 import 'simple_map_widget.dart';
 
 class StopInfoSheet extends StatefulWidget {
@@ -46,6 +48,9 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   List<TrainArrival>? _trainArrivals;
   bool _loadingTrains = false;
   
+  NativeAd? _nativeAd;
+  bool _isNativeAdLoaded = false;
+  
   /// Verifica si esta parada es la estación de Renfe
   bool get _isRenfeStation {
     final name = widget.stop.name.toUpperCase();
@@ -61,6 +66,20 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     if (_isRenfeStation) {
       _loadTrainTimes();
     }
+    _initNativeAd();
+  }
+
+  void _initNativeAd() {
+    if (!AppConfig.showAds) return;
+
+    _nativeAd = AdService.instance.createNativeAd(
+      onAdLoaded: (ad) {
+        setState(() => _isNativeAdLoaded = true);
+      },
+      onAdFailedToLoad: (ad, error) {
+        setState(() => _isNativeAdLoaded = false);
+      },
+    )..load();
   }
   
   Future<void> _loadTrainTimes() async {
@@ -126,6 +145,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   @override
   void dispose() {
     _autoRefreshTimer?.cancel();
+    _nativeAd?.dispose();
     super.dispose();
   }
 
@@ -799,6 +819,17 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
               minimumSize: const Size(double.infinity, 44),
             ),
           ),
+          
+          // --- ANUNCIO NATIVO AVANZADO ---
+          if (AppConfig.showAds && _nativeAd != null && _isNativeAdLoaded)
+            Container(
+              margin: const EdgeInsets.only(top: 24, bottom: 8),
+              height: 320, // Altura estimada para un anuncio nativo con imagen
+              alignment: Alignment.center,
+              child: AdWidget(ad: _nativeAd!),
+            ),
+            
+          const SizedBox(height: 20),
         ],
         ),
       ),

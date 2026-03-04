@@ -31,6 +31,7 @@ import 'services/auth_service.dart';
 import 'services/socket_service.dart';
 import 'services/bus_simulation_service.dart';
 import 'services/tts_service.dart';
+import 'services/ad_service.dart';
 import 'providers/elderly_mode_provider.dart';
 import 'dart:async';
 
@@ -99,6 +100,7 @@ void main() async {
           AssistantService.initialize();
           SocketService().initialize();
           await TtsService().init();
+          await AdService.instance.initialize();
         }
 
         final stopsService = StopsService();
