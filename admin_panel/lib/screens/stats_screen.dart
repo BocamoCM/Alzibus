@@ -184,6 +184,7 @@ class _StatsScreenState extends State<StatsScreen> {
         'isPositive': true,
         'icon': Icons.location_on,
       },
+      /*
       {
         'title': 'Usuarios Premium',
         'value': _showSensitiveData ? '${_stats['premiumUsers'] ?? 0}' : '***',
@@ -198,6 +199,7 @@ class _StatsScreenState extends State<StatsScreen> {
         'isPositive': true,
         'icon': Icons.payments,
       },
+      */
     ];
 
     return LayoutBuilder(

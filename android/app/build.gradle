@@ -33,8 +33,6 @@ android {
     compileSdk 36
     ndkVersion "27.0.12077973"
 
-
-    // Fix for FileSystemException during lint analysis
     lint {
         checkReleaseBuilds false
         abortOnError false
@@ -68,23 +66,36 @@ android {
     defaultConfig {
         applicationId "com.alzitrans.app"
         minSdkVersion 24
-        targetSdk 34
+        targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            if (keystorePropertiesFile.exists()) {
-                signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
-            }
-            
+            signingConfig signingConfigs.release
+
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            packagingOptions {
+                doNotStrip "**/*.so"
+            }
+
+            // ⚡ Evitar debug symbols completamente
+            ndk {
+                debugSymbolLevel 'NONE'
+            }
         }
+    }
+}
+
+// ⚡ Desactivar el strip solo en RELEASE para evitar errores de toolchain en Windows sin romper el DEBUG
+tasks.configureEach { task ->
+    if (task.name.toLowerCase().contains("strip") && 
+        (task.name.toLowerCase().contains("release") || task.name.toLowerCase().contains("bundle"))) {
+        task.enabled = false
     }
 }
 
@@ -93,6 +104,6 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     implementation 'com.google.android.material:material:1.12.0'
 }

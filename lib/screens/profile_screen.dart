@@ -70,8 +70,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildAvatar(theme),
                       const SizedBox(height: 24),
-                      _buildPremiumCard(theme, l),
-                      const SizedBox(height: 24),
+                      _buildStatsCards(theme, l),
+                      const SizedBox(height: 16),
+                      _buildInfoCard(theme, l),
+                      const SizedBox(height: 16),
                       _buildActionsCard(theme, l),
                     ],
                   ),
@@ -130,6 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+              /*
               if (_profile?['isPremium'] == true)
                 Positioned(
                   right: 0,
@@ -143,6 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: const Icon(Icons.diamond, color: AlzitransColors.burgundy, size: 20),
                   ),
                 ),
+              */
             ],
           ),
         ),
