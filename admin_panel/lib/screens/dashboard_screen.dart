@@ -87,6 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       {'title': 'Rutas Activas', 'value': '${_stats['totalRoutes'] ?? 0}', 'icon': Icons.route, 'color': const Color(0xFF8B2252)},
       {'title': 'Usuarios Activos', 'value': '${_stats['activeUsers'] ?? 0}', 'icon': Icons.people, 'color': const Color(0xFFB22234)},
       {'title': 'Consultas Hoy', 'value': '${_stats['todayQueries'] ?? 0}', 'icon': Icons.query_stats, 'color': const Color(0xFFE85A4F)},
+      {'title': 'Usuarios Premium', 'value': '${_stats['premiumUsers'] ?? 0}', 'icon': Icons.diamond, 'color': const Color(0xFFD4AF37)}, // Color dorado
     ];
 
     return LayoutBuilder(

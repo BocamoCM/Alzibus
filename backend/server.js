@@ -1154,6 +1154,7 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             queriesPrev7d,
             avgResponseTime,
             totalStopsResult,
+            premiumUsersResult,
         ] = await Promise.all([
             pool.query("SELECT COUNT(*) FROM users"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true"),
@@ -1185,6 +1186,7 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at < NOW() - INTERVAL '7 days' AND created_at >= NOW() - INTERVAL '14 days'"),
             pool.query("SELECT AVG(duration_ms) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
             pool.query("SELECT COUNT(*) FROM stops"),
+            pool.query("SELECT COUNT(*) FROM users WHERE is_premium = TRUE"),
         ]);
 
         const cur7 = parseInt(queries7d.rows[0].count);
@@ -1198,6 +1200,8 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             avgResponseTime: Math.round(parseFloat(avgResponseTime.rows[0].avg || 0)),
             activeUsers: parseInt(usersTotal.rows[0].count),
             totalStops: totalStopsCount,
+            premiumUsers: parseInt(premiumUsersResult.rows[0].count || 0),
+            totalRevenue: (parseInt(premiumUsersResult.rows[0].count || 0) * 2.99).toFixed(2),
             users: {
                 total: parseInt(usersTotal.rows[0].count),
                 verified: parseInt(usersVerified.rows[0].count),

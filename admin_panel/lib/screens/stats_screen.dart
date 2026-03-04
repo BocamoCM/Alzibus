@@ -168,11 +168,25 @@ class _StatsScreenState extends State<StatsScreen> {
         'isPositive': true,
         'icon': Icons.location_on,
       },
+      {
+        'title': 'Usuarios Premium',
+        'value': '${_stats['premiumUsers'] ?? 0}',
+        'change': '💎',
+        'isPositive': true,
+        'icon': Icons.diamond,
+      },
+      {
+        'title': 'Ingresos Est. (€)',
+        'value': '${_stats['totalRevenue'] ?? '0.00'}',
+        'change': '↑',
+        'isPositive': true,
+        'icon': Icons.payments,
+      },
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1000 ? 4 : 2;
+        final crossAxisCount = constraints.maxWidth > 1200 ? 3 : (constraints.maxWidth > 800 ? 2 : 1);
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

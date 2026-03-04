@@ -181,6 +181,8 @@ class ApiService {
       'todayQueries': 0,
       'weeklyGrowth': 0.0,
       'avgResponseTime': 0.0,
+      'premiumUsers': 0,
+      'totalRevenue': '0.00',
     };
   }
 
