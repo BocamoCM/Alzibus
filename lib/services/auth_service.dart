@@ -36,6 +36,7 @@ class AuthService {
         await prefs.setString('jwt_token', token);
         await prefs.setString('user_email', data['user']['email'] as String);
         await prefs.setInt('user_id', data['user']['id'] as int);
+        await prefs.setBool('is_premium', data['user']['isPremium'] as bool? ?? false);
         
         // Establecer identidad en Sentry
         await Sentry.configureScope((scope) {
@@ -130,6 +131,7 @@ class AuthService {
     await prefs.remove('jwt_token');
     await prefs.remove('user_email');
     await prefs.remove('user_id');
+    await prefs.remove('is_premium');
     await prefs.remove('token_expiry');
     
     // Limpiar identidad en Sentry
@@ -167,6 +169,11 @@ class AuthService {
     return prefs.getString('user_email');
   }
 
+  Future<bool> isUserPremium() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('is_premium') ?? false;
+  }
+
   /// Obtiene el perfil del usuario desde la API.
   Future<Map<String, dynamic>?> getProfile(String token) async {
     try {
@@ -180,7 +187,10 @@ class AuthService {
           )
           .timeout(AppConfig.httpTimeout);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_premium', data['isPremium'] as bool? ?? false);
+        return data;
       }
     } catch (e) {
       debugPrint('Error obteniendo perfil: $e');

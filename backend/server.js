@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const helmet = require('helmet');
 const pool = require('./db');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +44,38 @@ app.use(cors({
     preflightContinue: false,
     optionsSuccessStatus: 204
 }));
+// Webhook de Stripe: Debe estar ANTES de express.json() para procesar el body crudo (raw)
+// Requerido para la validación de firma de Stripe (Seguridad de Producción)
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+        console.error(`[Webhook] Error de firma: ${err.message}`);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Manejar el evento de pago exitoso
+    if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+        const userId = paymentIntent.metadata.userId;
+
+        if (userId) {
+            try {
+                await pool.query('UPDATE users SET is_premium = TRUE WHERE id = $1', [userId]);
+                console.log(`[Stripe] Usuario ${userId} ahora es PREMIUM`);
+                sendDiscordNotification(`💎 **Nuevo Usuario Premium**: El usuario ID \`${userId}\` ha completado su pago.`);
+            } catch (dbErr) {
+                console.error('[Stripe] Error actualizando DB:', dbErr);
+            }
+        }
+    }
+
+    res.json({ received: true });
+});
+
 app.use(express.json()); // Para poder leer JSON en el body de las peticiones
 
 // ==========================================
@@ -528,7 +561,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         res.json({
             message: 'Login exitoso',
             token: token,
-            user: { id: user.id, email: user.email }
+            user: { id: user.id, email: user.email, isPremium: user.is_premium }
         });
     } catch (error) {
         console.error('Error en login:', error);
@@ -555,7 +588,7 @@ app.post('/api/users/heartbeat', authenticateToken, async (req, res) => {
 app.get('/api/users/profile', authenticateToken, async (req, res) => {
     try {
         const userResult = await pool.query(
-            'SELECT id, email, created_at, last_access FROM users WHERE id = $1',
+            'SELECT id, email, created_at, last_access, is_premium FROM users WHERE id = $1',
             [req.user.id]
         );
         if (userResult.rows.length === 0) {
@@ -579,6 +612,7 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
             email: user.email,
             createdAt: user.created_at,
             lastAccess: user.last_access,
+            isPremium: user.is_premium,
             stats: {
                 totalTrips: parseInt(totalTrips.rows[0].count),
                 mostUsedLine: lineUsage.rows[0]?.line || null,
@@ -1312,6 +1346,34 @@ setInterval(async () => {
         }
     }
 }, 300000); // Revisar cada 5 minutos
+
+// ==========================================
+// PAGOS PREMIUM (STRIPE + BIZUM)
+// ==========================================
+
+// 18. Crear Intención de Pago (Intent)
+app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
+    const { amount = 299 } = req.body; // Precio por defecto 2.99€ (centavos)
+
+    try {
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: 'eur',
+            payment_method_types: ['card', 'bizum'], // Soporte para Bizum y Tarjeta
+            metadata: {
+                userId: req.user.id.toString(),
+                email: req.user.email
+            },
+        });
+
+        res.json({
+            clientSecret: paymentIntent.client_secret,
+        });
+    } catch (error) {
+        console.error('[Stripe] Error creando intent:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Iniciar el servidor
 server.listen(PORT, '0.0.0.0', () => {

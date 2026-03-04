@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../pages/premium_page.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends StatefulWidget {
@@ -69,9 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildAvatar(theme),
                       const SizedBox(height: 24),
-                      _buildStatsCards(theme, l),
-                      const SizedBox(height: 24),
-                      _buildInfoCard(theme, l),
+                      _buildPremiumCard(theme, l),
                       const SizedBox(height: 24),
                       _buildActionsCard(theme, l),
                     ],
@@ -119,15 +118,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 38,
-                fontWeight: FontWeight.bold,
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 38,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
+              if (_profile?['isPremium'] == true)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.amber,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.diamond, color: AlzitransColors.burgundy, size: 20),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -144,6 +160,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }),
       ],
+    );
+  }
+
+  Widget _buildPremiumCard(ThemeData theme, AppLocalizations l) {
+    final isPremium = _profile?['isPremium'] == true;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: isPremium
+            ? const LinearGradient(
+                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [AlzitransColors.burgundy.withOpacity(0.9), AlzitransColors.wine],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: (isPremium ? Colors.orange : AlzitransColors.burgundy).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                isPremium ? Icons.diamond : Icons.workspace_premium,
+                color: Colors.white,
+                size: 32,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPremium ? 'USUARIO PREMIUM' : 'PÁSATE A PREMIUM',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    Text(
+                      isPremium
+                          ? 'Gracias por apoyar Alzitrans'
+                          : 'Quita los anuncios para siempre',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (!isPremium) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PremiumPage()),
+                  ).then((_) => _loadProfile()); // Recargar al volver
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AlzitransColors.burgundy,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('MÁS INFORMACIÓN', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

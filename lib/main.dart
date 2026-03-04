@@ -33,6 +33,7 @@ import 'services/bus_simulation_service.dart';
 import 'services/tts_service.dart';
 import 'services/ad_service.dart';
 import 'providers/elderly_mode_provider.dart';
+import 'services/premium_service.dart';
 import 'dart:async';
 
 // Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
@@ -77,6 +78,15 @@ void main() async {
       final prefs = await SharedPreferences.getInstance();
       final authService = AuthService();
       final isLoggedIn = await authService.isLoggedIn();
+      
+      // Inicializar Stripe
+      await PremiumService().init();
+
+      // Desactivar anuncios si es premium
+      if (isLoggedIn) {
+        final isPremium = await authService.isUserPremium();
+        AppConfig.showAds = !isPremium;
+      }
       
       // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
   runApp(AlzitransApp(isLoggedIn: isLoggedIn));
