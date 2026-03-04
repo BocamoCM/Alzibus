@@ -80,7 +80,13 @@ void main() async {
       final isLoggedIn = await authService.isLoggedIn();
       
       // Inicializar Stripe
-      await PremiumService().init();
+      debugPrint('Main: Inicializando PremiumService...');
+      try {
+        await PremiumService().init();
+        debugPrint('Main: PremiumService inicializado correctamente.');
+      } catch (e) {
+        debugPrint('Main: Error inicializando PremiumService: $e');
+      }
 
       // Desactivar anuncios si es premium
       if (isLoggedIn) {
@@ -240,39 +246,42 @@ class _AlzitransAppState extends State<AlzitransApp> {
               )
             : AlzitransTheme.lightTheme;
 
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: isElderly
-                ? const TextScaler.linear(1.6)
-                : const TextScaler.linear(1.0),
-          ),
-          child: MaterialApp(
-            navigatorKey: navigatorKey,
-            title: 'Alzitrans',
-            theme: theme,
-            debugShowCheckedModeBanner: false,
-            locale: _currentLocale,
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            navigatorObservers: [
-              SentryNavigatorObserver(),
-            ],
-            supportedLocales: const [
-              Locale('es'),
-              Locale('en'),
-              Locale('ca'),
-            ],
-            home: widget.isLoggedIn
-                ? HomePage(onLocaleChanged: _onLocaleChanged, currentLocale: _currentLocale)
-                : const LoginPage(),
-            routes: {
-              '/login': (context) => const LoginPage(),
-            },
-          ),
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'Alzitrans',
+          theme: theme,
+          debugShowCheckedModeBanner: false,
+          locale: _currentLocale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          navigatorObservers: [
+            SentryNavigatorObserver(),
+          ],
+          supportedLocales: const [
+            Locale('es'),
+            Locale('en'),
+            Locale('ca'),
+          ],
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: isElderly
+                    ? const TextScaler.linear(1.6)
+                    : const TextScaler.linear(1.0),
+              ),
+              child: child!,
+            );
+          },
+          home: widget.isLoggedIn
+              ? HomePage(onLocaleChanged: _onLocaleChanged, currentLocale: _currentLocale)
+              : const LoginPage(),
+          routes: {
+            '/login': (context) => const LoginPage(),
+          },
         );
       },
     );

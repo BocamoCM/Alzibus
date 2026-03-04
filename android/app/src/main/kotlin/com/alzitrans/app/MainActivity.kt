@@ -8,13 +8,13 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import es.antonborri.home_widget.HomeWidgetPlugin
 import java.util.Locale
 
-class MainActivity: FlutterActivity(), TextToSpeech.OnInitListener {
+class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
     private val CHANNEL = "com.alzitrans.app/maps"
     private val ASSISTANT_CHANNEL = "com.alzitrans.app/assistant"
     private var tts: TextToSpeech? = null

@@ -21,6 +21,7 @@ class _StatsScreenState extends State<StatsScreen> {
   List<Map<String, dynamic>> _peakHours = [];
   bool _isLoading = true;
   String _selectedPeriod = 'week';
+  bool _showSensitiveData = false;
 
   @override
   void initState() {
@@ -71,18 +72,33 @@ class _StatsScreenState extends State<StatsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Estadisticas',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Analisis detallado del uso del sistema',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[600],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Estadisticas',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Analisis detallado del uso del sistema',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: Icon(_showSensitiveData ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => setState(() => _showSensitiveData = !_showSensitiveData),
+                tooltip: _showSensitiveData ? 'Ocultar datos sensibles' : 'Mostrar datos sensibles',
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           _buildPeriodSelector(theme),
@@ -170,14 +186,14 @@ class _StatsScreenState extends State<StatsScreen> {
       },
       {
         'title': 'Usuarios Premium',
-        'value': '${_stats['premiumUsers'] ?? 0}',
+        'value': _showSensitiveData ? '${_stats['premiumUsers'] ?? 0}' : '***',
         'change': '💎',
         'isPositive': true,
         'icon': Icons.diamond,
       },
       {
         'title': 'Ingresos Est. (€)',
-        'value': '${_stats['totalRevenue'] ?? '0.00'}',
+        'value': _showSensitiveData ? '${_stats['totalRevenue'] ?? '0.00'}' : '***',
         'change': '↑',
         'isPositive': true,
         'icon': Icons.payments,

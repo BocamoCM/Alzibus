@@ -51,7 +51,12 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
     let event;
 
     try {
-        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        if (!process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET === 'whsec_...') {
+            console.warn('[Webhook] STRIPE_WEBHOOK_SECRET no configurado. Procesando sin validar firma (SOLO DESARROLLO)');
+            event = JSON.parse(req.body);
+        } else {
+            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        }
     } catch (err) {
         console.error(`[Webhook] Error de firma: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -1376,6 +1381,20 @@ app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('[Stripe] Error creando intent:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// 19. Confirmación Manual (cuando no se pueden usar webhooks)
+app.post('/api/payments/confirm-manual', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        await pool.query('UPDATE users SET is_premium = TRUE WHERE id = $1', [userId]);
+        console.log(`[Stripe] Usuario ${userId} confirmado manualmente como PREMIUM`);
+        sendDiscordNotification(`💎 **Nuevo Usuario Premium (Confirmación Manual)**: El usuario ID \`${userId}\` ha sido activado.`);
+        res.json({ success: true, message: 'Usuario actualizado a Premium' });
+    } catch (error) {
+        console.error('[Stripe] Error en confirmación manual:', error);
+        res.status(500).json({ error: 'Error al actualizar estado Premium' });
     }
 });
 

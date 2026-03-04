@@ -16,6 +16,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Map<String, dynamic>> _linesData = [];
   List<Map<String, dynamic>> _recentActivity = [];
   bool _isLoading = true;
+  bool _showSensitiveData = false;
 
   @override
   void initState() {
@@ -59,9 +60,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Dashboard', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Resumen general del sistema', style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[600])),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Dashboard', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Resumen general del sistema', style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[600])),
+                  ],
+                ),
+                IconButton(
+                  icon: Icon(_showSensitiveData ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _showSensitiveData = !_showSensitiveData),
+                  tooltip: _showSensitiveData ? 'Ocultar datos sensibles' : 'Mostrar datos sensibles',
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
             _buildStatsCards(theme),
             const SizedBox(height: 24),
@@ -87,7 +103,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       {'title': 'Rutas Activas', 'value': '${_stats['totalRoutes'] ?? 0}', 'icon': Icons.route, 'color': const Color(0xFF8B2252)},
       {'title': 'Usuarios Activos', 'value': '${_stats['activeUsers'] ?? 0}', 'icon': Icons.people, 'color': const Color(0xFFB22234)},
       {'title': 'Consultas Hoy', 'value': '${_stats['todayQueries'] ?? 0}', 'icon': Icons.query_stats, 'color': const Color(0xFFE85A4F)},
-      {'title': 'Usuarios Premium', 'value': '${_stats['premiumUsers'] ?? 0}', 'icon': Icons.diamond, 'color': const Color(0xFFD4AF37)}, // Color dorado
+      {
+        'title': 'Usuarios Premium',
+        'value': _showSensitiveData ? '${_stats['premiumUsers'] ?? 0}' : '***',
+        'icon': Icons.diamond,
+        'color': const Color(0xFFD4AF37)
+      },
     ];
 
     return LayoutBuilder(
