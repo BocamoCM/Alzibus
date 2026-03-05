@@ -110,6 +110,21 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend Alzibus alcanzable' });
 });
 
+// --- RUTAS PÚBLICAS PARA CUMPLIMIENTO (GOOGL PLAY) ---
+// Estas rutas sirven el HTML necesario para la consola de Google Play
+const path = require('path');
+
+app.get('/delete-account', (req, res) => {
+    res.sendFile(path.join(__dirname, 'delete-account.html'));
+});
+
+app.get('/privacy-policy', (req, res) => {
+    // Si queremos servir la política de privacidad también desde aquí
+    const fs = require('fs');
+    const marked = require('marked'); // Habría que instalarlo o servir HTML directamente
+    res.sendFile(path.join(__dirname, 'POLITICA_PRIVACIDAD_ALZITRANS.md')); // Temporal, mejor HTML
+});
+
 // Middleware para registrar las peticiones a la API
 app.use((req, res, next) => {
     const start = Date.now();
@@ -668,6 +683,27 @@ app.put('/api/users/password', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error cambiando contraseña:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// 18b. ELIMINAR CUENTA (Derecho al olvido / Play Store Compliance)
+app.delete('/api/users/profile', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const email = req.user.email;
+    try {
+        // 1. Borrar viajes (cascada manual si no está en el esquema)
+        await pool.query('DELETE FROM trips WHERE user_id = $1', [userId]);
+
+        // 2. Borrar el usuario
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+        console.log(`[GDPR] Usuario eliminado: ${email} (ID: ${userId})`);
+        sendDiscordNotification(`🗑️ **Cuenta eliminada**: El usuario \`${email}\` ha solicitado el borrado permanente de sus datos.`);
+
+        res.json({ message: 'Tu cuenta y todos tus datos han sido eliminados correctamente.' });
+    } catch (error) {
+        console.error('Error eliminando cuenta:', error);
+        res.status(500).json({ error: 'No se pudo eliminar la cuenta. Por favor, contacta con soporte.' });
     }
 });
 

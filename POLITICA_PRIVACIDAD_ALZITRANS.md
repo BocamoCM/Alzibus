@@ -30,5 +30,10 @@ Implementamos medidas de seguridad estándar de la industria (encriptación SSL/
 ## 4. Publicidad (AdMob)
 Nuestra aplicación utiliza Google AdMob para mostrar anuncios. Google puede recopilar identificadores de publicidad para personalizar los anuncios que ves. Los usuarios Premium no verán publicidad.
 
-## 5. Contacto
+## 5. Eliminación de Cuenta y Datos (Derecho de Supresión)
+Alzitrans facilita a los usuarios el control total sobre sus datos personales:
+*   **Desde la App:** Puedes eliminar tu cuenta permanentemente desde la pestaña de "Perfil" -> "Eliminar cuenta". Esta acción borrará de forma inmediata e irreversible tu correo, historial de viajes y favoritos de nuestros servidores.
+*   **Desde la Web:** Si has desinstalado la aplicación, puedes solicitar el borrado enviando un email a **bcarreres55@gmail.com** indicando tu dirección de correo de registro.
+
+## 6. Contacto
 Si tienes preguntas sobre esta política, puedes contactarnos a través de los canales oficiales del proyecto.

@@ -249,6 +249,32 @@ class AuthService {
     }
   }
 
+  /// Elimina permanentemente la cuenta del usuario y todos sus datos.
+  Future<bool> deleteAccount(String token) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('${AppConfig.baseUrl}/users/profile'),
+            headers: {
+              ...AppConfig.headers,
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(AppConfig.httpTimeout);
+      
+      if (response.statusCode == 200) {
+        await logout(); // Limpiar sesión local tras borrar en servidor
+        return true;
+      }
+      
+      final error = jsonDecode(response.body)['error'] ?? 'Error al eliminar cuenta';
+      throw Exception(error);
+    } catch (e) {
+      debugPrint('Error eliminando cuenta: $e');
+      rethrow;
+    }
+  }
+
   /// Envía un pulso de actividad al servidor para indicar que el usuario está en línea.
   Future<void> sendHeartbeat() async {
     try {

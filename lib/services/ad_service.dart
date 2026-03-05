@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -8,6 +9,8 @@ import '../constants/app_config.dart';
 class AdService {
   AdService._();
   static final AdService instance = AdService._();
+  
+  bool _isInitialized = false;
 
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initializationFuture => _initCompleter.future;

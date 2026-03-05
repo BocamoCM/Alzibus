@@ -390,7 +390,10 @@ class _SettingsPageState extends State<SettingsPage> {
         if (!AppConfig.showAds)
           Card(
             color: Colors.amber[50],
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.amber[200]!)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.amber[200]!),
+            ),
             child: const Padding(
               padding: EdgeInsets.all(12.0),
               child: Row(

@@ -385,13 +385,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(l.logout, style: const TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: Colors.orange),
+            title: Text(l.logout, style: const TextStyle(color: Colors.orange)),
             onTap: () => _confirmLogout(l),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            title: const Text('Eliminar cuenta', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Borrado permanente de todos tus datos', style: TextStyle(fontSize: 11)),
+            onTap: () => _confirmDeleteAccount(l),
           ),
         ],
       ),
     );
+  }
+
+  void _confirmDeleteAccount(AppLocalizations l) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('¿Eliminar tu cuenta?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Esta acción es irreversible. Se borrarán permanentemente:'),
+            const SizedBox(height: 12),
+            const Text('• Tu historial de viajes y estadísticas.'),
+            const Text('• Tus paradas favoritas.'),
+            const Text('• Tu suscripción Premium.'),
+            const SizedBox(height: 12),
+            Text('¿Estás totalmente seguro de que quieres eliminar la cuenta de ${_profile?['email']}?', style: const TextStyle(fontWeight: FontWeight.w500)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              _performDeletion();
+            },
+            child: const Text('SÍ, ELIMINAR TODO'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performDeletion() async {
+    // Mostrar indicador de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      if (_token != null) {
+        final success = await _auth.deleteAccount(_token!);
+        if (success && mounted) {
+          Navigator.pop(context); // Quitar el loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cuenta eliminada con éxito. Sentimos que te vayas.'),
+              backgroundColor: Colors.black,
+            ),
+          );
+          // Redirigir al login (AuthService ya limpió el token localmente)
+          Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Quitar el loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   void _showChangeEmailDialog(AppLocalizations l) {
