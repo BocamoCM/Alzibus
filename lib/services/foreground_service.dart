@@ -589,8 +589,23 @@ class ForegroundService {
   
   static Future<void> start() async {
     if (kIsWeb) return;
-    await _service.startService();
-    print('[ForegroundService] Service started');
+    
+    try {
+      // Si ya está corriendo, no intentar arrancarlo de nuevo para evitar errores de sistema
+      if (await _service.isRunning()) {
+        print('[ForegroundService] Service is already running, skipping start');
+        return;
+      }
+      
+      // Pequeño delay para asegurar que la app está en primer plano (especialmente en cold starts)
+      await Future.delayed(const Duration(seconds: 1));
+      
+      await _service.startService();
+      print('[ForegroundService] Service started successfully');
+    } catch (e) {
+      print('[ForegroundService] Error starting service (likely background restriction): $e');
+      // No relanzamos el error para evitar que la app crashee completamente
+    }
   }
   
   static Future<void> stop() async {

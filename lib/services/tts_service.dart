@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,34 +10,51 @@ class TtsService {
   final FlutterTts _flutterTts = FlutterTts();
   bool _enabled = false;
   bool _isSpeaking = false;
+  bool _initialized = false;
+  Completer<void>? _initCompleter;
 
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _enabled = prefs.getBool('tts_enabled') ?? false;
-    final locale = prefs.getString('app_locale') ?? 'es';
+    if (_initialized) return;
+    if (_initCompleter != null) return _initCompleter!.future;
 
-    await setLanguage(locale);
-    // Speech rate más lento para mayor claridad
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
+    _initCompleter = Completer<void>();
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _enabled = prefs.getBool('tts_enabled') ?? false;
+      final locale = prefs.getString('app_locale') ?? 'es';
 
-    // Configuraciones para evitar deletreo
-    await _flutterTts.setQueueMode(0); // Flush mode: interrumpir el anterior
+      // Configurar idioma inicial (sequential)
+      await _setLanguageInternal(locale);
+      
+      // Speech rate más lento para mayor claridad
+      await _flutterTts.setSpeechRate(0.45);
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setPitch(1.0);
 
-    // Listeners de estado
-    _flutterTts.setStartHandler(() {
-      _isSpeaking = true;
-    });
-    _flutterTts.setCompletionHandler(() {
-      _isSpeaking = false;
-    });
-    _flutterTts.setCancelHandler(() {
-      _isSpeaking = false;
-    });
-    _flutterTts.setErrorHandler((msg) {
-      _isSpeaking = false;
-    });
+      // Configuraciones para evitar deletreo
+      await _flutterTts.setQueueMode(0); // Flush mode: interrumpir el anterior
+
+      // Listeners de estado
+      _flutterTts.setStartHandler(() {
+        _isSpeaking = true;
+      });
+      _flutterTts.setCompletionHandler(() {
+        _isSpeaking = false;
+      });
+      _flutterTts.setCancelHandler(() {
+        _isSpeaking = false;
+      });
+      _flutterTts.setErrorHandler((msg) {
+        _isSpeaking = false;
+      });
+      
+      _initialized = true;
+      _initCompleter!.complete();
+    } catch (e) {
+      _initCompleter!.completeError(e);
+      _initCompleter = null;
+    }
   }
 
   bool get isEnabled => _enabled;
@@ -53,6 +71,14 @@ class TtsService {
   }
 
   Future<void> setLanguage(String languageCode) async {
+    // Si no está inicializado, esperar a que lo esté o inicializar
+    if (!_initialized) {
+      await init();
+    }
+    await _setLanguageInternal(languageCode);
+  }
+
+  Future<void> _setLanguageInternal(String languageCode) async {
     String ttsCode = "es-ES";
     if (languageCode == "en") ttsCode = "en-US";
     if (languageCode == "ca") ttsCode = "ca-ES";
@@ -61,6 +87,7 @@ class TtsService {
     await _flutterTts.setLanguage(ttsCode);
     
     // Intentar forzar motor de Google TTS que pronuncia mejor
+    // NOTA: setEngine puede causar re-inicialización y errores en release si se llama mucho
     try {
       await _flutterTts.setEngine('com.google.android.tts');
     } catch (_) {

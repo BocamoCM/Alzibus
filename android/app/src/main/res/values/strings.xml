@@ -9,6 +9,10 @@
     <string name="shortcut_bus_times_long">Ver tiempos de buses favoritos</string>
     <string name="shortcut_favorites_short">Favoritos</string>
     <string name="shortcut_favorites_long">Ver paradas favoritas</string>
+    <string name="shortcut_nfc_short">Escanear NFC</string>
+    <string name="shortcut_nfc_long">Escanear parada por NFC</string>
+    <string name="shortcut_map_short">Mapa</string>
+    <string name="shortcut_map_long">Ver mapa de paradas</string>
     
     <!-- Consultas de bus para App Actions -->
     <string name="bus_query_time">tiempos de bus</string>

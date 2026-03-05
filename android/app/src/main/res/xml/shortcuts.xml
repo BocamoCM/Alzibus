@@ -30,4 +30,32 @@
             android:data="alzitrans://favorites" />
     </shortcut>
 
+    <!-- Atajo para escanear NFC -->
+    <shortcut
+        android:shortcutId="scan_nfc"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_nfc_short"
+        android:shortcutLongLabel="@string/shortcut_nfc_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.alzitrans.app"
+            android:targetClass="com.alzitrans.app.MainActivity"
+            android:data="alzitrans://nfc" />
+    </shortcut>
+
+    <!-- Atajo para ver el mapa -->
+    <shortcut
+        android:shortcutId="view_map"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_map_short"
+        android:shortcutLongLabel="@string/shortcut_map_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.alzitrans.app"
+            android:targetClass="com.alzitrans.app.MainActivity"
+            android:data="alzitrans://map" />
+    </shortcut>
+
 </shortcuts>

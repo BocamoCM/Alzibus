@@ -22,3 +22,6 @@
 -dontwarn javax.annotation.**
 -dontwarn org.checkerframework.**
 -dontwarn com.google.errorprone.annotations.**
+
+# Flutter TTS
+-keep class com.tundez.flutter_tts.** { *; }

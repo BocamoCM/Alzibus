@@ -94,6 +94,11 @@ void main() async {
         AppConfig.showAds = !isPremium;
       }
       
+      // Inicializar AdMob (ANTES de runApp para evitar race conditions en la primera carga)
+      if (!kIsWeb) {
+        await AdService.instance.initialize();
+      }
+      
       // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
   runApp(AlzitransApp(isLoggedIn: isLoggedIn));
 
@@ -116,7 +121,6 @@ void main() async {
           AssistantService.initialize();
           SocketService().initialize();
           await TtsService().init();
-          await AdService.instance.initialize();
         }
 
         final stopsService = StopsService();
@@ -148,10 +152,6 @@ void main() async {
         
         if (!kIsWeb) {
           await _requestPermissions();
-          final notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-          if (notificationsEnabled) {
-            await ForegroundService.start();
-          }
         }
       });
     },
@@ -313,6 +313,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   
   // Heartbeat timer
   Timer? _heartbeatTimer;
+  StreamSubscription? _assistantSubscription;
   final AuthService _authService = AuthService();
   
   // Nuevos ajustes
@@ -338,9 +339,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // Verificar viaje pendiente después de que el widget esté completamente construido
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Pequeño delay para asegurar que el contexto esté listo
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 500), () async {
         _checkPendingTrip();
+        
+        // Arrancar el servicio de segundo plano aquí, cuando el usuario ya está viendo la app
+        // Esto evita el error "startForegroundService() not allowed from background"
+        if (_notificationsEnabled) {
+          await ForegroundService.start();
+        }
       });
+    });
+
+    // Escuchar navegación desde Assistant / Shortcuts
+    _assistantSubscription = AssistantService.navigationStream.listen((destination) {
+      if (mounted) {
+        setState(() {
+          switch (destination) {
+            case 'map':
+              _index = 0;
+              break;
+            case 'bus_times': // "Ver buses"
+              _index = 0;
+              break;
+            case 'favorites': // "Favoritos"
+              _index = 1;
+              break;
+            case 'nfc': // "Escanear NFC"
+              _index = 2;
+              break;
+            default:
+              _index = 0;
+          }
+        });
+      }
     });
   }
 
@@ -361,6 +392,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     _heartbeatTimer?.cancel();
+    _assistantSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

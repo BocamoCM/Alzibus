@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../main.dart'; // import for HomePage
 import 'register_page.dart';
 import 'forgot_password_page.dart';
+import '../constants/app_config.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -44,6 +45,11 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
+      
+      // Actualizar flag de publicidad según el estado premium del usuario
+      final isPremium = await _authService.isUserPremium();
+      AppConfig.showAds = !isPremium;
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomePage()),
       );

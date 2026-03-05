@@ -79,7 +79,13 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
-            packagingOptions {
+            packaging {
+                jniLibs {
+                    useLegacyPackaging true
+                }
+                resources {
+                    excludes += '/META-INF/{AL2.0,LGPL2.1}'
+                }
                 doNotStrip "**/*.so"
             }
 
@@ -88,14 +94,6 @@ android {
                 debugSymbolLevel 'NONE'
             }
         }
-    }
-}
-
-// ⚡ Desactivar el strip solo en RELEASE para evitar errores de toolchain en Windows sin romper el DEBUG
-tasks.configureEach { task ->
-    if (task.name.toLowerCase().contains("strip") && 
-        (task.name.toLowerCase().contains("release") || task.name.toLowerCase().contains("bundle"))) {
-        task.enabled = false
     }
 }
 

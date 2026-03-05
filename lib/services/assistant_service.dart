@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'favorite_stops_service.dart';
@@ -6,6 +7,10 @@ import 'bus_times_service.dart';
 /// Servicio para integrar con Google Assistant
 class AssistantService {
   static const MethodChannel _channel = MethodChannel('com.alzitrans.app/assistant');
+  
+  // Stream para comunicar navegación desde Assistant/Shortcuts a la UI
+  static final StreamController<String> _navController = StreamController<String>.broadcast();
+  static Stream<String> get navigationStream => _navController.stream;
   
   /// Inicializa el manejador del method channel para Assistant
   static void initialize() {
@@ -16,9 +21,16 @@ class AssistantService {
     switch (call.method) {
       case 'getBusTimes':
         return await getBusTimesForAssistant();
+      case 'getBusTimesWithQuery':
+        final String? query = call.arguments['query'];
+        return await getBusTimesForAssistant(query: query);
       case 'refreshWidget':
         await FavoriteStopsService.updateWidget();
         return 'Widget actualizado';
+      case 'navigateTo':
+        final String destination = call.arguments;
+        _navController.add(destination);
+        return true;
       default:
         throw PlatformException(
           code: 'NOT_IMPLEMENTED',
@@ -27,8 +39,9 @@ class AssistantService {
     }
   }
   
-  /// Obtiene un resumen de los tiempos de bus para Google Assistant
-  static Future<String> getBusTimesForAssistant() async {
+  /// Obtiene un resumen de los tiempos de bus para Google Assistant / Gemini
+  /// [query] opcional para filtrar por una línea específica (ej. "L1")
+  static Future<String> getBusTimesForAssistant({String? query}) async {
     try {
       final stop = await FavoriteStopsService.getWidgetFavorite();
       
@@ -37,7 +50,29 @@ class AssistantService {
       }
       
       final busTimesService = BusTimesService();
-      final arrivals = await busTimesService.getArrivalTimes(stop.stopId);
+      var arrivals = await busTimesService.getArrivalTimes(stop.stopId);
+      
+      String premiumMessage = "";
+      
+      // Lógica de filtrado por línea (Preparado para Premium en el futuro)
+      if (query != null && query.isNotEmpty) {
+        // Normalizar query (quitar espacios, puntos, pasar a mayúsculas)
+        final cleanQuery = query.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
+        
+        // Intentar encontrar la línea en los resultados
+        final filtered = arrivals.where((a) => 
+          a.line.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase() == cleanQuery
+        ).toList();
+        
+        if (filtered.isNotEmpty) {
+          arrivals = filtered;
+          // NOTA: Aquí podrías comprobar si es premium para decidir si mostrar esto o no.
+          // De momento, lo permitimos para todos como pidió el usuario.
+          // premiumMessage = "\n(Función disponible gracias a Alzitrans Premium)"; 
+        } else {
+          return 'No encontré la línea $query en tu parada actual (${stop.stopName}).';
+        }
+      }
       
       if (arrivals.isEmpty) {
         return 'No hay buses programados para tu parada ${stop.stopName}.';
@@ -52,7 +87,7 @@ class AssistantService {
         response.write('Línea ${arrival.line} hacia ${arrival.destination} $timeText. ');
       }
       
-      return response.toString();
+      return response.toString() + premiumMessage;
     } catch (e) {
       return 'No pude obtener los tiempos de bus. Por favor, abre Alzibus.';
     }

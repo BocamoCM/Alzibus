@@ -9,17 +9,27 @@ class AdService {
   AdService._();
   static final AdService instance = AdService._();
 
-  bool _isInitialized = false;
+  final Completer<void> _initCompleter = Completer<void>();
+  Future<void> get initializationFuture => _initCompleter.future;
 
   /// Inicializa el SDK de Google Mobile Ads.
   Future<void> initialize() async {
-    if (!AppConfig.showAds) return;
+    if (!AppConfig.showAds) {
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
+      return;
+    }
     if (_isInitialized) return;
 
-    await MobileAds.instance.initialize();
-    _isInitialized = true;
-    if (kDebugMode) {
-      print('AdMob inicializado correctamente.');
+    try {
+      await MobileAds.instance.initialize();
+      _isInitialized = true;
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
+      if (kDebugMode) {
+        print('AdMob inicializado correctamente.');
+      }
+    } catch (e) {
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
+      debugPrint('Error inicializando AdMob: $e');
     }
   }
 

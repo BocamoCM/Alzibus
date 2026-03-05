@@ -93,15 +93,21 @@ class _SettingsPageState extends State<SettingsPage> {
     _initBannerAd();
   }
 
-  void _initBannerAd() {
+  void _initBannerAd() async {
     if (!AppConfig.showAds) return;
+
+    // Esperar a que el SDK esté inicializado
+    await AdService.instance.initializationFuture;
+    
+    if (!mounted) return;
 
     _bannerAd = AdService.instance.createBannerAd(
       onAdLoaded: (ad) {
-        setState(() => _isBannerAdLoaded = true);
+        if (mounted) setState(() => _isBannerAdLoaded = true);
       },
       onAdFailedToLoad: (ad, error) {
-        setState(() => _isBannerAdLoaded = false);
+        debugPrint('AdMob Banner Error: ${error.message} (Code: ${error.code})');
+        if (mounted) setState(() => _isBannerAdLoaded = false);
       },
     )..load();
   }
@@ -198,13 +204,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _languageTile({
-    required String flag,
     required String name,
     required Locale locale,
   }) {
     final isSelected = _currentLocale.languageCode == locale.languageCode;
     return ListTile(
-      leading: Text(flag, style: const TextStyle(fontSize: 24)),
+      leading: const Icon(Icons.language, color: AlzitransColors.burgundy),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: isSelected
           ? const Icon(Icons.check_circle, color: AlzitransColors.burgundy)
@@ -344,9 +349,9 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.all(4),
             child: Column(
               children: [
-                _languageTile(flag: '🇪🇸', name: 'Español', locale: const Locale('es')),
-                _languageTile(flag: '🏳️', name: 'Valencià', locale: const Locale('ca')),
-                _languageTile(flag: '🇬🇧', name: 'English', locale: const Locale('en')),
+                _languageTile(name: 'Español', locale: const Locale('es')),
+                _languageTile(name: 'Valencià', locale: const Locale('ca')),
+                _languageTile(name: 'English', locale: const Locale('en')),
               ],
             ),
           ),
@@ -381,7 +386,41 @@ class _SettingsPageState extends State<SettingsPage> {
         
         const SizedBox(height: 24),
 
-        const SizedBox(height: 24),
+        // --- ESTADO PREMIUM / PUBLICIDAD ---
+        if (!AppConfig.showAds)
+          Card(
+            color: Colors.amber[50],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.amber[200]!)),
+            child: const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                   Icon(Icons.star, color: Colors.amber),
+                   SizedBox(width: 12),
+                   Expanded(
+                     child: Text(
+                       'Eres usuario Premium. Los anuncios están desactivados para una mejor experiencia.',
+                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                     ),
+                   ),
+                ],
+              ),
+            ),
+          ),
+          
+        // --- ANUNCIO BANNER ---
+        if (AppConfig.showAds && _bannerAd != null && _isBannerAdLoaded)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Container(
+              alignment: Alignment.center,
+              width: _bannerAd!.size.width.toDouble(),
+              height: _bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
+            ),
+          ),
+
+        const SizedBox(height: 12),
         Text(l.information,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
@@ -453,17 +492,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 32),
-        
-        // --- ANUNCIO BANNER ---
-        if (AppConfig.showAds && _bannerAd != null && _isBannerAdLoaded)
-          Container(
-            alignment: Alignment.center,
-            width: _bannerAd!.size.width.toDouble(),
-            height: _bannerAd!.size.height.toDouble(),
-            child: AdWidget(ad: _bannerAd!),
-          ),
-          
         const SizedBox(height: 16),
       ],
     ),   // body: ListView

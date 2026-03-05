@@ -165,14 +165,49 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
             when (data.host) {
                 "bus_times" -> {
                     Log.d(TAG, "Procesando bus_times")
-                    // Obtener y hablar los tiempos de bus
-                    val text = getBusTimesText()
-                    Log.d(TAG, "Texto a hablar: $text")
-                    Toast.makeText(this, text, Toast.LENGTH_LONG).show()
-                    speak(text)
+                    val query = data.getQueryParameter("query")
+                    Log.d(TAG, "Query extraída: $query")
+                    
+                    // Si hay query, llamar a Flutter para procesarla
+                    if (query != null && query.isNotEmpty()) {
+                        MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod(
+                            "getBusTimesWithQuery", 
+                            mapOf("query" to query),
+                            object : MethodChannel.Result {
+                                override fun success(result: Any?) {
+                                    val text = result as? String ?: getBusTimesText()
+                                    Toast.makeText(this@MainActivity, text, Toast.LENGTH_LONG).show()
+                                    speak(text)
+                                }
+                                override fun error(code: String, msg: String?, details: Any?) {
+                                    val text = getBusTimesText()
+                                    speak(text)
+                                }
+                                override fun notImplemented() {
+                                    val text = getBusTimesText()
+                                    speak(text)
+                                }
+                            }
+                        )
+                    } else {
+                        // Comportamiento por defecto (parada favorita)
+                        val text = getBusTimesText()
+                        Log.d(TAG, "Texto a hablar (default): $text")
+                        Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+                        speak(text)
+                    }
                 }
                 "favorites" -> {
-                    // Navegar a favoritos - Flutter manejará esto
+                    // Navegar a favoritos
+                    MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "favorites")
+                }
+                "nfc" -> {
+                    // Navegar a NFC
+                    MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "nfc")
+                }
+                "map" -> {
+                    // Navegar a Mapa
+                    MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "map")
                 }
             }
         }

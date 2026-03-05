@@ -6,7 +6,8 @@
         <parameter name="thing.name">
             <entity-set-reference entitySetId="BusQueryEntitySet" />
         </parameter>
-        <fulfillment urlTemplate="alzitrans://bus_times" />
+        <!-- Soporte para consultas específicas como "L1" -->
+        <fulfillment urlTemplate="alzitrans://bus_times{?query}" />
     </action>
     
     <!-- Definición de entidades para consultas de bus -->
