@@ -89,9 +89,9 @@ android {
                 doNotStrip "**/*.so"
             }
 
-            // ⚡ Evitar debug symbols completamente
+            // ⚡ Habilitar debug symbols para Google Play
             ndk {
-                debugSymbolLevel 'NONE'
+                debugSymbolLevel 'FULL'
             }
         }
     }
