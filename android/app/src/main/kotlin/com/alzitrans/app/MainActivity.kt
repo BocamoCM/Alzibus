@@ -87,6 +87,7 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
         }
 
         // Si hay un intent pendiente (App Action), procesarlo ahora que el motor está listo
+        Log.d(TAG, "configureFlutterEngine - Comprobando pendingIntent: $pendingIntent")
         pendingIntent?.let {
             handleIntent(it)
             pendingIntent = null
@@ -99,24 +100,27 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
         // Inicializar TTS
         tts = TextToSpeech(this, this)
         
-        // No llamamos a handleIntent aquí directamente si el motor no existe aún
-        // Lo guardamos para configureFlutterEngine
-        if (flutterEngine == null) {
-            pendingIntent = intent
-        } else {
-            handleIntent(intent)
-        }
+        // CRÍTICO: No acceder a 'flutterEngine' aquí, ya que el delegate de la superclase
+        // puede no estar inicializado y provocar un NPE. Guardamos el intent para configureFlutterEngine.
+        pendingIntent = intent
     }
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Log.d(TAG, "onNewIntent - Nuevo intent recibido: ${intent.data}")
-        setIntent(intent) // Importante: actualizar el intent
+        setIntent(intent)
         
-        if (flutterEngine == null) {
+        // Intentamos procesar el intent. Si el motor no está listo, lo guardamos.
+        try {
+            val engine = flutterEngine
+            if (engine != null) {
+                handleIntent(intent)
+            } else {
+                pendingIntent = intent
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "onNewIntent - Motor no listo aún, guardando intent")
             pendingIntent = intent
-        } else {
-            handleIntent(intent)
         }
     }
     
