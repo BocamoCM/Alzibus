@@ -21,6 +21,8 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
     private var ttsReady = false
     private val TAG = "AlzitransAssistant"
 
+    private var pendingIntent: Intent? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
@@ -83,6 +85,12 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
                 else -> result.notImplemented()
             }
         }
+
+        // Si hay un intent pendiente (App Action), procesarlo ahora que el motor está listo
+        pendingIntent?.let {
+            handleIntent(it)
+            pendingIntent = null
+        }
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,14 +98,26 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
         Log.d(TAG, "onCreate - Inicializando TTS")
         // Inicializar TTS
         tts = TextToSpeech(this, this)
-        handleIntent(intent)
+        
+        // No llamamos a handleIntent aquí directamente si el motor no existe aún
+        // Lo guardamos para configureFlutterEngine
+        if (flutterEngine == null) {
+            pendingIntent = intent
+        } else {
+            handleIntent(intent)
+        }
     }
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Log.d(TAG, "onNewIntent - Nuevo intent recibido: ${intent.data}")
         setIntent(intent) // Importante: actualizar el intent
-        handleIntent(intent)
+        
+        if (flutterEngine == null) {
+            pendingIntent = intent
+        } else {
+            handleIntent(intent)
+        }
     }
     
     override fun onDestroy() {
@@ -158,6 +178,8 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
     
     private fun handleIntent(intent: Intent) {
         val data = intent.data
+        val engine = flutterEngine // Guardar referencia local para evitar NPE
+        
         Log.d(TAG, "handleIntent - data: $data, scheme: ${data?.scheme}, host: ${data?.host}")
         
         if (data != null && data.scheme == "alzitrans") {
@@ -168,9 +190,9 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
                     val query = data.getQueryParameter("query")
                     Log.d(TAG, "Query extraída: $query")
                     
-                    // Si hay query, llamar a Flutter para procesarla
-                    if (query != null && query.isNotEmpty()) {
-                        MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod(
+                    // Si hay query y el motor está listo, llamar a Flutter
+                    if (query != null && query.isNotEmpty() && engine != null) {
+                        MethodChannel(engine.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod(
                             "getBusTimesWithQuery", 
                             mapOf("query" to query),
                             object : MethodChannel.Result {
@@ -199,15 +221,21 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
                 }
                 "favorites" -> {
                     // Navegar a favoritos
-                    MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "favorites")
+                    engine?.let {
+                        MethodChannel(it.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "favorites")
+                    }
                 }
                 "nfc" -> {
                     // Navegar a NFC
-                    MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "nfc")
+                    engine?.let {
+                        MethodChannel(it.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "nfc")
+                    }
                 }
                 "map" -> {
                     // Navegar a Mapa
-                    MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "map")
+                    engine?.let {
+                        MethodChannel(it.dartExecutor.binaryMessenger, ASSISTANT_CHANNEL).invokeMethod("navigateTo", "map")
+                    }
                 }
             }
         }
