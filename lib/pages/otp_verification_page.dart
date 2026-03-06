@@ -2,6 +2,7 @@ import 'package:alzitrans/main.dart';
 import 'package:alzitrans/services/auth_service.dart';
 import 'package:alzitrans/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String email;
@@ -72,6 +73,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       if (error != null) {
         _showError(error);
       } else {
+        // Notificar al sistema que la autenticación terminó con éxito (para guardar contraseña)
+        TextInput.finishAutofillContext();
+        
         if (widget.isLoginFlow) {
           _showSuccess('¡Sesión iniciada correctamente!');
           // Navegar a Home quitando todo el historial anterior

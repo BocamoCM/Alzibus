@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
+import 'package:alzitrans/pages/otp_verification_page.dart';
 import '../services/auth_service.dart';
 import '../main.dart'; // import for HomePage
 import 'register_page.dart';
@@ -46,6 +48,9 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
       
+      // Finalizar contexto de autofill si no hay OTP (éxito directo)
+      TextInput.finishAutofillContext();
+      
       // Actualizar flag de publicidad según el estado premium del usuario
       final isPremium = await _authService.isUserPremium();
       AppConfig.showAds = !isPremium;
@@ -55,6 +60,11 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on AuthLoginOtpRequiredException catch (e) {
       if (!mounted) return;
+      
+      // IMPORTANTE: Avisar al sistema de que "aquí" terminamos con el usuario/pass
+      // para que salte el diálogo de guardar antes de que los campos desaparezcan.
+      TextInput.finishAutofillContext();
+
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => OtpVerificationPage(
@@ -87,94 +97,100 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: l.email,
-                  prefixIcon: const Icon(Icons.email_outlined),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l.enterEmail;
-                  }
-                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                  if (!emailRegex.hasMatch(value.trim())) {
-                    return l.invalidEmail;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: l.password,
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+          child: AutofillGroup(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: l.email,
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.email],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l.enterEmail;
+                    }
+                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                    if (!emailRegex.hasMatch(value.trim())) {
+                      return l.invalidEmail;
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: _obscurePassword,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _login(),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return l.enterPassword;
-                  }
-                  if (value.length < 6) {
-                    return l.passwordTooShort;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              if (_errorMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _login,
-                        child: Text(l.loginButton),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: l.password,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
                       ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegisterPage()),
-                  );
-                },
-                child: Text(l.noAccount),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-                  );
-                },
-                child: Text(l.forgotPassword),
-              ),
-            ],
+                  ),
+                  obscureText: _obscurePassword,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _login(),
+                  autofillHints: const [AutofillHints.password],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return l.enterPassword;
+                    }
+                    if (value.length < 6) {
+                      return l.passwordTooShort;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _login,
+                          child: Text(l.loginButton),
+                        ),
+                      ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    );
+                  },
+                  child: Text(l.noAccount),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+                    );
+                  },
+                  child: Text(l.forgotPassword),
+                ),
+              ],
+            ),
           ),
         ),
       ),
