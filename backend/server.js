@@ -725,45 +725,114 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 
         const user = result.rows[0];
 
-        // Verificar que la cuenta ha sido verificada por email (código OTP).
-        // Si no lo está, el usuario no puede iniciar sesión.
         if (user.is_verified === false) {
             return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.' });
         }
 
-        // Verificar que la cuenta esté activa (un admin puede desactivarla)
+        // Comprobar si hay una penalización activa por fallos previos en el OTP
+        if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
+            const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
+            return res.status(429).json({
+                error: `Demasiados intentos fallidos. Espera ${minutesLeft} minuto(s) antes de intentar el login de nuevo.`
+            });
+        }
+
         if (user.active === false) {
             return res.status(403).json({ error: 'Cuenta desactivada. Contacta con el administrador.' });
         }
 
-        // Comparar la contraseña proporcionada con el hash almacenado en la DB.
-        // bcrypt.compare() hashea la contraseña con la misma sal y compara el resultado.
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // Actualizar la fecha de último acceso (no bloqueante: si falla, no afecta al login)
-        pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [user.id])
-            .catch(err => console.warn('[Login] No se pudo actualizar last_access:', err.message));
+        // Generar código OTP para el login (2FA)
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
-        // Generar el token JWT con los datos del usuario.
-        // El token contiene: id y email del usuario.
-        // Expira en 24 horas: después de ese tiempo, la app pedirá login de nuevo.
+        await pool.query(
+            'UPDATE users SET verification_code = $1, otp_expires_at = $2, otp_attempts = 0 WHERE id = $3',
+            [verificationCode, otpExpiresAt, user.id]
+        );
+
+        // Enviar email con el código
+        await sendOtpEmail(user.email, verificationCode);
+        console.log(`[Login OTP] Enviado a ${user.email}`);
+
+        // Responder que se requiere verificación
+        res.json({
+            message: 'Se ha enviado un código de verificación a tu email.',
+            requiresOtp: true,
+            email: user.email
+        });
+
+    } catch (error) {
+        console.error('Error en login:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ==========================================
+// ENDPOINT 2.1: VERIFICACIÓN DE LOGIN (OTP)
+// ==========================================
+app.post('/api/login/verify', loginLimiter, async (req, res) => {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+        return res.status(400).json({ error: 'Email y código son obligatorios' });
+    }
+
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Usuario no encontrado' });
+        }
+
+        const user = result.rows[0];
+
+        // Verificar bloqueo por intentos
+        if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
+            const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
+            return res.status(429).json({ error: `Demasiados intentos. Espera ${minutesLeft} minuto(s).` });
+        }
+
+        // Verificar expiración
+        if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
+            return res.status(400).json({ error: 'El código ha caducado. Solicita otro.' });
+        }
+
+        // Verificar código
+        if (user.verification_code !== code) {
+            const newAttempts = (user.otp_attempts || 0) + 1;
+            if (newAttempts >= 3) {
+                const penaltyUntil = new Date(Date.now() + 30 * 60 * 1000);
+                await pool.query('UPDATE users SET otp_attempts = $1, otp_penalty_until = $2 WHERE id = $3', [newAttempts, penaltyUntil, user.id]);
+                return res.status(429).json({ error: 'Demasiados intentos fallidos. Bloqueado 30 min.' });
+            }
+            await pool.query('UPDATE users SET otp_attempts = $1 WHERE id = $2', [newAttempts, user.id]);
+            return res.status(400).json({ error: `Código incorrecto. Te quedan ${3 - newAttempts} intento(s).` });
+        }
+
+        // ✔️ ÉXITO: Generar el token JWT final
+        await pool.query(
+            'UPDATE users SET last_access = NOW(), verification_code = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE id = $1',
+            [user.id]
+        );
+
         const token = jwt.sign(
             { id: user.id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
-        // Devolver el token y datos básicos del usuario a la app
         res.json({
             message: 'Login exitoso',
-            token: token,                                               // Token JWT para autenticar futuras peticiones
-            user: { id: user.id, email: user.email, isPremium: user.is_premium } // Datos básicos del usuario
+            token: token,
+            user: { id: user.id, email: user.email, isPremium: user.is_premium }
         });
+
     } catch (error) {
-        console.error('Error en login:', error);
+        console.error('Error en verificación de login:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

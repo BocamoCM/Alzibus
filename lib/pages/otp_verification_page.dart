@@ -1,11 +1,17 @@
+import 'package:alzitrans/main.dart';
 import 'package:alzitrans/services/auth_service.dart';
 import 'package:alzitrans/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String email;
+  final bool isLoginFlow;
 
-  const OtpVerificationPage({super.key, required this.email});
+  const OtpVerificationPage({
+    super.key, 
+    required this.email,
+    this.isLoginFlow = false,
+  });
 
   @override
   State<OtpVerificationPage> createState() => _OtpVerificationPageState();
@@ -54,14 +60,30 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     setState(() => _isLoading = true);
 
     try {
-      final error = await _authService.verifyEmail(widget.email, code);
+      String? error;
+      if (widget.isLoginFlow) {
+        error = await _authService.verifyLoginCode(widget.email, code);
+      } else {
+        error = await _authService.verifyEmail(widget.email, code);
+      }
+      
       if (!mounted) return;
 
       if (error != null) {
         _showError(error);
       } else {
-        _showSuccess('¡Correo verificado! Ya puedes iniciar sesión.');
-        Navigator.pop(context);
+        if (widget.isLoginFlow) {
+          _showSuccess('¡Sesión iniciada correctamente!');
+          // Navegar a Home quitando todo el historial anterior
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+            (route) => false,
+          );
+        } else {
+          _showSuccess('¡Correo verificado! Ya puedes iniciar sesión.');
+          Navigator.pop(context);
+        }
       }
     } on AuthNetworkException {
       if (mounted) _showError('Sin conexión al servidor.');

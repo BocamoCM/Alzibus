@@ -10,6 +10,12 @@ class AuthInvalidCredentialsException implements Exception {
   const AuthInvalidCredentialsException();
 }
 
+/// Excepción lanzada cuando se requiere un código OTP para completar el login.
+class AuthLoginOtpRequiredException implements Exception {
+  final String email;
+  const AuthLoginOtpRequiredException(this.email);
+}
+
 /// Excepción lanzada cuando no hay conexión con el servidor.
 class AuthNetworkException implements Exception {
   final Object cause;
@@ -31,29 +37,33 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final token = data['token'] as String;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', token);
-        await prefs.setString('user_email', data['user']['email'] as String);
-        await prefs.setInt('user_id', data['user']['id'] as int);
-        await prefs.setBool('is_premium', data['user']['isPremium'] as bool? ?? false);
         
-        // Establecer identidad en Sentry
-        await Sentry.configureScope((scope) {
-          scope.setUser(SentryUser(
-            id: (data['user']['id'] as int).toString(),
-            email: data['user']['email'] as String,
-          ));
-        });
-
-        // Guardar expiración del token para validación futura
-        final expiry = _extractExpiry(token);
-        if (expiry != null) {
-          await prefs.setInt('token_expiry', expiry);
+        // Caso 1: Login directo (si estuviera desactivado el 2FA en el futuro)
+        // o si el servidor devuelve el token ya.
+        if (data['token'] != null) {
+          await _saveSession(data);
+          return;
         }
+        
+        // Caso 2: Se requiere OTP (2FA)
+        if (data['requiresOtp'] == true) {
+          throw AuthLoginOtpRequiredException(data['email'] as String);
+        }
+        
         return;
       }
+      
+      final body = jsonDecode(response.body);
+      final error = body['error'] as String? ?? 'Error de autenticación';
+      
+      if (response.statusCode == 403 && error.contains('verificar tu correo')) {
+        // Este caso es para cuando la cuenta NO está verificada en absoluto (registro pendiente)
+        // Podríamos lanzar una excepción específica o manejarlo como error normal.
+      }
+      
       throw const AuthInvalidCredentialsException();
+    } on AuthLoginOtpRequiredException {
+      rethrow;
     } on AuthInvalidCredentialsException {
       rethrow;
     } catch (e) {
@@ -84,8 +94,56 @@ class AuthService {
     }
   }
 
-  /// Verifica el código OTP enviado al correo. Lanza [AuthNetworkException].
-  /// Devuelve null si tuvo éxito, o el mensaje de error si falló.
+  /// Verifica el código OTP de login (2FA).
+  Future<String?> verifyLoginCode(String email, String code) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/login/verify'),
+            headers: AppConfig.headers,
+            body: jsonEncode({'email': email, 'code': code}),
+          )
+          .timeout(AppConfig.httpTimeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await _saveSession(data);
+        return null; // éxito
+      }
+      
+      final body = jsonDecode(response.body);
+      return body['error'] as String? ?? 'Código incorrecto';
+    } catch (e) {
+      debugPrint('Error en verificación de login: $e');
+      throw AuthNetworkException(e);
+    }
+  }
+
+  /// Guarda los datos de la sesión tras un login exitoso.
+  Future<void> _saveSession(Map<String, dynamic> data) async {
+    final token = data['token'] as String;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('jwt_token', token);
+    await prefs.setString('user_email', data['user']['email'] as String);
+    await prefs.setInt('user_id', data['user']['id'] as int);
+    await prefs.setBool('is_premium', data['user']['isPremium'] as bool? ?? false);
+    
+    // Establecer identidad en Sentry
+    await Sentry.configureScope((scope) {
+      scope.setUser(SentryUser(
+        id: (data['user']['id'] as int).toString(),
+        email: data['user']['email'] as String,
+      ));
+    });
+
+    // Guardar expiración del token para validación futura
+    final expiry = _extractExpiry(token);
+    if (expiry != null) {
+      await prefs.setInt('token_expiry', expiry);
+    }
+  }
+
+  /// Verifica el código OTP enviado al correo (Registro).
   Future<String?> verifyEmail(String email, String code) async {
     try {
       final response = await http

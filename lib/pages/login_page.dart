@@ -53,6 +53,16 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
+    } on AuthLoginOtpRequiredException catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => OtpVerificationPage(
+            email: e.email,
+            isLoginFlow: true,
+          ),
+        ),
+      );
     } on AuthInvalidCredentialsException {
       if (!mounted) return;
       setState(() {
