@@ -1,60 +1,105 @@
-const express = require('express');
-const { sendDiscordNotification } = require('./utils/discord');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit');
-const nodemailer = require('nodemailer');
-const helmet = require('helmet');
-const pool = require('./db');
-require('dotenv').config();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// ============================================================
+// server.js — Servidor principal del backend de Alzitrans
+// ============================================================
+// Este archivo es el punto de entrada del backend. Configura:
+// - Express como framework HTTP
+// - Socket.IO para comunicación en tiempo real (WebSockets)
+// - PostgreSQL como base de datos (vía pool de conexiones)
+// - Stripe para pagos Premium
+// - JWT para autenticación de usuarios
+// - Nodemailer para envío de emails (verificación OTP)
+// - Helmet y CORS para seguridad HTTP
+// - Rate limiting para protección contra ataques de fuerza bruta
+// - Discord webhooks para notificaciones al equipo de desarrollo
+// ============================================================
 
-const app = express();
-const server = http.createServer(app);
+const express = require('express');               // Framework web para crear la API REST
+const { sendDiscordNotification } = require('./utils/discord'); // Utilidad para enviar alertas a Discord
+const http = require('http');                     // Módulo HTTP nativo de Node.js (necesario para Socket.IO)
+const socketIo = require('socket.io');            // WebSockets para comunicación bidireccional en tiempo real
+const cors = require('cors');                     // Middleware para permitir peticiones desde otros dominios (Cross-Origin)
+const bcrypt = require('bcrypt');                 // Librería para hashear contraseñas de forma segura (bcrypt con salt)
+const jwt = require('jsonwebtoken');              // JSON Web Tokens para autenticación stateless
+const rateLimit = require('express-rate-limit');  // Limita el número de peticiones por IP (anti brute-force y DDoS)
+const nodemailer = require('nodemailer');          // Envío de emails SMTP (usado para códigos OTP de verificación)
+const helmet = require('helmet');                 // Establece cabeceras HTTP de seguridad (X-Frame-Options, CSP, etc.)
+const pool = require('./db');                     // Pool de conexiones a PostgreSQL (importado desde db.js)
+require('dotenv').config();                       // Carga las variables de entorno desde el archivo .env
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // SDK de Stripe inicializado con la clave secreta
 
-// Configuración de CORS dinámica
+const app = express();                // Instancia de la aplicación Express
+const server = http.createServer(app); // Servidor HTTP que envuelve Express (necesario para poder adjuntar Socket.IO)
+
+// Configuración de CORS dinámica:
+// Lee los orígenes permitidos desde la variable de entorno ALLOWED_ORIGINS (separados por comas).
+// Si no está definida, permite todos los orígenes ('*') — solo recomendable en desarrollo.
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
 
+// Inicializar Socket.IO sobre el servidor HTTP.
+// Socket.IO permite enviar eventos en tiempo real a todos los clientes conectados
+// (por ejemplo, cuando se crea un nuevo aviso desde el panel de admin,
+// se emite un evento 'new_notice' y la app lo recibe al instante).
 const io = socketIo(server, {
     cors: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,     // Solo acepta conexiones WebSocket desde estos orígenes
+        methods: ["GET", "POST"]     // Métodos HTTP permitidos en el handshake inicial
     }
 });
 
-// Middleware de depuración: Registrar TODAS las peticiones entrantes
+// ── Middleware de depuración ──
+// Registra en consola TODAS las peticiones HTTP entrantes con su método, URL e IP.
+// Útil para depurar problemas de conectividad y ver qué clientes están accediendo.
+// En producción se podría desactivar o filtrar para no saturar los logs.
 app.use((req, res, next) => {
     console.log(`[DEBUG] ${req.method} ${req.url} desde ${req.ip}`);
-    next();
+    next(); // Pasar al siguiente middleware (sin esto, la petición se quedaría "colgada")
 });
 
-// Middlewares
-// Desactivamos helmet temporalmente o lo configuramos para permitir CORS
+// ── Middlewares de seguridad ──
+
+// Helmet: Añade automáticamente cabeceras HTTP de seguridad a todas las respuestas:
+// - X-Content-Type-Options: nosniff (evita que el navegador adivine tipos MIME)
+// - X-Frame-Options: SAMEORIGIN (previene clickjacking)
+// - Strict-Transport-Security (fuerza HTTPS)
+// crossOriginResourcePolicy: false → permite que otros dominios carguen recursos (necesario para CORS)
 app.use(helmet({
     crossOriginResourcePolicy: false,
 }));
+
+// CORS: Permite que la app Flutter (y el panel admin web) hagan peticiones a esta API
+// desde un dominio diferente. Sin esto, el navegador bloquearía las peticiones.
 app.use(cors({
-    origin: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204
+    origin: true,                                                      // Acepta cualquier origen (se refina con allowedOrigins en Socket.IO)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],     // Métodos HTTP permitidos
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],    // Headers que el cliente puede enviar
+    credentials: true,                                                  // Permite enviar cookies/tokens entre dominios
+    preflightContinue: false,                                           // No pasa las peticiones OPTIONS al siguiente handler
+    optionsSuccessStatus: 204                                           // Responde 204 (No Content) a las preflight requests
 }));
-// Webhook de Stripe: Debe estar ANTES de express.json() para procesar el body crudo (raw)
-// Requerido para la validación de firma de Stripe (Seguridad de Producción)
+// ── Webhook de Stripe ──
+// IMPORTANTE: Este endpoint DEBE estar definido ANTES de express.json().
+// Razón: Stripe envía el body como datos crudos (raw bytes), y express.json()
+// lo parseaería como JSON antes de que podamos validar la firma criptográfica.
+// La firma se genera sobre los bytes originales, no sobre el JSON parseado.
+//
+// Flujo del webhook:
+// 1. Stripe envía un POST a esta URL cuando ocurre un evento de pago.
+// 2. Verificamos que la firma del header 'stripe-signature' coincida con nuestro secret.
+// 3. Si el pago fue exitoso (payment_intent.succeeded), activamos Premium al usuario.
+// 4. Respondemos 200 para que Stripe sepa que procesamos el webhook correctamente.
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    const sig = req.headers['stripe-signature'];
+    const sig = req.headers['stripe-signature']; // Firma criptográfica enviada por Stripe
     let event;
 
     try {
+        // Si no hay webhook secret configurado, estamos en modo desarrollo:
+        // parseamos el body directamente sin validar firma (NO SEGURO para producción)
         if (!process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET === 'whsec_...') {
             console.warn('[Webhook] STRIPE_WEBHOOK_SECRET no configurado. Procesando sin validar firma (SOLO DESARROLLO)');
             event = JSON.parse(req.body);
         } else {
+            // En producción: validar la firma criptográfica para asegurar que
+            // el webhook realmente viene de Stripe y no de un atacante
             event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
         }
     } catch (err) {
@@ -62,15 +107,17 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Manejar el evento de pago exitoso
+    // Solo procesamos el evento de "pago completado exitosamente"
     if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        const userId = paymentIntent.metadata.userId;
+        const paymentIntent = event.data.object;      // Objeto completo del PaymentIntent
+        const userId = paymentIntent.metadata.userId;  // ID del usuario que pagó (se envió como metadata al crear el intent)
 
         if (userId) {
             try {
+                // Marcar al usuario como Premium en la base de datos
                 await pool.query('UPDATE users SET is_premium = TRUE WHERE id = $1', [userId]);
                 console.log(`[Stripe] Usuario ${userId} ahora es PREMIUM`);
+                // Notificar al equipo vía Discord
                 sendDiscordNotification(`💎 **Nuevo Usuario Premium**: El usuario ID \`${userId}\` ha completado su pago.`);
             } catch (dbErr) {
                 console.error('[Stripe] Error actualizando DB:', dbErr);
@@ -78,59 +125,85 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
         }
     }
 
+    // Siempre responder 200 a Stripe para confirmar recepción del webhook
     res.json({ received: true });
 });
 
-app.use(express.json()); // Para poder leer JSON en el body de las peticiones
+// express.json(): Middleware que parsea el body de las peticiones con Content-Type: application/json.
+// Convierte el body JSON en un objeto JavaScript accesible en req.body.
+// DEBE ir después del webhook de Stripe (que necesita el body crudo).
+app.use(express.json());
 
 // ==========================================
 // MIDDLEWARE: VALIDACIÓN DE API KEY
 // ==========================================
-// Todas las rutas /api/* requieren el header X-API-Key correcto.
+// Capa de seguridad que protege TODA la API REST.
+// Cada petición a /api/* debe incluir el header 'X-API-Key' con la clave correcta.
+// La clave se define en el archivo .env (variable API_KEY).
+// Esto evita que cualquier persona pueda usar la API sin autorización,
+// incluso si conoce la URL del servidor.
 const validateApiKey = (req, res, next) => {
-    // Las peticiones OPTIONS (preflight de CORS) no llevan headers personalizados
-    // y deben permitirse para que el navegador pueda validar la conexión.
+    // Las peticiones OPTIONS son "preflight" de CORS: el navegador las envía
+    // automáticamente antes de una petición real para verificar si el servidor
+    // acepta el origen. No llevan headers personalizados, así que las dejamos pasar.
     if (req.method === 'OPTIONS') {
         return next();
     }
 
-    const apiKey = req.headers['x-api-key'];
+    const apiKey = req.headers['x-api-key']; // Leer la API Key del header de la petición
     if (!apiKey || apiKey !== process.env.API_KEY) {
+        // Si no hay API Key o no coincide, rechazar con 401 (Unauthorized)
         console.warn(`[API Key] Petición rechazada desde ${req.ip}`);
         sendDiscordNotification(`⚠️ **Petición rechazada**: API Key inválida desde ${req.ip} para \`${req.method} ${req.url}\``);
         return res.status(401).json({ error: 'API Key inválida o no proporcionada' });
     }
-    next();
+    next(); // API Key válida → continuar al siguiente middleware/endpoint
 };
 
+// Aplicar el middleware de API Key a TODAS las rutas que empiecen por /api
 app.use('/api', validateApiKey);
 
-// Endpoint de salud para verificar conectividad sin base de datos
+// ── Endpoint de salud (Health Check) ──
+// Endpoint simple que responde "ok" sin consultar la base de datos.
+// Se usa desde la app Flutter para verificar si el servidor está vivo
+// antes de intentar operaciones más complejas (login, registro, etc.).
+// También útil para monitorizar el servidor con herramientas externas.
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend Alzibus alcanzable' });
 });
 
-// --- RUTAS PÚBLICAS PARA CUMPLIMIENTO (GOOGL PLAY) ---
-// Estas rutas sirven el HTML necesario para la consola de Google Play
-const path = require('path');
+// ── Rutas públicas para cumplimiento de Google Play ──
+// Google Play requiere que las apps tengan una URL pública accesible para:
+// 1. Política de privacidad: obligatoria para publicar en Play Store.
+// 2. Eliminación de cuenta: obligatoria desde 2023 para cumplir con las
+//    políticas de datos de usuario (los usuarios deben poder borrar su cuenta).
+// Estas rutas sirven archivos HTML/Markdown estáticos sin requerir autenticación.
+const path = require('path'); // Módulo nativo de Node.js para manejar rutas de archivos
 
+// Página web pública donde el usuario puede solicitar la eliminación de su cuenta
 app.get('/delete-account', (req, res) => {
     res.sendFile(path.join(__dirname, 'delete-account.html'));
 });
 
+// Página web pública con la política de privacidad de la app
 app.get('/privacy-policy', (req, res) => {
-    // Si queremos servir la política de privacidad también desde aquí
     const fs = require('fs');
-    const marked = require('marked'); // Habría que instalarlo o servir HTML directamente
-    res.sendFile(path.join(__dirname, 'POLITICA_PRIVACIDAD_ALZITRANS.md')); // Temporal, mejor HTML
+    const marked = require('marked');
+    res.sendFile(path.join(__dirname, 'POLITICA_PRIVACIDAD_ALZITRANS.md'));
 });
 
-// Middleware para registrar las peticiones a la API
+// ── Middleware de logging de peticiones API ──
+// Registra cada petición en la tabla 'api_logs' de PostgreSQL.
+// Guarda: endpoint (ruta), método HTTP y tiempo de respuesta en ms.
+// Esto alimenta las gráficas de estadísticas del panel de administración
+// (uso diario, horas pico, rendimiento de endpoints, etc.).
+// Se excluyen las rutas /api/stats para no crear un bucle infinito de logs.
 app.use((req, res, next) => {
-    const start = Date.now();
+    const start = Date.now(); // Marca de tiempo al inicio de la petición
+    // El evento 'finish' se dispara cuando la respuesta se ha enviado completamente
     res.on('finish', () => {
-        const duration = Date.now() - start;
-        // No registrar las peticiones de stats para no inflar los números
+        const duration = Date.now() - start; // Calcular duración total en milisegundos
+        // Excluir peticiones de estadísticas para no inflar los números de uso
         if (!req.path.startsWith('/api/stats')) {
             pool.query(
                 'INSERT INTO api_logs (endpoint, method, duration_ms) VALUES ($1, $2, $3)',
@@ -141,51 +214,72 @@ app.use((req, res, next) => {
     next();
 });
 
+// Puerto en el que escuchará el servidor. Se lee de .env o usa 4000 por defecto.
 const PORT = process.env.PORT || 4000;
 
 // ==========================================
 // MIDDLEWARE: AUTENTICACIÓN JWT
 // ==========================================
-// Protege rutas que requieren usuario autenticado.
+// Este middleware protege las rutas que requieren un usuario autenticado.
+// Funciona así:
+// 1. El cliente (app Flutter) envía el header: Authorization: Bearer <token>
+// 2. Extraemos el token del header.
+// 3. Verificamos que el token sea válido y no haya expirado usando jwt.verify().
+// 4. Si es válido, el payload del token (id, email del usuario) se guarda en req.user
+//    para que los endpoints siguientes sepan quién es el usuario.
+// 5. Si no es válido, se rechaza la petición con 403 (Forbidden).
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
-    if (!token) return res.status(401).json({ error: 'Token requerido' });
+    const authHeader = req.headers['authorization'];     // Leer el header "Authorization"
+    const token = authHeader && authHeader.split(' ')[1]; // Extraer el token después de "Bearer "
+    if (!token) return res.status(401).json({ error: 'Token requerido' }); // No hay token → 401
+    // Verificar el token con la clave secreta (JWT_SECRET del .env)
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
-        req.user = user;
-        next();
+        if (err) return res.status(403).json({ error: 'Token inválido o expirado' }); // Token malo → 403
+        req.user = user; // Guardar datos del usuario decodificados en la petición
+        next();          // Token válido → continuar al endpoint
     });
 };
 
 
 
 // ==========================================
-// LIMITADORES DE FRECUENCIA (SECURITY)
+// LIMITADORES DE FRECUENCIA (RATE LIMITING)
 // ==========================================
+// Los rate limiters protegen contra abusos y ataques de fuerza bruta.
+// Cada limiter tiene una ventana de tiempo y un máximo de peticiones por IP.
+// Si se supera el límite, se devuelve un error 429 (Too Many Requests).
 
-// Limita creación de cuentas
+// Limita la creación de cuentas nuevas:
+// Máximo 5 registros por hora desde la misma IP.
+// Previene la creación masiva de cuentas falsas.
 const registerLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hora
-    max: 5,
+    windowMs: 60 * 60 * 1000, // Ventana de 1 hora (en milisegundos)
+    max: 5,                    // Máximo 5 peticiones por ventana
     message: { error: 'Demasiadas cuentas creadas. Reinténtalo en una hora.' },
-    standardHeaders: true,
-    legacyHeaders: false,
+    standardHeaders: true,     // Devuelve info de rate limit en headers estándar (RateLimit-*)
+    legacyHeaders: false,      // No enviar los headers legacy X-RateLimit-*
 });
 
-// Limita intentos de login (Anti Bruteforce)
+// Limita intentos de inicio de sesión (Anti Bruteforce):
+// Máximo 10 intentos cada 15 minutos desde la misma IP.
+// Si se excede, notifica a Discord para alertar de un posible ataque.
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 10,
+    windowMs: 15 * 60 * 1000, // Ventana de 15 minutos
+    max: 10,                   // Máximo 10 intentos
     message: { error: 'Demasiados intentos de inicio de sesión. Reinténtalo en 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
+    // Handler personalizado: además de rechazar, notifica a Discord
     handler: (req, res, next, options) => {
         sendDiscordNotification(`🛡️ **Brute Force bloqueado**: Múltiples fallos de login desde IP ${req.ip}`);
         res.status(options.statusCode).send(options.message);
     }
 });
 
+// ── Middleware de autenticación de Administrador ──
+// Similar a authenticateToken, pero además verifica que el usuario
+// tenga el rol 'admin' en el payload del JWT.
+// Solo los tokens generados en /api/admin/login tienen role: 'admin'.
 const authenticateAdmin = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -193,17 +287,22 @@ const authenticateAdmin = (req, res, next) => {
     if (!token) return res.status(401).json({ error: 'Token de administrador requerido' });
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        // Si el token es inválido O el rol no es 'admin', denegar acceso
         if (err || user.role !== 'admin') {
             return res.status(403).json({ error: 'Acceso denegado: Se requieren privilegios de administrador' });
         }
-        req.user = user;
+        req.user = user; // Guardar datos del admin en la petición
         next();
     });
 };
 
 // ==========================================
-// ENDPOINT: LOGIN ADMINISTRADOR
+// ENDPOINT: LOGIN DE ADMINISTRADOR
 // ==========================================
+// El panel de administración web (dashboard.html) usa este endpoint para
+// autenticarse. Solo requiere una contraseña única definida en ADMIN_PASSWORD (.env).
+// Al autenticarse, genera un JWT con role: 'admin' que dura 12 horas.
+// Este token se usa luego en las peticiones al panel admin.
 app.post('/api/admin/login', loginLimiter, async (req, res) => {
     const { password } = req.body;
 
@@ -211,8 +310,9 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Contraseña requerida' });
     }
 
-    // Comparamos con la contraseña de admin en .env
+    // Comparar la contraseña recibida con la almacenada en la variable de entorno
     if (password === process.env.ADMIN_PASSWORD) {
+        // Generar un JWT de administrador con 12 horas de validez
         const token = jwt.sign(
             { id: 'admin', email: 'admin@alzitrans.com', role: 'admin' },
             process.env.JWT_SECRET,
@@ -221,51 +321,74 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
         sendDiscordNotification(`🔏 **Panel Admin**: Sesión iniciada correctamente.`);
         return res.json({ token });
     } else {
+        // Contraseña incorrecta: notificar a Discord (posible intento de intrusión)
         sendDiscordNotification(`❌ **Fallo de Admin**: Intento de login administrativo incorrecto desde ${req.ip}`);
         return res.status(401).json({ error: 'Contraseña de administrador incorrecta' });
     }
 });
 // ==========================================
-// HELPER: Enviar email de verificación y responder al cliente
+// HELPER: Envío de email con código OTP
 // ==========================================
+// Envía un correo electrónico con el código de verificación de 6 dígitos.
+// Usa Nodemailer con un servidor SMTP configurado en las variables de entorno.
+// El envío es NO BLOQUEANTE: la función regresa inmediatamente y el correo
+// se envía en segundo plano (para no retrasar la respuesta HTTP al usuario).
 async function sendOtpEmail(email, verificationCode) {
-    // Log del código para desarrollo
+    // Log del código en consola (solo visible para el desarrollador, útil en desarrollo)
     console.log(`[OTP] Código de verificación para ${email}: ${verificationCode}`);
 
+    // Configurar el transportador SMTP con los datos del .env
     const transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST || 'localhost',
-        port: parseInt(process.env.EMAIL_PORT) || 587,
-        secure: false,
+        host: process.env.EMAIL_HOST || 'localhost',       // Servidor SMTP
+        port: parseInt(process.env.EMAIL_PORT) || 587,     // Puerto SMTP (587 = STARTTLS)
+        secure: false,                                      // false para STARTTLS, true para SSL directo (465)
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
+            user: process.env.EMAIL_USER,                   // Usuario del servidor de correo
+            pass: process.env.EMAIL_PASS                    // Contraseña del servidor de correo
         },
-        tls: { rejectUnauthorized: false }
+        tls: { rejectUnauthorized: false }                  // Permite certificados autofirmados (común en servidores locales)
     });
 
+    // Definir el contenido del email
     const mailOptions = {
-        from: process.env.EMAIL_FROM || 'AlziTrans <bcarreres55@gmail.com>',
-        to: email,
-        subject: 'Verifica tu cuenta de Alzibus',
-        text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.`
+        from: process.env.EMAIL_FROM || 'AlziTrans <bcarreres55@gmail.com>', // Remitente
+        to: email,                                                             // Destinatario
+        subject: 'Verifica tu cuenta de Alzibus',                              // Asunto
+        text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.` // Cuerpo (texto plano)
     };
 
-    // Enviar sin bloquear
+    // Enviar sin bloquear la respuesta HTTP al cliente
     transporter.sendMail(mailOptions)
         .then(() => console.log('Correo OTP enviado a', email))
         .catch(err => console.error('Error enviando correo:', err.message));
 }
 
+// Helper que combina el envío del OTP con la respuesta HTTP de registro exitoso.
+// Se reutiliza tanto para registros nuevos como para re-registros de cuentas no verificadas.
 function sendVerificationAndRespond(res, email, verificationCode, newUser) {
     sendOtpEmail(email, verificationCode);
     return res.status(201).json({
         message: 'Usuario registrado. Por favor verifica tu email.',
         user: newUser.rows[0],
-        requiresVerification: true
+        requiresVerification: true  // La app Flutter sabe que debe mostrar la pantalla de OTP
     });
 }
 
-// 1. Registro de usuario
+// ==========================================
+// ENDPOINT 1: REGISTRO DE USUARIO
+// ==========================================
+// POST /api/register
+// Crea una nueva cuenta de usuario con email y contraseña.
+// Flujo:
+// 1. Validar que se proporcionaron email y contraseña.
+// 2. Limpiar cuentas "basura" (no verificadas de más de 5 minutos).
+// 3. Si el email ya existe y está verificado → rechazar.
+// 4. Si el email existe pero NO está verificado → permitir re-registro (actualizar contraseña y código).
+// 5. Hashear la contraseña con bcrypt (10 rondas de sal).
+// 6. Generar un código OTP de 6 dígitos con 15 min de validez.
+// 7. Guardar en la DB como usuario NO verificado.
+// 8. Enviar el código por email y responder al cliente.
+// Protección: registerLimiter (máx 5 registros/hora por IP).
 app.post('/api/register', registerLimiter, async (req, res) => {
     const { email, password } = req.body;
 
@@ -274,49 +397,54 @@ app.post('/api/register', registerLimiter, async (req, res) => {
     }
 
     try {
-        // Limpiar cuentas no verificadas de más de 5 minutos (anti-basura)
+        // Limpieza anti-basura: eliminar cuentas no verificadas creadas hace más de 5 minutos.
+        // Evita que el sistema se llene de cuentas abandonadas en el proceso de registro.
         await pool.query(
             "DELETE FROM users WHERE is_verified = false AND created_at < NOW() - INTERVAL '5 minutes'"
         );
 
-        // Verificar si el usuario ya existe
+        // Comprobar si ya existe un usuario con este email
         const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userExists.rows.length > 0) {
             const existingUser = userExists.rows[0];
-            // Si ya está verificado, rechazar
+            // Si ya está verificado, no se puede registrar de nuevo
             if (existingUser.is_verified) {
                 return res.status(400).json({ error: 'El usuario ya existe' });
             }
-            // Si NO está verificado, permitir re-registro (actualizar contraseña y código)
+            // Si NO está verificado, permitir re-registro: actualizar contraseña y generar nuevo código
+            // (el usuario quizá perdió el email anterior o el código caducó)
             const saltRounds = 10;
             const passwordHash = await bcrypt.hash(password, saltRounds);
-            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 dígitos aleatorios
             await pool.query(
                 'UPDATE users SET password_hash = $1, verification_code = $2, created_at = NOW() WHERE id = $3',
                 [passwordHash, verificationCode, existingUser.id]
             );
-            // Enviar nuevo correo (más abajo)
             const newUser = { rows: [{ id: existingUser.id, email: existingUser.email }] };
-            // Saltar al envío de email ↓
             return sendVerificationAndRespond(res, email, verificationCode, newUser);
         }
 
-        // Encriptar la contraseña (10 rondas de sal)
+        // ── Nuevo usuario ──
+        // Hashear la contraseña con bcrypt:
+        // bcrypt añade una "sal" aleatoria (10 rondas) a la contraseña antes de hashearla.
+        // Esto hace que dos usuarios con la misma contraseña tengan hashes diferentes.
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
-        // Generar código OTP y fecha de expiración (15 minutos)
+        // Generar código OTP de 6 dígitos (entre 100000 y 999999)
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        // El código caduca en 15 minutos
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-        // Guardar en la base de datos de manera INACTIVA y con el código
+        // Insertar el nuevo usuario como NO verificado (is_verified = false)
+        // No podrá hacer login hasta que verifique el código OTP
         const newUser = await pool.query(
             `INSERT INTO users (email, password_hash, is_verified, verification_code, otp_expires_at, otp_attempts, otp_resend_count)
              VALUES ($1, $2, false, $3, $4, 0, 0) RETURNING id, email`,
             [email, passwordHash, verificationCode, otpExpiresAt]
         );
 
-        // Notificar a Discord (sin bloquear la respuesta)
+        // Notificar al equipo vía Discord (sin bloquear la respuesta HTTP)
         sendDiscordNotification(`🚀 **Nuevo usuario registrado**: \`${email}\` (ID: ${newUser.rows[0].id})`);
 
         return sendVerificationAndRespond(res, email, verificationCode, newUser);
@@ -326,7 +454,15 @@ app.post('/api/register', registerLimiter, async (req, res) => {
     }
 });
 
-// 1.5. Verificación de Correo (OTP)
+// ==========================================
+// ENDPOINT 1.5: VERIFICACIÓN DE EMAIL (OTP)
+// ==========================================
+// POST /api/verify-email
+// El usuario envía su email y el código OTP de 6 dígitos recibido por correo.
+// Seguridad anti-fuerza bruta implementada:
+// - Máximo 3 intentos incorrectos antes de bloquear la cuenta 30 minutos.
+// - Los códigos caducan automáticamente a los 15 minutos.
+// - Si hay penalización activa, se rechaza la petición con el tiempo restante.
 app.post('/api/verify-email', async (req, res) => {
     const { email, code } = req.body;
 
@@ -346,7 +482,8 @@ app.post('/api/verify-email', async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya está verificado' });
         }
 
-        // Comprobar penalización por demasiados intentos fallidos
+        // Comprobar si hay una penalización activa por demasiados intentos fallidos.
+        // Si el usuario ha fallado 3 veces, su cuenta se bloquea 30 minutos.
         if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
             const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
             return res.status(429).json({
@@ -354,17 +491,18 @@ app.post('/api/verify-email', async (req, res) => {
             });
         }
 
-        // Comprobar si el código ha caducado
+        // Comprobar si el código OTP ha caducado (15 minutos de validez)
         if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
             return res.status(400).json({ error: 'El código ha caducado. Solicita uno nuevo.' });
         }
 
-        // Comprobar si el código es correcto
+        // Verificar si el código introducido coincide con el almacenado
         if (user.verification_code !== code) {
+            // Código incorrecto: incrementar contador de intentos
             const newAttempts = (user.otp_attempts || 0) + 1;
 
             if (newAttempts >= 3) {
-                // Penalizar durante 30 minutos
+                // 3 intentos fallidos → bloquear la cuenta 30 minutos
                 const penaltyUntil = new Date(Date.now() + 30 * 60 * 1000);
                 await pool.query(
                     'UPDATE users SET otp_attempts = $1, otp_penalty_until = $2 WHERE id = $3',
@@ -375,13 +513,14 @@ app.post('/api/verify-email', async (req, res) => {
                 });
             }
 
+            // Aún quedan intentos: guardar el nuevo contador e informar al usuario
             await pool.query('UPDATE users SET otp_attempts = $1 WHERE id = $2', [newAttempts, user.id]);
             return res.status(400).json({
                 error: `Código incorrecto. Te quedan ${3 - newAttempts} intento(s).`
             });
         }
 
-        // Marcar como verificado y limpiar el código
+        // ✔️ Código correcto: marcar la cuenta como verificada y limpiar datos OTP
         await pool.query(
             'UPDATE users SET is_verified = true, verification_code = NULL, otp_expires_at = NULL, otp_attempts = 0, otp_penalty_until = NULL WHERE id = $1',
             [user.id]
@@ -395,7 +534,15 @@ app.post('/api/verify-email', async (req, res) => {
     }
 });
 
-// 1.6. Reenviar código OTP
+// ==========================================
+// ENDPOINT 1.6: REENVIAR CÓDIGO OTP
+// ==========================================
+// POST /api/resend-otp
+// Permite al usuario solicitar un nuevo código de verificación si:
+// - El código anterior caducó o se perdió el email.
+// - La cuenta aún no está verificada.
+// Límites: máximo 3 reenvíos antes de penalizar 1 hora (anti-spam).
+// Genera un nuevo código de 6 dígitos con 15 min de validez.
 app.post('/api/resend-otp', registerLimiter, async (req, res) => {
     const { email } = req.body;
 
@@ -415,7 +562,7 @@ app.post('/api/resend-otp', registerLimiter, async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya está verificado' });
         }
 
-        // Comprobar penalización activa (por intentos fallidos)
+        // Comprobar si hay penalización activa (por intentos fallidos previos)
         if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
             const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
             return res.status(429).json({
@@ -423,17 +570,18 @@ app.post('/api/resend-otp', registerLimiter, async (req, res) => {
             });
         }
 
-        // Máximo 3 reenvíos antes de penalizar 1 hora
+        // Límite de reenvíos: máximo 3 antes de bloquear 1 hora.
+        // Esto previene que un atacante envíe spam de emails desde el sistema.
         const resendCount = user.otp_resend_count || 0;
         if (resendCount >= 3) {
-            const penaltyUntil = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+            const penaltyUntil = new Date(Date.now() + 60 * 60 * 1000); // Penalización de 1 hora
             await pool.query('UPDATE users SET otp_penalty_until = $1 WHERE id = $2', [penaltyUntil, user.id]);
             return res.status(429).json({
                 error: 'Has solicitado demasiados códigos. Inicia el registro de nuevo en 1 hora.'
             });
         }
 
-        // Generar nuevo código con nueva expiración
+        // Generar nuevo código OTP de 6 dígitos con expiración de 15 minutos
         const newCode = Math.floor(100000 + Math.random() * 900000).toString();
         const newExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -455,7 +603,15 @@ app.post('/api/resend-otp', registerLimiter, async (req, res) => {
     }
 });
 
-// 1.7. Olvido de contraseña - Enviar código
+// ==========================================
+// ENDPOINT 1.7: OLVIDO DE CONTRASEÑA (Enviar código de recuperación)
+// ==========================================
+// POST /api/forgot-password
+// Genera y envía un código OTP al email del usuario para que pueda
+// restablecer su contraseña.
+// Seguridad: si el email no existe, se responde con el mismo mensaje genérico
+// ("Si el correo está registrado, recibirás un código") para no revelar
+// si una dirección de email está registrada o no (protege contra enumeración de cuentas).
 app.post('/api/forgot-password', registerLimiter, async (req, res) => {
     const { email } = req.body;
 
@@ -494,7 +650,12 @@ app.post('/api/forgot-password', registerLimiter, async (req, res) => {
     }
 });
 
-// 1.8. Restablecer contraseña con código
+// ==========================================
+// ENDPOINT 1.8: RESTABLECER CONTRASEÑA CON CÓDIGO
+// ==========================================
+// POST /api/reset-password
+// El usuario envía: email, código OTP recibido por correo, y nueva contraseña.
+// Si el código es válido y no ha caducado, se actualiza la contraseña.
 app.post('/api/reset-password', registerLimiter, async (req, res) => {
     const { email, code, newPassword } = req.body;
 
@@ -510,21 +671,21 @@ app.post('/api/reset-password', registerLimiter, async (req, res) => {
 
         const user = result.rows[0];
 
-        // Validar expiración
+        // Validar que el código OTP no haya caducado (15 min de validez)
         if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
             return res.status(400).json({ error: 'El código ha caducado' });
         }
 
-        // Validar código
+        // Validar que el código coincida con el almacenado en la DB
         if (user.verification_code !== code) {
             return res.status(400).json({ error: 'Código de recuperación incorrecto' });
         }
 
-        // Encriptar nueva contraseña
+        // Hashear la nueva contraseña con bcrypt (10 rondas de sal)
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(newPassword, saltRounds);
 
-        // Actualizar y limpiar tokens
+        // Actualizar la contraseña y limpiar los datos OTP temporales
         await pool.query(
             'UPDATE users SET password_hash = $1, verification_code = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE id = $2',
             [passwordHash, user.id]
@@ -537,7 +698,18 @@ app.post('/api/reset-password', registerLimiter, async (req, res) => {
     }
 });
 
-// 2. Login de usuario
+// ==========================================
+// ENDPOINT 2: LOGIN DE USUARIO
+// ==========================================
+// POST /api/login
+// Autentica al usuario con email y contraseña.
+// Verificaciones en orden:
+// 1. Que el email exista en la DB.
+// 2. Que la cuenta esté verificada (OTP completado).
+// 3. Que la cuenta esté activa (no desactivada por un admin).
+// 4. Que la contraseña sea correcta (comparación bcrypt).
+// Si todo es correcto, genera un JWT con 24h de validez y lo devuelve.
+// Protección: loginLimiter (máx 10 intentos/15min por IP).
 app.post('/api/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
 
@@ -553,35 +725,42 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 
         const user = result.rows[0];
 
-        // Verificar si confirmó el correo (OTP)
+        // Verificar que la cuenta ha sido verificada por email (código OTP).
+        // Si no lo está, el usuario no puede iniciar sesión.
         if (user.is_verified === false) {
             return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.' });
         }
 
-        // Verificar que la cuenta está activa
+        // Verificar que la cuenta esté activa (un admin puede desactivarla)
         if (user.active === false) {
             return res.status(403).json({ error: 'Cuenta desactivada. Contacta con el administrador.' });
         }
 
+        // Comparar la contraseña proporcionada con el hash almacenado en la DB.
+        // bcrypt.compare() hashea la contraseña con la misma sal y compara el resultado.
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // Actualizar last_access (no bloqueante — puede fallar si columna aún no existe)
+        // Actualizar la fecha de último acceso (no bloqueante: si falla, no afecta al login)
         pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [user.id])
             .catch(err => console.warn('[Login] No se pudo actualizar last_access:', err.message));
 
+        // Generar el token JWT con los datos del usuario.
+        // El token contiene: id y email del usuario.
+        // Expira en 24 horas: después de ese tiempo, la app pedirá login de nuevo.
         const token = jwt.sign(
             { id: user.id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
+        // Devolver el token y datos básicos del usuario a la app
         res.json({
             message: 'Login exitoso',
-            token: token,
-            user: { id: user.id, email: user.email, isPremium: user.is_premium }
+            token: token,                                               // Token JWT para autenticar futuras peticiones
+            user: { id: user.id, email: user.email, isPremium: user.is_premium } // Datos básicos del usuario
         });
     } catch (error) {
         console.error('Error en login:', error);
@@ -592,8 +771,15 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 // ==========================================
 // RUTAS DE PERFIL DE USUARIO
 // ==========================================
+// Todas estas rutas requieren autenticación JWT (authenticateToken).
+// El usuario solo puede ver/modificar sus propios datos.
 
-// 16. Heartbeat: Actualizar last_access (vía polling desde la app)
+// ── Heartbeat: Actualizar último acceso ──
+// POST /api/users/heartbeat
+// La app envía esta petición periódicamente (cada 2 minutos) para:
+// 1. Indicar que el usuario sigue usando la app ("está online").
+// 2. Actualizar la columna last_access en la DB.
+// Esto permite al panel admin mostrar qué usuarios están activos ahora.
 app.post('/api/users/heartbeat', authenticateToken, async (req, res) => {
     try {
         await pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [req.user.id]);
@@ -604,9 +790,16 @@ app.post('/api/users/heartbeat', authenticateToken, async (req, res) => {
     }
 });
 
-// 17. Obtener perfil del usuario + estadísticas de viajes
+// ── Obtener perfil del usuario + estadísticas de viajes ──
+// GET /api/users/profile
+// Devuelve los datos del perfil del usuario autenticado junto con
+// estadísticas calculadas de sus viajes:
+// - Total de viajes registrados.
+// - Línea más usada (la que tiene más viajes).
+// - Viajes del mes actual.
 app.get('/api/users/profile', authenticateToken, async (req, res) => {
     try {
+        // Obtener datos básicos del usuario por su ID (del token JWT)
         const userResult = await pool.query(
             'SELECT id, email, created_at, last_access, is_premium FROM users WHERE id = $1',
             [req.user.id]
@@ -616,14 +809,14 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
         }
         const user = userResult.rows[0];
 
-        // Stats de viajes
-        const totalTrips = await pool.query('SELECT COUNT(*) FROM trips WHERE user_id = $1', [req.user.id]);
+        // Calcular estadísticas de viajes con 3 consultas paralelas:
+        const totalTrips = await pool.query('SELECT COUNT(*) FROM trips WHERE user_id = $1', [req.user.id]); // Total de viajes
         const lineUsage = await pool.query(
-            `SELECT line, COUNT(*) as count FROM trips WHERE user_id = $1 GROUP BY line ORDER BY count DESC LIMIT 1`,
+            `SELECT line, COUNT(*) as count FROM trips WHERE user_id = $1 GROUP BY line ORDER BY count DESC LIMIT 1`, // Línea más usada
             [req.user.id]
         );
         const thisMonthTrips = await pool.query(
-            `SELECT COUNT(*) FROM trips WHERE user_id = $1 AND timestamp >= date_trunc('month', NOW())`,
+            `SELECT COUNT(*) FROM trips WHERE user_id = $1 AND timestamp >= date_trunc('month', NOW())`, // Viajes del mes actual
             [req.user.id]
         );
 
@@ -645,7 +838,9 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
     }
 });
 
-// 17. Actualizar email del usuario
+// ── Actualizar email del usuario ──
+// PUT /api/users/profile
+// Permite cambiar la dirección de email. Verifica que no esté en uso por otro usuario.
 app.put('/api/users/profile', authenticateToken, async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email requerido' });
@@ -662,7 +857,10 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
     }
 });
 
-// 18. Cambiar contraseña del usuario
+// ── Cambiar contraseña del usuario ──
+// PUT /api/users/password
+// Requiere la contraseña actual (verificación de identidad) y la nueva contraseña.
+// La nueva contraseña debe tener al menos 6 caracteres.
 app.put('/api/users/password', authenticateToken, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) {
@@ -686,7 +884,15 @@ app.put('/api/users/password', authenticateToken, async (req, res) => {
     }
 });
 
-// 18b. ELIMINAR CUENTA (Derecho al olvido / Play Store Compliance)
+// ── ELIMINAR CUENTA (Derecho al olvido / GDPR / Play Store Compliance) ──
+// DELETE /api/users/profile
+// Elimina permanentemente la cuenta del usuario y todos sus datos asociados.
+// Google Play exige que los usuarios puedan borrar su cuenta desde la app.
+// También cumple con el RGPD (Reglamento General de Protección de Datos europeo).
+// Pasos:
+// 1. Eliminar todos los viajes del usuario (tabla trips).
+// 2. Eliminar el propio usuario (tabla users).
+// 3. Notificar al equipo vía Discord.
 app.delete('/api/users/profile', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const email = req.user.email;
@@ -710,8 +916,15 @@ app.delete('/api/users/profile', authenticateToken, async (req, res) => {
 // ==========================================
 // RUTAS DE ADMINISTRACIÓN DE USUARIOS
 // ==========================================
+// Estas rutas solo son accesibles con un token JWT de administrador.
+// Se usan desde el panel web de administración (dashboard.html).
 
-// 19. Listar todos los usuarios (solo admin)
+// ── Listar todos los usuarios (solo admin) ──
+// GET /api/admin/users
+// Devuelve la lista completa de usuarios con datos de actividad:
+// - Si están online (last_access < 5 min).
+// - Número total de viajes por usuario (con LEFT JOIN a la tabla trips).
+// Ordenados por fecha de creación descendente (los más recientes primero).
 app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(`
@@ -731,7 +944,10 @@ app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
     }
 });
 
-// 20. Activar/desactivar usuario (solo admin)
+// ── Activar/desactivar usuario (toggle) ──
+// PATCH /api/admin/users/:id/toggle
+// Invierte el estado 'active' del usuario (true → false o false → true).
+// Un usuario desactivado no puede iniciar sesión.
 app.patch('/api/admin/users/:id/toggle', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -750,8 +966,14 @@ app.patch('/api/admin/users/:id/toggle', authenticateAdmin, async (req, res) => 
 // ==========================================
 // RUTAS DE AVISOS / INCIDENCIAS
 // ==========================================
+// Los avisos informan a los usuarios sobre incidencias en el servicio
+// (retrasos, cortes, cambios de ruta, etc.).
+// Los avisos pueden tener fecha de expiración y estar asociados a una línea.
 
-// 21. Obtener avisos activos (público)
+// ── Obtener avisos activos (público, accesible desde la app) ──
+// GET /api/notices
+// Solo devuelve avisos que están activos (active=TRUE) y no han expirado.
+// Ordenados por fecha de creación descendente (los más recientes primero).
 app.get('/api/notices', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -768,7 +990,9 @@ app.get('/api/notices', async (req, res) => {
     }
 });
 
-// 22. Obtener TODOS los avisos (admin)
+// ── Obtener TODOS los avisos sin filtrar (admin) ──
+// GET /api/admin/notices
+// El panel admin necesita ver también los avisos desactivados y expirados.
 app.get('/api/admin/notices', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(
@@ -781,7 +1005,12 @@ app.get('/api/admin/notices', authenticateAdmin, async (req, res) => {
     }
 });
 
-// 23. Crear aviso
+// ── Crear un nuevo aviso ──
+// POST /api/admin/notices
+// Crea un aviso con título, cuerpo, línea afectada (opcional) y fecha de expiración (opcional).
+// IMPORTANTE: Al crear un aviso, se emite un evento 'new_notice' por WebSocket
+// a todos los clientes conectados. La app Flutter lo recibe al instante y
+// muestra el badge de notificación sin necesidad de hacer pull-to-refresh.
 app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
     const { title, body, line, expiresAt } = req.body;
     if (!title || !body) return res.status(400).json({ error: 'Título y cuerpo requeridos' });
@@ -802,7 +1031,8 @@ app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
     }
 });
 
-// 24. Activar/desactivar aviso
+// ── Activar/desactivar aviso (toggle) ──
+// PATCH /api/admin/notices/:id/toggle
 app.patch('/api/admin/notices/:id/toggle', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -818,7 +1048,8 @@ app.patch('/api/admin/notices/:id/toggle', authenticateAdmin, async (req, res) =
     }
 });
 
-// 25. Eliminar aviso
+// ── Eliminar aviso permanentemente ──
+// DELETE /api/admin/notices/:id
 app.delete('/api/admin/notices/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -832,11 +1063,14 @@ app.delete('/api/admin/notices/:id', authenticateAdmin, async (req, res) => {
 });
 
 // ==========================================
-// RUTAS DE PARADAS DE AUTOBÚS
+// RUTAS DE PARADAS DE AUTOBÚS (CRUD)
 // ==========================================
+// CRUD completo para gestionar las paradas de bus.
+// GET es público (la app necesita las paradas). POST/PUT/DELETE requieren admin.
 
-
-// 3. Obtener todas las paradas (Público)
+// ── Obtener todas las paradas (Público) ──
+// GET /api/stops
+// Devuelve todas las paradas con id, nombre, coordenadas y líneas asociadas.
 app.get('/api/stops', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM stops ORDER BY id ASC');
@@ -847,7 +1081,9 @@ app.get('/api/stops', async (req, res) => {
     }
 });
 
-// 4. Crear una nueva parada
+// ── Crear una nueva parada (solo admin) ──
+// POST /api/stops
+// Campos: name, lat, lng, lines (array de strings como ["L1", "L2"])
 app.post('/api/stops', authenticateAdmin, async (req, res) => {
     const { name, lat, lng, lines } = req.body;
     try {
@@ -863,7 +1099,8 @@ app.post('/api/stops', authenticateAdmin, async (req, res) => {
     }
 });
 
-// 5. Actualizar una parada existente
+// ── Actualizar una parada existente (solo admin) ──
+// PUT /api/stops/:id
 app.put('/api/stops/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const { name, lat, lng, lines } = req.body;
@@ -883,7 +1120,8 @@ app.put('/api/stops/:id', authenticateAdmin, async (req, res) => {
     }
 });
 
-// 6. Eliminar una parada
+// ── Eliminar una parada (solo admin) ──
+// DELETE /api/stops/:id
 app.delete('/api/stops/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -899,10 +1137,15 @@ app.delete('/api/stops/:id', authenticateAdmin, async (req, res) => {
 });
 
 // ==========================================
-// RUTAS DE ESTADÍSTICAS (ADMIN PANEL)
+// RUTAS DE ESTADÍSTICAS (PANEL DE ADMINISTRACIÓN)
 // ==========================================
+// Estos endpoints alimentan las gráficas y contadores del dashboard admin.
+// La mayoría requieren autenticación de administrador.
 
-// 7. Obtener estadísticas generales
+// ── Estadísticas generales ──
+// GET /api/stats
+// Devuelve un resumen de: total de paradas, rutas únicas, usuarios activos,
+// consultas hoy, crecimiento semanal (%), y tiempo medio de respuesta.
 app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
         const stopsCount = await pool.query('SELECT COUNT(*) FROM stops');
@@ -910,7 +1153,9 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
         const todayQueries = await pool.query('SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE');
         const avgResponseTime = await pool.query('SELECT AVG(duration_ms) FROM api_logs');
 
-        // Calcular crecimiento semanal REAL comparando esta semana vs la anterior
+        // Calcular crecimiento semanal REAL:
+        // Compara el número de peticiones API de esta semana vs la anterior.
+        // Si la semana anterior tuvo 100 peticiones y esta 150, el crecimiento es +50%.
         const thisWeek = await pool.query(
             `SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'`
         );
@@ -923,7 +1168,9 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
             ? parseFloat(((thisWeekCount - lastWeekCount) / lastWeekCount * 100).toFixed(1))
             : 0;
 
-        // Calcular rutas únicas (L1, L2, L3)
+        // Calcular rutas únicas extrayendo valores del campo JSONB 'lines' de cada parada.
+        // Ejemplo: si las paradas tienen lines = ["L1","L2"] y ["L2","L3"],
+        // el resultado será 3 rutas únicas: L1, L2, L3.
         const routesResult = await pool.query(`
             SELECT DISTINCT jsonb_array_elements_text(lines) as line 
             FROM stops 
@@ -944,7 +1191,10 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
     }
 });
 
-// 8. Obtener uso por día (últimos 7 días)
+// ── Uso por día (últimos 7 días) ──
+// GET /api/stats/usage
+// Devuelve el número de peticiones API por día de la semana.
+// Se usa para la gráfica de barras "Uso semanal" del dashboard.
 app.get('/api/stats/usage', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -981,7 +1231,10 @@ app.get('/api/stats/usage', async (req, res) => {
     }
 });
 
-// 9. Obtener actividad reciente
+// ── Actividad reciente ──
+// GET /api/stats/activity
+// Devuelve las últimas 5 peticiones a la API con endpoint, método y hora.
+// Se muestra en el dashboard como "actividad en tiempo real".
 app.get('/api/stats/activity', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -1011,7 +1264,10 @@ app.get('/api/stats/activity', async (req, res) => {
     }
 });
 
-// 10. Paradas más visitadas (desde trips — cada viaje confirmado cuenta como visita)
+// ── Paradas más visitadas (top 10) ──
+// GET /api/stats/top-stops
+// Cuenta los viajes registrados por parada y devuelve las 10 con más viajes.
+// Cada viaje confirmado por un usuario cuenta como una "visita" a esa parada.
 app.get('/api/stats/top-stops', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -1043,7 +1299,11 @@ app.get('/api/stats/top-stops', async (req, res) => {
 });
 
 
-// 11. Horas pico (desde api_logs, agrupado por hora)
+// ── Horas pico (distribución horaria de peticiones API) ──
+// GET /api/stats/peak-hours
+// Agrupa las peticiones API de los últimos 30 días por hora del día (0-23).
+// Calcula un nivel relativo (0.0-1.0) comparando con la hora de mayor tráfico.
+// Clasifica cada hora como: Pico (≥85%), Alto (≥60%), Medio (≥35%), Bajo (<35%).
 app.get('/api/stats/peak-hours', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -1087,7 +1347,11 @@ app.get('/api/stats/peak-hours', async (req, res) => {
     }
 });
 
-// 11.5. Registrar alerta de proximidad (desde la App)
+// ── Log de alerta de proximidad ──
+// POST /api/stats/log-alert
+// Cuando un usuario activa una alerta de llegada de bus en la app,
+// se registra aquí para que el equipo pueda ver qué líneas y paradas
+// tienen más demanda. Solo envía una notificación a Discord.
 app.post('/api/stats/log-alert', async (req, res) => {
     const { stopName, line, destination } = req.body;
     sendDiscordNotification(`🔔 **Alerta Activada**: Usuario esperando \`${line} -> ${destination}\` en **${stopName}**`);
@@ -1097,9 +1361,12 @@ app.post('/api/stats/log-alert', async (req, res) => {
 // ==========================================
 // RUTAS DE HISTORIAL DE VIAJES
 // ==========================================
-// Todas protegidas por JWT (el usuario solo ve sus propios viajes)
+// Todas protegidas por JWT: el usuario SOLO puede ver y gestionar SUS viajes.
+// Cada viaje almacena: línea, destino, parada, timestamp y si fue confirmado.
 
-// 12. Obtener historial de viajes del usuario
+// ── Obtener historial de viajes del usuario ──
+// GET /api/trips
+// Devuelve todos los viajes del usuario autenticado, ordenados del más reciente al más antiguo.
 app.get('/api/trips', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
@@ -1117,7 +1384,12 @@ app.get('/api/trips', authenticateToken, async (req, res) => {
     }
 });
 
-// 13. Guardar un nuevo viaje
+// ── Guardar un nuevo viaje ──
+// POST /api/trips
+// La app envía los datos del viaje cuando el usuario confirma que ha cogido el bus.
+// Campos obligatorios: line, destination, stopName, stopId, timestamp.
+// El campo 'confirmed' indica si el usuario confirmó manualmente el viaje (true)
+// o fue detectado automáticamente por proximidad (false).
 app.post('/api/trips', authenticateToken, async (req, res) => {
     const { line, destination, stopName, stopId, timestamp, confirmed } = req.body;
     if (!line || !destination || !stopName || stopId === undefined || !timestamp) {
@@ -1142,7 +1414,10 @@ app.post('/api/trips', authenticateToken, async (req, res) => {
     }
 });
 
-// 14. Eliminar un viaje por ID
+// ── Eliminar un viaje individual por ID ──
+// DELETE /api/trips/:id
+// El usuario puede deslizar un viaje en la app para eliminarlo.
+// Solo puede borrar sus propios viajes (WHERE user_id = req.user.id).
 app.delete('/api/trips/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
@@ -1160,7 +1435,10 @@ app.delete('/api/trips/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// 15. Borrar todo el historial del usuario
+// ── Borrar todo el historial del usuario ──
+// DELETE /api/trips
+// Elimina TODOS los viajes del usuario autenticado de una vez.
+// La app muestra un diálogo de confirmación antes de hacer esta petición.
 app.delete('/api/trips', authenticateToken, async (req, res) => {
     try {
         await pool.query('DELETE FROM trips WHERE user_id = $1', [req.user.id]);
@@ -1171,7 +1449,17 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
     }
 });
 
-// ANALYTICS: Dashboard de estadísticas (Admin Only)
+// ── Dashboard unificado de analíticas (Admin) ──
+// GET /api/stats/dashboard
+// Endpoint principal del panel de administración.
+// Ejecuta ~21 consultas SQL en paralelo (Promise.all) para obtener
+// todas las métricas de un solo golpe:
+// - Usuarios: total, verificados, registrados esta semana, activos en 7 días.
+// - Viajes: total, confirmados, por línea, por hora, paradas top, viajes diarios.
+// - API: endpoints más usados, tiempo medio de respuesta, consultas 7 días.
+// - Avisos: total, activos, distribución por línea.
+// - Premium: número de usuarios premium y facturación estimada.
+// La paralelización con Promise.all minimiza la latencia total.
 app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
     try {
         const [
@@ -1352,7 +1640,14 @@ app.get('/api/stats/peak-hours', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Reporte diario a medianoche
+// ── Reporte diario automático a Discord ──
+// Un setInterval que se ejecuta cada 5 minutos y verifica si es medianoche.
+// A las 00:00 genera un resumen del día anterior:
+// - Número de usuarios nuevos registrados.
+// - Número de viajes validados.
+// - Línea más usada.
+// Envía el resumen como notificación a Discord.
+// La variable lastReportDate evita enviar más de un reporte por día.
 let lastReportDate = '';
 
 setInterval(async () => {
@@ -1395,10 +1690,21 @@ setInterval(async () => {
 // ==========================================
 // PAGOS PREMIUM (STRIPE + BIZUM)
 // ==========================================
+// Estos endpoints gestionan el flujo de pago para la suscripción Premium.
+// Flujo completo:
+// 1. La app llama a /create-intent para crear un PaymentIntent en Stripe.
+// 2. Stripe devuelve un clientSecret que la app usa para mostrar el Payment Sheet.
+// 3. El usuario paga con tarjeta o Bizum.
+// 4. Stripe notifica vía webhook (/api/payments/webhook) que el pago fue exitoso.
+// 5. El webhook actualiza is_premium = TRUE en la DB.
+// 6. Si el webhook falla, la app puede usar /confirm-manual como fallback.
 
-// 18. Crear Intención de Pago (Intent)
+// ── Crear Intención de Pago (PaymentIntent) ──
+// POST /api/payments/create-intent
+// Crea un PaymentIntent en Stripe por 2,99€ (299 céntimos).
+// El metadata incluye el userId y email para identificar al usuario en el webhook.
 app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
-    const { amount = 299 } = req.body; // Precio por defecto 2.99€ (centavos)
+    const { amount = 299 } = req.body; // Precio por defecto: 2,99€ en céntimos
 
     try {
         const paymentIntent = await stripe.paymentIntents.create({
@@ -1420,7 +1726,12 @@ app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
     }
 });
 
-// 19. Confirmación Manual (cuando no se pueden usar webhooks)
+// ── Confirmación Manual de Premium ──
+// POST /api/payments/confirm-manual
+// Fallback si el webhook de Stripe no funciona (por ejemplo, si el servidor
+// no es accesible desde Internet).
+// La app detecta que el pago fue exitoso y llama directamente a este endpoint
+// para activar Premium. Menos seguro que el webhook, pero funcional.
 app.post('/api/payments/confirm-manual', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -1434,7 +1745,10 @@ app.post('/api/payments/confirm-manual', authenticateToken, async (req, res) => 
     }
 });
 
-// Iniciar el servidor
+// ── Iniciar el servidor HTTP ──
+// Escucha en todas las interfaces de red ('0.0.0.0') para aceptar
+// conexiones tanto locales como remotas (importante para la Raspberry Pi).
+// El puerto se lee de la variable de entorno PORT o usa 4000 por defecto.
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor y WebSockets corriendo en puerto ${PORT}`);
 });

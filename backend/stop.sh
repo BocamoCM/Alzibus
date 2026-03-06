@@ -1,9 +1,20 @@
 #!/bin/bash
 
-# Script de parada universal para Alzibus Backend
+# ==========================================
+# stop.sh — Script de parada del ecosistema Alzibus
+# ==========================================
+# Detiene todos los servicios del backend:
+# 1. Para el servidor Node.js (PM2 si está disponible).
+# 2. Detiene el contenedor de PostgreSQL (Docker Compose).
+#
+# Uso: bash stop.sh
+# ==========================================
+
 echo "🛑 Deteniendo ecosistema Alzibus..."
 
-# 1. Definir posibles ubicaciones del backend
+# 1. Buscar la carpeta del backend en las mismas ubicaciones que start.sh.
+# Es necesario estar en el directorio correcto para que docker compose
+# encuentre el archivo docker-compose.yml.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 POSSIBLE_PATHS=(
     "$SCRIPT_DIR"
@@ -29,7 +40,9 @@ fi
 # 2. Entrar en la carpeta del backend
 cd "$BACKEND_DIR" || exit
 
-# 3. Detener el Backend
+# 3. Detener el servidor Node.js (gestionado por PM2).
+# pm2 stop detiene el proceso sin eliminarlo de la lista.
+# El '2>/dev/null' suprime errores si PM2 no tiene el proceso registrado.
 if command -v pm2 &> /dev/null
 then
     echo "🔥 Deteniendo proceso en PM2..."
@@ -38,7 +51,9 @@ else
     echo "ℹ️ PM2 no detectado."
 fi
 
-# 4. Detener la base de datos con Docker Compose
+# 4. Detener la base de datos con Docker Compose.
+# docker compose down para los contenedores y elimina las redes creadas.
+# Los datos de PostgreSQL se MANTIENEN en el volumen 'pgdata' (persistente).
 echo "📦 Deteniendo base de datos (PostgreSQL)..."
 docker compose down
 

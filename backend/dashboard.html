@@ -1,3 +1,32 @@
+<!--
+  ==========================================
+  dashboard.html — Panel de Analíticas de Alzibus (Admin)
+  ==========================================
+  Aplicación web SPA (Single Page Application) que muestra las métricas
+  de uso del servicio de autobuses en tiempo real.
+
+  Características:
+  - Login con contraseña de administrador (JWT almacenado en localStorage).
+  - 6 tarjetas KPI: usuarios, verificados, viajes, activos 7d, avisos, nuevos.
+  - Gráficas con Chart.js: registros diarios, viajes diarios, por línea,
+    por hora, tasa de confirmación.
+  - Tabla de paradas más usadas (top 10).
+  - Tabla de rendimiento de la API (endpoints, latencia, llamadas).
+  - Auto-refresh cada 60 segundos.
+  - Protección XSS: se usa textContent en vez de innerHTML para datos del usuario.
+
+  Flujo:
+  1. Al abrir, muestra el overlay de login.
+  2. El usuario introduce la contraseña de admin.
+  3. Se llama a POST /api/admin/login → obtiene JWT.
+  4. Con el JWT, se llama a GET /api/stats/dashboard (endpoint unificado).
+  5. Se renderizan todas las métricas y gráficas con los datos recibidos.
+  6. Cada 60 segundos se recarga automáticamente.
+
+  Dependencias externas:
+  - Chart.js 4.4.0 (CDN): librería de gráficas en canvas.
+  ==========================================
+-->
 <!DOCTYPE html>
 <html lang="es">
 
@@ -5,24 +34,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Alzibus — Dashboard de Analíticas</title>
+  <!-- Chart.js: librería de gráficas que renderiza en elementos <canvas> -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* ── Variables CSS (Design System) ──
+       Define los colores y medidas base del dashboard.
+       El tema es oscuro con acentos en tonos burdeos (color corporativo de Alzibus). */
     :root {
-      --burgundy: #6B1A3A;
-      --burgundy-dark: #3D0E22;
-      --burgundy-light: #8B2850;
-      --accent: #E8A0B4;
-      --bg: #0F0812;
-      --surface: #1A1020;
-      --surface2: #251830;
-      --text: #F0E6EC;
-      --muted: #9A8090;
-      --l1: #1565C0;
-      --l2: #2E7D32;
-      --l3: #E65100;
-      --success: #2E7D32;
-      --warn: #F57F17;
-      --radius: 14px;
+      --burgundy: #6B1A3A;        /* Color principal burdeos */
+      --burgundy-dark: #3D0E22;    /* Burdeos oscuro (header) */
+      --burgundy-light: #8B2850;   /* Burdeos claro (hover, acentos) */
+      --accent: #E8A0B4;           /* Rosa claro para valores destacados */
+      --bg: #0F0812;               /* Fondo principal del body */
+      --surface: #1A1020;          /* Fondo de tarjetas */
+      --surface2: #251830;         /* Fondo de inputs y elementos secundarios */
+      --text: #F0E6EC;             /* Color de texto principal */
+      --muted: #9A8090;            /* Color de texto secundario/apagado */
+      --l1: #1565C0;               /* Color de la Línea 1 (azul) */
+      --l2: #2E7D32;               /* Color de la Línea 2 (verde) */
+      --l3: #E65100;               /* Color de la Línea 3 (naranja) */
+      --success: #2E7D32;          /* Color de éxito */
+      --warn: #F57F17;             /* Color de advertencia */
+      --radius: 14px;              /* Border-radius global para tarjetas */
     }
 
     * {
@@ -100,7 +133,9 @@
       margin: 0 auto;
     }
 
-    /* ── Loading overlay ── */
+    /* ── Loading overlay ──
+       Pantalla de carga que cubre todo el viewport mientras se obtienen los datos.
+       Se muestra con display:flex y se oculta cambiando a display:none. */
     #loading {
       position: fixed;
       inset: 0;
@@ -128,7 +163,9 @@
       }
     }
 
-    /* ── Error banner ── */
+    /* ── Error banner ──
+       Banner rojo que aparece cuando no se puede conectar al servidor.
+       Normalmente oculto (display:none), se activa desde JavaScript. */
     #error-banner {
       display: none;
       background: #4a1515;
@@ -139,7 +176,10 @@
       color: #FFC7C7;
     }
 
-    /* ── KPI Cards ── */
+    /* ── KPI Cards ──
+       Tarjetas de métricas clave (Key Performance Indicators).
+       Grid responsivo: se adapta automáticamente de 1 a 6 columnas.
+       Cada tarjeta tiene un degradado sutil con el color asignado via --color. */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -308,7 +348,10 @@
       background: var(--burgundy-light);
     }
 
-    /* ── Login Overlay ── */
+    /* ── Login Overlay ──
+       Pantalla de login que cubre todo el viewport.
+       Se muestra al abrir el dashboard por primera vez o al cerrar sesión.
+       Contiene un formulario con campo de contraseña y botón de login. */
     #login-overlay {
       position: fixed;
       inset: 0;
@@ -378,6 +421,12 @@
 
 <body>
 
+  <!-- ==========================================
+       OVERLAY DE LOGIN
+       ==========================================
+       Se muestra al cargar la página. Una vez autenticado, se oculta.
+       El formulario envía la contraseña a POST /api/admin/login.
+       Si es correcta, guarda el JWT en localStorage y carga los datos. -->
   <div id="login-overlay">
     <div class="login-card">
       <div style="font-size: 3rem; margin-bottom: 16px;">🔐</div>
@@ -391,6 +440,10 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       SPINNER DE CARGA
+       ==========================================
+       Se muestra mientras se esperan los datos del servidor. -->
   <div id="loading" style="display:none">
     <div class="spinner"></div>
     <span style="color:var(--muted)">Cargando datos…</span>
@@ -409,6 +462,16 @@
     </div>
   </header>
 
+  <!-- ==========================================
+       CONTENIDO PRINCIPAL DEL DASHBOARD
+       ==========================================
+       Estructura:
+       1. KPIs (tarjetas de métricas clave)
+       2. Gráficas de tendencia (registros + viajes, 30 días)
+       3. Distribución de uso (por línea, por hora, confirmación)
+       4. Top 10 paradas más usadas (tabla)
+       5. Rendimiento de la API (tabla con latencia)
+       ========================================== -->
   <main>
     <div id="error-banner"></div>
 
@@ -510,10 +573,22 @@
   <footer>Alzibus Analytics · Datos en tiempo real desde PostgreSQL · <span id="server-url"></span></footer>
 
   <script>
-    // ── Configuración ──────────────────────────────────────────────
+    // ==========================================
+    // JAVASCRIPT DEL DASHBOARD
+    // ==========================================
+    // Lógica del panel de administración:
+    // - Autenticación con JWT (almacenado en localStorage).
+    // - Petición al endpoint unificado /api/stats/dashboard.
+    // - Renderizado de gráficas con Chart.js.
+    // - Auto-refresh cada 60 segundos.
+
+    // ── Configuración ──
+    // URL del servidor backend. Cambiar a la IP de producción si se despliega.
     const SERVER = 'http://localhost:3000';
     document.getElementById('server-url').textContent = SERVER;
 
+    // Opciones por defecto para todas las gráficas de Chart.js.
+    // Define el estilo de los ejes, colores del grid, y tamaño de fuente.
     const CHART_DEFAULTS = {
       responsive: true,
       maintainAspectRatio: false,
@@ -524,9 +599,16 @@
       },
     };
 
+    // Almacenar instancias de las gráficas para poder destruirlas al actualizar.
+    // Sin esto, Chart.js crea múltiples gráficas superpuestas en cada refresh.
     let charts = {};
+
+    // Token JWT del administrador. Se guarda en localStorage para persistir entre recargas.
     let TOKEN = localStorage.getItem('alzibus_admin_token');
 
+    // ── Función de Login ──
+    // Envía la contraseña al endpoint POST /api/admin/login.
+    // Si es correcta, recibe un JWT que se usa para todas las peticiones posteriores.
     async function doLogin() {
       const pass = document.getElementById('admin-pass').value;
       const btn = document.querySelector('.login-card button');
@@ -562,11 +644,16 @@
       }
     }
 
+    // ── Cerrar Sesión ──
+    // Elimina el token de localStorage y recarga la página para volver al login.
     function logout() {
       localStorage.removeItem('alzibus_admin_token');
       location.reload();
     }
 
+    // ── Helper para crear/actualizar gráficas ──
+    // Destruye la gráfica anterior (si existe) y crea una nueva.
+    // Esto evita el efecto de superposición al hacer refresh.
     function makeChart(id, type, data, options = {}) {
       const ctx = document.getElementById(id).getContext('2d');
       if (charts[id]) charts[id].destroy();
@@ -577,6 +664,10 @@
       });
     }
 
+    // ── Helper para procesar datos de los últimos 30 días ──
+    // Recibe un array de {day, cnt} y lo convierte en labels y values
+    // rellenando los días que no tienen datos con 0.
+    // Esto asegura que la gráfica muestre todos los 30 días sin huecos.
     function parseDates30(rows) {
       // Fill all 30 days even if no data
       const map = {};
@@ -591,6 +682,8 @@
       return { labels, values };
     }
 
+    // ── Helper de color por línea ──
+    // Devuelve el color asignado a cada línea de autobús.
     function lineColor(line) {
       if (line === 'L1') return '#1565C0';
       if (line === 'L2') return '#2E7D32';
@@ -598,12 +691,16 @@
       return '#6B1A3A';
     }
 
+    // ── Helper de badge de latencia ──
+    // Genera HTML con color indicando si la latencia es buena (verde), 
+    // media (naranja) o mala (rojo).
     function latencyBadge(ms) {
       if (ms < 100) return `<span style="color:#81C784">● ${ms}ms</span>`;
       if (ms < 500) return `<span style="color:#FFB74D">● ${ms}ms</span>`;
       return `<span style="color:#EF9A9A">● ${ms}ms</span>`;
     }
 
+    // ── Helper de clase CSS para badges de línea ──
     function badgeClass(line) {
       if (line === 'L1') return 'badge-l1';
       if (line === 'L2') return 'badge-l2';
@@ -611,6 +708,13 @@
       return 'badge-gen';
     }
 
+    // ==========================================
+    // CARGA PRINCIPAL DE DATOS
+    // ==========================================
+    // Función principal que obtiene todos los datos del servidor
+    // y renderiza las gráficas y tablas.
+    // Llama a GET /api/stats/dashboard con el token JWT.
+    // Si el token es inválido (401/403), cierra sesión automáticamente.
     async function loadData() {
       if (!TOKEN) {
         document.getElementById('login-overlay').style.display = 'flex';
@@ -634,7 +738,7 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const d = await res.json();
 
-        // ── KPIs ───────────────────────────────────────
+        // ── KPIs: Actualizar las tarjetas de métricas principales ──
         document.getElementById('k-users').textContent = d.users.total;
         document.getElementById('k-users-sub').textContent = `+${d.users.thisWeek} esta semana`;
         document.getElementById('k-verified').textContent = d.users.verified;
@@ -734,7 +838,9 @@
           scales: {},
         });
 
-        // ── Top paradas (XSS Safe) ─────────────────────
+        // ── Tabla: Top 10 paradas más usadas (XSS Safe) ──
+        // Usa textContent en vez de innerHTML para los datos del usuario
+        // para prevenir ataques XSS (inyección de código malicioso).
         const topStopsBody = document.createElement('tbody');
         const maxCnt = Math.max(...d.trips.topStops.map(s => parseInt(s.cnt)), 1);
 
@@ -758,7 +864,8 @@
         stopsTable.innerHTML = `<table><thead><tr><th>#</th><th>Parada</th><th>Viajes</th><th>Proporción</th></tr></thead></table>`;
         stopsTable.querySelector('table').appendChild(topStopsBody);
 
-        // ── API Performance (XSS Safe) ─────────────────
+        // ── Tabla: Rendimiento de la API (XSS Safe) ──
+        // Muestra los endpoints más llamados con sus métricas de latencia.
         const apiTableBody = document.getElementById('api-table');
         apiTableBody.innerHTML = '';
 
@@ -797,8 +904,10 @@
       }
     }
 
-    // Auto-refresh cada 60 segundos
+    // ── Inicialización y Auto-refresh ──
+    // Cargar datos inmediatamente al abrir la página.
     loadData();
+    // Recargar automáticamente cada 60 segundos para mantener los datos frescos.
     setInterval(loadData, 60_000);
   </script>
 </body>

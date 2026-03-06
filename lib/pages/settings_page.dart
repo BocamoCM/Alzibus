@@ -207,7 +207,8 @@ class _SettingsPageState extends State<SettingsPage> {
     required String name,
     required Locale locale,
   }) {
-    final isSelected = _currentLocale.languageCode == locale.languageCode;
+    final activeLocale = Localizations.localeOf(context);
+    final isSelected = activeLocale.languageCode == locale.languageCode;
     return ListTile(
       leading: const Icon(Icons.language, color: AlzitransColors.burgundy),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),

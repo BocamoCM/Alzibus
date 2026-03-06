@@ -1,24 +1,53 @@
+# ==========================================
+# docker-compose.yml — Orquestación de servicios Alzibus
+# ==========================================
+# Define los servicios necesarios para ejecutar el backend.
+# Actualmente solo contiene PostgreSQL (el backend Node.js se ejecuta con PM2).
+#
+# Comandos:
+#   docker compose up -d    → Arrancar la base de datos en segundo plano
+#   docker compose down     → Detener y eliminar contenedores (los datos se mantienen)
+#   docker compose logs db  → Ver los logs de PostgreSQL
+#
+# Los datos se persisten en un volumen Docker llamado 'pgdata'.
+# Esto significa que aunque se elimine el contenedor, los datos NO se pierden.
+
 version: '3.8'
 
 services:
+  # ─── Servicio de Base de Datos ───
   db:
-    image: postgres:15
-    container_name: alzibus_postgres
+    image: postgres:15                    # Imagen oficial de PostgreSQL versión 15
+    container_name: alzibus_postgres      # Nombre fijo para identificar fácilmente el contenedor
     environment:
-      POSTGRES_USER: alzibus_user
-      POSTGRES_PASSWORD: alzibus_password
-      POSTGRES_DB: alzibus_db
+      # Credenciales de la base de datos.
+      # IMPORTANTE: Estas deben coincidir con las variables del archivo .env del backend.
+      POSTGRES_USER: alzibus_user         # Usuario de PostgreSQL
+      POSTGRES_PASSWORD: alzibus_password # Contraseña (cambiar en producción real)
+      POSTGRES_DB: alzibus_db            # Nombre de la base de datos a crear
     ports:
+      # Mapear el puerto 5433 del host al 5432 del contenedor.
+      # Se usa 5433 para no conflictuar con una instalación local de PostgreSQL (que usa 5432).
       - "5433:5432"
     volumes:
+      # Volumen persistente para los datos de PostgreSQL.
+      # Sin esto, los datos se perderían al eliminar el contenedor.
       - pgdata:/var/lib/postgresql/data
-      # Este archivo se ejecutará automáticamente la primera vez que se cree la base de datos
+      # Montar init.sql como script de inicialización.
+      # PostgreSQL ejecuta automáticamente los .sql de /docker-entrypoint-initdb.d/
+      # SOLO la primera vez que se crea la base de datos (cuando el volumen está vacío).
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - alzibus-net
+      - alzibus-net  # Red interna de Docker para comunicación entre servicios
 
+# ─── Volúmenes persistentes ───
+# Define el volumen 'pgdata' gestionado por Docker.
+# Se puede inspeccionar con: docker volume inspect backend_pgdata
 volumes:
   pgdata:
 
+# ─── Redes ───
+# Red bridge interna para que los servicios se comuniquen por nombre.
+# Ejemplo: desde otro contenedor, se puede conectar a PostgreSQL como 'db:5432'.
 networks:
   alzibus-net:

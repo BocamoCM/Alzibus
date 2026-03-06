@@ -218,7 +218,9 @@ class _AlzitransAppState extends State<AlzitransApp> {
     TtsService().setLanguage(code);
   }
 
-  void _onLocaleChanged(Locale locale) {
+  void _onLocaleChanged(Locale locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_locale', locale.languageCode);
     setState(() => _currentLocale = locale);
     TtsService().setLanguage(locale.languageCode);
   }
