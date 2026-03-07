@@ -77,13 +77,54 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         TextInput.finishAutofillContext();
         
         if (widget.isLoginFlow) {
-          _showSuccess('¡Sesión iniciada correctamente!');
-          // Navegar a Home quitando todo el historial anterior
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-            (route) => false,
-          );
+          // COMPROBAR BIOMETRÍA TRAS LOGIN EXITOSO
+          final canCheck = await _authService.canCheckBiometrics();
+          final isEnabled = await _authService.isBiometricEnabled();
+          
+          if (canCheck && !isEnabled && mounted) {
+            final setupBiometrics = await showDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                title: const Text('¿Activar Huella?'),
+                content: const Text('¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Ahora no'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('¡Sí, activar!'),
+                  ),
+                ],
+              ),
+            );
+
+            if (setupBiometrics == true) {
+              // Necesitamos la contraseña del login anterior. 
+              // Como no la tenemos aquí, una opción es pedirla o haberla guardado temporalmente.
+              // Para simplificar, asumiremos que el AuthService tiene una forma de 
+              // obtenerla o que el usuario la introducirá una última vez si es necesario.
+              // Pero lo ideal es que el login_page la pase o el servicio la cachee.
+              // SOLUCIÓN: El login_page debería pasarla o el AuthService guardarla 
+              // temporalmente hasta este punto.
+              
+              // Por ahora, mostraremos un mensaje indicando que se activará en el próximo login manual exitoso
+              // O mejor, el AuthService la guarda en el login() y aquí la persistimos.
+              await _authService.persistBiometricCredentials();
+              if (mounted) _showSuccess('¡Acceso biométrico activado!');
+            }
+          }
+
+          if (mounted) {
+            _showSuccess('¡Sesión iniciada correctamente!');
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (route) => false,
+            );
+          }
         } else {
           _showSuccess('¡Correo verificado! Ya puedes iniciar sesión.');
           Navigator.pop(context);

@@ -23,6 +23,70 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
+  bool _canCheckBiometrics = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final canCheck = await _authService.canCheckBiometrics();
+    final isEnabled = await _authService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _canCheckBiometrics = canCheck && isEnabled;
+      });
+      
+      // Intentar login automático si está habilitado
+      if (_canCheckBiometrics) {
+        _loginWithBiometrics();
+      }
+    }
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final success = await _authService.loginWithBiometrics();
+      if (success) {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            // No mostramos error aquí para no molestar si solo falló el escaneo
+          });
+        }
+      }
+    } on AuthLoginOtpRequiredException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => OtpVerificationPage(
+            email: e.email,
+            isLoginFlow: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error en acceso biométrico: $e';
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -179,12 +243,27 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 _isLoading
                     ? const CircularProgressIndicator()
-                    : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _login,
-                          child: Text(l.loginButton),
-                        ),
+                    : Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _login,
+                              child: Text(l.loginButton),
+                            ),
+                          ),
+                          if (_canCheckBiometrics) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: _loginWithBiometrics,
+                              icon: const Icon(Icons.fingerprint),
+                              label: const Text('Entrar con huella'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 45),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                 TextButton(
                   onPressed: () {

@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../constants/app_config.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Excepción lanzada cuando las credenciales son incorrectas.
 class AuthInvalidCredentialsException implements Exception {
@@ -23,15 +25,113 @@ class AuthNetworkException implements Exception {
 }
 
 class AuthService {
+  final LocalAuthentication _auth = LocalAuthentication();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  static const String _keyEmail = 'biometric_email';
+  static const String _keyPassword = 'biometric_password';
+  static const String _keyEnabled = 'biometric_enabled';
+
+  // Caché temporal para persistir tras el OTP (estática para compartir entre instancias)
+  static String? _tempEmail;
+  static String? _tempPassword;
+
+  /// Comprueba si el dispositivo soporta biometría y tiene huellas registradas.
+  Future<bool> canCheckBiometrics() async {
+    try {
+      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+      final bool isDeviceSupported = await _auth.isDeviceSupported();
+      return canAuthenticateWithBiometrics && isDeviceSupported;
+    } catch (e) {
+      debugPrint('Error comprobando biometría: $e');
+      return false;
+    }
+  }
+
+  /// Intenta autenticar al usuario localmente con biometría.
+  Future<bool> authenticateWithBiometrics() async {
+    try {
+      return await _auth.authenticate(
+        localizedReason: 'Escanea tu huella para entrar en Alzibus',
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+    } catch (e) {
+      debugPrint('Error en autenticación biométrica: $e');
+      return false;
+    }
+  }
+
+  /// Guarda las credenciales de forma segura para futuro login biométrico.
+  Future<void> saveBiometricCredentials(String email, String password) async {
+    await _storage.write(key: _keyEmail, value: email);
+    await _storage.write(key: _keyPassword, value: password);
+    await _storage.write(key: _keyEnabled, value: 'true');
+  }
+
+  /// Pasa la caché temporal a persistente (se llama tras verificar OTP)
+  Future<void> persistBiometricCredentials() async {
+    if (_tempEmail != null && _tempPassword != null) {
+      await saveBiometricCredentials(_tempEmail!, _tempPassword!);
+      _tempEmail = null;
+      _tempPassword = null;
+    }
+  }
+
+  /// Comprueba si el usuario tiene activado el login biométrico.
+  Future<bool> isBiometricEnabled() async {
+    final String? enabled = await _storage.read(key: _keyEnabled);
+    return enabled == 'true';
+  }
+
+  /// Elimina las credenciales biométricas (ej. al cerrar sesión).
+  Future<void> clearBiometricCredentials() async {
+    await _storage.delete(key: _keyEmail);
+    await _storage.delete(key: _keyPassword);
+    await _storage.delete(key: _keyEnabled);
+  }
+
+  /// Intenta el login automático usando biometría.
+  Future<bool> loginWithBiometrics() async {
+    if (!await isBiometricEnabled()) return false;
+
+    if (await authenticateWithBiometrics()) {
+      final String? email = await _storage.read(key: _keyEmail);
+      final String? password = await _storage.read(key: _keyPassword);
+
+      if (email != null && password != null) {
+        // Login con biometric: true → el servidor salta el OTP.
+        // La autenticación biométrica del dispositivo ya actúa como 2FA.
+        try {
+          await login(email, password, biometric: true);
+          return true;
+        } catch (e) {
+          debugPrint('Error login tras biometría: $e');
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
   /// Intenta iniciar sesión. Lanza [AuthInvalidCredentialsException] si las
   /// credenciales son incorrectas, o [AuthNetworkException] si no hay red.
-  Future<void> login(String email, String password) async {
+  /// Si [biometric] es true, el servidor salta el OTP (la huella actúa como 2FA).
+  Future<void> login(String email, String password, {bool biometric = false}) async {
+    // Guardar en caché temporal por si el usuario activa la huella tras el OTP
+    _tempEmail = email;
+    _tempPassword = password;
+
     try {
       final response = await http
           .post(
             Uri.parse('${AppConfig.baseUrl}/login'),
             headers: AppConfig.headers,
-            body: jsonEncode({'email': email, 'password': password}),
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+              if (biometric) 'biometric': true,
+            }),
           )
           .timeout(AppConfig.httpTimeout);
 

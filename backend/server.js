@@ -192,6 +192,14 @@ app.get('/privacy-policy', (req, res) => {
     res.sendFile(path.join(__dirname, 'POLITICA_PRIVACIDAD_ALZITRANS.md'));
 });
 
+// ── app-ads.txt para verificación de AdMob ──
+// Google AdMob requiere que el archivo app-ads.txt esté accesible en la raíz
+// del dominio del desarrollador para autorizar fuentes de anuncios.
+// Debe ser público (sin autenticación ni API Key).
+app.get('/app-ads.txt', (req, res) => {
+    res.type('text/plain').send('google.com, pub-5215993257564469, DIRECT, f08c47fec0942fa0\n');
+});
+
 // ── Middleware de logging de peticiones API ──
 // Registra cada petición en la tabla 'api_logs' de PostgreSQL.
 // Guarda: endpoint (ruta), método HTTP y tiempo de respuesta en ms.
@@ -711,7 +719,7 @@ app.post('/api/reset-password', registerLimiter, async (req, res) => {
 // Si todo es correcto, genera un JWT con 24h de validez y lo devuelve.
 // Protección: loginLimiter (máx 10 intentos/15min por IP).
 app.post('/api/login', loginLimiter, async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, biometric } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({ error: 'Email y contraseña son obligatorios' });
@@ -744,6 +752,25 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+
+        // Si el login viene desde biometría (huella), saltar OTP y dar acceso directo.
+        // La autenticación biométrica del dispositivo ya actúa como segundo factor.
+        if (biometric === true) {
+            await pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [user.id]);
+
+            const token = jwt.sign(
+                { id: user.id, email: user.email },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+
+            console.log(`[Login Biométrico] Acceso directo para ${user.email}`);
+            return res.json({
+                message: 'Login biométrico exitoso',
+                token: token,
+                user: { id: user.id, email: user.email, isPremium: user.is_premium }
+            });
         }
 
         // Generar código OTP para el login (2FA)
