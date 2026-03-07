@@ -46,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text.trim(),
       );
 
+      debugPrint('[LoginPage] Login finalizado sin excepción');
       if (!mounted) return;
       
       // Finalizar contexto de autofill si no hay OTP (éxito directo)
@@ -59,7 +60,10 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } on AuthLoginOtpRequiredException catch (e) {
+      debugPrint('[LoginPage] AuthLoginOtpRequiredException capturada para: ${e.email}');
       if (!mounted) return;
+      
+      setState(() => _isLoading = false);
       
       // IMPORTANTE: Avisar al sistema de que "aquí" terminamos con el usuario/pass
       // para que salte el diálogo de guardar antes de que los campos desaparezcan.
@@ -74,16 +78,25 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } on AuthInvalidCredentialsException {
+      debugPrint('[LoginPage] AuthInvalidCredentialsException capturada');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = l.incorrectCredentials;
       });
-    } on AuthNetworkException {
+    } on AuthNetworkException catch (e) {
+      debugPrint('[LoginPage] AuthNetworkException capturada: ${e.cause}');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = l.noServerConnection;
+      });
+    } catch (e) {
+      debugPrint('[LoginPage] Otra excepción capturada: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Error inesperado: $e';
       });
     }
   }

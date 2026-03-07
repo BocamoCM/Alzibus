@@ -35,21 +35,26 @@ class AuthService {
           )
           .timeout(AppConfig.httpTimeout);
 
+      debugPrint('[AuthService] Login status: ${response.statusCode}');
+      debugPrint('[AuthService] Login body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-        // Caso 1: Login directo (si estuviera desactivado el 2FA en el futuro)
-        // o si el servidor devuelve el token ya.
+        // Caso 1: Login directo
         if (data['token'] != null) {
+          debugPrint('[AuthService] Login directo exitoso');
           await _saveSession(data);
           return;
         }
         
         // Caso 2: Se requiere OTP (2FA)
         if (data['requiresOtp'] == true) {
+          debugPrint('[AuthService] Se requiere OTP para ${data['email']}');
           throw AuthLoginOtpRequiredException(data['email'] as String);
         }
         
+        debugPrint('[AuthService] Respuesta 200 inesperada (sin token ni requiresOtp)');
         return;
       }
       
