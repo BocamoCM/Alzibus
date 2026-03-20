@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_config.dart';
 import '../models/trip_record.dart';
@@ -27,18 +27,10 @@ class TripHistoryService {
   /// Carga el historial del servidor. Debe llamarse al iniciar la pantalla.
   Future<void> loadFromApi(String token) async {
     try {
-      final response = await http
-          .get(
-            Uri.parse('${AppConfig.baseUrl}/trips'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().get('/trips');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response.data;
         _records = data.map((e) => TripRecord.fromJson(_normalizeJson(e))).toList();
         debugPrint('[TripHistory] Cargados ${_records.length} viajes desde la API');
       }
@@ -82,7 +74,7 @@ class TripHistoryService {
   }
 
   /// El usuario confirmó que cogió el bus → guardar en API y descontar local si aplica.
-  Future<void> confirmTrip(String token) async {
+  Future<void> confirmTrip(String token, {String paymentMethod = 'card'}) async {
     final pending = getPendingTrip();
     if (pending == null) return;
     
@@ -95,16 +87,17 @@ class TripHistoryService {
       stopId: pending['stopId'],
       timestamp: DateTime.parse(pending['timestamp']),
       confirmed: true,
+      paymentMethod: paymentMethod,
     );
 
-    // 2. Gestionar descuento de viaje NFC si existe tarjeta local
+    // 2. Gestionar descuento de viaje NFC si existe tarjeta local y el pago fue con tarjeta
     final isUnlimited = _prefs.getBool('is_unlimited') ?? false;
     final storedTrips = _prefs.getInt('stored_trips') ?? 0;
     
-    if (!isUnlimited && storedTrips > 0) {
+    if (!isUnlimited && storedTrips > 0 && paymentMethod == 'card') {
       final newTrips = storedTrips - 1;
       await _prefs.setInt('stored_trips', newTrips);
-      debugPrint('[TripHistory] Auto-descuento NFC: $storedTrips -> $newTrips');
+      debugPrint('[TripHistory] Auto-descuento NFC (Tarjeta): $storedTrips -> $newTrips');
     }
 
     await _prefs.remove(_pendingTripKey);
@@ -113,8 +106,6 @@ class TripHistoryService {
   Future<void> rejectTrip() async {
     await _prefs.remove(_pendingTripKey);
   }
-
-
 
   // ─────────────────────────────────────────────────────────────
   // ESCRITURA EN LA API
@@ -136,6 +127,7 @@ class TripHistoryService {
       stopId: stopId,
       timestamp: DateTime.now(),
       confirmed: confirmed,
+      paymentMethod: 'card', 
     );
   }
 
@@ -147,28 +139,24 @@ class TripHistoryService {
     required int stopId,
     required DateTime timestamp,
     required bool confirmed,
+    String? paymentMethod,
   }) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/trips'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'line': line,
-              'destination': destination,
-              'stopName': stopName,
-              'stopId': stopId,
-              'timestamp': timestamp.toIso8601String(),
-              'confirmed': confirmed,
-            }),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/trips',
+        data: {
+          'line': line,
+          'destination': destination,
+          'stopName': stopName,
+          'stopId': stopId,
+          'timestamp': timestamp.toIso8601String(),
+          'confirmed': confirmed,
+          'paymentMethod': paymentMethod,
+        },
+      );
 
       if (response.statusCode == 201) {
-        final newRecord = TripRecord.fromJson(_normalizeJson(jsonDecode(response.body)));
+        final newRecord = TripRecord.fromJson(_normalizeJson(response.data));
         _records.insert(0, newRecord);
       }
     } catch (e) {
@@ -182,15 +170,7 @@ class TripHistoryService {
 
   Future<void> clearHistory(String token) async {
     try {
-      await http
-          .delete(
-            Uri.parse('${AppConfig.baseUrl}/trips'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(AppConfig.httpTimeout);
+      await ApiClient().delete('/trips');
       _records.clear();
     } catch (e) {
       debugPrint('[TripHistory] Error borrando historial: $e');
@@ -209,15 +189,7 @@ class TripHistoryService {
     final serverId = record.serverId;
     if (serverId != null) {
       try {
-        await http
-            .delete(
-              Uri.parse('${AppConfig.baseUrl}/trips/$serverId'),
-              headers: {
-                ...AppConfig.headers,
-                'Authorization': 'Bearer $token',
-              },
-            )
-            .timeout(AppConfig.httpTimeout);
+        await ApiClient().delete('/trips/$serverId');
       } catch (e) {
         debugPrint('[TripHistory] Error eliminando viaje: $e');
       }

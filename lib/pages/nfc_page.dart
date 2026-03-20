@@ -1,464 +1,81 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:nfc_manager/nfc_manager.dart';
-import 'package:nfc_manager/src/nfc_manager_android/tags/nfc_a.dart';
-import 'package:nfc_manager/src/nfc_manager_android/tags/iso_dep.dart';
-import 'package:nfc_manager/src/nfc_manager_android/tags/mifare_classic.dart';
-import 'package:nfc_manager/src/nfc_manager_android/tags/tag.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vibration/vibration.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
-import '../models/bus_card.dart';
-import '../services/tts_service.dart';
+import '../core/providers/nfc_controller.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
 import '../constants/app_config.dart';
 
-/// Claves Mifare para tarjetas de bus de Alzira
-/// Extraídas de los dumps de las tarjetas reales
-class BusCardKeys {
-  // Claves Key A por sector (extraídas de sector trailers)
-  static final Map<int, Uint8List> keyA = {
-    0: Uint8List.fromList([0xBC, 0x93, 0x33, 0xB1, 0xBB, 0x6E]),  // Block 3
-    1: Uint8List.fromList([0xDF, 0xED, 0x7C, 0x26, 0xBF, 0x1B]),  // Block 7 - Contiene estado actual
-    2: Uint8List.fromList([0x17, 0x5B, 0x77, 0xCD, 0x00, 0x97]),  // Block 11
-    3: Uint8List.fromList([0xE4, 0xBC, 0xDF, 0x37, 0x24, 0x03]),  // Block 15
-    4: Uint8List.fromList([0xE4, 0x74, 0xDF, 0x44, 0x8D, 0x37]),  // Block 19
-    5: Uint8List.fromList([0x39, 0x8E, 0xA4, 0xFE, 0x52, 0x06]),  // Block 23 - Historial
-    6: Uint8List.fromList([0xF2, 0x0C, 0x09, 0x4B, 0xDB, 0x31]),  // Block 27
-    7: Uint8List.fromList([0x1C, 0x93, 0x8B, 0xA7, 0xE7, 0x0E]),  // Block 31
-  };
-  
-  // Clave por defecto (fallback)
-  static final Uint8List defaultKey = Uint8List.fromList([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
-}
-
-class NfcPage extends StatefulWidget {
+class NfcPage extends ConsumerStatefulWidget {
   const NfcPage({super.key});
 
   @override
-  State<NfcPage> createState() => _NfcPageState();
+  ConsumerState<NfcPage> createState() => _NfcPageState();
 }
 
-class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  String _status = 'Acerca tu tarjeta para leer el saldo';
-  bool _scanning = false;
-  BusCard? _cardData;
-  int _storedTrips = 0;
-  bool _isUnlimited = false;
-  String? _lastCardUid;
-  bool _nfcAvailable = true;
-  bool _lowBalanceWarningsEnabled = true;
-  int _lowBalanceThreshold = 5;
-  final FlutterLocalNotificationsPlugin _notif = FlutterLocalNotificationsPlugin();
+class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+  late NfcController _nfcNotifier;
   
   BannerAd? _bannerAd;
   bool _isBannerAdLoaded = false;
-  
-  int _scanCounter = 0;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initAnimations();
-    _initNotifications();
-    _loadPreferences();
-    _checkNfcAvailability();
     
-    // Pre-cargar anuncio intersticial
-    if (AppConfig.showAds) {
-      AdService.instance.loadInterstitialAd();
-      _initBannerAd();
-    }
+    _nfcNotifier = ref.read(nfcControllerProvider.notifier);
     
-    // Timer para refrescar datos (por si se descuenta desde el diálogo global)
-    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (mounted && !_scanning) {
-        _loadPreferences();
-      }
-    });
-  }
-
-  void _initBannerAd() {
-    _bannerAd = AdService.instance.createBannerAd(
-      onAdLoaded: (ad) {
-        setState(() => _isBannerAdLoaded = true);
-      },
-      onAdFailedToLoad: (ad, error) {
-        setState(() => _isBannerAdLoaded = false);
-      },
-    )..load();
-  }
-
-  void _initAnimations() {
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    );
+    )..repeat(reverse: true);
+    
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    _pulseController.repeat(reverse: true);
+
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    if (!AppConfig.showAds) return;
+    final adUnitId = AppConfig.bannerAdId;
+    if (adUnitId.isNotEmpty) {
+      _bannerAd = BannerAd(
+        adUnitId: adUnitId,
+        size: AdSize.banner,
+        request: const AdRequest(),
+        listener: BannerAdListener(
+          onAdLoaded: (_) {
+            if (mounted) setState(() => _isBannerAdLoaded = true);
+          },
+          onAdFailedToLoad: (ad, error) {
+            ad.dispose();
+            debugPrint('Error cargando banner ad en NFC Page: $error');
+          },
+        ),
+      )..load();
+    }
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     _bannerAd?.dispose();
+    _nfcNotifier.stopScan();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _loadPreferences();
-    }
-  }
-
-  Future<void> _checkNfcAvailability() async {
-    final isAvailable = await NfcManager.instance.isAvailable();
-    setState(() {
-      _nfcAvailable = isAvailable;
-      if (!isAvailable) {
-        _status = 'NFC no disponible en este dispositivo';
-      }
-    });
-  }
-
-  Future<void> _initNotifications() async {
-    const android = AndroidInitializationSettings('@drawable/ic_launcher_foreground');
-    const initSettings = InitializationSettings(android: android);
-    await _notif.initialize(initSettings);
-  }
-
-  Future<void> _loadPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _lowBalanceWarningsEnabled = prefs.getBool('low_balance_warnings') ?? true;
-      _lowBalanceThreshold = prefs.getInt('low_balance_threshold') ?? 5;
-      _storedTrips = prefs.getInt('stored_trips') ?? 0;
-      _isUnlimited = prefs.getBool('is_unlimited') ?? false;
-      _lastCardUid = prefs.getString('last_card_uid');
-      _scanCounter = prefs.getInt('nfc_scan_count') ?? 0;
-      if (_isUnlimited) {
-        _status = 'Tienes viajes ILIMITADOS';
-      } else if (_storedTrips > 0) {
-        _status = 'Tienes $_storedTrips viajes guardados';
-      }
-    });
-  }
-
-  Future<void> _saveTrips(int trips, String uid, bool isUnlimited) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('stored_trips', trips);
-    await prefs.setString('last_card_uid', uid);
-    await prefs.setBool('is_unlimited', isUnlimited);
-    setState(() {
-      _isUnlimited = isUnlimited;
-    });
-    
-    // Anuncio por voz si está habilitado
-    if (mounted) {
-      final l = AppLocalizations.of(context)!;
-      if (isUnlimited) {
-        TtsService().speak(l.nfcUnlimitedAnnounce);
-      } else {
-        final balanceStr = (trips * 1.5).toStringAsFixed(2); // Estimación basada en tarifa 1.50€
-        TtsService().speak(l.nfcBalanceAnnounce(balanceStr, trips));
-      }
-    }
-  }
-
-  Future<void> _validateTrip() async {
-    if (_storedTrips <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No te quedan viajes disponibles')),
-      );
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar viaje'),
-        content: const Text('¿Deseas validar un viaje ahora? Se restará 1 de tu contador.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AlzitransColors.burgundy),
-            child: const Text('Validar'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      final newTrips = _storedTrips - 1;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('stored_trips', newTrips);
-      
-      setState(() {
-        _storedTrips = newTrips;
-        if (_cardData != null) {
-          _cardData = BusCard(
-            uid: _cardData!.uid,
-            balance: _cardData!.balance,
-            trips: newTrips,
-            cardType: _cardData!.cardType,
-            isUnlimited: _cardData!.isUnlimited,
-          );
-        }
-      });
-
-      if (mounted) {
-        final l = AppLocalizations.of(context)!;
-        final balanceStr = (newTrips * 1.5).toStringAsFixed(2);
-        TtsService().speak(l.nfcBalanceAnnounce(balanceStr, newTrips));
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Viaje validado. Te quedan $newTrips viajes.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-      
-      await _checkLowBalance(newTrips);
-    }
-  }
-
-  Future<void> _savePreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('low_balance_warnings', _lowBalanceWarningsEnabled);
-    await prefs.setInt('low_balance_threshold', _lowBalanceThreshold);
-  }
-
-  Future<void> _checkLowBalance(int trips) async {
-    if (_lowBalanceWarningsEnabled && trips > 0 && trips <= _lowBalanceThreshold) {
-      final androidDetails = AndroidNotificationDetails(
-        'alzibus-hu',
-        'Alzibus (Heads-up) - Saldo',
-        channelDescription: 'Avisos heads-up de saldo bajo en tarjeta',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        vibrationPattern: Int64List.fromList([0, 300, 200, 300, 200, 300]),
-        ticker: 'Saldo bajo',
-        styleInformation: const BigTextStyleInformation(''),
-        fullScreenIntent: true,
-        category: AndroidNotificationCategory.status,
-        visibility: NotificationVisibility.public,
-      );
-      final details = NotificationDetails(android: androidDetails);
-      
-      // Vibrar el dispositivo
-      final hasVibrator = await Vibration.hasVibrator();
-      if (hasVibrator == true) {
-        Vibration.vibrate(pattern: [0, 300, 200, 300, 200, 300]);
-      }
-      
-      await _notif.show(
-        999,
-        '⚠️ Saldo bajo en tu tarjeta',
-        'Te quedan solo $trips viajes. Recarga pronto tu tarjeta.',
-        details,
-      );
-    }
-  }
-
-  Future<void> _startScan() async {
-    if (!_nfcAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NFC no disponible')),
-      );
-      return;
-    }
-
-    setState(() {
-      _scanning = true;
-      _status = 'Acerca tu tarjeta al teléfono...';
-      _cardData = null;
-    });
-
-    try {
-      await NfcManager.instance.startSession(
-        pollingOptions: {
-          NfcPollingOption.iso14443,
-          NfcPollingOption.iso15693,
-        },
-        onDiscovered: (NfcTag tag) async {
-          await _handleTagDiscovered(tag);
-        },
-      );
-    } catch (e) {
-      debugPrint('Error starting NFC session: $e');
-      setState(() {
-        _status = 'Error al iniciar escaneo NFC';
-        _scanning = false;
-      });
-    }
-  }
-
-  Future<void> _handleTagDiscovered(NfcTag tag) async {
-    try {
-      String? uid;
-      
-      // Intentar obtener UID de NfcA (común en Mifare)
-      final nfca = NfcAAndroid.from(tag);
-      if (nfca != null) {
-        uid = nfca.tag.id.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
-      }
-      
-      // Si no, intentar IsoDep
-      if (uid == null) {
-        final isodep = IsoDepAndroid.from(tag);
-        if (isodep != null) {
-          uid = isodep.tag.id.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
-        }
-      }
-      
-      // Intentar Mifare Classic - usando claves reales de las tarjetas de bus
-      final mifareClassic = MifareClassicAndroid.from(tag);
-      BusCard? cardData;
-      
-      if (mifareClassic != null) {
-        if (uid == null) {
-          uid = mifareClassic.tag.id.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
-        }
-        
-        // Claves Mifare de las tarjetas de bus de Alzira
-        // Usamos las claves específicas del sector 1 (blocks 4-7)
-        final keysToTry = [
-          BusCardKeys.keyA[1]!, // Key A del Sector 1 (primaria)
-          BusCardKeys.keyA[0]!, // Key A del Sector 0 (alternativa)
-          BusCardKeys.defaultKey, // Clave por defecto (último recurso)
-        ];
-        
-        // Intentar leer bloques con autenticación
-        // Función auxiliar para autenticar un sector
-        Future<bool> authenticateSector(int sector, Uint8List key) async {
-          try {
-            return await mifareClassic.authenticateSectorWithKeyA(sectorIndex: sector, key: key);
-          } catch (e) {
-            try {
-              return await mifareClassic.authenticateSectorWithKeyB(sectorIndex: sector, key: key);
-            } catch (_) {
-              return false;
-            }
-          }
-        }
-
-        try {
-          bool authSector2 = await authenticateSector(2, BusCardKeys.keyA[2]!);
-          Uint8List? block8;
-          if (authSector2) {
-            block8 = await mifareClassic.readBlock(blockIndex: 8);
-          } else {
-            // Reintentar con clave por defecto
-            if (await authenticateSector(2, BusCardKeys.defaultKey)) {
-              block8 = await mifareClassic.readBlock(blockIndex: 8);
-            }
-          }
-
-          bool authSector1 = await authenticateSector(1, BusCardKeys.keyA[1]!);
-          Uint8List? block5;
-          if (authSector1) {
-            block5 = await mifareClassic.readBlock(blockIndex: 5);
-          } else {
-            // Reintentar con clave por defecto
-            if (await authenticateSector(1, BusCardKeys.defaultKey)) {
-              block5 = await mifareClassic.readBlock(blockIndex: 5);
-            }
-          }
-
-          if (block8 != null && block5 != null) {
-            final balance = block8[0] | (block8[1] << 8) | (block8[2] << 16) | (block8[3] << 24);
-            final cardType = block5[1];
-            
-            // Calcular viajes (Tarifa 1.50€, Remanente 0.50€)
-            int trips = 0;
-            if (balance >= 50) {
-              trips = (balance - 50) ~/ 150;
-            }
-            
-            final bool isCardUnlimited = (block5[2] == 0 && block5[3] == 0) || block5[6] == 0x01 || cardType == 5;
-            cardData = BusCard(
-              uid: uid,
-              balance: balance,
-              trips: trips,
-              cardType: isCardUnlimited ? 5 : cardType,
-              isUnlimited: isCardUnlimited,
-            );
-            
-            setState(() {
-              _status = cardData!.isUnlimited ? 'Bono Ilimitado Detectado' : 'Tarjeta leída correctamente';
-              _cardData = cardData;
-              _storedTrips = trips;
-              _isUnlimited = cardData.isUnlimited;
-              _scanning = false;
-            });
-            
-            await _saveTrips(trips, uid, cardData.isUnlimited);
-            await _checkLowBalance(trips);
-
-            // Gestión de frecuencia de anuncios intersticiales (1 de cada 5 lecturas)
-            final prefs = await SharedPreferences.getInstance();
-            _scanCounter++;
-            await prefs.setInt('nfc_scan_count', _scanCounter);
-
-            if (AppConfig.showAds && _scanCounter % 5 == 1) {
-              AdService.instance.showInterstitialAd();
-            }
-          } else {
-            setState(() {
-              _status = 'Error al leer bloques de la tarjeta';
-              _scanning = false;
-            });
-          }
-        } catch (e) {
-          debugPrint('Error en lectura multi-sector: $e');
-          setState(() {
-            _status = 'Error de comunicación con la tarjeta';
-            _scanning = false;
-          });
-        }
-      } else {
-        // No es Mifare Classic
-        uid ??= 'Desconocido';
-        setState(() {
-          _status = 'Tarjeta detectada (no es Mifare Classic)';
-          _cardData = BusCard(uid: uid!, balance: 0, trips: 0, cardType: 0, isUnlimited: false);
-          _scanning = false;
-        });
-      }
-      
-      // Mostrar diálogo informativo
-      if (mounted && mifareClassic == null) {
-        _showCardInfoDialog(uid);
-      }
-      
-      await NfcManager.instance.stopSession();
-    } catch (e) {
-      debugPrint('Error reading tag: $e');
-      setState(() {
-        _status = 'Error al leer la tarjeta: ${e.toString().split('\n').first}';
-        _scanning = false;
-      });
-      await NfcManager.instance.stopSession();
+    if (state == AppLifecycleState.paused) {
+      _nfcNotifier.stopScan();
     }
   }
 
@@ -511,15 +128,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
     );
   }
 
-  void _stopScan() {
-    NfcManager.instance.stopSession();
-    setState(() {
-      _scanning = false;
-      _status = 'Escaneo cancelado';
-    });
-  }
-
-  void _showSettingsDialog() {
+  void _showSettingsDialog(NfcState nfcState) {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -531,29 +140,31 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
               SwitchListTile(
                 title: const Text('Activar advertencias'),
                 subtitle: const Text('Notificar cuando el saldo sea bajo'),
-                value: _lowBalanceWarningsEnabled,
+                value: nfcState.lowBalanceWarningsEnabled,
                 onChanged: (value) {
-                  setDialogState(() => _lowBalanceWarningsEnabled = value);
-                  setState(() => _lowBalanceWarningsEnabled = value);
-                  _savePreferences();
+                  ref.read(nfcControllerProvider.notifier).updatePreferences(
+                    warningsEnabled: value,
+                    threshold: nfcState.lowBalanceThreshold,
+                  );
                 },
               ),
               const Divider(),
               ListTile(
                 title: const Text('Avisar cuando queden'),
-                subtitle: Text('$_lowBalanceThreshold viajes o menos'),
+                subtitle: Text('${nfcState.lowBalanceThreshold} viajes o menos'),
               ),
               Slider(
-                value: _lowBalanceThreshold.toDouble(),
+                value: nfcState.lowBalanceThreshold.toDouble(),
                 min: 1,
                 max: 20,
                 divisions: 19,
-                label: '$_lowBalanceThreshold viajes',
-                onChanged: _lowBalanceWarningsEnabled
+                label: '${nfcState.lowBalanceThreshold} viajes',
+                onChanged: nfcState.lowBalanceWarningsEnabled
                     ? (value) {
-                        setDialogState(() => _lowBalanceThreshold = value.toInt());
-                        setState(() => _lowBalanceThreshold = value.toInt());
-                        _savePreferences();
+                        ref.read(nfcControllerProvider.notifier).updatePreferences(
+                          warningsEnabled: nfcState.lowBalanceWarningsEnabled,
+                          threshold: value.toInt(),
+                        );
                       }
                     : null,
               ),
@@ -570,93 +181,13 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
     );
   }
 
-  void _showFlipperDumpInfo() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.analytics, color: AlzitransColors.burgundy),
-            const SizedBox(width: 8),
-            const Text('Información de tarjetas'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Tarjetas analizadas:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              _buildCardInfo('Bus1.nfc', 'Antes de usar', '0.96€', '1 viaje'),
-              const Divider(),
-              _buildCardInfo('Bus2.nfc', 'Después de usar', '4.50€', '27 viajes'),
-              const Divider(),
-              _buildCardInfo('BusJP.nfc', 'Bono ilimitado', 'Ilimitado', '--'),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Estructura detectada:\n'
-                  '• Bloque 5: Estado actual\n'
-                  '• Bytes 2-3: Saldo en céntimos\n'
-                  '• Byte 8: Contador de viajes\n'
-                  '• Bloques 20-26: Historial',
-                  style: TextStyle(fontSize: 12, fontFamily: 'monospace'),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardInfo(String name, String desc, String balance, String trips) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          const Icon(Icons.credit_card, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text(desc, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(balance, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(trips, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final trips = _cardData?.trips;
-    final isLowBalance = trips != null && trips > 0 && trips <= _lowBalanceThreshold;
+    final state = ref.watch(nfcControllerProvider);
+    final controller = ref.read(nfcControllerProvider.notifier);
+    
+    final trips = state.cardData?.trips;
+    final isLowBalance = trips != null && trips > 0 && trips <= state.lowBalanceThreshold;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
@@ -705,7 +236,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                               width: double.infinity,
                               height: 220,
                               decoration: BoxDecoration(
-                                gradient: _isUnlimited
+                                gradient: state.isUnlimited
                                     ? AlzitransColors.primaryGradient
                                     : const LinearGradient(
                                         begin: Alignment.topLeft,
@@ -763,7 +294,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                               ],
                                             ),
                                             Text(
-                                              _cardData?.cardTypeName ?? 'Transporte Público Alzira',
+                                              state.cardData?.cardTypeName ?? 'Transporte Público Alzira',
                                               style: TextStyle(
                                                 color: Colors.white.withOpacity(0.8),
                                                 fontSize: 12,
@@ -773,7 +304,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                           ],
                                         ),
                                         Text(
-                                          _isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
+                                          state.isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
                                           style: TextStyle(
                                             color: Colors.white.withOpacity(0.7),
                                             fontSize: 10,
@@ -785,10 +316,10 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                           child: FittedBox(
                                             fit: BoxFit.scaleDown,
                                             child: Text(
-                                              _isUnlimited ? 'ILIMITADO' : '$_storedTrips',
+                                              state.isUnlimited ? 'ILIMITADO' : '${state.storedTrips}',
                                               style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: _isUnlimited ? 36 : 48,
+                                                fontSize: state.isUnlimited ? 36 : 48,
                                                 fontWeight: FontWeight.w900,
                                                 shadows: [
                                                   Shadow(
@@ -801,11 +332,11 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                             ),
                                           ),
                                         ),
-                                        if (_lastCardUid != null)
+                                        if (state.lastCardUid != null)
                                           Align(
                                             alignment: Alignment.bottomRight,
                                             child: Text(
-                                              'ID: $_lastCardUid',
+                                              'ID: ${state.lastCardUid}',
                                               style: TextStyle(
                                                 color: Colors.white.withOpacity(0.5),
                                                 fontSize: 9,
@@ -821,7 +352,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                     right: 15,
                                     child: Opacity(
                                       opacity: 0.8,
-                                      child: _scanning
+                                      child: state.scanning
                                           ? AnimatedBuilder(
                                               animation: _pulseAnimation,
                                               builder: (context, child) => Transform.scale(
@@ -844,7 +375,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
-                              _status,
+                              state.status,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
@@ -854,15 +385,48 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                             ),
                           ),
                           const SizedBox(height: 32),
-                          if (!_scanning)
+                          if (!state.scanning)
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: (_storedTrips > 0 && !_isUnlimited) ? _validateTrip : null,
+                                onPressed: (state.storedTrips > 0 && !state.isUnlimited) ? () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Confirmar viaje'),
+                                      content: const Text('¿Deseas validar un viaje ahora? Se restará 1 de tu contador.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          style: ElevatedButton.styleFrom(backgroundColor: AlzitransColors.burgundy),
+                                          child: const Text('Validar'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm == true) {
+                                    int newTrips = await controller.validateTrip();
+                                    if (newTrips >= 0 && mounted) {
+                                      final l = AppLocalizations.of(context)!;
+                                      final balanceStr = (newTrips * 1.5).toStringAsFixed(2);
+                                      controller.speak(l.nfcBalanceAnnounce(balanceStr, newTrips));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Viaje validado. Te quedan $newTrips viajes.'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } : null,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: _isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
+                                  backgroundColor: state.isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: _isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey,
+                                  disabledBackgroundColor: state.isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -872,11 +436,11 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(_isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
+                                    Icon(state.isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        _isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
+                                        state.isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
                                         style: const TextStyle(fontSize: 18),
                                         textAlign: TextAlign.center,
                                       ),
@@ -891,17 +455,38 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                 const CircularProgressIndicator(),
                                 const SizedBox(height: 16),
                                 TextButton(
-                                  onPressed: _stopScan,
+                                  onPressed: () => controller.stopScan(),
                                   child: const Text('Cancelar'),
                                 ),
                               ],
                             ),
                           const SizedBox(height: 16),
-                          if (!_scanning)
+                          if (!state.scanning)
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton(
-                                onPressed: _nfcAvailable ? _startScan : null,
+                                onPressed: state.nfcAvailable ? () {
+                                  controller.startScan(
+                                    onError: () {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('NFC no disponible')),
+                                        );
+                                      }
+                                    },
+                                    onVoiceAnnounce: (type) {
+                                      if (mounted) {
+                                        final l = AppLocalizations.of(context)!;
+                                        if (state.isUnlimited) {
+                                          controller.speak(l.nfcUnlimitedAnnounce);
+                                        } else {
+                                          final balanceStr = (state.storedTrips * 1.5).toStringAsFixed(2);
+                                          controller.speak(l.nfcBalanceAnnounce(balanceStr, state.storedTrips));
+                                        }
+                                      }
+                                    }
+                                  );
+                                } : null,
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AlzitransColors.burgundy,
                                   side: const BorderSide(color: AlzitransColors.burgundy),
@@ -918,7 +503,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        _storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
+                                        state.storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
                                         style: const TextStyle(fontSize: 16),
                                         textAlign: TextAlign.center,
                                       ),
@@ -928,7 +513,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                               ),
                             ),
                           const SizedBox(height: 24),
-                          if (_cardData != null && isLowBalance) ...[
+                          if (state.cardData != null && isLowBalance) ...[
                             Card(
                               color: Colors.orange.shade50,
                               child: Padding(
@@ -957,7 +542,6 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
                     ),
                   ),
                 ),
-                // --- ANUNCIO BANNER PERSISTENTE AL FINAL ---
                 if (AppConfig.showAds && _bannerAd != null && _isBannerAdLoaded)
                   Container(
                     alignment: Alignment.center,
@@ -969,7 +553,7 @@ class _NfcPageState extends State<NfcPage> with SingleTickerProviderStateMixin, 
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showSettingsDialog,
+        onPressed: () => _showSettingsDialog(state),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
         tooltip: 'Ajustes de advertencias',

@@ -1,10 +1,15 @@
 import 'package:alzitrans/main.dart';
+import 'package:go_router/go_router.dart';
 import 'package:alzitrans/services/auth_service.dart';
 import 'package:alzitrans/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/auth_provider.dart';
+import '../services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/router/app_router.dart';
 
-class OtpVerificationPage extends StatefulWidget {
+class OtpVerificationPage extends ConsumerStatefulWidget {
   final String email;
   final bool isLoginFlow;
 
@@ -15,12 +20,11 @@ class OtpVerificationPage extends StatefulWidget {
   });
 
   @override
-  State<OtpVerificationPage> createState() => _OtpVerificationPageState();
+  ConsumerState<OtpVerificationPage> createState() => _OtpVerificationPageState();
 }
 
-class _OtpVerificationPageState extends State<OtpVerificationPage> {
+class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   final _codeController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
   bool _isResending = false;
   int _resendsLeft = 3;
@@ -62,10 +66,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
     try {
       String? error;
+      final authService = ref.read(authServiceProvider);
       if (widget.isLoginFlow) {
-        error = await _authService.verifyLoginCode(widget.email, code);
+        error = await authService.verifyLoginCode(widget.email, code);
       } else {
-        error = await _authService.verifyEmail(widget.email, code);
+        error = await authService.verifyEmail(widget.email, code);
       }
       
       if (!mounted) return;
@@ -78,8 +83,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         
         if (widget.isLoginFlow) {
           // COMPROBAR BIOMETRÍA TRAS LOGIN EXITOSO
-          final canCheck = await _authService.canCheckBiometrics();
-          final isEnabled = await _authService.isBiometricEnabled();
+          final canCheck = await authService.canCheckBiometrics();
+          final isEnabled = await authService.isBiometricEnabled();
           
           if (canCheck && !isEnabled && mounted) {
             final setupBiometrics = await showDialog<bool>(
@@ -112,22 +117,21 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               
               // Por ahora, mostraremos un mensaje indicando que se activará en el próximo login manual exitoso
               // O mejor, el AuthService la guarda en el login() y aquí la persistimos.
-              await _authService.persistBiometricCredentials();
+              await authService.persistBiometricCredentials();
               if (mounted) _showSuccess('¡Acceso biométrico activado!');
             }
           }
 
           if (mounted) {
+            await ref.read(authProvider.notifier).checkLogin();
+            if (!mounted) return;
             _showSuccess('¡Sesión iniciada correctamente!');
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (route) => false,
-            );
+            // La redirección está controlada por GoRouter, pero la forzamos para navegación explícita.
+            const HomeRoute().go(context);
           }
         } else {
           _showSuccess('¡Correo verificado! Ya puedes iniciar sesión.');
-          Navigator.pop(context);
+          const LoginRoute().go(context);
         }
       }
     } on AuthNetworkException {
@@ -146,7 +150,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     setState(() => _isResending = true);
 
     try {
-      final error = await _authService.resendOtp(widget.email);
+      final authService = ref.read(authServiceProvider);
+      final error = await authService.resendOtp(widget.email);
       if (!mounted) return;
 
       if (error != null) {

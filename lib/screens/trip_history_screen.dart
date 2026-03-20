@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/trip_history_service.dart';
-import '../services/auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/auth_provider.dart';
 import '../models/trip_record.dart';
 import '../theme/app_theme.dart';
 
-class TripHistoryScreen extends StatefulWidget {
+class TripHistoryScreen extends ConsumerStatefulWidget {
   const TripHistoryScreen({super.key});
 
   @override
-  State<TripHistoryScreen> createState() => _TripHistoryScreenState();
+  ConsumerState<TripHistoryScreen> createState() => _TripHistoryScreenState();
 }
 
-class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTickerProviderStateMixin {
+class _TripHistoryScreenState extends ConsumerState<TripHistoryScreen> with SingleTickerProviderStateMixin {
   TripHistoryService? _historyService;
   late TabController _tabController;
   bool _isLoading = true;
@@ -28,7 +29,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> with SingleTicker
 
   Future<void> _loadService() async {
     final prefs = await SharedPreferences.getInstance();
-    final authService = AuthService();
+    final authService = ref.read(authServiceProvider);
     final token = await authService.getToken();
     final service = TripHistoryService(prefs);
     if (token != null) {

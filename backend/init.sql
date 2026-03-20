@@ -86,8 +86,12 @@ CREATE TABLE IF NOT EXISTS trips (
     stop_id INTEGER NOT NULL,          -- ID de la parada en la tabla stops
     timestamp TIMESTAMPTZ NOT NULL,    -- Momento exacto del viaje
     confirmed BOOLEAN DEFAULT FALSE,   -- Si el usuario lo confirmó manualmente
+    payment_method VARCHAR(20),        -- Método de pago (ej: "card", "cash")
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP -- Cuándo se guardó el registro
 );
+
+-- Migraciones para la tabla trips:
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20);
 
 -- Índices para optimizar consultas frecuentes sobre viajes:
 -- idx_trips_user_id: acelera la búsqueda de viajes por usuario (WHERE user_id = X)

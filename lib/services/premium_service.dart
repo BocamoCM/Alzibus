@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import '../constants/app_config.dart';
 import 'auth_service.dart';
 
 class PremiumService {
-  static final PremiumService _instance = PremiumService._internal();
-  factory PremiumService() => _instance;
-  PremiumService._internal();
+  PremiumService();
 
   final AuthService _authService = AuthService();
 
@@ -35,22 +33,18 @@ class PremiumService {
 
       // 1. Crear Intent en el backend
       debugPrint('PremiumService: Creando PaymentIntent en el backend...');
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/payments/create-intent'),
-        headers: {
-          ...AppConfig.headers,
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'amount': 299}), // 2.99€
+      final response = await ApiClient().post(
+        '/payments/create-intent',
+        data: {'amount': 299},
       );
 
       debugPrint('PremiumService: Respuesta backend: ${response.statusCode}');
       if (response.statusCode != 200) {
-        debugPrint('PremiumService: Error backend: ${response.body}');
+        debugPrint('PremiumService: Error backend: ${response.data}');
         throw Exception("Error del servidor al crear el pago");
       }
 
-      final data = jsonDecode(response.body);
+      final data = response.data;
       final clientSecret = data['clientSecret'];
       debugPrint('PremiumService: ClientSecret recibido.');
 
@@ -72,13 +66,7 @@ class PremiumService {
       // 3.5. Confirmación Manual (Nueva: No depende de webhooks)
       debugPrint('PremiumService: Enviando confirmación manual al backend...');
       try {
-        final confirmRes = await http.post(
-          Uri.parse('${AppConfig.baseUrl}/payments/confirm-manual'),
-          headers: {
-            ...AppConfig.headers,
-            'Authorization': 'Bearer $token',
-          },
-        );
+        final confirmRes = await ApiClient().post('/payments/confirm-manual');
         debugPrint('PremiumService: Resultado confirmación manual: ${confirmRes.statusCode}');
       } catch (e) {
         debugPrint('PremiumService: Fallo en confirmación manual (continuando): $e');

@@ -1467,7 +1467,7 @@ app.get('/api/trips', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT id, line, destination, stop_name AS "stopName", stop_id AS "stopId",
-             timestamp, confirmed
+             timestamp, confirmed, payment_method AS "paymentMethod"
              FROM trips
              WHERE user_id = $1
              ORDER BY timestamp DESC`,
@@ -1487,16 +1487,16 @@ app.get('/api/trips', authenticateToken, async (req, res) => {
 // El campo 'confirmed' indica si el usuario confirmó manualmente el viaje (true)
 // o fue detectado automáticamente por proximidad (false).
 app.post('/api/trips', authenticateToken, async (req, res) => {
-    const { line, destination, stopName, stopId, timestamp, confirmed } = req.body;
+    const { line, destination, stopName, stopId, timestamp, confirmed, paymentMethod } = req.body;
     if (!line || !destination || !stopName || stopId === undefined || !timestamp) {
         return res.status(400).json({ error: 'Datos del viaje incompletos' });
     }
     try {
         const result = await pool.query(
-            `INSERT INTO trips (user_id, line, destination, stop_name, stop_id, timestamp, confirmed)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING id, line, destination, stop_name AS "stopName", stop_id AS "stopId", timestamp, confirmed`,
-            [req.user.id, line, destination, stopName, stopId, timestamp, confirmed ?? false]
+            `INSERT INTO trips (user_id, line, destination, stop_name, stop_id, timestamp, confirmed, payment_method)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             RETURNING id, line, destination, stop_name AS "stopName", stop_id AS "stopId", timestamp, confirmed, payment_method AS "paymentMethod"`,
+            [req.user.id, line, destination, stopName, stopId, timestamp, confirmed ?? false, paymentMethod || null]
         );
 
         // Notificar a Discord

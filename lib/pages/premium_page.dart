@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../services/premium_service.dart';
+import '../core/providers/premium_provider.dart';
 
-class PremiumPage extends StatefulWidget {
+class PremiumPage extends ConsumerStatefulWidget {
   const PremiumPage({super.key});
 
   @override
-  State<PremiumPage> createState() => _PremiumPageState();
+  ConsumerState<PremiumPage> createState() => _PremiumPageState();
 }
 
-class _PremiumPageState extends State<PremiumPage> {
+class _PremiumPageState extends ConsumerState<PremiumPage> {
   bool _isProcessing = false;
 
   Future<void> _handlePurchase() async {
     setState(() => _isProcessing = true);
-    final success = await PremiumService().purchasePremium(context);
+    final success = await ref.read(premiumServiceProvider).purchasePremium(context);
     debugPrint('PremiumPage: Resultado de la compra: $success');
     if (mounted) {
       setState(() => _isProcessing = false);
@@ -111,7 +113,7 @@ class _PremiumPageState extends State<PremiumPage> {
                           ),
                           child: Column(
                             children: [
-                              const Text(
+                               const Text(
                                 'Pago único para siempre',
                                 style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
                               ),

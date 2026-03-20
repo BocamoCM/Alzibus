@@ -48,11 +48,7 @@ class SimulatedBus {
 }
 
 class BusSimulationService {
-  // --- Singleton ---
-  static final BusSimulationService _instance = BusSimulationService._internal();
-  factory BusSimulationService() => _instance;
-  BusSimulationService._internal();
-  // -----------------
+  BusSimulationService();
 
   final BusTimesService _busTimesService = BusTimesService();
   final Map<String, SimulatedBus> _buses = {};

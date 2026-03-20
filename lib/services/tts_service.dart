@@ -3,9 +3,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TtsService {
-  static final TtsService _instance = TtsService._internal();
-  factory TtsService() => _instance;
-  TtsService._internal();
+  TtsService();
 
   final FlutterTts _flutterTts = FlutterTts();
   bool _enabled = false;

@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:alzitrans/pages/otp_verification_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
   String _message = '';
   bool _success = false;
@@ -37,7 +39,8 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      final errorMessage = await _authService.register(
+      final authService = ref.read(authServiceProvider);
+      final errorMessage = await authService.register(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
@@ -54,14 +57,7 @@ class _RegisterPageState extends State<RegisterPage> {
         
         // Redirigir a verificación
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OtpVerificationPage(
-                email: _emailController.text.trim(),
-              ),
-            ),
-          );
+          context.pushReplacement('/verify', extra: {'email': _emailController.text.trim()});
         }
       } else {
         setState(() {

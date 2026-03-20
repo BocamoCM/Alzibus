@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../constants/app_config.dart';
@@ -123,23 +123,20 @@ class AuthService {
     _tempPassword = password;
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/login'),
-            headers: AppConfig.headers,
-            body: jsonEncode({
-              'email': email,
-              'password': password,
-              if (biometric) 'biometric': true,
-            }),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/login',
+        data: {
+          'email': email,
+          'password': password,
+          if (biometric) 'biometric': true,
+        },
+      );
 
       debugPrint('[AuthService] Login status: ${response.statusCode}');
-      debugPrint('[AuthService] Login body: ${response.body}');
+      debugPrint('[AuthService] Login data: ${response.data}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data;
         
         // Caso 1: Login directo
         if (data['token'] != null) {
@@ -158,7 +155,7 @@ class AuthService {
         return;
       }
       
-      final body = jsonDecode(response.body);
+      final body = response.data;
       final error = body['error'] as String? ?? 'Error de autenticación';
       
       if (response.statusCode == 403 && error.contains('verificar tu correo')) {
@@ -181,17 +178,14 @@ class AuthService {
   /// Devuelve null si tuvo éxito, o el mensaje de error si falló.
   Future<String?> register(String email, String password) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/register'),
-            headers: AppConfig.headers,
-            body: jsonEncode({'email': email, 'password': password}),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/register',
+        data: {'email': email, 'password': password},
+      );
 
       if (response.statusCode == 201) return null; // Éxito
       
-      final body = jsonDecode(response.body);
+      final body = response.data;
       return body['error'] as String? ?? 'Error en el servidor (${response.statusCode})';
     } catch (e) {
       debugPrint('Error en registro: $e');
@@ -202,21 +196,18 @@ class AuthService {
   /// Verifica el código OTP de login (2FA).
   Future<String?> verifyLoginCode(String email, String code) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/login/verify'),
-            headers: AppConfig.headers,
-            body: jsonEncode({'email': email, 'code': code}),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/login/verify',
+        data: {'email': email, 'code': code},
+      );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data;
         await _saveSession(data);
         return null; // éxito
       }
       
-      final body = jsonDecode(response.body);
+      final body = response.data;
       return body['error'] as String? ?? 'Código incorrecto';
     } catch (e) {
       debugPrint('Error en verificación de login: $e');
@@ -251,16 +242,13 @@ class AuthService {
   /// Verifica el código OTP enviado al correo (Registro).
   Future<String?> verifyEmail(String email, String code) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/verify-email'),
-            headers: AppConfig.headers,
-            body: jsonEncode({'email': email, 'code': code}),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/verify-email',
+        data: {'email': email, 'code': code},
+      );
 
       if (response.statusCode == 200) return null; // éxito
-      final body = jsonDecode(response.body);
+      final body = response.data;
       return body['error'] as String? ?? 'Error de verificación';
     } catch (e) {
       debugPrint('Error en verificación de email: $e');
@@ -272,16 +260,13 @@ class AuthService {
   /// Devuelve null si tuvo éxito, o el mensaje de error si falló.
   Future<String?> resendOtp(String email) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/resend-otp'),
-            headers: AppConfig.headers,
-            body: jsonEncode({'email': email}),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/resend-otp',
+        data: {'email': email},
+      );
 
       if (response.statusCode == 200) return null; // éxito
-      final body = jsonDecode(response.body);
+      final body = response.data;
       return body['error'] as String? ?? 'Error al reenviar código';
     } catch (e) {
       debugPrint('Error al reenviar OTP: $e');
@@ -341,17 +326,9 @@ class AuthService {
   /// Obtiene el perfil del usuario desde la API.
   Future<Map<String, dynamic>?> getProfile(String token) async {
     try {
-      final response = await http
-          .get(
-            Uri.parse('${AppConfig.baseUrl}/users/profile'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().get('/users/profile');
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final data = response.data as Map<String, dynamic>;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_premium', data['isPremium'] as bool? ?? false);
         return data;
@@ -365,22 +342,16 @@ class AuthService {
   /// Actualiza el email del usuario.
   Future<bool> updateEmail(String token, String newEmail) async {
     try {
-      final response = await http
-          .put(
-            Uri.parse('${AppConfig.baseUrl}/users/profile'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({'email': newEmail}),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().put(
+        '/users/profile',
+        data: {'email': newEmail},
+      );
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_email', newEmail);
         return true;
       }
-      final error = jsonDecode(response.body)['error'] ?? 'Error desconocido';
+      final error = response.data['error'] ?? 'Error desconocido';
       throw Exception(error);
     } catch (e) {
       debugPrint('Error actualizando email: $e');
@@ -391,21 +362,15 @@ class AuthService {
   /// Cambia la contraseña del usuario.
   Future<bool> updatePassword(String token, String currentPassword, String newPassword) async {
     try {
-      final response = await http
-          .put(
-            Uri.parse('${AppConfig.baseUrl}/users/password'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'currentPassword': currentPassword,
-              'newPassword': newPassword,
-            }),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().put(
+        '/users/password',
+        data: {
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        },
+      );
       if (response.statusCode == 200) return true;
-      final error = jsonDecode(response.body)['error'] ?? 'Error desconocido';
+      final error = response.data['error'] ?? 'Error desconocido';
       throw Exception(error);
     } catch (e) {
       debugPrint('Error cambiando contraseña: $e');
@@ -416,22 +381,14 @@ class AuthService {
   /// Elimina permanentemente la cuenta del usuario y todos sus datos.
   Future<bool> deleteAccount(String token) async {
     try {
-      final response = await http
-          .delete(
-            Uri.parse('${AppConfig.baseUrl}/users/profile'),
-            headers: {
-              ...AppConfig.headers,
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().delete('/users/profile');
       
       if (response.statusCode == 200) {
         await logout(); // Limpiar sesión local tras borrar en servidor
         return true;
       }
       
-      final error = jsonDecode(response.body)['error'] ?? 'Error al eliminar cuenta';
+      final error = response.data['error'] ?? 'Error al eliminar cuenta';
       throw Exception(error);
     } catch (e) {
       debugPrint('Error eliminando cuenta: $e');
@@ -445,13 +402,7 @@ class AuthService {
       final token = await getToken();
       if (token == null) return;
 
-      await http.post(
-        Uri.parse('${AppConfig.baseUrl}/users/heartbeat'),
-        headers: {
-          ...AppConfig.headers,
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 5));
+      await ApiClient().post('/users/heartbeat');
     } catch (e) {
       debugPrint('Error en heartbeat: $e');
     }
@@ -460,19 +411,16 @@ class AuthService {
   /// Solicita un código de recuperación de contraseña.
   Future<String?> requestPasswordReset(String email) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/forgot-password'),
-            headers: AppConfig.headers,
-            body: jsonEncode({'email': email}),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/forgot-password',
+        data: {'email': email},
+      );
 
       if (response.statusCode == 404) {
         return 'Endpoint no encontrado (404). Verifica que el servidor está actualizado.';
       }
 
-      final body = jsonDecode(response.body);
+      final body = response.data;
       if (response.statusCode == 200) {
         return null; // Éxito
       }
@@ -488,23 +436,20 @@ class AuthService {
   /// Restablece la contraseña usando el código recibido por email.
   Future<String?> resetPassword(String email, String code, String newPassword) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConfig.baseUrl}/reset-password'),
-            headers: AppConfig.headers,
-            body: jsonEncode({
-              'email': email,
-              'code': code,
-              'newPassword': newPassword,
-            }),
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().post(
+        '/reset-password',
+        data: {
+          'email': email,
+          'code': code,
+          'newPassword': newPassword,
+        },
+      );
 
       if (response.statusCode == 404) {
         return 'Endpoint no encontrado (404). Verifica que el servidor está actualizado.';
       }
 
-      final body = jsonDecode(response.body);
+      final body = response.data;
       if (response.statusCode == 200) return null; // Éxito
       return body['error'] as String? ?? 'Error al restablecer contraseña (${response.statusCode})';
     } on FormatException {

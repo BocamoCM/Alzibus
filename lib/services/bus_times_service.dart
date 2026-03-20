@@ -1,5 +1,5 @@
-import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
+import '../core/network/api_client.dart';
 
 class BusArrival {
   final String line;
@@ -30,15 +30,14 @@ class BusTimesService {
 
   Future<List<BusArrival>> getArrivalTimes(int stopId) async {
     try {
-      final url = Uri.parse('$baseUrl?id=$stopId');
-      final response = await http.get(url);
+      final response = await ApiClient().get('$baseUrl?id=$stopId');
 
       if (response.statusCode != 200) {
         return [];
       }
 
       // Parsear HTML
-      final document = html_parser.parse(response.body);
+      final document = html_parser.parse(response.data.toString());
       final rows = document.querySelectorAll('table tr');
       
       final arrivals = <BusArrival>[];

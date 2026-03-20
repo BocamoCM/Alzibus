@@ -1,26 +1,26 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Provider que gestiona el Modo Personas Mayores globalmente.
-/// Usa InheritedNotifier para notificar a toda la árbol de widgets.
-class ElderlyModeNotifier extends ChangeNotifier {
-  bool _enabled = false;
+// Provider global para acceso síncrono a SharedPreferences
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('sharedPreferencesProvider must be overridden in ProviderScope');
+});
 
-  bool get enabled => _enabled;
-
-  Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _enabled = prefs.getBool('elderly_mode_enabled') ?? false;
-    notifyListeners();
+/// Provider que gestiona el Modo Personas Mayores de forma reactiva con Riverpod.
+class ElderlyModeNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    return prefs.getBool('elderly_mode_enabled') ?? false;
   }
 
   Future<void> toggle(bool value) async {
-    _enabled = value;
-    final prefs = await SharedPreferences.getInstance();
+    state = value;
+    final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setBool('elderly_mode_enabled', value);
-    notifyListeners();
   }
 }
 
-/// Singleton global accesible desde toda la app
-final elderlyModeNotifier = ElderlyModeNotifier();
+final elderlyModeProvider = NotifierProvider<ElderlyModeNotifier, bool>(() {
+  return ElderlyModeNotifier();
+});

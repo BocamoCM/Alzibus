@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
-import '../services/auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/auth_provider.dart';
 import 'reset_password_page.dart';
+import '../core/router/app_router.dart';
 
-class ForgotPasswordPage extends StatefulWidget {
+class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
 
   @override
-  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
+  ConsumerState<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -33,8 +35,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     });
 
     try {
+      final authService = ref.read(authServiceProvider);
       final email = _emailController.text.trim();
-      final error = await _authService.requestPasswordReset(email);
+      final error = await authService.requestPasswordReset(email);
 
       if (!mounted) return;
 
@@ -42,11 +45,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.codeSent)),
         );
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ResetPasswordPage(email: email),
-          ),
-        );
+        ResetPasswordRoute(email: email).push(context);
       } else {
         setState(() {
           _errorMessage = error;

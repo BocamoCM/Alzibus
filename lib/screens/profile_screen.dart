@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../core/router/app_router.dart';
+import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
@@ -7,16 +11,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   final VoidCallback? onSettingsTap;
   const ProfileScreen({super.key, this.onSettingsTap});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final AuthService _auth = AuthService();
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  AuthService get _auth => ref.read(authServiceProvider);
   Map<String, dynamic>? _profile;
   bool _isLoading = true;
   String? _token;
@@ -236,10 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PremiumPage()),
-                  ).then((_) => _loadProfile()); // Recargar al volver
+                  const PremiumRoute().push(context).then((_) => _loadProfile()); // Recargar al volver
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -357,10 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             leading: const Icon(Icons.bar_chart, color: AlzitransColors.burgundy),
             title: Text(l.tripHistory),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const TripHistoryScreen()),
-            ),
+            onTap: () => const TripHistoryRoute().push(context),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
@@ -455,7 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
           // Redirigir al login (AuthService ya limpió el token localmente)
-          Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+          const LoginRoute().go(context);
         }
       }
     } catch (e) {
@@ -612,7 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
                 if (mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+                  const LoginRoute().go(context);
                 }
               }
             },

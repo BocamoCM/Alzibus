@@ -7,8 +7,7 @@ import '../constants/app_config.dart';
 /// Servicio centralizado para gestionar la publicidad con AdMob.
 /// Respeta el flag global [AppConfig.showAds].
 class AdService {
-  AdService._();
-  static final AdService instance = AdService._();
+  AdService();
   
   bool _isInitialized = false;
 

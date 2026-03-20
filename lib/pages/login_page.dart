@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:alzitrans/pages/otp_verification_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../main.dart'; // import for HomePage
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 import '../constants/app_config.dart';
+import '../core/router/app_router.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
@@ -32,8 +35,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _checkBiometrics() async {
-    final canCheck = await _authService.canCheckBiometrics();
-    final isEnabled = await _authService.isBiometricEnabled();
+    final authService = ref.read(authServiceProvider);
+    final canCheck = await authService.canCheckBiometrics();
+    final isEnabled = await authService.isBiometricEnabled();
     if (mounted) {
       setState(() {
         _canCheckBiometrics = canCheck && isEnabled;
@@ -53,12 +57,12 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final success = await _authService.loginWithBiometrics();
+      final authService = ref.read(authServiceProvider);
+      final success = await authService.loginWithBiometrics();
       if (success) {
+        await ref.read(authProvider.notifier).checkLogin();
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+        // La redirección a home se maneja automáticamente por GoRouter gracias al authProvider.
       } else {
         if (mounted) {
           setState(() {
@@ -70,14 +74,7 @@ class _LoginPageState extends State<LoginPage> {
     } on AuthLoginOtpRequiredException catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => OtpVerificationPage(
-            email: e.email,
-            isLoginFlow: true,
-          ),
-        ),
-      );
+      VerifyRoute(email: e.email, isLoginFlow: true).push(context);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -105,7 +102,8 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _authService.login(
+      final authService = ref.read(authServiceProvider);
+      await authService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
@@ -117,12 +115,11 @@ class _LoginPageState extends State<LoginPage> {
       TextInput.finishAutofillContext();
       
       // Actualizar flag de publicidad según el estado premium del usuario
-      final isPremium = await _authService.isUserPremium();
+      final isPremium = await authService.isUserPremium();
       AppConfig.showAds = !isPremium;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
+      await ref.read(authProvider.notifier).checkLogin();
+      // La redirección a home se maneja automáticamente por GoRouter gracias al authProvider.
     } on AuthLoginOtpRequiredException catch (e) {
       debugPrint('[LoginPage] AuthLoginOtpRequiredException capturada para: ${e.email}');
       if (!mounted) return;
@@ -133,14 +130,7 @@ class _LoginPageState extends State<LoginPage> {
       // para que salte el diálogo de guardar antes de que los campos desaparezcan.
       TextInput.finishAutofillContext();
 
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => OtpVerificationPage(
-            email: e.email,
-            isLoginFlow: true,
-          ),
-        ),
-      );
+      VerifyRoute(email: e.email, isLoginFlow: true).push(context);
     } on AuthInvalidCredentialsException {
       debugPrint('[LoginPage] AuthInvalidCredentialsException capturada');
       if (!mounted) return;
@@ -267,17 +257,13 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const RegisterPage()),
-                    );
+                    const RegisterRoute().push(context);
                   },
                   child: Text(l.noAccount),
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-                    );
+                    const ForgotPasswordRoute().push(context);
                   },
                   child: Text(l.forgotPassword),
                 ),

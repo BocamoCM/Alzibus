@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 
 /// Horario programado de un tren
 class TrainSchedule {
@@ -184,15 +184,14 @@ class RenfeService {
   /// Obtiene retrasos en tiempo real desde la API de Renfe
   static Future<Map<String, int>> _fetchDelays() async {
     try {
-      final response = await http.get(Uri.parse(_gtfsRtUrl)).timeout(
-        const Duration(seconds: 10),
-      );
+      final response = await ApiClient().get(_gtfsRtUrl);
       
       if (response.statusCode != 200) {
         return {};
       }
       
-      final data = json.decode(response.body);
+      final rawData = response.data;
+      final data = rawData is String ? json.decode(rawData) : rawData;
       final Map<String, int> delays = {};
       
       final entities = data['entity'] as List<dynamic>? ?? [];

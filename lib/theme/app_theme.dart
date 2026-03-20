@@ -128,7 +128,7 @@ class AlzitransTheme {
         elevation: 4,
       ),
       
-      // Bottom Navigation
+      // Bottom Navigation (Legacy)
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AlzitransColors.burgundy,
@@ -137,6 +137,25 @@ class AlzitransTheme {
         unselectedLabelStyle: const TextStyle(fontSize: 11),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+      ),
+      
+      // NavigationBar (Material 3)
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.white,
+        indicatorColor: AlzitransColors.burgundy.withOpacity(0.15),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AlzitransColors.burgundy, size: 26);
+          }
+          return IconThemeData(color: Colors.grey[600], size: 24);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold, fontSize: 13);
+          }
+          return TextStyle(color: Colors.grey[600], fontWeight: FontWeight.normal, fontSize: 12);
+        }),
+        elevation: 1,
       ),
       
       // TabBar - Para AppBars con fondo blanco

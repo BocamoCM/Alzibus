@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:latlong2/latlong.dart';
 import 'dart:typed_data';
 import 'package:vibration/vibration.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import 'package:html/parser.dart' as html_parser;
 
 const String portName = 'background_location_port';
@@ -190,11 +190,10 @@ class BackgroundService {
   // Obtener tiempos de llegada desde la API
   static Future<List<Map<String, String>>> _fetchBusArrivals(int stopId) async {
     try {
-      final url = Uri.parse('https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=$stopId');
-      final response = await http.get(url);
+      final response = await ApiClient().get('https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=$stopId');
       if (response.statusCode != 200) return [];
       
-      final document = html_parser.parse(response.body);
+      final document = html_parser.parse(response.data.toString());
       final rows = document.querySelectorAll('table tr');
       final arrivals = <Map<String, String>>[];
       

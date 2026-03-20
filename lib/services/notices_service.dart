@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import '../constants/app_config.dart';
 
 class NoticeRecord {
@@ -44,15 +44,10 @@ class NoticesService {
   /// Carga los avisos activos desde la API.
   Future<List<NoticeRecord>> loadNotices() async {
     try {
-      final response = await http
-          .get(
-            Uri.parse('${AppConfig.baseUrl}/notices'),
-            headers: AppConfig.headers,
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().get('/notices');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response.data;
         _notices = data.map((e) => NoticeRecord.fromJson(e as Map<String, dynamic>)).toList();
         debugPrint('[NoticesService] ${_notices.length} avisos cargados');
       }

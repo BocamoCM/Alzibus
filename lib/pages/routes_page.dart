@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../services/stops_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/stops_provider.dart';
+import '../core/providers/bus_simulation_provider.dart';
 import '../services/bus_simulation_service.dart';
 import '../models/bus_stop.dart';
 import '../theme/app_theme.dart';
 
-class RoutesPage extends StatefulWidget {
+class RoutesPage extends ConsumerStatefulWidget {
   final Function(BusStop stop)? onStopTapped;
   
   const RoutesPage({super.key, this.onStopTapped});
 
   @override
-  State<RoutesPage> createState() => _RoutesPageState();
+  ConsumerState<RoutesPage> createState() => _RoutesPageState();
 }
 
-class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateMixin {
+class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final StopsService _stopsService = StopsService();
   
   Map<String, List<Map<String, dynamic>>> _routes = {};
   bool _isLoading = true;
@@ -48,7 +50,7 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
   }
   
   void _subscribeToBuses() {
-    final busService = BusSimulationService(); // Usa el Singleton
+    final busService = ref.read(busSimulationProvider); // Usa el Provider de Riverpod
     _buses = busService.buses;
     _busSubscription = busService.busStream.listen((buses) {
       if (mounted) {
@@ -59,10 +61,10 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
 
   Future<void> _loadRoutes() async {
     for (final line in ['L1', 'L2', 'L3']) {
-      final stops = await _stopsService.loadLineRoute(line);
+      final stops = await ref.read(lineRouteProvider(line).future);
       _routes[line] = stops;
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Color _getLineColor(String lineId) {
@@ -556,7 +558,7 @@ class _RoutesPageState extends State<RoutesPage> with SingleTickerProviderStateM
                     ),
                   ],
                 ),
-              );
+              ).animate(delay: (index * 50).ms).fade(duration: 400.ms).slideX(begin: 0.1, duration: 400.ms);
             },
           ),
         ),

@@ -8,8 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vibration/vibration.dart';
-import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as html_parser;
+import '../core/network/api_client.dart';
+import '../core/repositories/scraping_repository.dart';
 import 'package:home_widget/home_widget.dart';
 
 // Callbacks top-level para el background service
@@ -219,22 +219,12 @@ Future<void> _checkBusAlertsStatic(
       print('[ForegroundService] Processing alert: line=$line, stop=$stopName, notified5=$notified5min, notified2=$notified2min, notifiedArriving=$notifiedArriving');
       
       // Consultar tiempo real
-      final url = 'https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=$stopId';
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 10),
-      );
-      
-      if (response.statusCode == 200) {
-        final document = html_parser.parse(response.body);
-        final rows = document.querySelectorAll('tr');
+      final arrivals = await ScrapingRepository.getStopArrivals(stopId.toString());
+      print('[ForegroundService] Got ${arrivals.length} arrivals from API for stop $stopId');
         
-        print('[ForegroundService] Got ${rows.length} rows from API');
-        
-        for (final row in rows) {
-          final cells = row.querySelectorAll('td');
-          if (cells.length >= 3) {
-            final busLine = cells[0].text.trim();
-            final timeText = cells[2].text.trim();
+      for (final arrival in arrivals) {
+        final busLine = arrival['line']!;
+        final timeText = arrival['timeText']!;
             
             // Comparación flexible (ignorar espacios y mayúsculas)
             final lineNormalized = line.toString().trim().toUpperCase();
@@ -286,11 +276,7 @@ Future<void> _checkBusAlertsStatic(
                 print('[ForegroundService] No notification needed. minutes=$minutes, notified5=$notified5min, notified2=$notified2min, notifiedArriving=$notifiedArriving');
               }
               break;
-            }
-          }
         }
-      } else {
-        print('[ForegroundService] API returned status: ${response.statusCode}');
       }
     }
     
@@ -432,21 +418,12 @@ Future<void> _updateWidgetStatic(SharedPreferences prefs) async {
       if (stopId == null) continue;
       
       try {
-        final url = 'https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=$stopId';
-        final response = await http.get(Uri.parse(url)).timeout(
-          const Duration(seconds: 8),
-        );
+        final arrivals = await ScrapingRepository.getStopArrivals(stopId);
         
-        if (response.statusCode == 200) {
-          final document = html_parser.parse(response.body);
-          final rows = document.querySelectorAll('tr');
-          
-          for (final row in rows) {
-            final cells = row.querySelectorAll('td');
-            if (cells.length >= 3) {
-              final lineText = cells[0].text.trim();
-              final timeText = cells[1].text.trim();
-              final destText = cells[2].text.trim();
+        for (final arrival in arrivals) {
+          final lineText = arrival['line']!;
+          final destText = arrival['destination']!;
+          final timeText = arrival['timeText']!;
               
               if (lineText.isNotEmpty && timeText.isNotEmpty) {
                 // Formatear tiempo
@@ -475,8 +452,6 @@ Future<void> _updateWidgetStatic(SharedPreferences prefs) async {
                   'minutes': minutesValue.toString(),
                 });
               }
-            }
-          }
         }
       } catch (e) {
         print('[ForegroundService] Error fetching stop $stopId: $e');

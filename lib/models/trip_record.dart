@@ -6,6 +6,7 @@ class TripRecord {
   final int stopId;
   final DateTime timestamp;
   final bool confirmed;
+  final String? paymentMethod; // 'card', 'cash', null
 
   TripRecord({
     this.serverId,
@@ -15,6 +16,7 @@ class TripRecord {
     required this.stopId,
     required this.timestamp,
     this.confirmed = false,
+    this.paymentMethod,
   });
 
   Map<String, dynamic> toJson() => {
@@ -24,6 +26,7 @@ class TripRecord {
     'stopId': stopId,
     'timestamp': timestamp.toIso8601String(),
     'confirmed': confirmed,
+    'paymentMethod': paymentMethod,
   };
 
   factory TripRecord.fromJson(Map<String, dynamic> json) => TripRecord(
@@ -34,6 +37,7 @@ class TripRecord {
     stopId: json['stopId'] ?? 0,
     timestamp: DateTime.parse(json['timestamp']),
     confirmed: json['confirmed'] ?? false,
+    paymentMethod: json['paymentMethod'],
   );
 }
 

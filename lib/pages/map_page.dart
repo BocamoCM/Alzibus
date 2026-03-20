@@ -9,7 +9,8 @@ import '../models/bus_stop.dart';
 import '../constants/line_colors.dart';
 import '../services/notification_service.dart';
 import '../services/location_service.dart';
-import '../services/stops_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/stops_provider.dart';
 import '../services/bus_simulation_service.dart';
 import '../services/foreground_service.dart';
 import '../widgets/line_filter.dart';
@@ -17,8 +18,9 @@ import '../widgets/stop_info_sheet.dart';
 import '../widgets/multi_line_stop_marker.dart';
 import '../widgets/animated_bus_marker.dart';
 import '../theme/app_theme.dart';
+import '../core/providers/bus_simulation_provider.dart';
 
-class MapPage extends StatefulWidget {
+class MapPage extends ConsumerStatefulWidget {
   final FlutterLocalNotificationsPlugin notif;
   final bool notificationsEnabled;
   final double notificationDistance;
@@ -37,10 +39,10 @@ class MapPage extends StatefulWidget {
   });
 
   @override
-  State<MapPage> createState() => MapPageState();
+  ConsumerState<MapPage> createState() => MapPageState();
 }
 
-class MapPageState extends State<MapPage> {
+class MapPageState extends ConsumerState<MapPage> {
   List<BusStop> stops = [];
   Set<String> selectedLines = {'L1', 'L2', 'L3'};
   LatLng center = LatLng(39.1566, -0.4354);
@@ -54,7 +56,6 @@ class MapPageState extends State<MapPage> {
   
   late final NotificationService _notificationService;
   late final LocationService _locationService;
-  late final StopsService _stopsService;
   late final BusSimulationService _busSimulationService;
   
   Map<String, SimulatedBus> _simulatedBuses = {};
@@ -67,8 +68,7 @@ class MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     _notificationService = NotificationService(widget.notif);
-    _stopsService = StopsService();
-    _busSimulationService = BusSimulationService();
+    _busSimulationService = ref.read(busSimulationProvider);
     _locationService = LocationService(
       onLocationUpdate: (position, heading) {
         setState(() {
@@ -210,7 +210,7 @@ class MapPageState extends State<MapPage> {
 
   Future<void> _loadStops() async {
     print('Intentando cargar paradas...');
-    final loadedStops = await _stopsService.loadStops();
+    final loadedStops = await ref.read(stopsProvider.future);
     print('Paradas cargadas: ${loadedStops.length}');
     
     if (mounted) {

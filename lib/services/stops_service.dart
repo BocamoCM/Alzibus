@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import '../models/bus_stop.dart';
 import '../constants/app_config.dart';
 
@@ -10,19 +10,14 @@ class StopsService {
   Future<List<BusStop>> loadStops() async {
     try {
       // 1. Intentar cargar desde la API (Base de datos)
-      final response = await http
-          .get(
-            Uri.parse('${AppConfig.baseUrl}/stops'),
-            headers: AppConfig.headers,
-          )
-          .timeout(AppConfig.httpTimeout);
+      final response = await ApiClient().get('/stops');
       
       if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
+        final List<dynamic> jsonList = response.data;
         
         // Guardar en caché para el servicio en segundo plano
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('stops_cache', response.body);
+        await prefs.setString('stops_cache', jsonEncode(response.data));
         
         // Mapear los datos de la BD al modelo BusStop
         return jsonList.map((json) => BusStop(

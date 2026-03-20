@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,12 +35,11 @@ class RoutingService {
           '${from.longitude},${from.latitude};${to.longitude},${to.latitude}'
           '?overview=full&geometries=geojson';
       
-      final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 10),
-      );
+      final response = await ApiClient().get(url);
       
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final rawData = response.data;
+        final data = rawData is String ? json.decode(rawData) : rawData;
         
         if (data['code'] == 'Ok' && data['routes'] != null && data['routes'].isNotEmpty) {
           final geometry = data['routes'][0]['geometry'];

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import 'package:html/parser.dart' as html_parser;
 
 class FavoriteStop {
@@ -135,13 +135,13 @@ class FavoriteStopsService {
     try {
       // Obtener tiempos de llegada
       final url = 'https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=${stop.stopId}';
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final response = await ApiClient().get(url);
       
       String lineDestination = 'Sin datos';
       String arrivalTime = '--';
       
       if (response.statusCode == 200) {
-        final document = html_parser.parse(response.body);
+        final document = html_parser.parse(response.data.toString());
         final rows = document.querySelectorAll('tr');
         
         if (rows.isNotEmpty) {

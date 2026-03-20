@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
-import '../services/auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/router/app_router.dart';
 
-class ResetPasswordPage extends StatefulWidget {
+class ResetPasswordPage extends ConsumerStatefulWidget {
   final String email;
 
   const ResetPasswordPage({super.key, required this.email});
 
   @override
-  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
+  ConsumerState<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _ResetPasswordPageState extends State<ResetPasswordPage> {
+class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
@@ -37,7 +39,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     });
 
     try {
-      final error = await _authService.resetPassword(
+      final authService = ref.read(authServiceProvider);
+      final error = await authService.resetPassword(
         widget.email,
         _codeController.text.trim(),
         _passwordController.text.trim(),
@@ -49,7 +52,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.passwordResetSuccess)),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        const LoginRoute().go(context);
       } else {
         setState(() {
           _errorMessage = error;

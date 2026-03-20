@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
 import '../models/bus_stop.dart';
 import '../constants/line_colors.dart';
 import '../constants/app_config.dart';
@@ -16,11 +17,13 @@ import '../services/renfe_service.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../services/tts_service.dart';
+import '../core/providers/tts_provider.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
+import '../core/providers/ad_provider.dart';
 import 'simple_map_widget.dart';
 
-class StopInfoSheet extends StatefulWidget {
+class StopInfoSheet extends ConsumerStatefulWidget {
   final BusStop stop;
   final LatLng? userLocation;
 
@@ -31,10 +34,10 @@ class StopInfoSheet extends StatefulWidget {
   });
 
   @override
-  State<StopInfoSheet> createState() => _StopInfoSheetState();
+  ConsumerState<StopInfoSheet> createState() => _StopInfoSheetState();
 }
 
-class _StopInfoSheetState extends State<StopInfoSheet> {
+class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   final BusTimesService _busTimesService = BusTimesService();
   final BusAlertService _alertService = BusAlertService();
   List<BusArrival>? _arrivals;
@@ -72,7 +75,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
   void _initNativeAd() {
     if (!AppConfig.showAds) return;
 
-    _nativeAd = AdService.instance.createNativeAd(
+    _nativeAd = ref.read(adServiceProvider).createNativeAd(
       onAdLoaded: (ad) {
         setState(() => _isNativeAdLoaded = true);
       },
@@ -194,7 +197,7 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     // Anunciar por voz la parada y buses si hay datos (solo la primera vez)
     if (mounted && shouldSpeak) {
       final l = AppLocalizations.of(context)!;
-      final tts = TtsService();
+      final tts = ref.read(ttsProvider);
       
       // Anunciar nombre de la parada (primera locución)
       tts.speak(l.stopAnnounce(widget.stop.name));
@@ -244,18 +247,15 @@ class _StopInfoSheetState extends State<StopInfoSheet> {
     // Chequear inmediatamente
     await ForegroundService.checkAlertsNow();
 
-    // Notificar al backend para Discord (estadísticas)
     try {
-      final url = Uri.parse('${AppConfig.baseUrl}/stats/log-alert');
-      http.post(
-        url,
-        headers: AppConfig.headers,
-        body: jsonEncode({
+      ApiClient().post(
+        '/stats/log-alert',
+        data: {
           'stopName': widget.stop.name,
           'line': arrival.line,
           'destination': arrival.destination,
-        }),
-      ).timeout(const Duration(seconds: 3)).catchError((_) => null);
+        },
+      ).catchError((_) => null);
     } catch (_) {}
     
     if (mounted) {
