@@ -53,8 +53,10 @@ void onBackgroundNotificationResponse(NotificationResponse response) async {
   final historyService = TripHistoryService(prefs);
   final authService = AuthService();
   final token = await authService.getToken();
-  if (action == 'confirm_trip' && token != null) {
-    await historyService.confirmTrip(token);
+  if (action == 'confirm_card' && token != null) {
+    await historyService.confirmTrip(token, paymentMethod: 'card');
+  } else if (action == 'confirm_cash' && token != null) {
+    await historyService.confirmTrip(token, paymentMethod: 'cash');
   } else if (action == 'reject_trip') {
     await historyService.rejectTrip();
   }
@@ -79,6 +81,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   // Heartbeat timer
   Timer? _heartbeatTimer;
   StreamSubscription? _assistantSubscription;
+  StreamSubscription? _arrivalSubscription;
   AuthService get _authService => ref.read(authServiceProvider);
   
   // Nuevos ajustes
@@ -101,18 +104,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     // Iniciar heartbeat cada 2 minutos
     _startHeartbeat();
     
-    // Verificar viaje pendiente después de que el widget esté completamente construido
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Pequeño delay para asegurar que el contexto esté listo
-      Future.delayed(const Duration(milliseconds: 500), () async {
-        _checkPendingTrip();
-        
-        // Arrancar el servicio de segundo plano aquí, cuando el usuario ya está viendo la app
-        // Esto evita el error "startForegroundService() not allowed from background"
-        if (_notificationsEnabled) {
-          await ForegroundService.start();
-        }
-      });
+    // Verificar viaje pendiente inmediatamente al entrar
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkPendingTrip();
+      
+      // Arrancar el servicio de segundo plano
+      if (_notificationsEnabled) {
+        await ForegroundService.start();
+      }
     });
 
     // Escuchar navegación desde Assistant / Shortcuts
@@ -138,6 +137,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         });
       }
     });
+
+    // Escuchar llegada de buses en tiempo real para mostrar diálogo instantáneo
+    _arrivalSubscription = BusAlertService().onArrival.listen((pendingData) {
+      debugPrint('[HomeScreen] Arrival stream event: $pendingData');
+      if (mounted && !_isShowingTripDialog) {
+        _showTripConfirmDialog(pendingData);
+      }
+    });
   }
 
   Future<void> _loadNoticesCount() async {
@@ -153,11 +160,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
     if (mounted) setState(() => _noticesCount = unseenCount);
   }
-  
   @override
   void dispose() {
     _heartbeatTimer?.cancel();
     _assistantSubscription?.cancel();
+    _arrivalSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

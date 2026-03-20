@@ -82,6 +82,7 @@ class NotificationService {
     required String destination,
     required int minutes,
     String urgency = 'pronto', // 'pronto', 'muy_cerca', 'llegando'
+    String? payload,
   }) async {
     // Configurar mensaje y vibración según urgencia
     String title;
@@ -134,6 +135,7 @@ class NotificationService {
       '$title - Línea $line',
       '$stopName → $destination\n$timeText',
       details,
+      payload: payload,
     );
   }
 }

@@ -115,6 +115,9 @@ class BusAlertService {
   factory BusAlertService() => _instance;
   BusAlertService._internal();
 
+  final _arrivalController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onArrival => _arrivalController.stream;
+
   final BusTimesService _busTimesService = BusTimesService();
   late final NotificationService _notificationService;
   final Map<String, BusAlert> _activeAlerts = {};
@@ -293,12 +296,23 @@ class BusAlertService {
                 destination: alert.destination,
                 minutes: minutes,
                 urgency: 'llegando',
+                payload: 'trip_confirm',
               );
               alert.notifiedArriving = true;
               alertUpdated = true;
               
               // Guardar viaje pendiente para confirmar
               await _savePendingTrip(alert);
+              
+              // Notificar al stream para que la UI reaccione al instante si está abierta
+              final pendingData = {
+                'line': alert.line,
+                'destination': alert.destination,
+                'stopName': alert.stopName,
+                'stopId': alert.stopId,
+                'timestamp': DateTime.now().toIso8601String(),
+              };
+              _arrivalController.add(pendingData);
               
               // Remover alerta después de notificar llegada
               await removeAlert(alert.key);
