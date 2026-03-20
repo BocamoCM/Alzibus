@@ -296,6 +296,7 @@ class AuthService {
     await prefs.remove('user_id');
     await prefs.remove('is_premium');
     await prefs.remove('token_expiry');
+    await prefs.remove('pending_trip'); // Eliminar viajes pendientes al cerrar sesión
     
     // Limpiar identidad en Sentry
     await Sentry.configureScope((scope) {

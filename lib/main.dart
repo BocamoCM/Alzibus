@@ -34,6 +34,7 @@ import 'services/tts_service.dart';
 import 'services/ad_service.dart';
 import 'providers/elderly_mode_provider.dart';
 import 'services/premium_service.dart';
+import 'widgets/ad_banner_widget.dart';
 import 'dart:async';
 
 // Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
@@ -183,6 +184,7 @@ void _onBackgroundNotificationResponse(NotificationResponse response) async {
   final action = response.actionId;
   if (action == null) return;
   final prefs = await SharedPreferences.getInstance();
+  await prefs.reload();
   final historyService = TripHistoryService(prefs);
   final authService = AuthService();
   final token = await authService.getToken();
@@ -465,7 +467,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // Evitar mostrar múltiples diálogos
     if (_isShowingTripDialog) return;
     
+    // Solo mostrar si el usuario tiene sesión activa
+    if (!await AuthService().isLoggedIn()) return;
+    
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // Recargar para ver cambios del background service
     final historyService = TripHistoryService(prefs);
     final pending = historyService.getPendingTrip();
     
@@ -690,7 +696,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     
     // Si tocó la notificación de "bus llegando", mostrar diálogo
     if (payload == 'trip_confirm') {
+      if (!await AuthService().isLoggedIn()) return;
+      
       final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
       final historyService = TripHistoryService(prefs);
       final pending = historyService.getPendingTrip();
       
@@ -708,6 +717,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (action == null) return;
     
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final historyService = TripHistoryService(prefs);
     
     if (action == 'confirm_trip') {
@@ -806,7 +816,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l.appTitle),
+        title: const AdBannerWidget(),
+        titleSpacing: 0, // Para aprovechar todo el espacio para el banner
         actions: [
           // Único botón en AppBar: alertas activas (operacional, tiempo real)
           IconButton(

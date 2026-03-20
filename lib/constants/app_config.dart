@@ -32,8 +32,8 @@ class AppConfig {
   /// ID de la Aplicación AdMob (Android)
   static const String admobAppId = 'ca-app-pub-5215993257564469~3690891315';
 
-  /// ID del Banner Inferior
-  static const String bannerAdId = 'ca-app-pub-5215993257564469/4213160138';
+  /// ID del Banner Principal (Cabecera)
+  static const String bannerAdId = 'ca-app-pub-5215993257564469/6729019552';
 
   /// ID del Anuncio Nativo (Ficha de Parada)
   static const String nativeAdId = 'ca-app-pub-5215993257564469/1679805649';
