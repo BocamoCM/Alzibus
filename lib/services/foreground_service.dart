@@ -70,7 +70,7 @@ Future<void> _checkLocationStatic(
     await prefs.setString('last_foreground_check', now.toIso8601String());
     
     // SIEMPRE verificar alertas de bus
-    await _checkBusAlertsStatic(prefs, notif);
+    await _checkBusAlertsStatic(prefs, notif, service: service);
     
     // Actualizar widget de Android con parada favorita
     await _updateWidgetStatic(prefs);
@@ -182,8 +182,9 @@ Future<void> _showProximityNotificationStatic(
 
 Future<void> _checkBusAlertsStatic(
   SharedPreferences prefs,
-  FlutterLocalNotificationsPlugin notif,
-) async {
+  FlutterLocalNotificationsPlugin notif, {
+  ServiceInstance? service,
+}) async {
   try {
     // IMPORTANTE: Recargar SharedPreferences para obtener datos actualizados
     // desde el isolate principal
@@ -272,6 +273,19 @@ Future<void> _checkBusAlertsStatic(
                 };
                 await prefs.setString('pending_trip', jsonEncode(pendingTrip));
                 print('[ForegroundService] Saved pending trip for history');
+                
+                // NOTIFICAR A LA APP (si está en primer plano) por IPC
+                try {
+                  if (service != null) {
+                    service.invoke('bus_arrived', pendingTrip);
+                  } else {
+                    // Si se llama desde fuera del servicio (ej: checkAlertsNow en main isolate)
+                    FlutterBackgroundService().invoke('bus_arrived', pendingTrip);
+                  }
+                  print('[ForegroundService] IPC: "bus_arrived" enviado a la app');
+                } catch (e) {
+                  print('[ForegroundService] Error enviando IPC: $e');
+                }
               } else {
                 print('[ForegroundService] No notification needed. minutes=$minutes, notified5=$notified5min, notified2=$notified2min, notifiedArriving=$notifiedArriving');
               }
@@ -371,6 +385,11 @@ Future<void> _showBusArrivingNotificationStatic(
       '🚌 Línea $line $timeText\n📍 $stopName\n\n¡Prepárate para coger el bus!',
       contentTitle: '🚨 ¡Tu bus está llegando!',
     ),
+    actions: isArriving ? [
+      const AndroidNotificationAction('confirm_card', '💳 Con Tarjeta', showsUserInterface: true),
+      const AndroidNotificationAction('confirm_cash', '💵 En Efectivo', showsUserInterface: true),
+      const AndroidNotificationAction('reject_trip', '❌ No he subido', showsUserInterface: true),
+    ] : null,
   );
   
   await notif.show(

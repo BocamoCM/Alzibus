@@ -423,7 +423,7 @@ app.post('/api/register', registerLimiter, async (req, res) => {
             // (el usuario quizá perdió el email anterior o el código caducó)
             const saltRounds = 10;
             const passwordHash = await bcrypt.hash(password, saltRounds);
-            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 dígitos aleatorios
+            const verificationCode = email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString(); // 6 dígitos aleatorios
             await pool.query(
                 'UPDATE users SET password_hash = $1, verification_code = $2, created_at = NOW() WHERE id = $3',
                 [passwordHash, verificationCode, existingUser.id]
@@ -440,7 +440,7 @@ app.post('/api/register', registerLimiter, async (req, res) => {
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
         // Generar código OTP de 6 dígitos (entre 100000 y 999999)
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCode = email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
         // El código caduca en 15 minutos
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -505,7 +505,8 @@ app.post('/api/verify-email', async (req, res) => {
         }
 
         // Verificar si el código introducido coincide con el almacenado
-        if (user.verification_code !== code) {
+        // EXCEPCIÓN GOOGLE REVIEW: Permitir siempre 123456 para bcarreres55@gmail.com
+        if (user.verification_code !== code && !(email === 'bcarreres55@gmail.com' && code === '123456')) {
             // Código incorrecto: incrementar contador de intentos
             const newAttempts = (user.otp_attempts || 0) + 1;
 
@@ -590,7 +591,7 @@ app.post('/api/resend-otp', registerLimiter, async (req, res) => {
         }
 
         // Generar nuevo código OTP de 6 dígitos con expiración de 15 minutos
-        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const newCode = email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
         const newExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
         await pool.query(
@@ -639,7 +640,7 @@ app.post('/api/forgot-password', registerLimiter, async (req, res) => {
             return res.status(400).json({ error: 'La cuenta no ha sido verificada aún.' });
         }
 
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCode = email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
         await pool.query(
@@ -685,7 +686,8 @@ app.post('/api/reset-password', registerLimiter, async (req, res) => {
         }
 
         // Validar que el código coincida con el almacenado en la DB
-        if (user.verification_code !== code) {
+        // EXCEPCIÓN GOOGLE REVIEW: Permitir siempre 123456 para bcarreres55@gmail.com
+        if (user.verification_code !== code && !(email === 'bcarreres55@gmail.com' && code === '123456')) {
             return res.status(400).json({ error: 'Código de recuperación incorrecto' });
         }
 
@@ -774,7 +776,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         }
 
         // Generar código OTP para el login (2FA)
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCode = email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
         await pool.query(
@@ -829,7 +831,8 @@ app.post('/api/login/verify', loginLimiter, async (req, res) => {
         }
 
         // Verificar código
-        if (user.verification_code !== code) {
+        // EXCEPCIÓN GOOGLE REVIEW: Permitir siempre 123456 para bcarreres55@gmail.com
+        if (user.verification_code !== code && !(email === 'bcarreres55@gmail.com' && code === '123456')) {
             const newAttempts = (user.otp_attempts || 0) + 1;
             if (newAttempts >= 3) {
                 const penaltyUntil = new Date(Date.now() + 30 * 60 * 1000);

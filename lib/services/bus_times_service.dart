@@ -16,18 +16,6 @@ class BusArrival {
 class BusTimesService {
   static const String baseUrl = 'https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx';
 
-  static final Map<String, String> _lineMapping = {
-    'BL': 'L1', // Blava (Azul) -> L1
-    'RB': 'L1', // Ribera (Azul) -> L1
-    'VR': 'L2', // Verda (Verde) -> L2
-    'TR': 'L3', // Taronja (Naranja) -> L3
-  };
-
-  static String _normalizeLine(String rawLine) {
-    rawLine = rawLine.toUpperCase().trim();
-    return _lineMapping[rawLine] ?? rawLine;
-  }
-
   Future<List<BusArrival>> getArrivalTimes(int stopId) async {
     try {
       final response = await ApiClient().get('$baseUrl?id=$stopId');
@@ -46,13 +34,13 @@ class BusTimesService {
       for (var i = 1; i < rows.length; i++) {
         final cells = rows[i].querySelectorAll('td');
         if (cells.length >= 3) {
-          final rawLine = cells[0].text.trim();
+          final rawLine = cells[0].text.trim().toUpperCase();
           final destination = cells[1].text.trim();
           final time = cells[2].text.trim();
           
           if (rawLine.isNotEmpty && destination.isNotEmpty && time.isNotEmpty) {
             arrivals.add(BusArrival(
-              line: _normalizeLine(rawLine),
+              line: rawLine,
               destination: destination,
               time: time,
             ));

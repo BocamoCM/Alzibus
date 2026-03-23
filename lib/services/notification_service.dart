@@ -120,6 +120,11 @@ class NotificationService {
       ledColor: const Color.fromARGB(255, 255, 0, 0),
       ledOnMs: 1000,
       ledOffMs: 500,
+      actions: (urgency == 'llegando' || minutes <= 1) ? [
+        const AndroidNotificationAction('confirm_card', '💳 Con Tarjeta', showsUserInterface: true),
+        const AndroidNotificationAction('confirm_cash', '💵 En Efectivo', showsUserInterface: true),
+        const AndroidNotificationAction('reject_trip', '❌ No he subido', showsUserInterface: true),
+      ] : null,
     );
     
     final details = NotificationDetails(android: androidDetails);

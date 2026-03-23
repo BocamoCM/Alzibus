@@ -42,6 +42,7 @@ import '../services/premium_service.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../core/providers/auth_provider.dart';
 import 'dart:async';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 // Handler para notificaciones en segundo plano (debe ser top-level)
 @pragma('vm:entry-point')
@@ -77,6 +78,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   int _notificationCooldown = 5;
   bool _isShowingTripDialog = false; // Para evitar mostrar múltiples diálogos
   int _noticesCount = 0; // Número de avisos activos
+  int _storedTrips = 0;
+  bool _isUnlimited = false;
   
   // Heartbeat timer
   Timer? _heartbeatTimer;
@@ -145,6 +148,16 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         _showTripConfirmDialog(pendingData);
       }
     });
+
+    // Escuchar IPC desde el ForegroundService (Isolate separado)
+    if (!kIsWeb) {
+      FlutterBackgroundService().on('bus_arrived').listen((event) {
+        debugPrint('[HomeScreen] IPC "bus_arrived" received: $event');
+        if (mounted && event != null && !_isShowingTripDialog) {
+          _showTripConfirmDialog(event);
+        }
+      });
+    }
   }
 
   Future<void> _loadNoticesCount() async {
@@ -201,6 +214,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       _autoRefreshTimes = prefs.getBool('auto_refresh_times') ?? true;
       _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
       _ttsEnabled = prefs.getBool('tts_enabled') ?? false;
+      _storedTrips = prefs.getInt('stored_trips') ?? 0;
+      _isUnlimited = prefs.getBool('is_unlimited') ?? false;
     });
   }
 
@@ -240,6 +255,15 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload(); // Recargar para ver cambios del background service
+    
+    // Sincronizar estado local con SharedPreferences
+    if (mounted) {
+      setState(() {
+        _storedTrips = prefs.getInt('stored_trips') ?? 0;
+        _isUnlimited = prefs.getBool('is_unlimited') ?? false;
+      });
+    }
+
     final historyService = TripHistoryService(prefs);
     final pending = historyService.getPendingTrip();
     
@@ -365,8 +389,16 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               const SizedBox(height: 8),
               
               Text(
-                'Registra tus viajes para ver estadísticas',
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                _isUnlimited 
+                    ? 'Tienes viajes ILIMITADOS' 
+                    : (_storedTrips > 0 
+                        ? 'Se descontará 1 viaje de tu tarjeta (te quedan $_storedTrips)' 
+                        : 'No tienes viajes en la tarjeta'),
+                style: TextStyle(
+                  color: _isUnlimited || _storedTrips > 0 ? Colors.green[700] : Colors.red[700],
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -387,6 +419,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                             final token = await _authService.getToken();
                             if (token != null) {
                               await historyService.confirmTrip(token, paymentMethod: 'card');
+                              await prefs.reload();
+                              if (mounted) setState(() => _storedTrips = prefs.getInt('stored_trips') ?? 0);
                             }
                             if (mounted) _showTripRegisteredSnackBar(true);
                           },
@@ -427,6 +461,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                       ),
                     ],
                   ),
+                  if (!_isUnlimited && _storedTrips > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: Text(
+                        '💡 Paga en efectivo si no quieres usar tus viajes',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 11, fontStyle: FontStyle.italic),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   /* BOTÓN NO */
                   SizedBox(
