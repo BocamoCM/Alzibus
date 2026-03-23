@@ -331,25 +331,30 @@ class BusAlertService {
   }
 
   int _parseMinutes(String time) {
-    // Parsear tiempo: "5 min", "En parada", "12:30", etc.
-    if (time.toLowerCase().contains('parada')) return 0;
+    final cleanTime = time.toLowerCase().trim();
     
-    // <<< o < < < significa que el bus está llegando/en parada
-    if (time.contains('<<<') || time.contains('< < <') || time.contains('<')) return 0;
+    // Parsear tiempo: "5 min", "En parada", "12:30", etc.
+    if (cleanTime.contains('parada')) return 0;
+    
+    // Solo tratar como 0 si es el símbolo de llegada ("<<<" o "<") SIN números a continuación
+    if ((cleanTime.contains('<<<') || cleanTime.contains('< < <') || cleanTime == '<') && !cleanTime.contains(RegExp(r'\d'))) {
+      return 0;
+    }
     
     // >>> significa que el bus ya pasó - devolver -1
-    if (time.contains('>>>') || time.contains('> > >')) return -1;
+    if (cleanTime.contains('>>>') || cleanTime.contains('> > >')) return -1;
     
     // Sin servicio
-    if (time.contains('---') || time.trim().isEmpty) return -1;
+    if (cleanTime.contains('---') || cleanTime.isEmpty) return -1;
     
-    final minMatch = RegExp(r'(\d+)\s*min', caseSensitive: false).firstMatch(time);
-    if (minMatch != null) {
-      return int.tryParse(minMatch.group(1) ?? '99') ?? 99;
+    // Extraer el primer número que aparezca (ignorando el < si lo tiene, ej: "< 3 min" -> 3)
+    final match = RegExp(r'(\d+)').firstMatch(cleanTime);
+    if (match != null) {
+      return int.tryParse(match.group(1)!) ?? 99;
     }
     
     // Si es hora (HH:MM), calcular diferencia
-    final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(time);
+    final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(cleanTime);
     if (timeMatch != null) {
       final hour = int.tryParse(timeMatch.group(1) ?? '0') ?? 0;
       final minute = int.tryParse(timeMatch.group(2) ?? '0') ?? 0;

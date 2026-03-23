@@ -837,18 +837,32 @@ class _TripHistoryScreenState extends ConsumerState<TripHistoryScreen> with Sing
             style: TextStyle(color: Colors.grey[600], fontSize: 12),
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                _formatTime(trip.timestamp),
-                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-              ),
-              Icon(
-                trip.confirmed ? Icons.check_circle : Icons.help_outline,
-                size: 16,
-                color: trip.confirmed ? Colors.green : Colors.orange,
+              // Icono de método de pago
+              if (trip.paymentMethod != null) ...[
+                Icon(
+                  trip.paymentMethod == 'card' ? Icons.credit_card : Icons.payments,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 8),
+              ],
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _formatTime(trip.timestamp),
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                  ),
+                  Icon(
+                    trip.confirmed ? Icons.check_circle : Icons.help_outline,
+                    size: 16,
+                    color: trip.confirmed ? Colors.green : Colors.orange,
+                  ),
+                ],
               ),
             ],
           ),

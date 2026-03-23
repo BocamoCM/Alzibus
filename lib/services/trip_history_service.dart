@@ -76,10 +76,15 @@ class TripHistoryService {
   /// El usuario confirmó que cogió el bus → guardar en API y descontar local si aplica.
   Future<void> confirmTrip(String token, {String paymentMethod = 'card'}) async {
     final pending = getPendingTrip();
-    if (pending == null) return;
+    if (pending == null) {
+      debugPrint('[TripHistory] No hay viaje pendiente para confirmar.');
+      return;
+    }
+    
+    debugPrint('[TripHistory] Confirmando viaje con método: $paymentMethod');
     
     // 1. Guardar en API
-    await _saveToApi(
+    final success = await _saveToApi(
       token: token,
       line: pending['line'],
       destination: pending['destination'],
@@ -90,17 +95,22 @@ class TripHistoryService {
       paymentMethod: paymentMethod,
     );
 
-    // 2. Gestionar descuento de viaje NFC si existe tarjeta local y el pago fue con tarjeta
-    final isUnlimited = _prefs.getBool('is_unlimited') ?? false;
-    final storedTrips = _prefs.getInt('stored_trips') ?? 0;
-    
-    if (!isUnlimited && storedTrips > 0 && paymentMethod == 'card') {
-      final newTrips = storedTrips - 1;
-      await _prefs.setInt('stored_trips', newTrips);
-      debugPrint('[TripHistory] Auto-descuento NFC (Tarjeta): $storedTrips -> $newTrips');
-    }
+    if (success) {
+      // 2. Gestionar descuento de viaje NFC si existe tarjeta local y el pago fue con tarjeta
+      final isUnlimited = _prefs.getBool('is_unlimited') ?? false;
+      final storedTrips = _prefs.getInt('stored_trips') ?? 0;
+      
+      if (!isUnlimited && storedTrips > 0 && paymentMethod == 'card') {
+        final newTrips = storedTrips - 1;
+        await _prefs.setInt('stored_trips', newTrips);
+        debugPrint('[TripHistory] Auto-descuento NFC (Tarjeta): $storedTrips -> $newTrips');
+      }
 
-    await _prefs.remove(_pendingTripKey);
+      await _prefs.remove(_pendingTripKey);
+      debugPrint('[TripHistory] Viaje confirmado y pendiente eliminado localmente.');
+    } else {
+      debugPrint('[TripHistory] No se pudo guardar el viaje en el servidor. El viaje pendiente se mantiene.');
+    }
   }
 
   Future<void> rejectTrip() async {
@@ -131,7 +141,7 @@ class TripHistoryService {
     );
   }
 
-  Future<void> _saveToApi({
+  Future<bool> _saveToApi({
     required String token,
     required String line,
     required String destination,
@@ -142,25 +152,36 @@ class TripHistoryService {
     String? paymentMethod,
   }) async {
     try {
+      final data = {
+        'line': line,
+        'destination': destination,
+        'stopName': stopName,
+        'stopId': stopId,
+        'timestamp': timestamp.toIso8601String(),
+        'confirmed': confirmed,
+        'paymentMethod': paymentMethod,
+      };
+      
+      debugPrint('[TripHistory] Enviando viaje a API: $data');
+      
       final response = await ApiClient().post(
         '/trips',
-        data: {
-          'line': line,
-          'destination': destination,
-          'stopName': stopName,
-          'stopId': stopId,
-          'timestamp': timestamp.toIso8601String(),
-          'confirmed': confirmed,
-          'paymentMethod': paymentMethod,
-        },
+        data: data,
       );
+
+      debugPrint('[TripHistory] Respuesta API: ${response.statusCode} - ${response.data}');
 
       if (response.statusCode == 201) {
         final newRecord = TripRecord.fromJson(_normalizeJson(response.data));
         _records.insert(0, newRecord);
+        return true;
+      } else {
+        debugPrint('[TripHistory] Error en el servidor (${response.statusCode}): ${response.data}');
+        return false;
       }
     } catch (e) {
-      debugPrint('[TripHistory] Error guardando viaje: $e');
+      debugPrint('[TripHistory] Excepción al guardar viaje: $e');
+      return false;
     }
   }
 

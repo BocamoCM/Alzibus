@@ -331,13 +331,24 @@ Future<void> _checkBusAlertsStatic(
 }
 
 int _parseMinutesStatic(String timeStr) {
-  if (timeStr.contains('<') || timeStr.contains('>')) return 0;
-  if (timeStr.toLowerCase().contains('llegando')) return 0;
+  final cleanTime = timeStr.toLowerCase().trim();
   
-  final match = RegExp(r'(\d+)').firstMatch(timeStr);
+  if (cleanTime.contains('llegando')) return 0;
+  
+  // Solo tratar como 0 si es el símbolo de llegada ("<<<" o "<") SIN números a continuación
+  if ((cleanTime.contains('<<<') || cleanTime == '<') && !cleanTime.contains(RegExp(r'\d'))) {
+    return 0;
+  }
+  
+  // Tratar como -1 (ya pasó) si tiene ">"
+  if (cleanTime.contains('>') || cleanTime.contains('>>>')) return -1;
+  
+  // Extraer el primer número que aparezca (ignorando el < si lo tiene, ej: "< 3 min" -> 3)
+  final match = RegExp(r'(\d+)').firstMatch(cleanTime);
   if (match != null) {
     return int.tryParse(match.group(1)!) ?? -1;
   }
+  
   return -1;
 }
 
@@ -385,11 +396,6 @@ Future<void> _showBusArrivingNotificationStatic(
       '🚌 Línea $line $timeText\n📍 $stopName\n\n¡Prepárate para coger el bus!',
       contentTitle: '🚨 ¡Tu bus está llegando!',
     ),
-    actions: isArriving ? [
-      const AndroidNotificationAction('confirm_card', '💳 Con Tarjeta', showsUserInterface: true),
-      const AndroidNotificationAction('confirm_cash', '💵 En Efectivo', showsUserInterface: true),
-      const AndroidNotificationAction('reject_trip', '❌ No he subido', showsUserInterface: true),
-    ] : null,
   );
   
   await notif.show(
