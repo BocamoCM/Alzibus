@@ -435,7 +435,37 @@ class AppLocalizationsCa extends AppLocalizations {
   String get accessibilityVoice => 'Mode Accessibilitat (Veu)';
 
   @override
-  String get accessibilityVoiceSubtitle => 'Anunciar saldo i arribades de bus';
+  String get accessibilityVoiceSubtitle =>
+      'Llig les parades en seleccionar-les';
+
+  @override
+  String get highVisibilityMode => 'Mode d\'Alta Visibilitat';
+
+  @override
+  String get highVisibilitySubtitle =>
+      'Text i botons optimitzats per a millor legibilitat';
+
+  @override
+  String get privacyAndPermissions => 'PERMISOS I PRIVACITAT';
+
+  @override
+  String get backgroundAlerts => 'Alertes en segon pla';
+
+  @override
+  String get backgroundAlertsSubtitle =>
+      'Configura el rastreig de bus fora de l\'app';
+
+  @override
+  String get permissionActivated => 'Ja tens este permís activat ✅';
+
+  @override
+  String get configure => 'Configurar';
+
+  @override
+  String get privacyPolicy => 'Política de Privacitat';
+
+  @override
+  String get privacyPolicySubtitle => 'Consulta com protegim les teues dades';
 
   @override
   String get nfcCardReadSuccess => 'Targeta llegida correctament';
@@ -462,5 +492,16 @@ class AppLocalizationsCa extends AppLocalizations {
   @override
   String stopAnnounce(Object name) {
     return 'Parada $name.';
+  }
+
+  @override
+  String get teHemosApuntado => 'T\'hem apuntat al bus';
+
+  @override
+  String get alertaActiva => '(Alerta activa)';
+
+  @override
+  String personasInteresadas(int n) {
+    return '$n persones interessades';
   }
 }

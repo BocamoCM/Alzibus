@@ -925,8 +925,62 @@ abstract class AppLocalizations {
   /// No description provided for @accessibilityVoiceSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Anunciar saldo y llegadas de bus'**
+  /// **'Lee las paradas al seleccionarlas'**
   String get accessibilityVoiceSubtitle;
+
+  /// No description provided for @highVisibilityMode.
+  ///
+  /// In es, this message translates to:
+  /// **'Modo Alta Visibilidad'**
+  String get highVisibilityMode;
+
+  /// No description provided for @highVisibilitySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Texto y botones optimizados para mejor legibilidad'**
+  String get highVisibilitySubtitle;
+
+  /// No description provided for @privacyAndPermissions.
+  ///
+  /// In es, this message translates to:
+  /// **'PERMISOS Y PRIVACIDAD'**
+  String get privacyAndPermissions;
+
+  /// No description provided for @backgroundAlerts.
+  ///
+  /// In es, this message translates to:
+  /// **'Alertas en segundo plano'**
+  String get backgroundAlerts;
+
+  /// No description provided for @backgroundAlertsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Configura el rastreo de bus fuera de la app'**
+  String get backgroundAlertsSubtitle;
+
+  /// No description provided for @permissionActivated.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes este permiso activado ✅'**
+  String get permissionActivated;
+
+  /// No description provided for @configure.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurar'**
+  String get configure;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In es, this message translates to:
+  /// **'Política de Privacidad'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Consulta cómo protegemos tus datos'**
+  String get privacyPolicySubtitle;
 
   /// No description provided for @nfcCardReadSuccess.
   ///
@@ -964,6 +1018,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Parada {name}.'**
   String stopAnnounce(Object name);
+
+  /// No description provided for @teHemosApuntado.
+  ///
+  /// In es, this message translates to:
+  /// **'Te hemos apuntado al bus'**
+  String get teHemosApuntado;
+
+  /// No description provided for @alertaActiva.
+  ///
+  /// In es, this message translates to:
+  /// **'(Alerta activa)'**
+  String get alertaActiva;
+
+  /// No description provided for @personasInteresadas.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} personas interesadas'**
+  String personasInteresadas(int n);
 }
 
 class _AppLocalizationsDelegate

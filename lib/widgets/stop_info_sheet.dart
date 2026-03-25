@@ -22,6 +22,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import 'simple_map_widget.dart';
+import '../services/socket_service.dart';
+import '../services/gamification_service.dart';
 
 class StopInfoSheet extends ConsumerStatefulWidget {
   final BusStop stop;
@@ -54,6 +56,11 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   NativeAd? _nativeAd;
   bool _isNativeAdLoaded = false;
   
+  // Gamificación y Social
+  final Set<String> _joinedBuses = {};
+  final Map<String, int> _busAttendees = {}; // line_dest -> count
+  StreamSubscription? _attendeesSubscription;
+  
   /// Verifica si esta parada es la estación de Renfe
   bool get _isRenfeStation {
     final name = widget.stop.name.toUpperCase();
@@ -70,6 +77,22 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
       _loadTrainTimes();
     }
     _initNativeAd();
+    _setupAttendeesListener();
+  }
+
+  void _setupAttendeesListener() {
+    _attendeesSubscription = SocketService().onAttendeesUpdate.listen((data) {
+      if (mounted) {
+        final stopId = data['stopId'].toString();
+        if (stopId == widget.stop.id.toString()) {
+          final line = data['line'];
+          final count = data['count'] ?? 1;
+          setState(() {
+            _busAttendees[line] = count;
+          });
+        }
+      }
+    });
   }
 
   void _initNativeAd() {
@@ -149,6 +172,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   void dispose() {
     _autoRefreshTimer?.cancel();
     _nativeAd?.dispose();
+    _attendeesSubscription?.cancel();
     super.dispose();
   }
 
@@ -247,6 +271,9 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
     // Chequear inmediatamente
     await ForegroundService.checkAlertsNow();
 
+    // LÓGICA SOCIAL/ GAMIFICACIÓN: Al poner alerta, el usuario se "une" al bus
+    _joinBusSilently(arrival);
+
     try {
       ApiClient().post(
         '/stats/log-alert',
@@ -286,6 +313,29 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
     );
   }
 
+  Future<void> _joinBusSilently(BusArrival arrival) async {
+    final gamification = GamificationService();
+    
+    // 1. Verificar si el usuario ya se ha "unido" a esta línea hace poco
+    if (!gamification.canJoinLine(arrival.line)) {
+      debugPrint('[StopInfoSheet] Usuario ya unido a la línea ${arrival.line} recientemente. Ignorando.');
+      return;
+    }
+
+    // 2. Enviar al servidor
+    SocketService().emitAttendBus(arrival.line, widget.stop.id.toString());
+    
+    // 3. Guardar localmente para la UI inmediata
+    setState(() {
+      _joinedBuses.add('${arrival.line}_${arrival.destination}');
+      _busAttendees[arrival.line] = (_busAttendees[arrival.line] ?? 0) + 1;
+    });
+
+    // 4. Registrar en el servicio de gamificación (CO2 y persistencia de tiempo)
+    final attendees = _busAttendees[arrival.line] ?? 1;
+    await gamification.recordBusJoin(line: arrival.line, personasEnBus: attendees);
+  }
+
   Future<void> _openInGoogleMaps() async {
     try {
       const platform = MethodChannel('com.alzitrans.app/maps');
@@ -300,6 +350,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     const distance = Distance();
     
     return SingleChildScrollView(
@@ -602,6 +653,11 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                         ],
                       ),
                     ],
+                    // Mostrar contador de pasajeros interesados si es > 0
+                    if ((_busAttendees[arrival.line] ?? 0) > 0) ...[
+                      const SizedBox(height: 8),
+                      _buildAttendeesCounter(arrival),
+                    ],
                   ],
                 ),
               );
@@ -832,6 +888,39 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           const SizedBox(height: 20),
         ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAttendeesCounter(BusArrival arrival) {
+    final l = AppLocalizations.of(context)!;
+    final peopleCount = _busAttendees[arrival.line] ?? 0;
+    final isJoinedRecently = !GamificationService().canJoinLine(arrival.line);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isJoinedRecently ? Colors.orange[50] : Colors.blue[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isJoinedRecently ? Colors.orange[200]! : Colors.blue[200]!),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isJoinedRecently ? Icons.check_circle : Icons.people, 
+               size: 14, color: isJoinedRecently ? Colors.orange : Colors.blue),
+          const SizedBox(width: 8),
+          Text(
+            isJoinedRecently 
+              ? '${l.teHemosApuntado} ${l.alertaActiva}'
+              : l.personasInteresadas(peopleCount),
+            style: TextStyle(
+              fontSize: 11, 
+              color: isJoinedRecently ? Colors.orange[800] : Colors.blue, 
+              fontWeight: FontWeight.bold
+            ),
+          ),
+        ],
       ),
     );
   }

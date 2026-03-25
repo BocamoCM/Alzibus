@@ -431,7 +431,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accessibilityVoice => 'Accessibility Mode (Voice)';
 
   @override
-  String get accessibilityVoiceSubtitle => 'Announce balance and bus arrivals';
+  String get accessibilityVoiceSubtitle => 'Read stops when selecting them';
+
+  @override
+  String get highVisibilityMode => 'High Visibility Mode';
+
+  @override
+  String get highVisibilitySubtitle =>
+      'Optimized text and buttons for better readability';
+
+  @override
+  String get privacyAndPermissions => 'PERMISSIONS & PRIVACY';
+
+  @override
+  String get backgroundAlerts => 'Background Alerts';
+
+  @override
+  String get backgroundAlertsSubtitle =>
+      'Configure bus tracking outside the app';
+
+  @override
+  String get permissionActivated =>
+      'You already have this permission enabled ✅';
+
+  @override
+  String get configure => 'Configure';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get privacyPolicySubtitle => 'See how we protect your data';
 
   @override
   String get nfcCardReadSuccess => 'Card read successfully';
@@ -458,5 +488,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String stopAnnounce(Object name) {
     return 'Stop $name.';
+  }
+
+  @override
+  String get teHemosApuntado => 'You\'ve been joined to the bus';
+
+  @override
+  String get alertaActiva => '(Active alert)';
+
+  @override
+  String personasInteresadas(int n) {
+    return '$n people interested';
   }
 }

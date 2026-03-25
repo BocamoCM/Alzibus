@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
@@ -11,6 +12,8 @@ class SocketService {
   SocketService._internal();
 
   IO.Socket? _socket;
+  final _attendeesController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onAttendeesUpdate => _attendeesController.stream;
 
   void initialize() {
     if (_socket != null && _socket!.connected) return;
@@ -30,6 +33,11 @@ class SocketService {
     _socket!.on('new_notice', (data) {
       debugPrint('[SocketService] Nuevo aviso recibido: $data');
       _showNoticeDialog(data);
+    });
+
+    _socket!.on('bus_attendees_update', (data) {
+      debugPrint('[SocketService] Actualización de pasajeros: $data');
+      _attendeesController.add(Map<String, dynamic>.from(data));
     });
 
     _socket!.onDisconnect((_) {
@@ -88,6 +96,15 @@ class SocketService {
         ],
       ),
     );
+  }
+
+  void emitAttendBus(String line, String stopId) {
+    if (_socket == null || !_socket!.connected) return;
+    _socket!.emit('attend_bus', {
+      'line': line,
+      'stopId': stopId,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
   }
 
   void dispose() {

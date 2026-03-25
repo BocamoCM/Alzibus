@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
-import '../providers/elderly_mode_provider.dart';
+import '../providers/high_visibility_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
@@ -11,6 +11,8 @@ import '../constants/app_config.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/providers/gamification_provider.dart';
+import '../services/gamification_service.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   final bool notificationsEnabled;
@@ -61,7 +63,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late bool _autoRefreshTimes;
   late bool _vibrationEnabled;
   late bool _ttsEnabled;
-  late bool _elderlyMode;
+  late bool _highVisibility;
 
   @override
   void initState() {
@@ -73,7 +75,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _autoRefreshTimes = widget.autoRefreshTimes;
     _vibrationEnabled = widget.vibrationEnabled;
     _ttsEnabled = widget.ttsEnabled;
-    _elderlyMode = ref.read(elderlyModeProvider);
+    _highVisibility = ref.read(highVisibilityProvider);
     
     _initBannerAd();
   }
@@ -187,7 +189,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         const SizedBox(height: 8),
         SwitchListTile(
           title: Text(l.accessibilityVoice),
-          subtitle: const Text('Lee las paradas al seleccionarlas'),
+          subtitle: Text(l.accessibilityVoiceSubtitle),
           value: _ttsEnabled,
           onChanged: (val) {
             setState(() => _ttsEnabled = val);
@@ -196,28 +198,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           secondary: const Icon(Icons.record_voice_over),
         ),
         SwitchListTile(
-          title: const Text('Modo Personas Mayores'),
-          subtitle: const Text('Botones más grandes y texto muy claro'),
-          value: _elderlyMode,
+          title: Text(l.highVisibilityMode),
+          subtitle: Text(l.highVisibilitySubtitle),
+          value: _highVisibility,
           onChanged: (val) {
-            setState(() => _elderlyMode = val);
-            ref.read(elderlyModeProvider.notifier).toggle(val);
+            setState(() => _highVisibility = val);
+            ref.read(highVisibilityProvider.notifier).toggle(val);
           },
-          secondary: const Icon(Icons.accessibility_new),
+          secondary: const Icon(Icons.visibility),
         ),
         const Divider(),
-        Text('PERMISOS Y PRIVACIDAD',
+        Text(l.privacyAndPermissions,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
         const SizedBox(height: 8),
         ListTile(
           leading: const Icon(Icons.location_on, color: AlzitransColors.burgundy),
-          title: const Text('Alertas en segundo plano'),
-          subtitle: const Text('Configura el rastreo de bus fuera de la app'),
+          title: Text(l.backgroundAlerts),
+          subtitle: Text(l.backgroundAlertsSubtitle),
           trailing: ElevatedButton(
             onPressed: () async {
               if (await Permission.locationAlways.isGranted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ya tienes este permiso activado ✅'))
+                  SnackBar(content: Text(l.permissionActivated))
                 );
               } else {
                 // Limpiar el flag de bloqueo para que la app pueda volver a pedirlo
@@ -228,13 +230,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 await openAppSettings();
               }
             },
-            child: const Text('Configurar'),
+            child: Text(l.configure),
           ),
         ),
         ListTile(
           leading: const Icon(Icons.privacy_tip, color: AlzitransColors.burgundy),
-          title: const Text('Política de Privacidad'),
-          subtitle: const Text('Consulta cómo protegemos tus datos'),
+          title: Text(l.privacyPolicy),
+          subtitle: Text(l.privacyPolicySubtitle),
           onTap: () => launchUrl(Uri.parse(AppConfig.privacyPolicyUrl)),
           trailing: const Icon(Icons.open_in_new, size: 20),
         ),
@@ -258,4 +260,5 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       : null,
     );
   }
+
 }

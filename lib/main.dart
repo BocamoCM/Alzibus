@@ -34,10 +34,12 @@ import 'screens/notices_screen.dart';
 import 'services/auth_service.dart';
 import 'services/socket_service.dart';
 import 'services/bus_simulation_service.dart';
+import 'services/gamification_service.dart';
+import 'core/providers/gamification_provider.dart';
 import 'services/tts_service.dart';
 import 'core/providers/tts_provider.dart';
 import 'services/ad_service.dart';
-import 'providers/elderly_mode_provider.dart';
+import 'providers/high_visibility_provider.dart';
 import 'services/premium_service.dart';
 import 'widgets/ad_banner_widget.dart';
 import 'core/providers/auth_provider.dart';
@@ -136,6 +138,7 @@ void main() async {
         // ESPERAR a que termine la lógica de permisos/avisos
         await _requestPermissions();
         
+        final prefs = await SharedPreferences.getInstance();
         final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
         
         if (!kIsWeb) {
@@ -148,6 +151,7 @@ void main() async {
           
           AssistantService.initialize();
           SocketService().initialize();
+          GamificationService().initialize();
           await container.read(ttsProvider).init();
           await container.read(localeProvider.notifier).loadLocale();
         }
@@ -178,30 +182,28 @@ void main() async {
         
         await busSimService.initialScan(stopsData);
         busSimService.startSimulation();
-        
-        if (!kIsWeb) {
-          // Esperar 2 segundos antes de pedir permisos para que la UI cargue tranquila
-          await Future.delayed(const Duration(seconds: 2));
-          await _requestPermissions();
-        }
       });
     },
   );
 }
 
 Future<void> _requestPermissions() async {
-  // 1. Pedir notificaciones de forma independiente (no mezclado con ubicación)
-  await Permission.notification.request();
-
-  // 2. Verificar si ya tenemos el de segundo plano
+  // 1. Verificar si ya tenemos el de segundo plano
   if (await Permission.locationAlways.isGranted) return;
 
-  // 3. Mostrar el Aviso Prominente (Requisito de Google) de forma aislada
+  // 2. Verificar si el usuario ya rechazó explícitamente en esta sesión (o permanentemente)
+  final prefs = await SharedPreferences.getInstance();
+  if (prefs.getBool('background_location_disabled') == true) return;
+
+  // 3. Esperar a que el contexto esté disponible (máximo 5 segundos)
+  int attempts = 0;
+  while (navigatorKey.currentContext == null && attempts < 10) {
+    await Future.delayed(const Duration(milliseconds: 500));
+    attempts++;
+  }
+
   final context = navigatorKey.currentContext;
   if (context != null) {
-    // Pequeña pausa para no solapar con el de notificaciones
-    await Future.delayed(const Duration(milliseconds: 500));
-    
     final proceed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -209,11 +211,14 @@ Future<void> _requestPermissions() async {
     );
 
     if (proceed == true) {
-      // 4. Pedir Ubicación Foreground (primero, obligatorio en Android 10+)
+      // 4. Pedir Notificaciones ahora que han aceptado ver el aviso
+      await Permission.notification.request();
+
+      // 5. Pedir Ubicación Foreground (primero, obligatorio en Android 10+)
       final locationStatus = await Permission.location.request();
       
       if (locationStatus.isGranted) {
-        // 5. Pedir Ubicación en Segundo Plano (inmediatamente después)
+        // 6. Pedir Ubicación en Segundo Plano (inmediatamente después)
         await Permission.locationAlways.request();
       }
     } else {
@@ -233,10 +238,10 @@ class AlzitransApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLocale = ref.watch(localeProvider);
-    final isElderly = ref.watch(elderlyModeProvider);
+    final isHighVisibility = ref.watch(highVisibilityProvider);
     // El TextScaler de MediaQuery (abajo) ya escala todos los textos.
-    // Aquí solo ampliamos botones e iconos para el modo personas mayores.
-    final theme = isElderly
+    // Aquí solo ampliamos botones e iconos para el modo de alta visibilidad.
+    final theme = isHighVisibility
         ? AlzitransTheme.lightTheme.copyWith(
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
@@ -273,7 +278,7 @@ class AlzitransApp extends ConsumerWidget {
           builder: (context, child) {
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
-                textScaler: isElderly
+                textScaler: isHighVisibility
                     ? const TextScaler.linear(1.6)
                     : const TextScaler.linear(1.0),
               ),

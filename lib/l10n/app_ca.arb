@@ -156,7 +156,16 @@
   "passwordResetSuccess": "Contrasenya actualitzada correctament",
   "verifyCode": "Verificar codi",
   "accessibilityVoice": "Mode Accessibilitat (Veu)",
-  "accessibilityVoiceSubtitle": "Anunciar saldo i arribades de bus",
+  "accessibilityVoiceSubtitle": "Llig les parades en seleccionar-les",
+  "highVisibilityMode": "Mode d'Alta Visibilitat",
+  "highVisibilitySubtitle": "Text i botons optimitzats per a millor legibilitat",
+  "privacyAndPermissions": "PERMISOS I PRIVACITAT",
+  "backgroundAlerts": "Alertes en segon pla",
+  "backgroundAlertsSubtitle": "Configura el rastreig de bus fora de l'app",
+  "permissionActivated": "Ja tens este permís activat ✅",
+  "configure": "Configurar",
+  "privacyPolicy": "Política de Privacitat",
+  "privacyPolicySubtitle": "Consulta com protegim les teues dades",
   "nfcCardReadSuccess": "Targeta llegida correctament",
   "nfcBalanceAnnounce": "Saldo de {balance} euros. Et queden {trips} viatges.",
   "@nfcBalanceAnnounce": {
@@ -176,5 +185,9 @@
     }
   },
   "busArrivingAnnounce": "L'autobús de la línia {line} amb destí {destination} està arribant a {stop}.",
-  "stopAnnounce": "Parada {name}."
+  "stopAnnounce": "Parada {name}.",
+  "teHemosApuntado": "T'hem apuntat al bus",
+  "alertaActiva": "(Alerta activa)",
+  "personasInteresadas": "{n} persones interessades",
+  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } }
 }

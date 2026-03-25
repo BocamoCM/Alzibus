@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationService {
   Timer? _positionTimer;
@@ -14,6 +15,15 @@ class LocationService {
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      // SI EL USUARIO HA RECHAZADO EXPLÍCITAMENTE EN NUESTRO DIÁLOGO, NO PEDIR MÁS
+      final prefs = await SharedPreferences.getInstance();
+      final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
+      
+      if (backgroundDisabled) {
+        print('[LocationService] Tracking skipped: user explicitly disabled background location');
+        return;
+      }
+      
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }

@@ -156,7 +156,16 @@
   "passwordResetSuccess": "Password updated successfully",
   "verifyCode": "Verify code",
   "accessibilityVoice": "Accessibility Mode (Voice)",
-  "accessibilityVoiceSubtitle": "Announce balance and bus arrivals",
+  "accessibilityVoiceSubtitle": "Read stops when selecting them",
+  "highVisibilityMode": "High Visibility Mode",
+  "highVisibilitySubtitle": "Optimized text and buttons for better readability",
+  "privacyAndPermissions": "PERMISSIONS & PRIVACY",
+  "backgroundAlerts": "Background Alerts",
+  "backgroundAlertsSubtitle": "Configure bus tracking outside the app",
+  "permissionActivated": "You already have this permission enabled ✅",
+  "configure": "Configure",
+  "privacyPolicy": "Privacy Policy",
+  "privacyPolicySubtitle": "See how we protect your data",
   "nfcCardReadSuccess": "Card read successfully",
   "nfcBalanceAnnounce": "Balance of {balance} euros. You have {trips} trips left.",
   "@nfcBalanceAnnounce": {
@@ -176,5 +185,9 @@
     }
   },
   "busArrivingAnnounce": "The line {line} bus to {destination} is arriving at {stop}.",
-  "stopAnnounce": "Stop {name}."
+  "stopAnnounce": "Stop {name}.",
+  "teHemosApuntado": "You've been joined to the bus",
+  "alertaActiva": "(Active alert)",
+  "personasInteresadas": "{n} people interested",
+  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } }
 }

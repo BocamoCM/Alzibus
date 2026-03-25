@@ -16,7 +16,7 @@ class MultiLineStopMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Los marcadores del mapa son elementos gráficos de tamaño fijo.
-    // Reseteamos el textScaler para que el modo personas mayores no los rompas.
+    // Reseteamos el textScaler para que el modo de alta visibilidad no los rompa.
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
       child: GestureDetector(

@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../services/auth_service.dart';
-import '../../providers/elderly_mode_provider.dart';
+import '../../providers/high_visibility_provider.dart';
 
 // Provider básico para el servicio de autenticación
 final authServiceProvider = Provider<AuthService>((ref) {

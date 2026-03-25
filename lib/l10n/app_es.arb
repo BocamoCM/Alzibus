@@ -156,7 +156,16 @@
   "passwordResetSuccess": "Contraseña actualizada correctamente",
   "verifyCode": "Verificar código",
   "accessibilityVoice": "Modo Accesibilidad (Voz)",
-  "accessibilityVoiceSubtitle": "Anunciar saldo y llegadas de bus",
+  "accessibilityVoiceSubtitle": "Lee las paradas al seleccionarlas",
+  "highVisibilityMode": "Modo Alta Visibilidad",
+  "highVisibilitySubtitle": "Texto y botones optimizados para mejor legibilidad",
+  "privacyAndPermissions": "PERMISOS Y PRIVACIDAD",
+  "backgroundAlerts": "Alertas en segundo plano",
+  "backgroundAlertsSubtitle": "Configura el rastreo de bus fuera de la app",
+  "permissionActivated": "Ya tienes este permiso activado ✅",
+  "configure": "Configurar",
+  "privacyPolicy": "Política de Privacidad",
+  "privacyPolicySubtitle": "Consulta cómo protegemos tus datos",
   "nfcCardReadSuccess": "Tarjeta leída correctamente",
   "nfcBalanceAnnounce": "Saldo de {balance} euros. Te quedan {trips} viajes.",
   "@nfcBalanceAnnounce": {
@@ -176,5 +185,9 @@
     }
   },
   "busArrivingAnnounce": "El autobús de la línea {line} con destino {destination} está llegando a {stop}.",
-  "stopAnnounce": "Parada {name}."
+  "stopAnnounce": "Parada {name}.",
+  "teHemosApuntado": "Te hemos apuntado al bus",
+  "alertaActiva": "(Alerta activa)",
+  "personasInteresadas": "{n} personas interesadas",
+  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } }
 }
