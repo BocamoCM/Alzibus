@@ -8,6 +8,9 @@ import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import '../core/providers/locale_provider.dart';
 import '../constants/app_config.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   final bool notificationsEnabled;
@@ -203,7 +206,39 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           secondary: const Icon(Icons.accessibility_new),
         ),
         const Divider(),
-
+        Text('PERMISOS Y PRIVACIDAD',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.location_on, color: AlzitransColors.burgundy),
+          title: const Text('Alertas en segundo plano'),
+          subtitle: const Text('Configura el rastreo de bus fuera de la app'),
+          trailing: ElevatedButton(
+            onPressed: () async {
+              if (await Permission.locationAlways.isGranted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Ya tienes este permiso activado ✅'))
+                );
+              } else {
+                // Limpiar el flag de bloqueo para que la app pueda volver a pedirlo
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('background_location_disabled');
+                
+                // Abrir ajustes para que sea el usuario el que lo active
+                await openAppSettings();
+              }
+            },
+            child: const Text('Configurar'),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip, color: AlzitransColors.burgundy),
+          title: const Text('Política de Privacidad'),
+          subtitle: const Text('Consulta cómo protegemos tus datos'),
+          onTap: () => launchUrl(Uri.parse(AppConfig.privacyPolicyUrl)),
+          trailing: const Icon(Icons.open_in_new, size: 20),
+        ),
+        const Divider(),
         Text(l.language,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),

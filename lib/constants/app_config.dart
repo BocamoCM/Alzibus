@@ -18,6 +18,9 @@ class AppConfig {
   // API Key para validación básica (se debe pasar como --dart-define=API_KEY=...)
   static const String apiKey = String.fromEnvironment('API_KEY', defaultValue: 'alzibus-secret-key-2024');
   
+  /// URL de la Política de Privacidad (Requerido por Google Play)
+  static const String privacyPolicyUrl = 'https://github.com/BocamoCM/Alzibus/blob/main/backend/POLITICA_PRIVACIDAD_ALZITRANS.md';
+
   /// DSN de Sentry para el monitoreo de errores.
   static const String sentryDsn = String.fromEnvironment(
     'SENTRY_DSN',

@@ -67,10 +67,6 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- AdMob App ID -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5215993257564469~3690891315"/>
 
         <!-- Foreground Service con location type -->
         <service

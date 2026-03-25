@@ -45,6 +45,7 @@ import 'core/providers/locale_provider.dart';
 import 'core/providers/bus_simulation_provider.dart';
 import 'core/providers/ad_provider.dart';
 import 'core/providers/premium_provider.dart';
+import 'widgets/location_permission_dialog.dart';
 import 'dart:async';
 
 // Clave global para la navegación (necesaria para mostrar diálogos desde servicios)
@@ -132,9 +133,19 @@ void main() async {
       
       // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
       Future.microtask(() async {
+        // ESPERAR a que termine la lógica de permisos/avisos
+        await _requestPermissions();
+        
+        final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
+        
         if (!kIsWeb) {
-          await ForegroundService.initialize();
-          await BusAlertService().initialize();
+          // Solo iniciar servicios de segundo plano si el permiso NO ha sido rechazado
+          // y el de sistema NO está denegado totalmente.
+          if (!backgroundDisabled) {
+            await ForegroundService.initialize();
+            await BusAlertService().initialize();
+          }
+          
           AssistantService.initialize();
           SocketService().initialize();
           await container.read(ttsProvider).init();
@@ -169,6 +180,8 @@ void main() async {
         busSimService.startSimulation();
         
         if (!kIsWeb) {
+          // Esperar 2 segundos antes de pedir permisos para que la UI cargue tranquila
+          await Future.delayed(const Duration(seconds: 2));
           await _requestPermissions();
         }
       });
@@ -176,21 +189,38 @@ void main() async {
   );
 }
 
-/// Solicita todos los permisos necesarios para el foreground service
 Future<void> _requestPermissions() async {
-  // 1. Permiso de notificaciones (Android 13+)
+  // 1. Pedir notificaciones de forma independiente (no mezclado con ubicación)
   await Permission.notification.request();
-  
-  // 2. Permiso de ubicación (primero foreground)
-  final locationStatus = await Permission.location.request();
-  
-  if (locationStatus.isGranted) {
-    // 3. Permiso de ubicación en segundo plano (CRÍTICO para foreground service)
-    // Android requiere que primero tengas el permiso de ubicación normal
-    final bgStatus = await Permission.locationAlways.request();
+
+  // 2. Verificar si ya tenemos el de segundo plano
+  if (await Permission.locationAlways.isGranted) return;
+
+  // 3. Mostrar el Aviso Prominente (Requisito de Google) de forma aislada
+  final context = navigatorKey.currentContext;
+  if (context != null) {
+    // Pequeña pausa para no solapar con el de notificaciones
+    await Future.delayed(const Duration(milliseconds: 500));
     
-    if (!bgStatus.isGranted) {
-      debugPrint('⚠️ Permiso de ubicación en segundo plano denegado');
+    final proceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const LocationPermissionDialog(),
+    );
+
+    if (proceed == true) {
+      // 4. Pedir Ubicación Foreground (primero, obligatorio en Android 10+)
+      final locationStatus = await Permission.location.request();
+      
+      if (locationStatus.isGranted) {
+        // 5. Pedir Ubicación en Segundo Plano (inmediatamente después)
+        await Permission.locationAlways.request();
+      }
+    } else {
+      // Si el usuario pulsa "No permitir", guardamos su preferencia
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('background_location_disabled', true);
+      debugPrint('Main: El usuario ha rechazado explícitamente la ubicación en segundo plano');
     }
   }
 }

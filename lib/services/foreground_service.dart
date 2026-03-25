@@ -72,6 +72,13 @@ Future<void> _checkLocationStatic(
     // SIEMPRE verificar alertas de bus
     await _checkBusAlertsStatic(prefs, notif, service: service);
     
+    // Verificar si el usuario ha desactivado la localización en segundo plano explícitamente
+    final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
+    if (backgroundDisabled) {
+      print('[ForegroundService] Location check skipped: background_location_disabled is true');
+      return;
+    }
+
     // Actualizar widget de Android con parada favorita
     await _updateWidgetStatic(prefs);
     
