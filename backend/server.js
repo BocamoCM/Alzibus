@@ -76,6 +76,11 @@ app.use(cors({
     preflightContinue: false,                                           // No pasa las peticiones OPTIONS al siguiente handler
     optionsSuccessStatus: 204                                           // Responde 204 (No Content) a las preflight requests
 }));
+// ── Servir app-ads.txt (Requerido por AdMob) ──
+app.get('/app-ads.txt', (req, res) => {
+    res.sendFile(__dirname + '/app-ads.txt');
+});
+
 // ── Webhook de Stripe ──
 // IMPORTANTE: Este endpoint DEBE estar definido ANTES de express.json().
 // Razón: Stripe envía el body como datos crudos (raw bytes), y express.json()

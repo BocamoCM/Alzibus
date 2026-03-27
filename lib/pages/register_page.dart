@@ -5,6 +5,7 @@ import 'package:alzitrans/pages/otp_verification_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
+import '../core/router/app_router.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -57,7 +58,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         
         // Redirigir a verificación
         if (mounted) {
-          context.pushReplacement('/verify', extra: {'email': _emailController.text.trim()});
+          VerifyRoute(email: _emailController.text.trim()).pushReplacement(context);
         }
       } else {
         setState(() {
