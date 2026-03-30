@@ -1,6 +1,7 @@
 // ============================================================
 // server.js — Servidor principal del backend de Alzitrans
 // ============================================================
+const path = require('path');                     // Módulo para manejar rutas de archivos
 // Este archivo es el punto de entrada del backend. Configura:
 // - Express como framework HTTP
 // - Socket.IO para comunicación en tiempo real (WebSockets)
@@ -78,7 +79,8 @@ app.use(cors({
 }));
 // ── Servir app-ads.txt (Requerido por AdMob) ──
 app.get('/app-ads.txt', (req, res) => {
-    res.sendFile(__dirname + '/app-ads.txt');
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(path.join(__dirname, 'app-ads.txt'));
 });
 
 // ── Webhook de Stripe ──
