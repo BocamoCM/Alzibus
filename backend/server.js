@@ -83,6 +83,24 @@ app.get('/app-ads.txt', (req, res) => {
     res.sendFile(path.join(__dirname, 'app-ads.txt'));
 });
 
+// ── Smart QR Tracker (Redirección dinámica) ──
+// Intercepta escaneos de códigos QR físicos, avisa a Discord y redirige a la Google Play Store.
+app.get('/qr', (req, res) => {
+    const userAgent = req.get('User-Agent') || 'Desconocido';
+    let device = 'Móvil o Web';
+    if (/android/i.test(userAgent)) device = 'Android 🤖';
+    else if (/iphone|ipad|ipod/i.test(userAgent)) device = 'iOS (iPhone/iPad) 🍏';
+    else if (/windows/i.test(userAgent)) device = 'Windows 💻';
+    else if (/mac/i.test(userAgent)) device = 'Mac 💻';
+
+    // 1. Enviar notificación a Discord de forma asíncrona (no bloquea al usuario)
+    sendDiscordNotification(`📲 **¡Nuevo escaneo de QR!**\nAlguien ha escaneado el código de las paradas desde un dispositivo: **${device}**.`);
+
+    // 2. Redirigir de inmediato a la App (incluyendo UTMs para métricas nativas de Play Console)
+    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.alzitrans.app&referrer=utm_source%3Dqr_paradas%26utm_medium%3Dfisico%26utm_campaign%3Dlanzamiento';
+    res.redirect(playStoreUrl);
+});
+
 // ── Webhook de Stripe ──
 // IMPORTANTE: Este endpoint DEBE estar definido ANTES de express.json().
 // Razón: Stripe envía el body como datos crudos (raw bytes), y express.json()
