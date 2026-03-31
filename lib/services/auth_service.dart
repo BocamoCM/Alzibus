@@ -52,9 +52,11 @@ class AuthService {
   Future<bool> authenticateWithBiometrics() async {
     try {
       return await _auth.authenticate(
-        localizedReason: 'Escanea tu huella para entrar en Alzibus',
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
+        localizedReason: 'Alzitrans – verify your identity / verifica tu identidad',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
       );
     } catch (e) {
       debugPrint('Error en autenticación biométrica: $e');

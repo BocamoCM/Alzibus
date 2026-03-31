@@ -42,6 +42,13 @@ class SocketService {
 
     _socket!.onDisconnect((_) {
       debugPrint('[SocketService] Desconectado de WebSockets');
+      // Fix #5: Auto-reconexión tras 5 segundos (evita perder avisos por caídas de 4G)
+      Future.delayed(const Duration(seconds: 5), () {
+        if (_socket != null && !_socket!.connected) {
+          debugPrint('[SocketService] Intentando reconexión...');
+          _socket!.connect();
+        }
+      });
     });
   }
 
@@ -111,5 +118,9 @@ class SocketService {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+    // Fix #1: Cerrar el StreamController para liberar la memoria correctamente
+    if (!_attendeesController.isClosed) {
+      _attendeesController.close();
+    }
   }
 }

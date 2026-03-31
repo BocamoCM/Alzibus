@@ -85,6 +85,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   Timer? _heartbeatTimer;
   StreamSubscription? _assistantSubscription;
   StreamSubscription? _arrivalSubscription;
+  StreamSubscription? _ipcSubscription; // Fix #3: retener suscripción IPC para poder cancelarla
   AuthService get _authService => ref.read(authServiceProvider);
   
   // Nuevos ajustes
@@ -151,7 +152,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
     // Escuchar IPC desde el ForegroundService (Isolate separado)
     if (!kIsWeb) {
-      FlutterBackgroundService().on('bus_arrived').listen((event) {
+      // Fix #3: Guardar la suscripción para poder cancelarla en dispose()
+      _ipcSubscription = FlutterBackgroundService().on('bus_arrived').listen((event) {
         debugPrint('[HomeScreen] IPC "bus_arrived" received: $event');
         if (mounted && event != null && !_isShowingTripDialog) {
           _showTripConfirmDialog(event);
@@ -178,18 +180,22 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     _heartbeatTimer?.cancel();
     _assistantSubscription?.cancel();
     _arrivalSubscription?.cancel();
+    _ipcSubscription?.cancel(); // Fix #3: cancelar suscripción IPC para evitar callbacks en widget destruido
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    // Primer pulso inmediato
-    _authService.sendHeartbeat();
+    // Fix #2: Comprobar token antes de hacer el primer pulso inmediato
+    _authService.getToken().then((token) {
+      if (token != null) _authService.sendHeartbeat();
+    });
     
-    // Pulsos periódicos cada 2 minutos
-    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
-      _authService.sendHeartbeat();
+    // Pulsos periódicos cada 2 minutos, solo si hay sesión activa
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (timer) async {
+      final token = await _authService.getToken();
+      if (token != null) _authService.sendHeartbeat();
     });
   }
   
