@@ -53,10 +53,8 @@ class AuthService {
     try {
       return await _auth.authenticate(
         localizedReason: 'Alzitrans – verify your identity / verifica tu identidad',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
       );
     } catch (e) {
       debugPrint('Error en autenticación biométrica: $e');
