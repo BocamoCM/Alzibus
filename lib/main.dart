@@ -35,6 +35,7 @@ import 'services/auth_service.dart';
 import 'services/socket_service.dart';
 import 'services/bus_simulation_service.dart';
 import 'services/gamification_service.dart';
+import 'services/install_tracking_service.dart';
 import 'core/providers/gamification_provider.dart';
 import 'services/tts_service.dart';
 import 'core/providers/tts_provider.dart';
@@ -89,6 +90,12 @@ void main() async {
     appRunner: () async {
       // 1. Inicialización crítica (rápida)
       final prefs = await SharedPreferences.getInstance();
+      
+      // Inicializar rastreo de instalaciones (asíncrono, no bloqueante)
+      InstallTrackingService.checkAndSendReferrer(prefs).catchError((e) {
+        debugPrint('Error en tracking de instalación: $e');
+      });
+
       final authService = AuthService();
       final isLoggedIn = await authService.isLoggedIn();
       

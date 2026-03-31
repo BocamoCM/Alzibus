@@ -101,6 +101,22 @@ app.get('/qr', (req, res) => {
     res.redirect(playStoreUrl);
 });
 
+// ── Smart App Install Tracker ──
+// Recibe un ping de la app la primera vez que se abre si procede de la Google Play originada por un QR.
+app.post('/api/metrics/install', express.json(), (req, res) => {
+    const { referrer } = req.body;
+
+    // Filtramos para notificar en Discord solo las descargas atribuidas a nuestra campaña de paradas.
+    if (referrer && referrer.includes('qr_paradas')) {
+        sendDiscordNotification(`🎉 **¡NUEVA INSTALACIÓN COMPLETADA!** 🎉\n¡Un usuario acaba de instalar y abrir Alzitrans por primera vez gracias al QR físico de las paradas!`);
+    } else if (referrer && referrer.includes('utm_source')) {
+        sendDiscordNotification(`📈 **Nueva instalación orgánica/digital**\nInstalada mediante la campaña: \`${referrer}\``);
+    }
+
+    // Devolvemos status 200 sin bloquear a la app móvil.
+    res.status(200).json({ received: true });
+});
+
 // ── Webhook de Stripe ──
 // IMPORTANTE: Este endpoint DEBE estar definido ANTES de express.json().
 // Razón: Stripe envía el body como datos crudos (raw bytes), y express.json()
