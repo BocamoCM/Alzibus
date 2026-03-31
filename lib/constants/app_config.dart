@@ -4,7 +4,7 @@ class AppConfig {
   AppConfig._();
 
   /// URL base de la API de producción.
-  static const String _productionBaseUrl = 'http://alzitrans.duckdns.org:4000/api';
+  static const String _productionBaseUrl = 'https://alzitrans.duckdns.org/api';
 
   /// URL base de la API.
   static const String baseUrl = String.fromEnvironment(
