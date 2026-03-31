@@ -32,7 +32,7 @@ Future<void> onStart(ServiceInstance service) async {
   // Crear canal de alertas con alta prioridad
   final androidPlugin = notif.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
   const alertsChannel = AndroidNotificationChannel(
-    'alzibus_alerts',
+    'alzibus-alerts',
     'Alertas de Bus',
     description: 'Te avisa cuando tu bus está llegando',
     importance: Importance.max,
@@ -165,7 +165,7 @@ Future<void> _showProximityNotificationStatic(
   }
   
   final androidDetails = AndroidNotificationDetails(
-    'alzibus_alerts',
+    'alzibus-alerts',
     'Alertas de paradas',
     channelDescription: 'Notificaciones cuando estás cerca de una parada',
     importance: Importance.high,
@@ -378,7 +378,7 @@ Future<void> _showBusArrivingNotificationStatic(
   // Crear canal si no existe
   final androidPlugin = notif.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
   const alertsChannel = AndroidNotificationChannel(
-    'alzibus_alerts',
+    'alzibus-alerts',
     'Alertas de Bus',
     description: 'Te avisa cuando tu bus está llegando',
     importance: Importance.max,
@@ -388,7 +388,7 @@ Future<void> _showBusArrivingNotificationStatic(
   await androidPlugin?.createNotificationChannel(alertsChannel);
   
   final androidDetails = AndroidNotificationDetails(
-    'alzibus_alerts',
+    'alzibus-alerts',
     'Alertas de Bus',
     channelDescription: 'Te avisa cuando tu bus está llegando',
     importance: Importance.max,
@@ -564,7 +564,7 @@ class ForegroundService {
     
     // También crear canal para alertas
     const alertChannel = AndroidNotificationChannel(
-      'alzibus_alerts',
+      'alzibus-alerts',
       'Alertas de paradas',
       description: 'Notificaciones cuando estás cerca de una parada',
       importance: Importance.high,
@@ -640,7 +640,7 @@ class ForegroundService {
     await notif.initialize(initSettings);
     
     const androidDetails = AndroidNotificationDetails(
-      'alzibus_alerts',
+      'alzibus-alerts',
       'Alertas de Bus',
       channelDescription: 'Te avisa cuando tu bus está llegando',
       importance: Importance.max,

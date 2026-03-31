@@ -101,7 +101,7 @@ class BackgroundService {
       }
       
     } catch (e) {
-      print('Error en servicio de fondo: $e');
+      debugPrint('[BackgroundService] Error en servicio de fondo: $e');
     }
   }
 

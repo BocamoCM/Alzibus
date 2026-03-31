@@ -201,9 +201,11 @@ class TripHistoryService {
 
   /// Elimina un viaje por su timestamp (busca el ID en _records).
   Future<void> deleteTrip(String token, DateTime timestamp) async {
-    // Buscar el registro por timestamp para obtener el 'id' del servidor
+    // Fix #8: Buscar por serverId si existe, o comparar como string para evitar
+    // problemas de microsegundos al comparar DateTime directamente (==).
+    final timestampStr = timestamp.toIso8601String().substring(0, 19); // yyyy-MM-ddTHH:mm:ss
     final record = _records.firstWhere(
-      (r) => r.timestamp == timestamp,
+      (r) => r.timestamp.toIso8601String().startsWith(timestampStr),
       orElse: () => TripRecord(
           line: '', destination: '', stopName: '', stopId: 0, timestamp: timestamp),
     );
@@ -215,7 +217,9 @@ class TripHistoryService {
         debugPrint('[TripHistory] Error eliminando viaje: $e');
       }
     }
-    _records.removeWhere((r) => r.timestamp == timestamp);
+    _records.removeWhere(
+      (r) => r.timestamp.toIso8601String().startsWith(timestampStr),
+    );
   }
 
   // ─────────────────────────────────────────────────────────────
