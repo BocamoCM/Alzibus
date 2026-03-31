@@ -93,11 +93,16 @@ app.get('/qr', (req, res) => {
     else if (/windows/i.test(userAgent)) device = 'Windows 💻';
     else if (/mac/i.test(userAgent)) device = 'Mac 💻';
 
-    // 1. Enviar notificación a Discord de forma asíncrona (no bloquea al usuario)
-    sendDiscordNotification(`📲 **¡Nuevo escaneo de QR!**\nAlguien ha escaneado el código de las paradas desde un dispositivo: **${device}**.`);
+    // Extraer el parámetro de parada, ej: /qr?stop=Hospital
+    const stopLocation = req.query.stop ? encodeURIComponent(req.query.stop) : 'Desconocida';
+    const stopForDiscord = req.query.stop ? req.query.stop : 'No especificada';
 
-    // 2. Redirigir de inmediato a la App (incluyendo UTMs para métricas nativas de Play Console)
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.alzitrans.app&referrer=utm_source%3Dqr_paradas%26utm_medium%3Dfisico%26utm_campaign%3Dlanzamiento';
+    // 1. Enviar notificación a Discord de forma asíncrona
+    sendDiscordNotification(`📲 **¡Nuevo escaneo de QR!**\nAlguien ha escaneado el código desde la parada: **${stopForDiscord}** 📍\nDispositivo: **${device}**`);
+
+    // 2. Redirigir de inmediato a la App (con UTMs precisas para esa parada)
+    // utm_content nos dirá en Google Play Console qué parada generó esta descarga
+    const playStoreUrl = `https://play.google.com/store/apps/details?id=com.alzitrans.app&referrer=utm_source%3Dqr_paradas%26utm_medium%3Dfisico%26utm_campaign%3Dlanzamiento%26utm_content%3D${stopLocation}`;
     res.redirect(playStoreUrl);
 });
 
