@@ -31,6 +31,13 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // SDK de Strip
 const app = express();                // Instancia de la aplicación Express
 const server = http.createServer(app); // Servidor HTTP que envuelve Express (necesario para poder adjuntar Socket.IO)
 
+// ==========================================
+// CONFIGURACIÓN DE PROXY (Caddy / Nginx)
+// ==========================================
+// Al estar detrás de Caddy, todas las peticiones llegan localmente (127.0.0.1).
+// Esto le dice a Express que lea la IP real del usuario desde los headers (X-Forwarded-For).
+app.set('trust proxy', 1);
+
 // Configuración de CORS dinámica:
 // Lee los orígenes permitidos desde la variable de entorno ALLOWED_ORIGINS (separados por comas).
 // Si no está definida, permite todos los orígenes ('*') — solo recomendable en desarrollo.
