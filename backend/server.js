@@ -185,7 +185,7 @@ app.get('/api/health', (req, res) => {
 // 2. Eliminación de cuenta: obligatoria desde 2023 para cumplir con las
 //    políticas de datos de usuario (los usuarios deben poder borrar su cuenta).
 // Estas rutas sirven archivos HTML/Markdown estáticos sin requerir autenticación.
-const path = require('path'); // Módulo nativo de Node.js para manejar rutas de archivos
+
 
 // Página web pública donde el usuario puede solicitar la eliminación de su cuenta
 app.get('/delete-account', (req, res) => {
