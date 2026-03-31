@@ -31,7 +31,8 @@ else
 fi
 
 # Memoria RAM
-free -m | awk 'NR==2{printf "Memoria RAM (Usada): \t\033[0;32m%.2f%%\033[0m (%s MB Libres)\n", $3*100/$2, $4}'
+RAM=$(free -m | awk 'NR==2{printf "%.2f%% Usada (%s MB Libres)", $3*100/$2, $4}')
+echo -e "Memoria RAM: \t\t${GREEN}${RAM}${NC}"
 echo ""
 
 # 2. Estado de la Base de Datos (PostgreSQL en Docker)
@@ -39,9 +40,11 @@ echo -e "${YELLOW}[2/3] Base de Datos (Docker - alzibus_postgres):${NC}"
 if command -v docker &> /dev/null; then
     DB_STATUS=$(docker inspect -f '{{.State.Status}}' alzibus_postgres 2>/dev/null || echo "not_found")
     if [ "$DB_STATUS" == "running" ]; then
-        echo -e "Contenedor postgres: \t${GREEN}✅ ONLINE${NC}"
+        DB_STATUS_TEXT="✅ ONLINE"
+        echo -e "Contenedor postgres: \t${GREEN}${DB_STATUS_TEXT}${NC}"
     else
-        echo -e "Contenedor postgres: \t${RED}❌ CAÍDO ($DB_STATUS)${NC}"
+        DB_STATUS_TEXT="❌ CAÍDO ($DB_STATUS)"
+        echo -e "Contenedor postgres: \t${RED}${DB_STATUS_TEXT}${NC}"
         echo -e "👉 Para revisarlo: \t docker logs alzibus_postgres --tail 20"
     fi
 else
@@ -57,12 +60,15 @@ if command -v pm2 &> /dev/null; then
     PM2_STATUS=$(pm2 jlist | grep -oP '"name":"alzibus-backend"[^}]*"status":"\K[^"]+')
     
     if [ "$PM2_STATUS" == "online" ]; then
-        echo -e "API REST: \t\t${GREEN}✅ ONLINE${NC}"
+        PM2_STATUS_TEXT="✅ ONLINE"
+        echo -e "API REST: \t\t${GREEN}${PM2_STATUS_TEXT}${NC}"
     elif [ -z "$PM2_STATUS" ]; then
-        echo -e "API REST: \t\t${RED}⚠️ NO ENCONTRADO en esta sesión de pm2${NC}"
+        PM2_STATUS_TEXT="⚠️ NO ENCONTRADO"
+        echo -e "API REST: \t\t${RED}${PM2_STATUS_TEXT}${NC}"
         echo -e "Asegúrate de ejecutar el script con el mismo usuario (borja)."
     else
-        echo -e "API REST: \t\t${RED}❌ $PM2_STATUS${NC}"
+        PM2_STATUS_TEXT="❌ $PM2_STATUS"
+        echo -e "API REST: \t\t${RED}${PM2_STATUS_TEXT}${NC}"
         echo -e "👉 Para revisarlo:\t pm2 logs alzibus-backend"
     fi
 else
@@ -71,3 +77,46 @@ fi
 
 echo ""
 echo -e "${BLUE}==============================================${NC}"
+
+# ============================================================
+# Enviar reporte a Discord
+# ============================================================
+echo -e "${YELLOW}Enviando reporte a Discord...${NC}"
+
+# Leer URL del webhook desde el archivo .env del backend
+if [ -f "$(dirname "$0")/.env" ]; then
+    WEBHOOK_URL=$(grep 'DISCORD_WEBHOOK_URL' "$(dirname "$0")/.env" | cut -d '=' -f2 | tr -d '"')
+fi
+
+if [ -n "$WEBHOOK_URL" ]; then
+    # Preparar el mensaje en formato Markdown para Discord
+    DISCORD_DESC="**Sistema:** $TEMP | $RAM\n**Base de Datos (Docker):** $DB_STATUS_TEXT\n**API (PM2):** $PM2_STATUS_TEXT"
+    
+    # Determinar el color del embed (Verde = Todo OK, Rojo = Algo falla)
+    if [[ "$DB_STATUS_TEXT" == *"ONLINE"* ]] && [[ "$PM2_STATUS_TEXT" == *"ONLINE"* ]]; then
+        COLOR=3066993 # Verde
+    else
+        COLOR=15158332 # Rojo
+    fi
+
+    # Payload JSON
+    PAYLOAD=$(cat <<EOF
+{
+  "content": null,
+  "embeds": [
+    {
+      "title": "📊 Alzitrans - Reporte del Servidor",
+      "description": "Reporte de estado generado en la Raspberry Pi 5.\\n\\n$DISCORD_DESC",
+      "color": $COLOR,
+      "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+    }
+  ]
+}
+EOF
+)
+
+    curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL" -s > /dev/null
+    echo -e "${GREEN}✅ Reporte enviado a Discord con éxito.${NC}"
+else
+    echo -e "${RED}⚠️ No se encontró DISCORD_WEBHOOK_URL en el archivo .env${NC}"
+fi
