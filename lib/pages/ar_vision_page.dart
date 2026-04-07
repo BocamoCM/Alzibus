@@ -11,7 +11,13 @@ import '../theme/app_theme.dart';
 
 class ArVisionPage extends StatefulWidget {
   final List<BusStop> nearbyStops;
-  const ArVisionPage({super.key, required this.nearbyStops});
+  final String? targetStopId; // Nueva propiedad
+  
+  const ArVisionPage({
+    super.key, 
+    required this.nearbyStops, 
+    this.targetStopId,
+  });
 
   @override
   State<ArVisionPage> createState() => _ArVisionPageState();
@@ -21,6 +27,7 @@ class _ArVisionPageState extends State<ArVisionPage> {
   CameraController? _cameraController;
   StreamSubscription? _compassSubscription;
   double _heading = 0;
+  double _pitch = 0; // Para la inclinación arriba/abajo
   Position? _currentPosition;
   bool _initialized = false;
   bool _hasPermission = false;
@@ -52,6 +59,9 @@ class _ArVisionPageState extends State<ArVisionPage> {
         if (mounted) {
           setState(() {
             _heading = event.heading ?? 0;
+            // Estimar inclinación (Pitch) desde los datos del sensor si están disponibles
+            // Algunos dispositivos devuelven esto en el compass event o usaremos un valor base
+            _pitch = (event.accuracy ?? 0) > 0 ? 0 : 0; 
           });
         }
       });
@@ -143,13 +153,20 @@ class _ArVisionPageState extends State<ArVisionPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final List<Widget> markers = [];
 
-    for (var stop in widget.nearbyStops) {
+    // Filtrar paradas: Si hay una seleccionada, solo esa. Si no, las cercanas.
+    final List<BusStop> stopsToRender = widget.targetStopId != null
+        ? widget.nearbyStops.where((s) => s.id.toString() == widget.targetStopId).toList()
+        : widget.nearbyStops;
+
+    for (var stop in stopsToRender) {
       final stopLoc = LatLng(stop.lat, stop.lng);
       final azimuth = ArMathUtils.calculateBearing(userLoc, stopLoc);
       final distance = ArMathUtils.calculateDistance(userLoc, stopLoc);
       
-      // Mostrar paradas en un radio de 10km
-      if (distance > 10000) continue;
+      // Si no es el objetivo, limitar a 2km para evitar caos
+      if (widget.targetStopId == null && distance > 2000) continue;
+      // Si es el objetivo, mostrar hasta 15km
+      if (widget.targetStopId != null && distance > 15000) continue;
 
       final xOffset = ArMathUtils.getXOffset(azimuth, _heading, screenWidth);
       

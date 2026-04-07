@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../core/network/api_client.dart';
 
 /// Horario programado de un tren

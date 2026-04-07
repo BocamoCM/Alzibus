@@ -24,6 +24,9 @@ import '../core/providers/ad_provider.dart';
 import 'simple_map_widget.dart';
 import '../services/socket_service.dart';
 import '../services/gamification_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../pages/ar_vision_page.dart';
+import '../core/providers/stops_provider.dart';
 
 class StopInfoSheet extends ConsumerStatefulWidget {
   final BusStop stop;
@@ -348,6 +351,37 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
     }
   }
 
+  Future<void> _openStreetView() async {
+    final url = Uri.parse('google.streetview:cbll=${widget.stop.lat},${widget.stop.lng}');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      // Fallback a URL web si no hay app de Google Maps
+      final webUrl = Uri.parse('https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${widget.stop.lat},${widget.stop.lng}');
+      if (await canLaunchUrl(webUrl)) {
+        await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      }
+    }
+  }
+
+  Future<void> _openArVision() async {
+    // Necesitamos la lista de todas las paradas para que el AR las detecte
+    // Usamos el provider de paradas que ya tienes
+    final allStops = ref.read(stopsProvider).whenOrNull(data: (stops) => stops) ?? [];
+    
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ArVisionPage(
+            nearbyStops: allStops,
+            targetStopId: widget.stop.id.toString(),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -441,6 +475,42 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                         width: double.infinity,
                         height: 200,
                       ),
+                ),
+              ),
+              // Botón de Street View (Entorno)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 4,
+                  child: InkWell(
+                    onTap: _openStreetView,
+                    borderRadius: BorderRadius.circular(20),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.visibility,
+                            size: 20,
+                            color: Colors.blue,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Explorar zona',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
               Positioned(
@@ -873,6 +943,21 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
             label: const Text('Ver en Google Maps'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 44),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Botón de Alzitrans Vision AR
+          ElevatedButton.icon(
+            onPressed: _openArVision,
+            icon: const Icon(Icons.view_in_ar),
+            label: const Text('Alzitrans Vision (AR)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AlzitransColors.burgundy,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           

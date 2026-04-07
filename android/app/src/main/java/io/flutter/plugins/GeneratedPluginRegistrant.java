@@ -21,6 +21,11 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin android_play_install_referrer, de.lschmierer.android_play_install_referrer.AndroidPlayInstallReferrerPlugin", e);
     }
     try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.camerax.CameraAndroidCameraxPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin camera_android_camerax, io.flutter.plugins.camerax.CameraAndroidCameraxPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.device_info.DeviceInfoPlusPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin device_info_plus, dev.fluttercommunity.plus.device_info.DeviceInfoPlusPlugin", e);
@@ -29,6 +34,11 @@ public final class GeneratedPluginRegistrant {
       flutterEngine.getPlugins().add(new id.flutter.flutter_background_service.FlutterBackgroundServicePlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin flutter_background_service_android, id.flutter.flutter_background_service.FlutterBackgroundServicePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.hemanthraj.fluttercompass.FlutterCompassPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin flutter_compass, com.hemanthraj.fluttercompass.FlutterCompassPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new com.dexterous.flutterlocalnotifications.FlutterLocalNotificationsPlugin());
