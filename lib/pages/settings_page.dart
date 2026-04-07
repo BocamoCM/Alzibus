@@ -3,7 +3,7 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../providers/high_visibility_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import '../core/providers/locale_provider.dart';
@@ -53,8 +53,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  BannerAd? _bannerAd;
-  bool _isBannerAdLoaded = false;
 
   late bool _notificationsEnabled;
   late double _notificationDistance;
@@ -76,28 +74,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _vibrationEnabled = widget.vibrationEnabled;
     _ttsEnabled = widget.ttsEnabled;
     _highVisibility = ref.read(highVisibilityProvider);
-    
-    _initBannerAd();
   }
 
-  void _initBannerAd() async {
-    if (!AppConfig.showAds) return;
-
-    final adService = ref.read(adServiceProvider);
-    await adService.initializationFuture;
-    
-    if (!mounted) return;
-
-    _bannerAd = adService.createBannerAd(
-      onAdLoaded: (ad) {
-        if (mounted) setState(() => _isBannerAdLoaded = true);
-      },
-      onAdFailedToLoad: (ad, error) {
-        debugPrint('AdMob Banner Error: ${error.message} (Code: ${error.code})');
-        if (mounted) setState(() => _isBannerAdLoaded = false);
-      },
-    )..load();
-  }
 
   Widget _languageTile({
     required String name,
@@ -251,12 +229,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         const SizedBox(height: 48),
       ],
     ),
-    bottomNavigationBar: _isBannerAdLoaded && _bannerAd != null && AppConfig.showAds
-      ? SizedBox(
-          height: _bannerAd!.size.height.toDouble(),
-          width: _bannerAd!.size.width.toDouble(),
-          child: AdWidget(ad: _bannerAd!),
-        )
+    bottomNavigationBar: AppConfig.showAds 
+      ? const AdBannerWidget(adUnitId: AppConfig.settingsBannerAdId)
       : null,
     );
   }

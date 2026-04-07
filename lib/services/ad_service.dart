@@ -107,9 +107,12 @@ class AdService {
     required void Function(Ad) onAdLoaded,
     required void Function(Ad, LoadAdError) onAdFailedToLoad,
     bool isCollapsible = false,
+    String? adUnitId,
   }) {
     return BannerAd(
-      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/6300978111' : AppConfig.bannerAdId,
+      adUnitId: kDebugMode 
+          ? 'ca-app-pub-3940256099942544/6300978111' 
+          : (adUnitId ?? AppConfig.bannerAdId),
       size: AdSize.banner,
       request: AdRequest(
         extras: isCollapsible ? {'collapsible': 'bottom'} : null,

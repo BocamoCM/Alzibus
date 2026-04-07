@@ -37,6 +37,9 @@ class AppConfig {
   /// ID del Banner Principal (Cabecera)
   static const String bannerAdId = 'ca-app-pub-5215993257564469/6729019552';
 
+  /// ID del Banner de Ajustes (Inferior)
+  static const String settingsBannerAdId = 'ca-app-pub-5215993257564469/4213160138';
+
   /// ID del Anuncio Nativo (Ficha de Parada)
   static const String nativeAdId = 'ca-app-pub-5215993257564469/1679805649';
 
