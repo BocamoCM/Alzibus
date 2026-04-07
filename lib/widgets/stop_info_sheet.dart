@@ -579,17 +579,6 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          // --- NATIVE AD INTEGRATION ---
-          if (_isNativeAdLoaded && _nativeAd != null)
-            Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              height: 300, // Altura para el template Medium
-              child: AdWidget(
-                key: UniqueKey(), // Forzar reconstrucción limpia
-                ad: _nativeAd!,
-              ),
-            ),
-          // --- END NATIVE AD ---
           // Tiempos de llegada en tiempo real
           Row(
             children: [
