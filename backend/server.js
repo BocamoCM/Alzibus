@@ -100,10 +100,20 @@ app.get('/qr', (req, res) => {
     else if (/windows/i.test(userAgent)) device = 'Windows 💻';
     else if (/mac/i.test(userAgent)) device = 'Mac 💻';
 
-    // 1. Enviar notificación a Discord de forma asíncrona
-    sendDiscordNotification(`📲 **¡Nuevo escaneo de QR!**\nAlguien ha escaneado el código de las paradas.\nDispositivo: **${device}**`);
+    // 1. Enviar notificación a Discord con Embed enriquecido
+    sendDiscordNotification({
+        embeds: [{
+            title: "📲 Nuevo Escaneo de QR",
+            description: "Un usuario ha escaneado el código físico en las paradas.",
+            fields: [
+                { name: "Dispositivo", value: device, inline: true },
+                { name: "Navegador", value: userAgent.substring(0, 100), inline: false }
+            ],
+            footer: { text: "Campaña Física Alzira" }
+        }]
+    });
 
-    // 2. Redirigir de inmediato a la App (con UTMs genéricas para la campaña física)
+    // 2. Redirigir de inmediato a la App
     const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.alzitrans.app&referrer=utm_source%3Dqr_paradas%26utm_medium%3Dfisico%26utm_campaign%3Dlanzamiento';
     res.redirect(playStoreUrl);
 });
@@ -115,9 +125,22 @@ app.post('/api/metrics/install', express.json(), (req, res) => {
 
     // Filtramos para notificar en Discord solo las descargas atribuidas a nuestra campaña de paradas.
     if (referrer && referrer.includes('qr_paradas')) {
-        sendDiscordNotification(`🎉 **¡NUEVA INSTALACIÓN COMPLETADA!** 🎉\n¡Un usuario acaba de instalar y abrir Alzitrans por primera vez gracias al QR físico de las paradas!`);
+        sendDiscordNotification({
+            embeds: [{
+                title: "🎉 ¡NUEVA INSTALACIÓN DETECTADA! 🎉",
+                description: "¡Éxito! Un usuario ha instalado y abierto la app desde el **QR físico**.",
+                color: 0xD4AF37, // Gold
+                fields: [{ name: "Origen", value: "Campaña QR Paradas" }]
+            }]
+        });
     } else if (referrer && referrer.includes('utm_source')) {
-        sendDiscordNotification(`📈 **Nueva instalación orgánica/digital**\nInstalada mediante la campaña: \`${referrer}\``);
+        sendDiscordNotification({
+            embeds: [{
+                title: "📈 Nueva Instalación (Marketing)",
+                description: `Se ha completado una descarga desde una campaña externa.`,
+                fields: [{ name: "Campaña", value: `\`${referrer}\`` }]
+            }]
+        });
     }
 
     // Devolvemos status 200 sin bloquear a la app móvil.
@@ -183,32 +206,78 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
 app.use(express.json());
 
 // ==========================================
-// MIDDLEWARE: VALIDACIÓN DE API KEY
+// SEGURIDAD: CONTROL DE ACCESOS Y BLOQUEOS
 // ==========================================
-// Capa de seguridad que protege TODA la API REST.
-// Cada petición a /api/* debe incluir el header 'X-API-Key' con la clave correcta.
-// La clave se define en el archivo .env (variable API_KEY).
-// Esto evita que cualquier persona pueda usar la API sin autorización,
-// incluso si conoce la URL del servidor.
+const failedApiKeyLog = {}; // Registro de fallos por IP: { '1.2.3.4': 5 }
+const bannedIps = new Set(); // IPs bloqueadas temporalmente
+
+const MAX_API_KEY_FAILURES = 10;   // Umbral de fallos antes del baneo
+const BAN_DURATION = 24 * 60 * 60 * 1000; // Duración del baneo (24 horas)
+
+// Middleware: Validación de API Key con Protección Anti-BruteForce
 const validateApiKey = (req, res, next) => {
-    // Las peticiones OPTIONS son "preflight" de CORS: el navegador las envía
-    // automáticamente antes de una petición real para verificar si el servidor
-    // acepta el origen. No llevan headers personalizados, así que las dejamos pasar.
+    const ip = req.ip;
+
+    // 1. Verificar si la IP está en la lista negra
+    if (bannedIps.has(ip)) {
+        return res.status(403).json({
+            error: 'Acceso denegado de forma persistente. IP bloqueada por seguridad.'
+        });
+    }
+
     if (req.method === 'OPTIONS') {
         return next();
     }
 
-    const apiKey = req.headers['x-api-key']; // Leer la API Key del header de la petición
+    const apiKey = req.headers['x-api-key'];
+
     if (!apiKey || apiKey !== process.env.API_KEY) {
-        // Si no hay API Key o no coincide, rechazar con 401 (Unauthorized)
-        console.warn(`[API Key] Petición rechazada desde ${req.ip}`);
-        sendDiscordNotification(`⚠️ **Petición rechazada**: API Key inválida desde ${req.ip} para \`${req.method} ${req.url}\``);
+        // Registrar el fallo
+        failedApiKeyLog[ip] = (failedApiKeyLog[ip] || 0) + 1;
+
+        console.warn(`[API Key] Fallo (${failedApiKeyLog[ip]}/${MAX_API_KEY_FAILURES}) desde ${ip}: ${req.method} ${req.url}`);
+
+        // Si supera el umbral, bloquear IP
+        if (failedApiKeyLog[ip] >= MAX_API_KEY_FAILURES) {
+            bannedIps.add(ip);
+            console.error(`[SECURITY] 🚫 IP BLOQUEADA: ${ip} tras ${MAX_API_KEY_FAILURES} intentos fallidos.`);
+
+            // Notificar a Discord con Embed Rojo
+            sendDiscordNotification({
+                embeds: [{
+                    title: "🚫 IP Bloqueada Automáticamente",
+                    description: `Se ha detectado un posible ataque de escaneo desde la IP **${ip}**.`,
+                    color: 0xFF0000,
+                    fields: [
+                        { name: "IP", value: `\`${ip}\``, inline: true },
+                        { name: "Intentos", value: `\`${failedApiKeyLog[ip]}\``, inline: true },
+                        { name: "Ruta final", value: `\`${req.method} ${req.url}\``, inline: false },
+                        { name: "Acción", value: "Baneo temporal (24h)", inline: false }
+                    ],
+                    footer: { text: "Alzitrans Shield System" }
+                }]
+            });
+
+            // Programar desbloqueo automático
+            setTimeout(() => {
+                bannedIps.delete(ip);
+                delete failedApiKeyLog[ip];
+                console.log(`[SECURITY] IP Desbloqueada: ${ip}`);
+            }, BAN_DURATION);
+
+        } else {
+            // Notificar fallo simple (sin ban todavía)
+            sendDiscordNotification(`⚠️ **Petición rechazada** (${failedApiKeyLog[ip]}/${MAX_API_KEY_FAILURES}): API Key inválida desde ${ip} para \`${req.method} ${req.url}\``);
+        }
+
         return res.status(401).json({ error: 'API Key inválida o no proporcionada' });
     }
-    next(); // API Key válida → continuar al siguiente middleware/endpoint
+
+    // Si la API Key es válida, resetear el contador de fallos para esta IP (por si acaso)
+    delete failedApiKeyLog[ip];
+    next();
 };
 
-// Aplicar el middleware de API Key a TODAS las rutas que empiecen por /api
 app.use('/api', validateApiKey);
 
 // ── Endpoint de salud (Health Check) ──

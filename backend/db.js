@@ -27,7 +27,18 @@ const pool = new Pool({
 // el equipo se entere inmediatamente y pueda investigar.
 pool.on('error', (err) => {
     console.error('[DATABASE] Error inesperado en el pool:', err);
-    sendDiscordNotification(`🫀 **Fallo en la Base de Datos**: \`${err.message}\``);
+    sendDiscordNotification({
+        embeds: [{
+            title: "🔴 Fallo Crítico de Base de Datos",
+            description: "Se ha detectado un error inesperado en el pool de conexiones de PostgreSQL.",
+            color: 0xFF0000, // Red
+            fields: [
+                { name: "Error", value: `\`${err.message}\`` },
+                { name: "Código", value: `\`${err.code || 'N/A'}\`` }
+            ],
+            footer: { text: "Alzitrans Backend Monitor" }
+        }]
+    });
 });
 
 // Exportar el pool para que el resto del backend lo use con:
