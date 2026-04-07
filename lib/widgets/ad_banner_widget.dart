@@ -27,9 +27,13 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
     _loadAd();
   }
 
-  void _loadAd() {
+  void _loadAd() async {
     final adService = ref.read(adServiceProvider);
     if (!adService.canShowAds) return;
+
+    // Pequeño delay de cortesía para evitar colisiones con App Open Ads en el arranque
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (!mounted) return;
 
     _bannerAd = adService.createBannerAd(
       isCollapsible: widget.isCollapsible,
@@ -43,7 +47,14 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
       },
       onAdFailedToLoad: (ad, err) {
         debugPrint('Error al cargar banner AdMob: ${err.message}');
-        if (mounted) setState(() {}); // Para reconstruir en modo error
+        ad.dispose();
+        
+        // Reintento único tras 5 segundos si falla la primera vez
+        if (mounted && !_isLoaded) {
+          Future.delayed(const Duration(seconds: 5), () {
+            if (mounted && !_isLoaded) _loadAd();
+          });
+        }
       },
     )..load();
   }
