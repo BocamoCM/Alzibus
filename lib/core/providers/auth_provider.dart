@@ -84,6 +84,17 @@ class AuthNotifier extends Notifier<AuthState> {
     await ref.read(authServiceProvider).logout();
     state = state.copyWith(isLoading: false, isLoggedIn: false);
   }
+
+  Future<void> deleteAccount(String token) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await ref.read(authServiceProvider).deleteAccount(token);
+      state = state.copyWith(isLoading: false, isLoggedIn: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
+  }
 }
 
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {

@@ -363,8 +363,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     try {
       if (_token != null) {
-        final success = await _auth.deleteAccount(_token!);
-        if (success && mounted) {
+        await ref.read(authProvider.notifier).deleteAccount(_token!);
+        if (mounted) {
           Navigator.pop(context); // Quitar el loading
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -372,7 +372,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               backgroundColor: Colors.black,
             ),
           );
-          // Redirigir al login (AuthService ya limpió el token localmente)
+          // Redirigir al login (authProvider ya notificó el cambio de estado)
           const LoginRoute().go(context);
         }
       }
@@ -525,13 +525,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              await _auth.logout();
+              await ref.read(authProvider.notifier).logout();
               if (mounted) {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                if (mounted) {
-                  const LoginRoute().go(context);
-                }
+                const LoginRoute().go(context);
               }
             },
             child: Text(l.logout, style: const TextStyle(color: Colors.white)),
