@@ -584,7 +584,10 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
             Container(
               margin: const EdgeInsets.only(bottom: 20),
               height: 300, // Altura para el template Medium
-              child: AdWidget(ad: _nativeAd!),
+              child: AdWidget(
+                key: UniqueKey(), // Forzar reconstrucción limpia
+                ad: _nativeAd!,
+              ),
             ),
           // --- END NATIVE AD ---
           // Tiempos de llegada en tiempo real

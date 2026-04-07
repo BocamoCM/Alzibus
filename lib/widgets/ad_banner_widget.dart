@@ -61,7 +61,10 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
         alignment: Alignment.center,
         width: _bannerAd!.size.width.toDouble(),
         height: _bannerAd!.size.height.toDouble(),
-        child: AdWidget(ad: _bannerAd!),
+        child: AdWidget(
+          key: UniqueKey(), // Forzar reconstrucción limpia
+          ad: _bannerAd!,
+        ),
       );
     }
     
