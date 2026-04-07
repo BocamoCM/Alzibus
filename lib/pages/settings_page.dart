@@ -243,12 +243,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         ),
         
+        const SizedBox(height: 12),
+        if (AppConfig.showAds)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 200, maxHeight: 250),
+              child: AdBannerWidget(
+                key: UniqueKey(),
+                adUnitId: AppConfig.nativeAdId,
+              ),
+            ),
+          ),
         const SizedBox(height: 48),
       ],
     ),
-    bottomNavigationBar: AppConfig.showAds 
-      ? const AdBannerWidget(adUnitId: AppConfig.settingsBannerAdId)
-      : null,
     );
   }
 
