@@ -40,11 +40,11 @@ class AdService {
 
   /// --- APP OPEN ADS ---
 
-  AppOpenAd? _appOpenAd;
-  DateTime? _appOpenLoadTime;
-  DateTime? _lastAppOpenShowTime;
-  bool _isAppOpenAdLoading = false;
-  bool _isShowingAppOpenAd = false;
+  // Nativos Precargados
+  NativeAd? _profileNativeAd;
+  bool _isProfileNativeAdLoaded = false;
+  NativeAd? _settingsNativeAd;
+  bool _isSettingsNativeAdLoaded = false;
 
   /// Carga un anuncio de apertura (App Open Ad).
   void loadAppOpenAd() {
@@ -124,6 +124,26 @@ class AdService {
 
     _appOpenAd!.show();
   }
+
+  /// Precarga los anuncios nativos para las pantallas principales.
+  void preloadNativeAds() {
+    if (!canShowAds) return;
+    
+    // Precargar Perfil
+    _profileNativeAd = createNativeAd(
+      onAdLoaded: (ad) => _isProfileNativeAdLoaded = true,
+      onAdFailedToLoad: (ad, error) => _isProfileNativeAdLoaded = false,
+    )..load();
+    
+    // Precargar Ajustes
+    _settingsNativeAd = createNativeAd(
+      onAdLoaded: (ad) => _isSettingsNativeAdLoaded = true,
+      onAdFailedToLoad: (ad, error) => _isSettingsNativeAdLoaded = false,
+    )..load();
+  }
+  
+  NativeAd? get profileNativeAd => _isProfileNativeAdLoaded ? _profileNativeAd : null;
+  NativeAd? get settingsNativeAd => _isSettingsNativeAdLoaded ? _settingsNativeAd : null;
 
   /// --- BANNER ADS ---
 

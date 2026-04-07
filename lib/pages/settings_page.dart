@@ -248,15 +248,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 60, maxHeight: 70),
-              child: AdBannerWidget(
-                adUnitId: AppConfig.settingsBannerAdId,
-              ),
+              constraints: const BoxConstraints(minHeight: 200, maxHeight: 250),
+              child: _buildNativeAdOrBanner(),
             ),
           ),
         const SizedBox(height: 48),
       ],
     ),
+    );
+  }
+
+  Widget _buildNativeAdOrBanner() {
+    final adService = ref.read(adServiceProvider);
+    final preloadedAd = adService.settingsNativeAd;
+
+    if (preloadedAd != null) {
+      return AdWidget(ad: preloadedAd);
+    }
+
+    // Si no hay precargado, mostrar banner estándar como respaldo (pero con menor altura)
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 60, maxHeight: 70),
+      child: AdBannerWidget(
+        adUnitId: AppConfig.settingsBannerAdId,
+      ),
     );
   }
 

@@ -119,7 +119,9 @@ void main() async {
 
       // AdMob
       if (!kIsWeb) {
-        await container.read(adServiceProvider).initialize();
+        final adService = container.read(adServiceProvider);
+        await adService.initialize();
+        adService.preloadNativeAds();
       }
 
       runApp(

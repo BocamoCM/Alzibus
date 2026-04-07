@@ -83,12 +83,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           padding: const EdgeInsets.only(bottom: 24),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
-                              minHeight: 60,
-                              maxHeight: 70,
+                              minHeight: 200,
+                              maxHeight: 250,
                             ),
-                            child: AdBannerWidget(
-                              adUnitId: AppConfig.settingsBannerAdId,
-                            ),
+                            child: _buildNativeAdOrBanner(),
                           ),
                         ),
                       _buildInfoCard(theme, l),
@@ -204,6 +202,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNativeAdOrBanner() {
+    final adService = ref.read(adServiceProvider);
+    final preloadedAd = adService.profileNativeAd;
+
+    if (preloadedAd != null) {
+      return AdWidget(ad: preloadedAd);
+    }
+
+    // Si no hay precargado, mostrar banner estándar como respaldo
+    return AdBannerWidget(
+      adUnitId: AppConfig.settingsBannerAdId,
     );
   }
 
