@@ -4,113 +4,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alzibus - Los buses de Alzira en tu mano</title>
+    <title>Alzibus — Tu bus en Alzira, en tiempo real</title>
+    <meta name="description"
+        content="Alzibus es la app definitiva para el transporte público en Alzira. Tiempos reales, alertas inteligentes, lectura NFC y mucho más.">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/logo.png">
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="logo">
-                <img src="assets/logo.png" alt="Alzibus Logo">
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <img src="assets/logo.png" alt="Alzibus">
                 <span>Alzibus</span>
-            </div>
+            </a>
             <ul class="nav-links">
-                <li><a href="#inicio">Inicio</a></li>
                 <li><a href="#funciones">Funciones</a></li>
-                <li><a href="#descarga" class="btn-primary">Descargar</a></li>
+                <li><a href="#descarga" class="btn-nav">Descargar</a></li>
             </ul>
         </div>
     </nav>
 
+    <!-- HERO -->
     <header class="hero" id="inicio">
+        <div class="hero-bg-glow"></div>
         <div class="container hero-grid">
             <div class="hero-content">
-                <h1 class="animate-up">M Muévete por Alzira <span>sin esperas</span></h1>
-                <p class="animate-up delay-1">Consulta tiempos real de llegada, gestiona tus paradas favoritas y recibe
-                    alertas de proximidad. Todo en una app diseñada para ti.</p>
-                <div class="hero-buttons animate-up delay-2">
-                    <a href="https://play.google.com/store" class="btn-download">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                            alt="Google Play">
+                <p class="hero-tag">App gratuita para Alzira</p>
+                <h1>Tu autobús,<br>siempre <span class="gradient-text">a tiempo</span></h1>
+                <p class="hero-desc">Consulta tiempos reales de llegada, recibe alertas inteligentes, lee tu tarjeta NFC
+                    y mucho más. Todo lo que necesitas para moverte por Alzira.</p>
+                <div class="hero-actions">
+                    <a href="#descarga" class="btn-main">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M17.5227 7.39601V8.92935C19.2 9.78268 20.5 11.5494 20.5 13.7727V18.0494C20.5 20.816 18.3833 22.9994 15.6667 22.9994H8.33333C5.61667 22.9994 3.5 20.816 3.5 18.0494V13.7727C3.5 11.5494 4.8 9.78268 6.47733 8.92935V7.39601C6.47733 4.34935 8.94067 1.66602 12 1.66602C15.06 1.66602 17.5227 4.34935 17.5227 7.39601ZM12 3.66602C10.07 3.66602 8.47733 5.34935 8.47733 7.39601V8.41602H15.5227V7.39601C15.5227 5.34935 13.93 3.66602 12 3.66602ZM12.75 14.3327C12.75 13.916 12.4167 13.5827 12 13.5827C11.5833 13.5827 11.25 13.916 11.25 14.3327V17.3327C11.25 17.7494 11.5833 18.0827 12 18.0827C12.4167 18.0827 12.75 17.7494 12.75 17.3327V14.3327Z"
+                                fill="white" />
+                        </svg>
+                        Descargar gratis
                     </a>
+                    <a href="#funciones" class="btn-ghost">Descubrir funciones →</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat"><strong>3</strong> Líneas</div>
+                    <div class="stat-divider"></div>
+                    <div class="stat"><strong>50+</strong> Paradas</div>
+                    <div class="stat-divider"></div>
+                    <div class="stat"><strong>100%</strong> Gratis</div>
                 </div>
             </div>
-            <div class="hero-image animate-float">
-                <img src="assets/app-mockup.png" alt="Alzibus App Preview">
+            <div class="hero-phone">
+                <div class="phone-frame">
+                    <!-- CAPTURA REAL: Reemplaza esta ruta con tu captura de la pantalla principal -->
+                    <img src="assets/screen-home.png" alt="Pantalla principal de Alzibus">
+                </div>
             </div>
         </div>
     </header>
 
+    <!-- FUNCIONES -->
     <section class="features" id="funciones">
         <div class="container">
-            <h2 class="section-title animate-up">Descubre todo lo que Alzibus <br><span>puede hacer por ti</span></h2>
+            <h2 class="section-title">Todo lo que necesitas<br>para <span class="gradient-text">moverte por
+                    Alzira</span></h2>
+            <p class="section-subtitle">Alzibus integra todas las herramientas del transporte público en una sola app,
+                con un diseño moderno y fácil de usar.</p>
 
-            <!-- Fila 1: Mapa (Texto Izquierda, Imagen Derecha) -->
-            <div class="feature-row">
-                <div class="feature-info animate-up">
-                    <div class="icon-badge">📍</div>
-                    <h3>Tiempo Real e Interactivo</h3>
-                    <p>No vuelvas a perder un autobús. Visualiza en tiempo real la ubicación de cada línea y el tiempo
-                        exacto de llegada a tu parada favorita.</p>
+            <!-- FUNCIÓN 1: Mapa en Tiempo Real -->
+            <div class="feature-row" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">01 — Mapa interactivo</span>
+                    <h3>Seguimiento en <span class="gradient-text">tiempo real</span></h3>
+                    <p>Visualiza el mapa de Alzira con todas las paradas y líneas de autobús. Toca cualquier parada para
+                        ver los tiempos exactos de llegada actualizados segundo a segundo.</p>
+                    <ul class="feature-list">
+                        <li>📍 Ubicación de cada parada en el mapa</li>
+                        <li>🚌 Buses en movimiento en tiempo real</li>
+                        <li>⏱️ Tiempos de llegada actualizados</li>
+                    </ul>
                 </div>
-                <div class="feature-visual animate-up delay-1">
-                    <div class="mockup-screen map-screen">
-                        <div class="status-bar"></div>
-                        <div class="app-header"></div>
-                        <div class="map-point" style="top: 30%; left: 40%"></div>
-                        <div class="map-point bus" style="top: 45%; left: 55%"></div>
-                        <div class="map-point" style="top: 65%; left: 35%"></div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-right">
+                        <div class="phone-frame">
+                            <img src="assets/screen-map.png" alt="Mapa de paradas">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Fila 2: Perfil (Imagen Izquierda, Texto Derecha) -->
-            <div class="feature-row reverse">
-                <div class="feature-info animate-up">
-                    <div class="icon-badge">�</div>
-                    <h3>Tu Espacio Personal</h3>
-                    <p>Gestiona tus paradas favoritas de forma rápida. Un diseño limpio que te permite acceder a la
-                        información que más te importa en segundos.</p>
+            <!-- FUNCIÓN 2: Alertas Inteligentes -->
+            <div class="feature-row reverse" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">02 — Alertas inteligentes</span>
+                    <h3>Tú mandas,<br>la app <span class="gradient-text">te avisa</span></h3>
+                    <p>Activa una alerta para cualquier línea y parada. Alzibus te enviará una notificación cuando el
+                        bus esté a 5, 2 o 1 minuto de llegar. Nunca más correrás para coger el bus.</p>
+                    <ul class="feature-list">
+                        <li>🔔 Notificación a 5, 2 y 1 minuto</li>
+                        <li>📳 Vibración inteligente</li>
+                        <li>🛑 Se desactiva sola al llegar</li>
+                    </ul>
                 </div>
-                <div class="feature-visual animate-up delay-1">
-                    <div class="mockup-screen profile-screen">
-                        <div class="status-bar"></div>
-                        <div class="profile-avatar"></div>
-                        <div class="profile-card"></div>
-                        <div class="profile-card short"></div>
-                        <div class="profile-card"></div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-left">
+                        <div class="phone-frame">
+                            <img src="assets/screen-alerts.png" alt="Alertas de bus">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Fila 3: Alertas (Texto Izquierda, Imagen Derecha) -->
-            <div class="feature-row">
-                <div class="feature-info animate-up">
-                    <div class="icon-badge">�</div>
-                    <h3>Tú mandas, la App te avisa</h3>
-                    <p>Configura alertas inteligentes para recibir una notificación cuando el bus esté llegando o cuando
-                        estés cerca de tu destino.</p>
+            <!-- FUNCIÓN 3: Lectura NFC -->
+            <div class="feature-row" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">03 — Tarjeta NFC</span>
+                    <h3>Lee tu tarjeta<br><span class="gradient-text">con el móvil</span></h3>
+                    <p>Acerca tu tarjeta de transporte al móvil y lee al instante tu saldo y los últimos viajes
+                        realizados. Compatible con tarjetas MIFARE Classic 1K del servicio de bus de Alzira.</p>
+                    <ul class="feature-list">
+                        <li>💳 Lectura instantánea del saldo</li>
+                        <li>🕐 Historial de viajes de la tarjeta</li>
+                        <li>📱 Sin necesidad de apps externas</li>
+                    </ul>
                 </div>
-                <div class="feature-visual animate-up delay-1">
-                    <div class="mockup-screen alerts-screen">
-                        <div class="status-bar"></div>
-                        <div class="alert-item"></div>
-                        <div class="alert-item active"></div>
-                        <div class="alert-item"></div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-right">
+                        <div class="phone-frame">
+                            <img src="assets/screen-nfc.png" alt="Lectura NFC">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FUNCIÓN 4: Rutas y Líneas -->
+            <div class="feature-row reverse" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">04 — Rutas y líneas</span>
+                    <h3>Todas las líneas<br><span class="gradient-text">a un toque</span></h3>
+                    <p>Consulta el recorrido completo de las líneas L1, L2 y L3 con todas sus paradas, horarios y
+                        destinos. Planifica tu viaje antes de salir de casa.</p>
+                    <ul class="feature-list">
+                        <li>🗺️ Recorrido completo de cada línea</li>
+                        <li>🏁 Paradas de ida y vuelta</li>
+                        <li>🎨 Cada línea con su color distintivo</li>
+                    </ul>
+                </div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-left">
+                        <div class="phone-frame">
+                            <img src="assets/screen-routes.png" alt="Rutas y líneas">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FUNCIÓN 5: Favoritos -->
+            <div class="feature-row" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">05 — Paradas favoritas</span>
+                    <h3>Tus paradas,<br><span class="gradient-text">siempre a mano</span></h3>
+                    <p>Guarda tus paradas más frecuentes con un solo toque. Accede a los tiempos de llegada de tu parada
+                        habitual sin tener que buscarla cada vez que abres la app.</p>
+                    <ul class="feature-list">
+                        <li>⭐ Añadir/quitar favoritos al instante</li>
+                        <li>🏠 Acceso rápido desde la pantalla principal</li>
+                        <li>📊 Widget de escritorio con tus favoritos</li>
+                    </ul>
+                </div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-right">
+                        <div class="phone-frame">
+                            <img src="assets/screen-favorites.png" alt="Paradas favoritas">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FUNCIÓN 6: Historial de Viajes -->
+            <div class="feature-row reverse" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">06 — Historial de viajes</span>
+                    <h3>Tu diario de<br><span class="gradient-text">desplazamientos</span></h3>
+                    <p>Alzibus guarda automáticamente cada viaje que realizas. Consulta cuándo y dónde cogiste el bus,
+                        qué línea usaste y cuántos viajes llevas este mes.</p>
+                    <ul class="feature-list">
+                        <li>📅 Fecha y hora de cada viaje</li>
+                        <li>📈 Estadísticas mensuales</li>
+                        <li>🚌 Línea y destino de cada trayecto</li>
+                    </ul>
+                </div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-left">
+                        <div class="phone-frame">
+                            <img src="assets/screen-history.png" alt="Historial de viajes">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FUNCIÓN 7: Perfil y Estadísticas -->
+            <div class="feature-row" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">07 — Tu perfil</span>
+                    <h3>Estadísticas<br><span class="gradient-text">personalizadas</span></h3>
+                    <p>Un espacio exclusivo donde ver tus datos: total de viajes, paradas visitadas, línea favorita y
+                        mucho más. Un diseño limpio y funcional que te cuenta tu historia con el bus.</p>
+                    <ul class="feature-list">
+                        <li>👤 Datos de tu cuenta</li>
+                        <li>📊 Total de viajes y estadísticas</li>
+                        <li>🏆 Parada y línea más utilizadas</li>
+                    </ul>
+                </div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-right">
+                        <div class="phone-frame">
+                            <img src="assets/screen-profile.png" alt="Perfil del usuario">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FUNCIÓN 8: Multiidioma -->
+            <div class="feature-row reverse" data-animate>
+                <div class="feature-text">
+                    <span class="feature-label">08 — Multiidioma</span>
+                    <h3>En tu idioma,<br><span class="gradient-text">como en casa</span></h3>
+                    <p>Alzibus está disponible en Español, Valenciano/Catalán e Inglés. Cambia el idioma desde los
+                        ajustes de la app y toda la interfaz se adapta inmediatamente.</p>
+                    <ul class="feature-list">
+                        <li>🇪🇸 Español</li>
+                        <li>🏴 Valenciano / Catalán</li>
+                        <li>🇬🇧 Inglés</li>
+                    </ul>
+                </div>
+                <div class="feature-phone">
+                    <div class="phone-3d tilt-left">
+                        <div class="phone-frame">
+                            <img src="assets/screen-settings.png" alt="Ajustes multiidioma">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- CTA / DESCARGA -->
+    <section class="cta" id="descarga">
+        <div class="cta-glow"></div>
+        <div class="container cta-content">
+            <h2>¿A qué esperas?</h2>
+            <p>Descarga Alzibus gratis y empieza a moverte mejor por Alzira hoy mismo.</p>
+            <a href="https://play.google.com/store" class="btn-main btn-lg" target="_blank">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M3.60889 2.34222L12.2667 11L3.60889 19.6578C3.22222 19.2711 3 18.7067 3 18V4C3 3.29333 3.22222 2.72889 3.60889 2.34222ZM14.4756 13.2089L5.26889 22.4156L16.6844 16.02L14.4756 13.2089ZM20.1622 10.1867L17.3822 11.7444L14.9422 9L17.3822 6.25556L20.1622 7.81333C21.2844 8.44 21.2844 9.56 20.1622 10.1867ZM5.26889 1.58444L16.6844 7.98L14.4756 10.7911L5.26889 1.58444Z"
+                        fill="white" />
+                </svg>
+                Descargar en Google Play
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
     <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 Alzibus. Creado con ❤️ para los ciudadanos de Alzira.</p>
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <img src="assets/logo.png" alt="Alzibus" class="footer-logo">
+                <span>Alzibus</span>
+            </div>
+            <p class="footer-copy">&copy; 2026 Alzibus. Hecho con ❤️ para Alzira.</p>
         </div>
     </footer>
 
