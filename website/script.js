@@ -39,15 +39,23 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchUserCount() {
         if (!userCountEl) return;
         try {
+            console.log('[Alzitrans] Fetching live users...');
             const response = await fetch('/api/stats/public');
             if (response.ok) {
                 const data = await response.json();
+                console.log('[Alzitrans] Users found:', data.totalUsers);
                 if (data.totalUsers !== undefined) {
                     animateValue(userCountEl, 0, data.totalUsers, 1500);
+                } else {
+                    userCountEl.innerHTML = '+40'; // Fallback sensible
                 }
+            } else {
+                console.warn('[Alzitrans] API response not ok:', response.status);
+                userCountEl.innerHTML = '+40';
             }
         } catch (err) {
-            console.error('Error fetching user count:', err);
+            console.error('[Alzitrans] Error fetching user count:', err);
+            userCountEl.innerHTML = '+40'; // Fallback si el API no responde
         }
     }
 
