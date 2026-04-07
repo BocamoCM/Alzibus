@@ -55,13 +55,13 @@ const io = socketIo(server, {
 });
 
 // ── Middleware de depuración ──
-// Registra en consola TODAS las peticiones HTTP entrantes con su método, URL e IP.
-// Útil para depurar problemas de conectividad y ver qué clientes están accediendo.
-// En producción se podría desactivar o filtrar para no saturar los logs.
-app.use((req, res, next) => {
-    console.log(`[DEBUG] ${req.method} ${req.url} desde ${req.ip}`);
-    next(); // Pasar al siguiente middleware (sin esto, la petición se quedaría "colgada")
-});
+// Solo activo fuera de producción para no saturar los logs de Caddy con cada petición.
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log(`[DEBUG] ${req.method} ${req.url} desde ${req.ip}`);
+        next();
+    });
+}
 
 // ── Middlewares de seguridad ──
 

@@ -81,7 +81,7 @@ class GamificationService extends ChangeNotifier {
     switch (badgeId) {
       case 'primer_viaje': return '🌱 Primer Viaje';
       case 'viajero_frecuente': return '🚌 Viajero Frecuente';
-      case 'viajero_experto': return '🎖️ Maestro Alzibus';
+      case 'viajero_experto': return '🎖️ Maestro Alzitrans';
       default: return '🏅 Logro';
     }
   }

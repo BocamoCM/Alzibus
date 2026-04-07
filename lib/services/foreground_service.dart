@@ -537,7 +537,7 @@ Future<void> _updateWidgetStatic(SharedPreferences prefs) async {
 class ForegroundService {
   static final FlutterBackgroundService _service = FlutterBackgroundService();
   static const String _channelId = 'alzibus_foreground';
-  static const String _channelName = 'Alzibus Service';
+  static const String _channelName = 'Servicio Alzitrans';
   
   static Future<void> initialize() async {
     // No inicializar en web
@@ -552,7 +552,7 @@ class ForegroundService {
     const androidChannel = AndroidNotificationChannel(
       _channelId,
       _channelName,
-      description: 'Servicio de notificaciones de Alzibus',
+      description: 'Servicio de notificaciones de Alzitrans',
       importance: Importance.min, // Mínima importancia para que no moleste
       playSound: false,
       enableVibration: false,
@@ -581,7 +581,7 @@ class ForegroundService {
         autoStart: false,
         isForegroundMode: true,
         notificationChannelId: _channelId,
-        initialNotificationTitle: 'Alzibus',
+        initialNotificationTitle: 'Alzitrans',
         initialNotificationContent: 'Activo en segundo plano',
         foregroundServiceNotificationId: 888,
         foregroundServiceTypes: [AndroidForegroundType.location],

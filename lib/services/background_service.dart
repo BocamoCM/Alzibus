@@ -349,7 +349,7 @@ class BackgroundService {
     // Asegurar que el canal heads-up exista en el isolate de fondo
     const androidChannel = AndroidNotificationChannel(
       'alzibus-hu',
-      'Alzibus (Heads-up)',
+      'Alzitrans (Proximidad)',
       description: 'Notificaciones heads-up de paradas cercanas',
       importance: Importance.max,
       playSound: true,
@@ -363,7 +363,7 @@ class BackgroundService {
 
     final androidDetails = AndroidNotificationDetails(
       'alzibus-hu',
-      'Alzibus (Heads-up)',
+      'Alzitrans (Proximidad)',
       channelDescription: 'Notificaciones heads-up de paradas cercanas',
       importance: Importance.max,
       priority: Priority.high,

@@ -212,7 +212,7 @@ class RenfeService {
       
       return delays;
     } catch (e) {
-      print('[RenfeService] Error fetching delays: $e');
+      debugPrint('[RenfeService] Error fetching delays: $e');
       return {};
     }
   }

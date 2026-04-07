@@ -24,7 +24,7 @@ class NotificationService {
     // Crear canal de notificación heads-up (nuevo id para forzar actualización)
     const androidChannel = AndroidNotificationChannel(
       'alzibus-hu',
-      'Alzibus (Heads-up)',
+      'Alzitrans (Proximidad)',
       description: 'Notificaciones heads-up de paradas cercanas',
       importance: Importance.max,
       playSound: true,
@@ -53,7 +53,7 @@ class NotificationService {
   Future<void> showProximityNotification(String stopName, List<String> lines, double distance) async {
     final androidDetails = AndroidNotificationDetails(
       'alzibus-hu',
-      'Alzibus (Heads-up)',
+      'Alzitrans (Proximidad)',
       channelDescription: 'Notificaciones heads-up de paradas cercanas',
       importance: Importance.max,
       priority: Priority.high,

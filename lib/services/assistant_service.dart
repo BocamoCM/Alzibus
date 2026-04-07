@@ -46,7 +46,7 @@ class AssistantService {
       final stop = await FavoriteStopsService.getWidgetFavorite();
       
       if (stop == null) {
-        return 'No tienes paradas favoritas. Abre Alzibus y añade una parada a favoritos.';
+        return 'No tienes paradas favoritas. Abre Alzitrans y añade una parada a favoritos.';
       }
       
       final busTimesService = BusTimesService();
@@ -89,7 +89,7 @@ class AssistantService {
       
       return response.toString() + premiumMessage;
     } catch (e) {
-      return 'No pude obtener los tiempos de bus. Por favor, abre Alzibus.';
+      return 'No pude obtener los tiempos de bus. Por favor, abre Alzitrans.';
     }
   }
   
