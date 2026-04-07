@@ -78,18 +78,18 @@ class AdService {
       return;
     }
 
-    // DELAY INICIAL: No mostrar nada los primeros 120 segundos (2 min)
-    // Esto da tiempo al usuario para loguearse o registrarse sin interrupciones.
-    if (DateTime.now().difference(_appStartTime).inSeconds < 120) {
-      debugPrint('AppOpenAd: Postergado por inicio de sesión reciente.');
+    // DELAY INICIAL: No mostrar nada los primeros 10 segundos
+    // Esto da unos segundos de cortesía al entrar.
+    if (DateTime.now().difference(_appStartTime).inSeconds < 10) {
+      debugPrint('AppOpenAd: Postergado por inicio muy reciente.');
       return;
     }
 
-    // COOLDOWN: No mostrar más de una vez cada 3 minutos
+    // COOLDOWN: No mostrar más de una vez cada 1 minuto
     if (_lastAppOpenShowTime != null) {
       final diff = DateTime.now().difference(_lastAppOpenShowTime!);
-      if (diff.inMinutes < 3) {
-        debugPrint('AppOpenAd: Cooldown activo (${3 - diff.inMinutes} min restantes). Saltando.');
+      if (diff.inMinutes < 1) {
+        debugPrint('AppOpenAd: Cooldown activo (${60 - diff.inSeconds} seg restantes). Saltando.');
         return;
       }
     }
