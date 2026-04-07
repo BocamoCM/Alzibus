@@ -69,21 +69,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ? _buildError(l)
               : RefreshIndicator(
                   onRefresh: _loadProfile,
+              : RefreshIndicator(
+                  onRefresh: _loadProfile,
                   child: ListView(
                     padding: const EdgeInsets.all(20),
                     children: [
                       _buildAvatar(theme),
                       const SizedBox(height: 24),
                       _buildStatsCards(theme, l),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       _buildInfoCard(theme, l),
                       const SizedBox(height: 16),
                       _buildActionsCard(theme, l),
                     ],
                   ),
                 ),
-    );
-  }
+        ),
+      );
+    }
 
   Widget _buildError(AppLocalizations l) {
     return Center(
@@ -107,51 +110,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Column(
       children: [
         Container(
-          width: 90,
-          height: 90,
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AlzitransColors.burgundy, AlzitransColors.wine],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AlzitransColors.burgundy.withOpacity(0.1),
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AlzitransColors.burgundy.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            border: Border.all(color: AlzitransColors.burgundy, width: 2),
           ),
-          child: Stack(
-            children: [
-              Center(
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+          child: Center(
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: AlzitransColors.burgundy,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
               ),
-              /*
-              if (_profile?['isPremium'] == true)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.amber,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.diamond, color: AlzitransColors.burgundy, size: 20),
-                  ),
-                ),
-              */
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -171,90 +145,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildPremiumCard(ThemeData theme, AppLocalizations l) {
-    final isPremium = _profile?['isPremium'] == true;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: isPremium
-            ? const LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : LinearGradient(
-                colors: [AlzitransColors.burgundy.withOpacity(0.9), AlzitransColors.wine],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: (isPremium ? Colors.orange : AlzitransColors.burgundy).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(
-                isPremium ? Icons.diamond : Icons.workspace_premium,
-                color: Colors.white,
-                size: 32,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isPremium ? 'USUARIO PREMIUM' : 'PÁSATE A PREMIUM',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    Text(
-                      isPremium
-                          ? 'Gracias por apoyar Alzitrans'
-                          : 'Quita los anuncios para siempre',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (!isPremium) ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  const PremiumRoute().push(context).then((_) => _loadProfile()); // Recargar al volver
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AlzitransColors.burgundy,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('MÁS INFORMACIÓN', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatsCards(ThemeData theme, AppLocalizations l) {
     final stats = _profile?['stats'] as Map<String, dynamic>? ?? {};
@@ -278,25 +168,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey[200]!),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: color, size: 24),
             const SizedBox(height: 8),
             Text(
               value,
-              style: theme.textTheme.titleLarge?.copyWith(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+              style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
