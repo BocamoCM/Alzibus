@@ -14,6 +14,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========================
+    // telemetry (Visits & Clicks)
+    // ========================
+    async function sendTelemetry(eventType) {
+        try {
+            fetch('/api/metrics/web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event_type: eventType })
+            });
+        } catch (err) { }
+    }
+
+    // Registrar visita
+    sendTelemetry('visit');
+
+    // Registrar clics en descarga
+    document.querySelectorAll('a[href*="play.google.com"]').forEach(link => {
+        link.addEventListener('click', () => sendTelemetry('download_click'));
+    });
+
+    // ========================
     // Scroll-triggered animations
     // ========================
     const animatedElements = document.querySelectorAll('[data-animate], .feature-row');

@@ -230,8 +230,10 @@ const validateApiKey = (req, res, next) => {
     }
 
     // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
-    const publicRoutes = ['/api/stats/public', '/api/health'];
-    if (publicRoutes.includes(req.url) || publicRoutes.includes(req.path)) {
+    const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
+    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web'];
+
+    if (publicRoutes.includes(originalPath)) {
         return next();
     }
 
@@ -1743,6 +1745,47 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
 // - Avisos: total, activos, distribución por línea.
 // - Premium: número de usuarios premium y facturación estimada.
 // La paralelización con Promise.all minimiza la latencia total.
+// ── Telemetría de la Landing Page ──
+// POST /api/metrics/web
+// Registra visitas y clics en descarga.
+app.post('/api/metrics/web', express.json(), async (req, res) => {
+    const { event_type } = req.body;
+    const ip = req.ip;
+    const ua = req.get('User-Agent') || 'Desconocido';
+
+    try {
+        await pool.query(
+            "INSERT INTO web_metrics (event_type, ip, user_agent) VALUES ($1, $2, $3)",
+            [event_type, ip, ua]
+        );
+
+        // Notificar clics de descarga a Discord (Visitas son silenciosas para evitar spam)
+        if (event_type === 'download_click') {
+            let device = 'Móvil o Web';
+            if (/android/i.test(ua)) device = 'Android 🤖';
+            else if (/iphone|ipad|ipod/i.test(ua)) device = 'iOS 🍏';
+
+            sendDiscordNotification({
+                embeds: [{
+                    title: "📥 Nuevo Click en Descarga (Web)",
+                    description: "Un usuario ha pulsado el botón de descarga en la página web.",
+                    color: 0x00FF00,
+                    fields: [
+                        { name: "Dispositivo", value: device, inline: true },
+                        { name: "IP", value: ip, inline: true }
+                    ],
+                    footer: { text: "Alzitrans Web Tracker" }
+                }]
+            });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error saving web metrics:', error);
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
 // ── Estadísticas públicas para la Landing Page ──
 // GET /api/stats/public
 // Devuelve métricas básicas (usuarios totales) para mostrar en la web.
