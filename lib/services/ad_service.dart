@@ -42,7 +42,9 @@ class AdService {
 
   AppOpenAd? _appOpenAd;
   DateTime? _appOpenLoadTime;
+  DateTime? _lastAppOpenShowTime;
   bool _isAppOpenAdLoading = false;
+  bool _isShowingAppOpenAd = false;
 
   /// Carga un anuncio de apertura (App Open Ad).
   void loadAppOpenAd() {
@@ -69,9 +71,18 @@ class AdService {
 
   /// Muestra el anuncio de apertura si está disponible y no ha expirado (< 4 horas según política Google).
   void showAppOpenAdIfAvailable() {
-    if (!canShowAds || _appOpenAd == null) {
-      loadAppOpenAd();
+    if (!canShowAds || _appOpenAd == null || _isShowingAppOpenAd) {
+      if (_appOpenAd == null) loadAppOpenAd();
       return;
+    }
+
+    // COOLDOWN: No mostrar más de una vez cada 5 minutos
+    if (_lastAppOpenShowTime != null) {
+      final diff = DateTime.now().difference(_lastAppOpenShowTime!);
+      if (diff.inMinutes < 5) {
+        debugPrint('AppOpenAd: Cooldown activo (${5 - diff.inMinutes} min restantes). Saltando.');
+        return;
+      }
     }
 
     // Comprobar si el anuncio ha expirado (usamos 4h para App Open por política de AdMob)
@@ -84,12 +95,18 @@ class AdService {
     }
 
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        _isShowingAppOpenAd = true;
+        _lastAppOpenShowTime = DateTime.now();
+      },
       onAdDismissedFullScreenContent: (ad) {
+        _isShowingAppOpenAd = false;
         ad.dispose();
         _appOpenAd = null;
         loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
+        _isShowingAppOpenAd = false;
         ad.dispose();
         _appOpenAd = null;
         loadAppOpenAd();
