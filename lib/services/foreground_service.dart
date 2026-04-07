@@ -585,6 +585,7 @@ class ForegroundService {
         initialNotificationContent: 'Activo en segundo plano',
         foregroundServiceNotificationId: 888,
         foregroundServiceTypes: [AndroidForegroundType.location],
+        notificationIcon: '@mipmap/ic_launcher',
       ),
       iosConfiguration: IosConfiguration(
         autoStart: false,
