@@ -51,6 +51,8 @@ class AdService {
   bool _isProfileNativeAdLoaded = false;
   NativeAd? _settingsNativeAd;
   bool _isSettingsNativeAdLoaded = false;
+  NativeAd? _alertsNativeAd;
+  bool _isAlertsNativeAdLoaded = false;
 
   /// Carga un anuncio de apertura (App Open Ad).
   void loadAppOpenAd() {
@@ -146,10 +148,17 @@ class AdService {
       onAdLoaded: (ad) => _isSettingsNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isSettingsNativeAdLoaded = false,
     )..load();
+    
+    // Precargar Alertas
+    _alertsNativeAd = createNativeAd(
+      onAdLoaded: (ad) => _isAlertsNativeAdLoaded = true,
+      onAdFailedToLoad: (ad, error) => _isAlertsNativeAdLoaded = false,
+    )..load();
   }
   
   NativeAd? get profileNativeAd => _isProfileNativeAdLoaded ? _profileNativeAd : null;
   NativeAd? get settingsNativeAd => _isSettingsNativeAdLoaded ? _settingsNativeAd : null;
+  NativeAd? get alertsNativeAd => _isAlertsNativeAdLoaded ? _alertsNativeAd : null;
 
   /// --- BANNER ADS ---
 

@@ -6,8 +6,12 @@ import '../services/bus_times_service.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/ad_provider.dart';
+import '../services/ad_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-class ActiveAlertsScreen extends StatefulWidget {
+class ActiveAlertsScreen extends ConsumerStatefulWidget {
   final Function(int stopId, String stopName)? onViewStop;
   
   const ActiveAlertsScreen({super.key, this.onViewStop});
@@ -16,7 +20,7 @@ class ActiveAlertsScreen extends StatefulWidget {
   State<ActiveAlertsScreen> createState() => _ActiveAlertsScreenState();
 }
 
-class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
+class _ActiveAlertsScreenState extends ConsumerState<ActiveAlertsScreen> {
   final BusAlertService _alertService = BusAlertService();
   final BusTimesService _busTimesService = BusTimesService();
   List<BusAlert> _alerts = [];
@@ -173,11 +177,8 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 300, maxHeight: 350),
-                child: AdBannerWidget(
-                  key: UniqueKey(),
-                  adUnitId: AppConfig.nativeAdId,
-                ),
+                constraints: const BoxConstraints(minHeight: 200, maxHeight: 250),
+                child: _buildNativeAdOrBanner(),
               ),
             );
           }
@@ -337,4 +338,19 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
       ),
     );
   }
+
+  Widget _buildNativeAdOrBanner() {
+    final adService = ref.read(adServiceProvider);
+    final preloadedAd = adService.alertsNativeAd;
+
+    if (preloadedAd != null) {
+      return AdWidget(ad: preloadedAd);
+    }
+
+    // Si no hay precargado, mostrar banner estándar como respaldo
+    return AdBannerWidget(
+      adUnitId: AppConfig.nativeAdId,
+    );
+  }
+
 }

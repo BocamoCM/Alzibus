@@ -81,9 +81,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 24),
                       _buildStatsCards(theme, l),
                       const SizedBox(height: 24),
+                      _buildInfoCard(theme, l),
+                      const SizedBox(height: 16),
+                      _buildActionsCard(theme, l),
+                      const SizedBox(height: 24),
                       if (AppConfig.showAds)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
                               minHeight: 200,
@@ -92,9 +96,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: _buildNativeAdOrBanner(),
                           ),
                         ),
-                      _buildInfoCard(theme, l),
-                      const SizedBox(height: 16),
-                      _buildActionsCard(theme, l),
+                      const SizedBox(height: 48),
                     ],
                   ),
                 ),
