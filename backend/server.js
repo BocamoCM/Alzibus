@@ -229,6 +229,12 @@ const validateApiKey = (req, res, next) => {
         return next();
     }
 
+    // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
+    const publicRoutes = ['/api/stats/public', '/api/health'];
+    if (publicRoutes.includes(req.url) || publicRoutes.includes(req.path)) {
+        return next();
+    }
+
     const apiKey = req.headers['x-api-key'];
 
     if (!apiKey || apiKey !== process.env.API_KEY) {
