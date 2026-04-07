@@ -74,7 +74,11 @@ networks:
   alzibus-net:
     driver: bridge
 
+# ─── Volúmenes persistentes ───
 volumes:
+  # Usamos el volumen que ya tenías para no perder datos
   pgdata:
+    external: true
+    name: backend_pgdata
   caddy_data:
   caddy_config:
