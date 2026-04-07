@@ -38,17 +38,82 @@ class AdService {
   /// Indica si los anuncios están habilitados y el SDK inicializado.
   bool get canShowAds => AppConfig.showAds && _isInitialized;
 
+  /// --- APP OPEN ADS ---
+
+  AppOpenAd? _appOpenAd;
+  DateTime? _appOpenLoadTime;
+  bool _isAppOpenAdLoading = false;
+
+  /// Carga un anuncio de apertura (App Open Ad).
+  void loadAppOpenAd() {
+    if (!canShowAds || _isAppOpenAdLoading) return;
+
+    _isAppOpenAdLoading = true;
+    AppOpenAd.load(
+      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/9257395921' : AppConfig.appOpenAdId,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd = ad;
+          _appOpenLoadTime = DateTime.now();
+          _isAppOpenAdLoading = false;
+          if (kDebugMode) print('AppOpenAd cargado.');
+        },
+        onAdFailedToLoad: (error) {
+          _isAppOpenAdLoading = false;
+          debugPrint('Fallo al cargar AppOpenAd: $error');
+        },
+      ),
+    );
+  }
+
+  /// Muestra el anuncio de apertura si está disponible y no ha expirado (< 4 horas según política Google).
+  void showAppOpenAdIfAvailable() {
+    if (!canShowAds || _appOpenAd == null) {
+      loadAppOpenAd();
+      return;
+    }
+
+    // Comprobar si el anuncio ha expirado (usamos 4h para App Open por política de AdMob)
+    if (_appOpenLoadTime != null && 
+        DateTime.now().difference(_appOpenLoadTime!) > const Duration(hours: 4)) {
+      _appOpenAd!.dispose();
+      _appOpenAd = null;
+      loadAppOpenAd();
+      return;
+    }
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _appOpenAd = null;
+        loadAppOpenAd();
+      },
+    );
+
+    _appOpenAd!.show();
+  }
+
   /// --- BANNER ADS ---
 
   /// Crea un Banner Ad con los parámetros configurados.
+  /// [isCollapsible] activa el banner desplegable de alto rendimiento.
   BannerAd createBannerAd({
     required void Function(Ad) onAdLoaded,
     required void Function(Ad, LoadAdError) onAdFailedToLoad,
+    bool isCollapsible = false,
   }) {
     return BannerAd(
       adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/6300978111' : AppConfig.bannerAdId,
       size: AdSize.banner,
-      request: const AdRequest(),
+      request: AdRequest(
+        extras: isCollapsible ? {'collapsible': 'bottom'} : null,
+      ),
       listener: BannerAdListener(
         onAdLoaded: onAdLoaded,
         onAdFailedToLoad: (ad, error) {
@@ -62,6 +127,7 @@ class AdService {
   /// --- INTERSTITIAL ADS ---
 
   InterstitialAd? _interstitialAd;
+  DateTime? _interstitialLoadTime;
   bool _isInterstitialLoading = false;
 
   /// Carga un anuncio intersticial para mostrarlo más tarde.
@@ -71,10 +137,11 @@ class AdService {
     _isInterstitialLoading = true;
     InterstitialAd.load(
       adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/1033173712' : AppConfig.interstitialAdId,
-    request: const AdRequest(),
+      request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
+          _interstitialLoadTime = DateTime.now();
           _isInterstitialLoading = false;
         },
         onAdFailedToLoad: (error) {
@@ -85,10 +152,17 @@ class AdService {
     );
   }
 
-  /// Muestra el anuncio intersticial si está cargado.
+  /// Muestra el anuncio intersticial si está cargado y no ha expirado (> 1h).
   void showInterstitialAd() {
+    // Verificar expiración (1 hora para mantener frescura y eCPM alto)
+    if (_interstitialAd != null && _interstitialLoadTime != null &&
+        DateTime.now().difference(_interstitialLoadTime!) > const Duration(hours: 1)) {
+      _interstitialAd!.dispose();
+      _interstitialAd = null;
+    }
+
     if (_interstitialAd == null) {
-      loadInterstitialAd(); // Intentar cargar para la próxima vez
+      loadInterstitialAd();
       return;
     }
 
@@ -96,7 +170,7 @@ class AdService {
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitialAd = null;
-        loadInterstitialAd(); // Pre-cargar el siguiente
+        loadInterstitialAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();

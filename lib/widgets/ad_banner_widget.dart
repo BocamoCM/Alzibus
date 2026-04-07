@@ -5,7 +5,8 @@ import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 
 class AdBannerWidget extends ConsumerStatefulWidget {
-  const AdBannerWidget({super.key});
+  final bool isCollapsible;
+  const AdBannerWidget({super.key, this.isCollapsible = false});
 
   @override
   ConsumerState<AdBannerWidget> createState() => _AdBannerWidgetState();
@@ -26,6 +27,7 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
     if (!adService.canShowAds) return;
 
     _bannerAd = adService.createBannerAd(
+      isCollapsible: widget.isCollapsible,
       onAdLoaded: (ad) {
         if (mounted) {
           setState(() {

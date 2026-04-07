@@ -658,7 +658,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
     return Scaffold(
       appBar: AppBar(
-        title: const AdBannerWidget(),
+        title: const AdBannerWidget(isCollapsible: true),
         titleSpacing: 0, // Para aprovechar todo el espacio para el banner
         actions: [
           // Único botón en AppBar: alertas activas (operacional, tiempo real)

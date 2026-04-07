@@ -239,15 +239,40 @@ Future<void> _requestPermissions() async {
 
 
 
-class AlzitransApp extends ConsumerWidget {
+class AlzitransApp extends ConsumerStatefulWidget {
   const AlzitransApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AlzitransApp> createState() => _AlzitransAppState();
+}
+
+class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBindingObserver {
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Mostrar App Open Ad al volver a la app (resumed)
+    if (state == AppLifecycleState.resumed) {
+      ref.read(adServiceProvider).showAppOpenAdIfAvailable();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentLocale = ref.watch(localeProvider);
     final isHighVisibility = ref.watch(highVisibilityProvider);
-    // El TextScaler de MediaQuery (abajo) ya escala todos los textos.
-    // Aquí solo ampliamos botones e iconos para el modo de alta visibilidad.
+    
     final theme = isHighVisibility
         ? AlzitransTheme.lightTheme.copyWith(
             elevatedButtonTheme: ElevatedButtonThemeData(

@@ -43,6 +43,9 @@ class AppConfig {
   /// ID del Anuncio Intersticial (Post-NFC)
   static const String interstitialAdId = 'ca-app-pub-5215993257564469/8708248424';
 
+  /// ID del Anuncio de Apertura (App Open Ad)
+  static const String appOpenAdId = 'ca-app-pub-5215993257564469/4971295325';
+
   /// --- FIN MONETIZACIÓN ---
 
   /// Hash del commit actual (opcional, vía --dart-define=COMMIT_HASH=...)
