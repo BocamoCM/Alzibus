@@ -11,6 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../services/ad_service.dart';
+import '../core/providers/ad_provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends ConsumerStatefulWidget {

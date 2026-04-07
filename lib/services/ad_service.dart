@@ -40,6 +40,12 @@ class AdService {
 
   /// --- APP OPEN ADS ---
 
+  AppOpenAd? _appOpenAd;
+  DateTime? _appOpenLoadTime;
+  DateTime? _lastAppOpenShowTime;
+  bool _isAppOpenAdLoading = false;
+  bool _isShowingAppOpenAd = false;
+  
   // Nativos Precargados
   NativeAd? _profileNativeAd;
   bool _isProfileNativeAdLoaded = false;
