@@ -29,7 +29,7 @@ class AppConfig {
   /// --- CONFIGURACIÓN DE MONETIZACIÓN (ADMOB) ---
   
   /// Permite desactivar todos los anuncios de la app de forma global.
-  static bool showAds = true; 
+  static bool showAds = false; // TEMPORAL: desactivado para capturas de pantalla 
 
   /// ID de la Aplicación AdMob (Android)
   static const String admobAppId = 'ca-app-pub-5215993257564469~3690891315';

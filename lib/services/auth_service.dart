@@ -275,6 +275,13 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    // Notificar al servidor antes de borrar el token (para Discord tracking)
+    try {
+      await ApiClient().post('/users/logout');
+    } catch (_) {
+      // No bloquear el logout si falla la notificación
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
     await prefs.remove('user_email');

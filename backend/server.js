@@ -885,6 +885,20 @@ app.post('/api/login', loginLimiter, async (req, res) => {
             );
 
             console.log(`[Login Biométrico] Acceso directo para ${user.email}`);
+
+            // Notificar a Discord
+            sendDiscordNotification({
+                embeds: [{
+                    title: '🟢 Usuario Conectado',
+                    description: `**${user.email}** ha iniciado sesión`,
+                    color: 0x4CAF50,
+                    fields: [
+                        { name: 'Método', value: '🔒 Biometría', inline: true },
+                        { name: 'IP', value: req.ip || 'Desconocida', inline: true }
+                    ]
+                }]
+            });
+
             return res.json({
                 message: 'Login biométrico exitoso',
                 token: token,
@@ -972,6 +986,19 @@ app.post('/api/login/verify', loginLimiter, async (req, res) => {
             { expiresIn: '24h' }
         );
 
+        // Notificar a Discord
+        sendDiscordNotification({
+            embeds: [{
+                title: '🟢 Usuario Conectado',
+                description: `**${user.email}** ha iniciado sesión`,
+                color: 0x4CAF50,
+                fields: [
+                    { name: 'Método', value: '📧 OTP', inline: true },
+                    { name: 'IP', value: req.ip || 'Desconocida', inline: true }
+                ]
+            }]
+        });
+
         res.json({
             message: 'Login exitoso',
             token: token,
@@ -1002,6 +1029,40 @@ app.post('/api/users/heartbeat', authenticateToken, async (req, res) => {
         res.json({ message: 'Heartbeat recibido' });
     } catch (error) {
         console.error('Error en heartbeat:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ── Logout: Registrar cierre de sesión ──
+// POST /api/users/logout
+// La app llama este endpoint al cerrar sesión para notificar a Discord.
+app.post('/api/users/logout', authenticateToken, async (req, res) => {
+    try {
+        sendDiscordNotification({
+            embeds: [{
+                title: '🔴 Usuario Desconectado',
+                description: `**${req.user.email}** ha cerrado sesión`,
+                color: 0xE53935
+            }]
+        });
+        res.json({ message: 'Logout registrado' });
+    } catch (error) {
+        console.error('Error en logout:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ── Usuarios activos en tiempo real ──
+// GET /api/admin/active-users
+// Devuelve los usuarios que han hecho heartbeat en los últimos 5 minutos.
+app.get('/api/admin/active-users', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT email, last_access FROM users WHERE last_access > NOW() - INTERVAL '5 minutes' ORDER BY last_access DESC"
+        );
+        res.json({ count: result.rows.length, users: result.rows });
+    } catch (error) {
+        console.error('Error en active-users:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
@@ -1889,11 +1950,21 @@ setInterval(async () => {
             const tripCount = tripsRes.rows[0].count;
             const topLine = lineRes.rows[0]?.line || 'Ninguna';
 
+            // Datos adicionales para el reporte mejorado
+            const activeRes = await pool.query(
+                "SELECT COUNT(DISTINCT id) FROM users WHERE last_access::date = $1", [yStr]
+            );
+            const totalRes = await pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true");
+            const activeCount = activeRes.rows[0].count;
+            const totalUsers = totalRes.rows[0].count;
+
             const message = `📊 **RESUMEN DIARIO (${yStr})**\n` +
                 `━━━━━━━━━━━━━━━━━━━━\n` +
-                `👤 **Usuarios nuevos**: \`${userCount}\` \n` +
-                `🎫 **Viajes validados**: \`${tripCount}\` \n` +
-                `🚌 **Línea estrella**: \`${topLine}\` \n` +
+                `👤 **Usuarios nuevos**: \`${userCount}\`\n` +
+                `👥 **Usuarios activos ayer**: \`${activeCount}\`\n` +
+                `📱 **Total registrados**: \`${totalUsers}\`\n` +
+                `🎫 **Viajes validados**: \`${tripCount}\`\n` +
+                `🚌 **Línea estrella**: \`${topLine}\`\n` +
                 `━━━━━━━━━━━━━━━━━━━━`;
 
             sendDiscordNotification(message);
