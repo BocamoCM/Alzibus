@@ -5,18 +5,22 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'dart:math' as math;
 import '../models/bus_stop.dart';
 import '../core/utils/ar_math_utils.dart';
 import '../theme/app_theme.dart';
 
 class ArVisionPage extends StatefulWidget {
   final List<BusStop> nearbyStops;
-  final String? targetStopId; // Nueva propiedad
+  final String? targetStopId; // Si no es null, solo muestra la flecha a esta parada
+  final LatLng? initialUserLocation; // Posición ya calculada por el mapa para evitar colapso de GPS
   
   const ArVisionPage({
     super.key, 
     required this.nearbyStops, 
     this.targetStopId,
+    this.initialUserLocation,
   });
 
   @override
@@ -26,6 +30,14 @@ class ArVisionPage extends StatefulWidget {
 class _ArVisionPageState extends State<ArVisionPage> {
   CameraController? _cameraController;
   StreamSubscription? _compassSubscription;
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+  StreamSubscription<Position>? _locationSubscription;
+  
+  // Variables para la dirección y su suavizado EMA
+  bool _headingInitialized = false;
+  double _headingSin = 0;
+  double _headingCos = 0;
+  
   double _heading = 0;
   double _pitch = 0; // Para la inclinación arriba/abajo
   Position? _currentPosition;
@@ -53,15 +65,72 @@ class _ArVisionPageState extends State<ArVisionPage> {
       );
 
       await _cameraController!.initialize();
-      _currentPosition = await Geolocator.getCurrentPosition();
+
+      // Obtener posición inicial rápido para pintar las paradas sin esperar al stream
+      if (widget.initialUserLocation != null) {
+        _currentPosition = Position(
+          longitude: widget.initialUserLocation!.longitude,
+          latitude: widget.initialUserLocation!.latitude,
+          timestamp: DateTime.now(),
+          accuracy: 5,
+          altitude: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          altitudeAccuracy: 0,
+          headingAccuracy: 0,
+        );
+      } else {
+        _currentPosition = await Geolocator.getLastKnownPosition() ?? await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+        );
+      }
+
+      // Usar Stream para que la precisión GPS mejore continuamente y no se quede colgada
+      _locationSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.bestForNavigation, distanceFilter: 1),
+      ).listen((Position position) {
+        if (mounted) setState(() => _currentPosition = position);
+      });
       
       _compassSubscription = FlutterCompass.events?.listen((event) {
         if (mounted) {
           setState(() {
-            _heading = event.heading ?? 0;
-            // Estimar inclinación (Pitch) desde los datos del sensor si están disponibles
-            // Algunos dispositivos devuelven esto en el compass event o usaremos un valor base
-            _pitch = (event.accuracy ?? 0) > 0 ? 0 : 0; 
+            double h = event.headingForCameraMode ?? event.heading ?? 0.0;
+            // Workaround: Algunos Android devuelven exactamente 0.0 si el modo cámara no está soportado.
+            if (event.headingForCameraMode == 0.0 && event.heading != null && event.heading != 0.0) {
+              h = event.heading!;
+            }
+            
+            // Suavizado EMA utilizando Seno y Coseno para evitar el temblor y el error de salto 360 -> 0
+            final rad = h * math.pi / 180;
+            if (!_headingInitialized) {
+              _headingSin = math.sin(rad);
+              _headingCos = math.cos(rad);
+              _headingInitialized = true;
+            } else {
+              const alpha = 0.15; // Ajuste para solidez vs respuesta rápida
+              _headingSin = _headingSin * (1 - alpha) + math.sin(rad) * alpha;
+              _headingCos = _headingCos * (1 - alpha) + math.cos(rad) * alpha;
+            }
+            
+            h = math.atan2(_headingSin, _headingCos) * 180 / math.pi;
+            if (h < 0) h += 360;
+            
+            _heading = h;
+          });
+        }
+      });
+      
+      _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
+        if (mounted) {
+          setState(() {
+            // Calcula pitch en grados. 0 = vertical, -90 = mirando al cielo, +90 = mirando al suelo
+            final rawPitch = math.atan2(event.z, event.y) * 180 / math.pi; 
+            // Aplicar un filtro de paso bajo (Exponential Moving Average) para suavizar el temblor
+            // 0.1 significa que toma 10% del nuevo valor y 90% del valor anterior
+            final alpha = 0.10;
+            _pitch = _pitch == 0 ? rawPitch : (_pitch * (1 - alpha) + rawPitch * alpha);
           });
         }
       });
@@ -81,6 +150,8 @@ class _ArVisionPageState extends State<ArVisionPage> {
   void dispose() {
     _cameraController?.dispose();
     _compassSubscription?.cancel();
+    _accelerometerSubscription?.cancel();
+    _locationSubscription?.cancel();
     super.dispose();
   }
 
@@ -147,11 +218,31 @@ class _ArVisionPageState extends State<ArVisionPage> {
   }
 
   List<Widget> _buildArMarkers() {
-    if (_currentPosition == null) return [];
+    int markersRendered = 0;
+    
+    // UI de Debug para saber qué está fallando (lo quitaremos luego)
+    final debugWidget = Positioned(
+      top: 100,
+      left: 10,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        color: Colors.black87,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('GPS: ${_currentPosition?.latitude ?? "N/A"}, ${_currentPosition?.longitude ?? "N/A"}', style: const TextStyle(color: Colors.greenAccent, fontSize: 10)),
+            Text('Heading: ${_heading.toStringAsFixed(1)}', style: const TextStyle(color: Colors.amber, fontSize: 10)),
+            Text('Pitch: ${_pitch.toStringAsFixed(1)}', style: const TextStyle(color: Colors.orange, fontSize: 10)),
+          ],
+        ),
+      ),
+    );
+
+    if (_currentPosition == null) return [debugWidget];
     
     final userLoc = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
     final screenWidth = MediaQuery.of(context).size.width;
-    final List<Widget> markers = [];
+    final List<Widget> markers = [debugWidget];
 
     // Filtrar paradas: Si hay una seleccionada, solo esa. Si no, las cercanas.
     final List<BusStop> stopsToRender = widget.targetStopId != null
@@ -171,12 +262,28 @@ class _ArVisionPageState extends State<ArVisionPage> {
       final xOffset = ArMathUtils.getXOffset(azimuth, _heading, screenWidth);
       
       if (xOffset != null) {
-        // Ajustar escala y posición vertical según distancia (límite 10km)
+        // Ajustar escala según distancia
         final scale = (1.0 - (distance / 12000)).clamp(0.2, 1.0);
-        final yOffset = 100.0 + (distance / 50); // Menos sensible a la altura para largas distancias
+        
+        // Compensación de pitch (inclinación de cámara)
+        final screenHeight = MediaQuery.of(context).size.height;
+        // Asumiendo un FOV vertical de aprox 60 grados para la cámara estándar
+        // Si pitch es negativo (mirando cielo), la parada debe pintar MÁS ABAJO (+yOffset)
+        final dy = -_pitch * (screenHeight / 60.0);
+        
+        // Base: si mantienes móvil recto, a 0 pitch, está aprox. en el tercio inferior/medio del FOV
+        final horizonBase = (screenHeight / 2) - 50; 
+        
+        // Lejos = ligeramente más alto en perspectiva, Cerca = más bajo
+        final distanceHeightOffset = (distance / 40); 
+
+        // Offset final en pantalla
+        final yOffset = horizonBase + dy + distanceHeightOffset;
 
         markers.add(
-          Positioned(
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
             left: xOffset - 60,
             top: yOffset,
             child: Transform.scale(

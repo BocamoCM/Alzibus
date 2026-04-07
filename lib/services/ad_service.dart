@@ -79,6 +79,8 @@ class AdService {
 
   final DateTime _appStartTime = DateTime.now();
 
+  static DateTime? lastAdDismissedTime; // Global para prevenir bucles de resume
+
   /// Muestra el anuncio de apertura si está disponible y no ha expirado (< 4 horas según política Google).
   void showAppOpenAdIfAvailable() {
     if (!canShowAds || _appOpenAd == null || _isShowingAppOpenAd) {
@@ -90,11 +92,21 @@ class AdService {
       debugPrint('AppOpenAd: Postergado por inicio muy reciente.');
       return;
     }
+    
+    // Si cerramos CUALQUIER anuncio hace menos de 15 segundos, no disparamos App Open (evita bucles por resume)
+    if (lastAdDismissedTime != null) {
+      final diff = DateTime.now().difference(lastAdDismissedTime!);
+      if (diff.inSeconds < 15) {
+        debugPrint('AppOpenAd: Global dismiss cooldown activo. Evitando bucle.');
+        return;
+      }
+    }
 
+    // Cooldown de 60 segundos para evitar bucles si mostrar el ad dispara pause/resume
     if (_lastAppOpenShowTime != null) {
       final diff = DateTime.now().difference(_lastAppOpenShowTime!);
-      if (diff.inMinutes < 1) {
-        debugPrint('AppOpenAd: Cooldown activo. Saltando.');
+      if (diff.inSeconds < 60) {
+        debugPrint('AppOpenAd: Cooldown activo (loop prevention). Saltando.');
         return;
       }
     }
@@ -114,12 +126,14 @@ class AdService {
       },
       onAdDismissedFullScreenContent: (ad) {
         _isShowingAppOpenAd = false;
+        lastAdDismissedTime = DateTime.now();
         ad.dispose();
         _appOpenAd = null;
         loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         _isShowingAppOpenAd = false;
+        lastAdDismissedTime = DateTime.now();
         ad.dispose();
         _appOpenAd = null;
         loadAppOpenAd();
@@ -153,7 +167,7 @@ class AdService {
   NativeAd? get settingsNativeAd => _isSettingsNativeAdLoaded ? _settingsNativeAd : null;
   NativeAd? get alertsNativeAd => _isAlertsNativeAdLoaded ? _alertsNativeAd : null;
 
-  /// --- BANNER ADS ---
+  /// --- BANNER ADS (ADAPTIVE) ---
 
   BannerAd createBannerAd({
     required void Function(Ad) onAdLoaded,
@@ -179,11 +193,48 @@ class AdService {
     );
   }
 
+  /// Crea un banner adaptativo que se ajusta al ancho de la pantalla.
+  /// Genera ~30-50% más eCPM que un banner fijo 320x50.
+  Future<BannerAd?> createAdaptiveBannerAd({
+    required BuildContext context,
+    required void Function(Ad) onAdLoaded,
+    required void Function(Ad, LoadAdError) onAdFailedToLoad,
+    bool isCollapsible = false,
+    String? adUnitId,
+  }) async {
+    final width = MediaQuery.of(context).size.width.truncate();
+    final adSize = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+    if (adSize == null) return null;
+
+    return BannerAd(
+      adUnitId: kDebugMode 
+          ? 'ca-app-pub-3940256099942544/6300978111' 
+          : (adUnitId ?? AppConfig.bannerAdId),
+      size: adSize,
+      request: AdRequest(
+        extras: isCollapsible ? {'collapsible': 'bottom'} : null,
+      ),
+      listener: BannerAdListener(
+        onAdLoaded: onAdLoaded,
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          onAdFailedToLoad(ad, error);
+        },
+      ),
+    );
+  }
+
   /// --- INTERSTITIAL ADS ---
 
   InterstitialAd? _interstitialAd;
   DateTime? _interstitialLoadTime;
   bool _isInterstitialLoading = false;
+  
+  // Contador global para intersticiales inteligentes
+  int _stopQueryCount = 0;
+  DateTime? _lastInterstitialShowTime;
+  static const int _interstitialCooldownMinutes = 3;
+  static const int _stopQueriesBeforeAd = 3;
 
   void loadInterstitialAd() {
     if (!canShowAds || _isInterstitialLoading) return;
@@ -206,6 +257,7 @@ class AdService {
     );
   }
 
+  /// Muestra intersticial si está disponible y respeta el cooldown.
   void showInterstitialAd() {
     if (_interstitialAd != null && _interstitialLoadTime != null &&
         DateTime.now().difference(_interstitialLoadTime!) > const Duration(hours: 1)) {
@@ -218,20 +270,125 @@ class AdService {
       return;
     }
 
+    // Respetar cooldown global
+    if (_lastInterstitialShowTime != null &&
+        DateTime.now().difference(_lastInterstitialShowTime!).inMinutes < _interstitialCooldownMinutes) {
+      debugPrint('[AdService] Interstitial cooldown activo. Saltando.');
+      return;
+    }
+
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitialAd = null;
+        _lastInterstitialShowTime = DateTime.now();
+        AdService.lastAdDismissedTime = DateTime.now();
         loadInterstitialAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _interstitialAd = null;
+        AdService.lastAdDismissedTime = DateTime.now();
         loadInterstitialAd();
       },
     );
 
+    _lastInterstitialShowTime = DateTime.now();
     _interstitialAd!.show();
+  }
+
+  /// Registrar consulta de parada y mostrar intersticial cada N consultas.
+  void trackStopQuery() {
+    _stopQueryCount++;
+    if (_stopQueryCount >= _stopQueriesBeforeAd) {
+      _stopQueryCount = 0;
+      showInterstitialAd();
+    }
+  }
+
+  /// Mostrar intersticial al volver del background después de X minutos.
+  void showInterstitialOnResume(DateTime? lastPausedTime) {
+    if (lastPausedTime == null) return;
+    final diff = DateTime.now().difference(lastPausedTime);
+    if (diff.inMinutes >= 5) {
+      showInterstitialAd();
+    }
+  }
+
+  /// --- REWARDED ADS (Banner-free 30 min) ---
+
+  RewardedAd? _rewardedAd;
+  bool _isRewardedAdLoading = false;
+  DateTime? _bannerFreeUntil;
+
+  /// Indica si el usuario está en modo "sin banners" (vio un rewarded).
+  bool get isBannerFree {
+    if (_bannerFreeUntil == null) return false;
+    return DateTime.now().isBefore(_bannerFreeUntil!);
+  }
+
+  /// Minutos restantes sin banners.
+  int get bannerFreeMinutesLeft {
+    if (_bannerFreeUntil == null) return 0;
+    final diff = _bannerFreeUntil!.difference(DateTime.now()).inMinutes;
+    return diff > 0 ? diff : 0;
+  }
+
+  void loadRewardedAd() {
+    if (!canShowAds || _isRewardedAdLoading) return;
+
+    _isRewardedAdLoading = true;
+    RewardedAd.load(
+      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/5224354917' : AppConfig.rewardedAdId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _rewardedAd = ad;
+          _isRewardedAdLoading = false;
+          if (kDebugMode) print('RewardedAd cargado.');
+        },
+        onAdFailedToLoad: (error) {
+          _rewardedAd = null;
+          _isRewardedAdLoading = false;
+          debugPrint('Fallo al cargar RewardedAd: $error');
+        },
+      ),
+    );
+  }
+
+  /// ¿Hay un rewarded listo para mostrar?
+  bool get isRewardedAdReady => _rewardedAd != null;
+
+  /// Muestra el rewarded ad. Al completar, activa 30 min sin banners.
+  void showRewardedAd({VoidCallback? onRewarded}) {
+    if (_rewardedAd == null) {
+      loadRewardedAd();
+      return;
+    }
+
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _rewardedAd = null;
+        AdService.lastAdDismissedTime = DateTime.now();
+        loadRewardedAd(); // Precargar siguiente
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _rewardedAd = null;
+        AdService.lastAdDismissedTime = DateTime.now();
+        loadRewardedAd();
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (ad, reward) {
+        // Activar 30 minutos sin banners
+        _bannerFreeUntil = DateTime.now().add(const Duration(minutes: 30));
+        if (kDebugMode) print('🎁 Banner-free hasta: $_bannerFreeUntil');
+        onRewarded?.call();
+      },
+    );
   }
 
   /// --- NATIVE ADS ---

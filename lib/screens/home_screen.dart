@@ -41,6 +41,7 @@ import '../providers/high_visibility_provider.dart';
 import '../services/premium_service.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../core/providers/auth_provider.dart';
+import '../core/providers/ad_provider.dart';
 import 'dart:async';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
@@ -88,6 +89,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   StreamSubscription? _ipcSubscription; // Fix #3: retener suscripción IPC para poder cancelarla
   AuthService get _authService => ref.read(authServiceProvider);
   
+  // Para intersticial al volver de background
+  DateTime? _lastPausedTime;
+  
   // Nuevos ajustes
   bool _showSimulatedBuses = true;
   bool _autoRefreshTimes = true;
@@ -116,6 +120,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       if (_notificationsEnabled) {
         await ForegroundService.start();
       }
+      
+      // Precargar anuncios tras iniciar (esperando a que AdMob se inicialice)
+      final adService = ref.read(adServiceProvider);
+      adService.initializationFuture.then((_) {
+        adService.loadRewardedAd();
+        adService.preloadNativeAds();
+      });
     });
 
     // Escuchar navegación desde Assistant / Shortcuts
@@ -199,14 +210,24 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     });
   }
   
-  // Cuando la app vuelve al frente, comprobar viaje pendiente y reanudar heartbeat
+  // Cuando la app vuelve al frente, comprobar viaje pendiente, reanudar heartbeat y mostrar ads
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final adService = ref.read(adServiceProvider);
+    
     if (state == AppLifecycleState.resumed) {
       _checkPendingTrip();
       _startHeartbeat();
+      
+      // Mostrar App Open Ad cada vez que el usuario vuelve (mejor impresiones)
+      adService.showAppOpenAdIfAvailable();
+      
+      // Mostrar Intersticial si el usuario estuvo fuera más de 5 minutos
+      adService.showInterstitialOnResume(_lastPausedTime);
+      _lastPausedTime = null;
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       _heartbeatTimer?.cancel();
+      _lastPausedTime ??= DateTime.now();
     }
   }
 
@@ -642,6 +663,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       // 1 — Rutas
       RoutesPage(
         onStopTapped: (stop) {
+          ref.read(adServiceProvider).trackStopQuery();
           setState(() => _index = 0);
           Future.delayed(const Duration(milliseconds: 100), () {
             _mapPageKey.currentState?.goToStop(stop);
@@ -672,6 +694,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                 MaterialPageRoute(
                   builder: (_) => ActiveAlertsScreen(
                     onViewStop: (stopId, stopName) {
+                      ref.read(adServiceProvider).trackStopQuery();
                       setState(() => _index = 0);
                       Future.delayed(const Duration(milliseconds: 100), () {
                         _mapPageKey.currentState?.goToStopById(stopId);

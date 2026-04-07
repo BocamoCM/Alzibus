@@ -46,6 +46,9 @@ class AppConfig {
   /// ID del Anuncio Intersticial (Post-NFC)
   static const String interstitialAdId = 'ca-app-pub-5215993257564469/8708248424';
 
+  /// ID del Anuncio Recompensado (Quitar banners 30 min)
+  static const String rewardedAdId = 'ca-app-pub-5215993257564469/5201537623';
+
   /// ID del Anuncio de Apertura (App Open Ad)
   static const String appOpenAdId = 'ca-app-pub-5215993257564469/7955497350';
 

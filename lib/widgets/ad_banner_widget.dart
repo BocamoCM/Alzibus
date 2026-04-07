@@ -31,9 +31,44 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
     final adService = ref.read(adServiceProvider);
     if (!adService.canShowAds) return;
 
+    // Si el usuario vio un rewarded y está en modo "sin banners", no cargar
+    if (adService.isBannerFree) return;
+
     // Pequeño delay de cortesía para evitar colisiones con App Open Ads en el arranque
     await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted) return;
+
+    // Intentar banner adaptativo primero (mayor eCPM)
+    BannerAd? adaptiveBanner = await adService.createAdaptiveBannerAd(
+      context: context,
+      isCollapsible: widget.isCollapsible,
+      adUnitId: widget.adUnitId,
+      onAdLoaded: (ad) {
+        if (mounted) {
+          setState(() {
+            _isLoaded = true;
+          });
+        }
+      },
+      onAdFailedToLoad: (ad, err) {
+        debugPrint('Error al cargar banner adaptativo: ${err.message}');
+        ad.dispose();
+        // Fallback a banner estándar
+        _loadStandardBanner();
+      },
+    );
+
+    if (adaptiveBanner != null) {
+      _bannerAd = adaptiveBanner..load();
+    } else {
+      // Fallback a banner estándar si no se pudo crear adaptativo
+      _loadStandardBanner();
+    }
+  }
+
+  void _loadStandardBanner() {
+    if (!mounted) return;
+    final adService = ref.read(adServiceProvider);
 
     _bannerAd = adService.createBannerAd(
       isCollapsible: widget.isCollapsible,
@@ -46,13 +81,13 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
         }
       },
       onAdFailedToLoad: (ad, err) {
-        debugPrint('Error al cargar banner AdMob: ${err.message}');
+        debugPrint('Error al cargar banner estándar: ${err.message}');
         ad.dispose();
         
         // Reintento único tras 5 segundos si falla la primera vez
         if (mounted && !_isLoaded) {
           Future.delayed(const Duration(seconds: 5), () {
-            if (mounted && !_isLoaded) _loadAd();
+            if (mounted && !_isLoaded) _loadStandardBanner();
           });
         }
       },
@@ -67,6 +102,13 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final adService = ref.watch(adServiceProvider);
+
+    // Si está en modo banner-free, mostrar indicador
+    if (adService.isBannerFree) {
+      return const SizedBox.shrink();
+    }
+
     if (_isLoaded && _bannerAd != null) {
       return Container(
         alignment: Alignment.center,

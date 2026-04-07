@@ -8,6 +8,7 @@ import '../models/trip_record.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../core/providers/ad_provider.dart';
 
 class TripHistoryScreen extends ConsumerStatefulWidget {
   const TripHistoryScreen({super.key});
@@ -27,6 +28,10 @@ class _TripHistoryScreenState extends ConsumerState<TripHistoryScreen> with Sing
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadService();
+    // Intersticial on history open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(adServiceProvider).showInterstitialAd();
+    });
   }
 
   Future<void> _loadService() async {

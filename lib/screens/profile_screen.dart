@@ -287,6 +287,46 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: widget.onSettingsTap,
           ),
+          if (AppConfig.showAds) ...[
+            const Divider(height: 1, indent: 56),
+            ListTile(
+              leading: const Icon(Icons.tv_off, color: Colors.green),
+              title: const Text('Quitar Anuncios (30 min)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              subtitle: const Text('Ver un vídeo corto para ocultar banners', style: TextStyle(fontSize: 11)),
+              trailing: const Icon(Icons.stars, color: Colors.green),
+              onTap: () {
+                final adService = ref.read(adServiceProvider);
+                if (adService.isRewardedAdReady) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => const Center(child: CircularProgressIndicator()),
+                  );
+                  adService.showRewardedAd(
+                    onRewarded: () {
+                      if (mounted) {
+                        Navigator.pop(context); // quitar dialog
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('¡Anuncios ocultos por 30 minutos! Disfruta 🎉'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        setState(() {}); // Forzar redibujado de la UI para ocultar banners
+                      }
+                    },
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Anuncio no disponible en este momento. Inténtalo más tarde.'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  adService.loadRewardedAd();
+                }
+              },
+            ),
+          ],
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.edit_outlined, color: AlzitransColors.burgundy),
