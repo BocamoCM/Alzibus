@@ -937,8 +937,20 @@ abstract class AppLocalizations {
   /// No description provided for @highVisibilitySubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Texto y botones optimizados para mejor legibilidad'**
+  /// **'Optimizado para mejor legibilidad'**
   String get highVisibilitySubtitle;
+
+  /// No description provided for @helpAndSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda y Soporte'**
+  String get helpAndSupport;
+
+  /// No description provided for @helpAndSupportSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Preguntas frecuentes y contacto'**
+  String get helpAndSupportSubtitle;
 
   /// No description provided for @privacyAndPermissions.
   ///

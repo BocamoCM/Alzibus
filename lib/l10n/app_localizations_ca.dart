@@ -442,8 +442,13 @@ class AppLocalizationsCa extends AppLocalizations {
   String get highVisibilityMode => 'Mode d\'Alta Visibilitat';
 
   @override
-  String get highVisibilitySubtitle =>
-      'Text i botons optimitzats per a millor legibilitat';
+  String get highVisibilitySubtitle => 'Optimitzat per a millor legibilitat';
+
+  @override
+  String get helpAndSupport => 'Ajuda i Suport';
+
+  @override
+  String get helpAndSupportSubtitle => 'Preguntes freqüents i contacte';
 
   @override
   String get privacyAndPermissions => 'PERMISOS I PRIVACITAT';

@@ -30,12 +30,12 @@ class SupportPage extends StatelessWidget {
             'Para que las alertas funcionen aunque tengas el móvil en el bolsillo o estés usando otra app. Alzitrans solo usa tu ubicación cuando tienes una alerta activa para avisarte justo a tiempo.',
           ),
           _buildFaqItem(
-            '¿Cómo se descuentan los viajes?',
-            'Si tienes un bono de Alzibus vinculado, puedes confirmar tu viaje al subir. La app descontará un viaje de tu saldo virtual de forma segura.',
+            '¿Cómo recargar mi tarjeta Alzibus?',
+            'Las tarjetas físicas de Alzibus se pueden recargar directamente en el autobús al subir o en los puntos de venta autorizados de la ciudad. Muy pronto podrás consultar tu saldo real aproximado desde la app.',
           ),
           _buildFaqItem(
-            '¿Qué es el ahorro de CO2?',
-            'Es nuestra forma de agradecerte que uses el transporte público. Por cada viaje que registras, calculamos cuánto CO2 has dejado de emitir comparado con ir en coche privado.',
+            '¿Qué son los puntos y el Rank?',
+            'Es nuestro sistema de Gamificación. Ganarás puntos por cada viaje registrado y por abrir la app diariamente. ¡Sube de Rank para demostrar que eres el usuario #1 de Alzitrans!',
           ),
           
           const SizedBox(height: 32),
@@ -53,7 +53,7 @@ class SupportPage extends StatelessWidget {
           const SizedBox(height: 16),
           
           ElevatedButton.icon(
-            onPressed: () => _launchEmail(),
+            onPressed: () => _launchEmail(context),
             icon: const Icon(Icons.email),
             label: const Text('Enviar Propuesta de Mejora'),
             style: ElevatedButton.styleFrom(
@@ -105,18 +105,24 @@ class SupportPage extends StatelessWidget {
     );
   }
 
-  Future<void> _launchEmail() async {
+  Future<void> _launchEmail(BuildContext context) async {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'soporte@alzitrans.es', // Cambiar por tu correo real si prefieres
+      path: 'bcarreres55@gmail.com', // Uso tu correo vinculado por seguridad
       query: encodeQueryParameters(<String, String>{
-        'subject': 'Sugerencia de mejora - Alzitrans App',
-        'body': 'Hola Borja,\n\nMe gustaría sugerir la siguiente mejora para la app:\n\n'
+        'subject': 'Sugerencia Alzitrans - Mejora',
+        'body': 'Hola,\n\nMe gustaría sugerir lo siguiente para Alzitrans:\n\n'
       }),
     );
 
-    if (await canLaunchUrl(emailLaunchUri)) {
-      await launchUrl(emailLaunchUri);
+    try {
+      await launchUrl(emailLaunchUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se ha podido abrir la app de correo')),
+        );
+      }
     }
   }
 

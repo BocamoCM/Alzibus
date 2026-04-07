@@ -442,8 +442,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get highVisibilityMode => 'Modo Alta Visibilidad';
 
   @override
-  String get highVisibilitySubtitle =>
-      'Texto y botones optimizados para mejor legibilidad';
+  String get highVisibilitySubtitle => 'Optimizado para mejor legibilidad';
+
+  @override
+  String get helpAndSupport => 'Ayuda y Soporte';
+
+  @override
+  String get helpAndSupportSubtitle => 'Preguntas frecuentes y contacto';
 
   @override
   String get privacyAndPermissions => 'PERMISOS Y PRIVACIDAD';
