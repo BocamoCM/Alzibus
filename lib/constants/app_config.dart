@@ -44,7 +44,7 @@ class AppConfig {
   static const String interstitialAdId = 'ca-app-pub-5215993257564469/8708248424';
 
   /// ID del Anuncio de Apertura (App Open Ad)
-  static const String appOpenAdId = 'ca-app-pub-5215993257564469/4971295325';
+  static const String appOpenAdId = 'ca-app-pub-5215993257564469/7955497350';
 
   /// --- FIN MONETIZACIÓN ---
 
