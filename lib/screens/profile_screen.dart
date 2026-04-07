@@ -9,6 +9,8 @@ import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
+import '../constants/app_config.dart';
+import '../widgets/ad_banner_widget.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends ConsumerStatefulWidget {
