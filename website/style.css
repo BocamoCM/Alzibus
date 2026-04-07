@@ -1,5 +1,5 @@
 /* ============================================
-   ALZITRANS LANDING PAGE — Premium Design System
+   ALZITRANS LANDING PAGE — Premium Design System v2
    ============================================ */
 
 :root {
@@ -15,6 +15,8 @@
     --glass-border: rgba(255, 255, 255, 0.08);
     --font: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
     --radius: 20px;
+    --glow-burgundy: rgba(107, 27, 61, 0.45);
+    --glow-coral: rgba(232, 90, 79, 0.3);
 }
 
 /* Reset */
@@ -252,7 +254,7 @@ a {
 }
 
 /* ============================================
-   PHONE FRAME — 3D Animated
+   PHONE FRAME — Neon Premium Design
    ============================================ */
 .hero-phone {
     display: flex;
@@ -262,17 +264,30 @@ a {
 .phone-frame {
     width: 260px;
     height: 520px;
-    background: var(--surface);
+    background: #1a1a24;
     border-radius: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    outline: 4px solid rgba(255, 255, 255, 0.03);
+    padding: 6px;
     overflow: hidden;
-    box-shadow:
-        0 30px 60px rgba(0, 0, 0, 0.8),
-        0 0 30px rgba(107, 27, 61, 0.2);
     position: relative;
+    /* Neon glow frame — clearly visible against dark bg */
+    border: 2px solid rgba(232, 90, 79, 0.4);
+    box-shadow:
+        0 0 15px rgba(107, 27, 61, 0.5),
+        0 0 60px rgba(107, 27, 61, 0.15),
+        0 30px 60px rgba(0, 0, 0, 0.7),
+        inset 0 0 20px rgba(107, 27, 61, 0.1);
 }
 
+/* Inner screen with rounded corners */
+.phone-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 34px;
+}
+
+/* Glass reflection overlay */
 .phone-frame::after {
     content: '';
     position: absolute;
@@ -280,30 +295,50 @@ a {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(125deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 40%);
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.12) 0%,
+            rgba(255, 255, 255, 0) 50%);
+    border-radius: 40px;
     pointer-events: none;
     z-index: 2;
 }
 
-.phone-frame img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+/* Animated glow ring around phones */
+.phone-frame::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 43px;
+    background: conic-gradient(from 0deg,
+            transparent 0%,
+            var(--glow-coral) 25%,
+            transparent 50%,
+            var(--glow-burgundy) 75%,
+            transparent 100%);
+    opacity: 0.4;
+    z-index: -1;
+    animation: glowSpin 8s linear infinite;
+}
+
+@keyframes glowSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Hero phone floating animation */
 .hero-phone .phone-frame {
-    animation: heroFloat 6s ease-in-out infinite;
     opacity: 0;
-    transform: translateY(30px);
-    animation: heroFloat 6s ease-in-out infinite, heroReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform: translateY(40px) scale(0.95);
+    animation:
+        heroReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+        heroFloat 6s ease-in-out 1.2s infinite;
 }
 
 @keyframes heroReveal {
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -311,11 +346,11 @@ a {
 
     0%,
     100% {
-        transform: translateY(0) rotate(2deg);
+        transform: translateY(0) rotate(1.5deg);
     }
 
     50% {
-        transform: translateY(-20px) rotate(-1deg);
+        transform: translateY(-18px) rotate(-1deg);
     }
 }
 
@@ -327,14 +362,15 @@ a {
     position: relative;
 }
 
+/* Ambient glow behind each feature phone */
 .feature-phone::before {
     content: '';
     position: absolute;
-    width: 250px;
-    height: 250px;
+    width: 280px;
+    height: 280px;
     border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.15;
+    filter: blur(90px);
+    opacity: 0.2;
     z-index: -1;
 }
 
@@ -436,16 +472,32 @@ a {
     transform: translateY(0);
 }
 
-/* Screenshot Reveal Animation */
-.phone-frame img {
+/* Screenshot Staggered Reveal (Features only) */
+.feature-row .phone-frame {
     opacity: 0;
-    transform: scale(0.9) translateY(20px);
-    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.85) translateY(30px);
+    transition:
+        opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,
+        transform 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
 }
 
-.visible .phone-frame img {
+.feature-row.visible .phone-frame {
     opacity: 1;
     transform: scale(1) translateY(0);
+}
+
+/* Stagger image inside the frame */
+.feature-row .phone-frame img {
+    opacity: 0;
+    transform: scale(1.08);
+    transition:
+        opacity 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.4s,
+        transform 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.4s;
+}
+
+.feature-row.visible .phone-frame img {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .feature-row.reverse {
@@ -497,11 +549,13 @@ a {
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     max-width: 380px;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
 }
 
 .feature-list li:hover {
     background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(232, 90, 79, 0.3);
+    transform: translateX(4px);
 }
 
 /* ============================================
@@ -632,6 +686,11 @@ a {
     .footer-content {
         flex-direction: column;
         gap: 16px;
+    }
+
+    /* Disable conic glow on mobile for performance */
+    .phone-frame::before {
+        display: none;
     }
 }
 
