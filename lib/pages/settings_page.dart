@@ -161,6 +161,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           } : null,
           secondary: const Icon(Icons.vibration),
         ),
+        const Divider(),
+        Text(l.language,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+        const SizedBox(height: 12),
+        _languageTile(name: 'Español', locale: const Locale('es')),
+        _languageTile(name: 'English', locale: const Locale('en')),
+        _languageTile(name: 'Valencià', locale: const Locale('ca')),
         
         const Divider(),
         Text(l.information.toUpperCase(),
@@ -185,22 +192,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ref.read(highVisibilityProvider.notifier).toggle(val);
           },
           secondary: const Icon(Icons.visibility),
-        ),
-        const Divider(),
-        Text(l.helpAndSupport.toUpperCase(),
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
-        const SizedBox(height: 8),
-        ListTile(
-          leading: const Icon(Icons.help_outline, color: AlzitransColors.burgundy),
-          title: Text(l.helpAndSupport),
-          subtitle: Text(l.helpAndSupportSubtitle),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SupportPage()),
-            );
-          },
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         ),
         const Divider(),
         Text(l.privacyAndPermissions,
@@ -236,12 +227,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           trailing: const Icon(Icons.open_in_new, size: 20),
         ),
         const Divider(),
-        Text(l.language,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        _languageTile(name: 'Español', locale: const Locale('es')),
-        _languageTile(name: 'English', locale: const Locale('en')),
-        _languageTile(name: 'Valencià', locale: const Locale('ca')),
+        Text(l.helpAndSupport.toUpperCase(),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.help_outline, color: AlzitransColors.burgundy),
+          title: Text(l.helpAndSupport),
+          subtitle: Text(l.helpAndSupportSubtitle),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SupportPage()),
+            );
+          },
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        ),
         
         const SizedBox(height: 48),
       ],
