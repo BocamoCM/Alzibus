@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alzibus - Los buses de Alzira en tu mano</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <img src="assets/logo.png" alt="Alzibus Logo">
+                <span>Alzibus</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#funciones">Funciones</a></li>
+                <li><a href="#descarga" class="btn-primary">Descargar</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero" id="inicio">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <h1 class="animate-up">M Muévete por Alzira <span>sin esperas</span></h1>
+                <p class="animate-up delay-1">Consulta tiempos real de llegada, gestiona tus paradas favoritas y recibe
+                    alertas de proximidad. Todo en una app diseñada para ti.</p>
+                <div class="hero-buttons animate-up delay-2">
+                    <a href="https://play.google.com/store" class="btn-download">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                            alt="Google Play">
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image animate-float">
+                <img src="assets/app-mockup.png" alt="Alzibus App Preview">
+            </div>
+        </div>
+    </header>
+
+    <section class="features" id="funciones">
+        <div class="container">
+            <h2 class="section-title">¿Por qué elegir Alzibus?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-image">
+                        <div class="mockup-screen map-screen">
+                            <div class="status-bar"></div>
+                            <div class="app-header"></div>
+                            <div class="map-point" style="top: 30%; left: 40%"></div>
+                            <div class="map-point" style="top: 60%; left: 70%"></div>
+                            <div class="map-point bus" style="top: 45%; left: 55%"></div>
+                        </div>
+                    </div>
+                    <div class="feature-content">
+                        <div class="icon-box">📍</div>
+                        <h3>Tiempo Real</h3>
+                        <p>Accede a la información exacta de cuánto falta para que llegue tu autobús en cada parada.</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-image">
+                        <div class="mockup-screen profile-screen">
+                            <div class="status-bar"></div>
+                            <div class="profile-avatar"></div>
+                            <div class="profile-card"></div>
+                            <div class="profile-card short"></div>
+                            <div class="profile-card"></div>
+                        </div>
+                    </div>
+                    <div class="feature-content">
+                        <div class="icon-box">👤</div>
+                        <h3>Perfil Moderno</h3>
+                        <p>Gestiona tus datos y revisa tus estadísticas de viaje con un diseño limpio y funcional.</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-image">
+                        <div class="mockup-screen alerts-screen">
+                            <div class="status-bar"></div>
+                            <div class="alert-item"></div>
+                            <div class="alert-item active"></div>
+                            <div class="alert-item"></div>
+                        </div>
+                    </div>
+                    <div class="feature-content">
+                        <div class="icon-box">�</div>
+                        <h3>Alertas Inteligentes</h3>
+                        <p>Recibe notificaciones cuando el bus esté a pocos minutos o cuando estés cerca de tu parada.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Alzibus. Creado con ❤️ para los ciudadanos de Alzira.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
