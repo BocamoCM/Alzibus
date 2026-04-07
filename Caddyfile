@@ -1,0 +1,21 @@
+{
+    email ${EMAIL:-borja@example.com}
+}
+
+# Website (Landing Page)
+alzibus.duckdns.org {
+    reverse_proxy alzibus_website:80
+}
+
+# API Backend
+api.alzibus.duckdns.org {
+    reverse_proxy alzibus_backend:3000
+}
+
+# Opcional: SSL con DuckDNS (requiere caddy con plugin)
+# alzibus.duckdns.org {
+#     reverse_proxy alzibus_website:80
+#     tls {
+#         dns duckdns {env.DUCKDNS_TOKEN}
+#     }
+# }
