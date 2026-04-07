@@ -159,10 +159,7 @@ Future<void> _showProximityNotificationStatic(
   List<String> lines,
   double distance,
 ) async {
-  // Vibrar
-  if (await Vibration.hasVibrator()) {
-    Vibration.vibrate(pattern: [0, 200, 100, 200]);
-  }
+  // Dejar que Android gestione la vibración según el canal y el modo del sistema
   
   final androidDetails = AndroidNotificationDetails(
     'alzibus-alerts',
@@ -366,12 +363,7 @@ Future<void> _showBusArrivingNotificationStatic(
   int minutes, {
   bool isArriving = false,
 }) async {
-  // Vibrar fuerte
-  try {
-    if (await Vibration.hasVibrator() == true) {
-      Vibration.vibrate(pattern: [0, 500, 200, 500, 200, 500]);
-    }
-  } catch (_) {}
+  // Dejar que Android gestione la vibración según el canal y el modo del sistema
   
   final timeText = minutes == 0 ? '¡LLEGANDO!' : 'en $minutes min';
   
