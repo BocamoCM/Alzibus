@@ -1,53 +1,83 @@
 # ==========================================
-# docker-compose.yml — Orquestación de servicios Alzibus
+# docker-compose.yml — Orquestación completa Alzibus
 # ==========================================
-# Define los servicios necesarios para ejecutar el backend.
-# Actualmente solo contiene PostgreSQL (el backend Node.js se ejecuta con PM2).
-#
-# Comandos:
-#   docker compose up -d    → Arrancar la base de datos en segundo plano
-#   docker compose down     → Detener y eliminar contenedores (los datos se mantienen)
-#   docker compose logs db  → Ver los logs de PostgreSQL
-#
-# Los datos se persisten en un volumen Docker llamado 'pgdata'.
-# Esto significa que aunque se elimine el contenedor, los datos NO se pierden.
-
-version: '3.8'
+# Este archivo gestiona DB, API, Website y Proxy SSL.
+# Lanzar con: docker compose up -d
 
 services:
-  # ─── Servicio de Base de Datos ───
+  # ─── Base de Datos (PostgreSQL) ───
   db:
-    image: postgres:15                    # Imagen oficial de PostgreSQL versión 15
-    container_name: alzibus_postgres      # Nombre fijo para identificar fácilmente el contenedor
+    image: postgres:15-alpine
+    container_name: alzibus_postgres
+    restart: always
     environment:
-      # Credenciales de la base de datos.
-      # IMPORTANTE: Estas deben coincidir con las variables del archivo .env del backend.
-      POSTGRES_USER: alzibus_user         # Usuario de PostgreSQL
-      POSTGRES_PASSWORD: alzibus_password # Contraseña (cambiar en producción real)
-      POSTGRES_DB: alzibus_db            # Nombre de la base de datos a crear
+      POSTGRES_USER: ${DB_USER:-alzibus_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-alzibus_password}
+      POSTGRES_DB: ${DB_NAME:-alzibus_db}
     ports:
-      # Mapear el puerto 5433 del host al 5432 del contenedor.
-      # Se usa 5433 para no conflictuar con una instalación local de PostgreSQL (que usa 5432).
       - "5433:5432"
     volumes:
-      # Volumen persistente para los datos de PostgreSQL.
-      # Sin esto, los datos se perderían al eliminar el contenedor.
       - pgdata:/var/lib/postgresql/data
-      # Montar init.sql como script de inicialización.
-      # PostgreSQL ejecuta automáticamente los .sql de /docker-entrypoint-initdb.d/
-      # SOLO la primera vez que se crea la base de datos (cuando el volumen está vacío).
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - alzibus-net  # Red interna de Docker para comunicación entre servicios
+      - alzibus-net
 
-# ─── Volúmenes persistentes ───
-# Define el volumen 'pgdata' gestionado por Docker.
-# Se puede inspeccionar con: docker volume inspect backend_pgdata
-volumes:
-  pgdata:
+  # ─── API Backend (Node.js) ───
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: alzibus_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-alzibus_user}
+      - DB_PASSWORD=${DB_PASSWORD:-alzibus_password}
+      - DB_NAME=${DB_NAME:-alzibus_db}
+      - JWT_SECRET=${JWT_SECRET}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    networks:
+      - alzibus-net
 
-# ─── Redes ───
-# Red bridge interna para que los servicios se comuniquen por nombre.
-# Ejemplo: desde otro contenedor, se puede conectar a PostgreSQL como 'db:5432'.
+  # ─── Website (Nginx) ───
+  website:
+    image: nginx:alpine
+    container_name: alzibus_website
+    restart: always
+    volumes:
+      - ../website:/usr/share/nginx/html
+      - ../website/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - alzibus-net
+
+  # ─── Proxy Inverso (Caddy) ───
+  proxy:
+    image: lucaslorentz/caddy-docker-proxy:2.8-alpine
+    container_name: alzibus_proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CADDY_DOCKER_CADDYFILE_PATH=/etc/caddy/Caddyfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - alzibus-net
+
 networks:
   alzibus-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+    external: true
+    name: backend_pgdata
+  caddy_data:
+  caddy_config:
