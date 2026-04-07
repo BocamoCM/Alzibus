@@ -66,9 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 console.log('[Alzitrans] Users found:', data.totalUsers);
                 if (data.totalUsers !== undefined) {
+                    console.log('[Alzitrans] Starting animation for:', data.totalUsers);
+                    userCountEl.innerHTML = `+0`; // Reset from ...
                     animateValue(userCountEl, 0, data.totalUsers, 1500);
                 } else {
-                    userCountEl.innerHTML = '+40'; // Fallback sensible
+                    userCountEl.innerHTML = '+25'; // Fallback sensible
                 }
             } else {
                 console.warn('[Alzitrans] API response not ok:', response.status);

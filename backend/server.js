@@ -286,6 +286,27 @@ const validateApiKey = (req, res, next) => {
     next();
 };
 
+// ── Inicialización de Tablas (Web Metrics) ──
+async function initDatabase() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS web_metrics (
+                id SERIAL PRIMARY KEY,
+                event_type VARCHAR(50) NOT NULL,
+                ip VARCHAR(45),
+                user_agent TEXT,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_web_metrics_event ON web_metrics(event_type);
+            CREATE INDEX IF NOT EXISTS idx_web_metrics_date ON web_metrics(created_at);
+        `);
+        console.log('✅ Base de datos verificada (web_metrics ok)');
+    } catch (err) {
+        console.error('❌ Error inicializando base de datos:', err);
+    }
+}
+initDatabase();
+
 app.use('/api', validateApiKey);
 
 // ── Endpoint de salud (Health Check) ──
