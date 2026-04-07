@@ -138,51 +138,79 @@ h1 span {
     filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
 }
 
-/* Features */
+/* Features Redesigned */
 .features {
-    padding: 100px 0;
+    padding: 150px 0;
 }
 
-.section-title {
-    text-align: center;
+.section-title span {
+    color: var(--primary);
+}
+
+.feature-row {
+    display: flex;
+    align-items: center;
+    gap: 80px;
+    margin-bottom: 200px;
+    position: relative;
+}
+
+.feature-row.reverse {
+    flex-direction: row-reverse;
+}
+
+.feature-info {
+    flex: 1;
+}
+
+.icon-badge {
+    width: 60px;
+    height: 60px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.feature-info h3 {
     font-size: 40px;
     font-weight: 800;
-    margin-bottom: 60px;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
 }
 
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
+.feature-info p {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 450px;
 }
 
-.feature-card {
-    background: var(--glass);
-    padding: 0;
-    border-radius: 30px;
-    border: 1px solid var(--glass-border);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.feature-card:hover {
-    transform: translateY(-10px) rotateX(5deg) rotateY(-5deg);
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.feature-content {
-    padding: 40px;
-}
-
-.feature-image {
-    width: 100%;
-    height: 300px;
-    overflow: hidden;
+.feature-visual {
+    flex: 1;
     display: flex;
     justify-content: center;
-    background: linear-gradient(135deg, rgba(107, 27, 61, 0.1), transparent);
+    position: relative;
+}
+
+/* Glowing Backgrounds for Features */
+.feature-visual::before {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--primary), transparent);
+    filter: blur(80px);
+    opacity: 0.15;
+    z-index: -1;
+}
+
+.feature-row.reverse .feature-visual::before {
+    background: radial-gradient(circle, var(--accent), transparent);
 }
 
 /* Mockup Screens */
@@ -201,7 +229,7 @@ h1 span {
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.feature-card:hover .mockup-screen {
+.feature-row:hover .mockup-screen {
     transform: perspective(1000px) rotateY(-5deg) rotateX(5deg) scale(1.05);
 }
 
