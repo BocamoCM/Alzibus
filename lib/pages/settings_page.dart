@@ -8,6 +8,8 @@ import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import '../core/providers/locale_provider.dart';
 import '../constants/app_config.dart';
+import '../services/ad_service.dart';
+import '../core/providers/ad_provider.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';

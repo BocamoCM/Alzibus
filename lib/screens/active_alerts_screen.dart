@@ -17,7 +17,7 @@ class ActiveAlertsScreen extends ConsumerStatefulWidget {
   const ActiveAlertsScreen({super.key, this.onViewStop});
 
   @override
-  State<ActiveAlertsScreen> createState() => _ActiveAlertsScreenState();
+  ConsumerState<ActiveAlertsScreen> createState() => _ActiveAlertsScreenState();
 }
 
 class _ActiveAlertsScreenState extends ConsumerState<ActiveAlertsScreen> {

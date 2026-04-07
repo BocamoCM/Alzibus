@@ -86,23 +86,19 @@ class AdService {
       return;
     }
 
-    // DELAY INICIAL: No mostrar nada los primeros 10 segundos
-    // Esto da unos segundos de cortesía al entrar.
     if (DateTime.now().difference(_appStartTime).inSeconds < 10) {
       debugPrint('AppOpenAd: Postergado por inicio muy reciente.');
       return;
     }
 
-    // COOLDOWN: No mostrar más de una vez cada 1 minuto
     if (_lastAppOpenShowTime != null) {
       final diff = DateTime.now().difference(_lastAppOpenShowTime!);
       if (diff.inMinutes < 1) {
-        debugPrint('AppOpenAd: Cooldown activo (${60 - diff.inSeconds} seg restantes). Saltando.');
+        debugPrint('AppOpenAd: Cooldown activo. Saltando.');
         return;
       }
     }
 
-    // Comprobar si el anuncio ha expirado (usamos 4h para App Open por política de AdMob)
     if (_appOpenLoadTime != null && 
         DateTime.now().difference(_appOpenLoadTime!) > const Duration(hours: 4)) {
       _appOpenAd!.dispose();
@@ -137,19 +133,16 @@ class AdService {
   void preloadNativeAds() {
     if (!canShowAds) return;
     
-    // Precargar Perfil
     _profileNativeAd = createNativeAd(
       onAdLoaded: (ad) => _isProfileNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isProfileNativeAdLoaded = false,
     )..load();
     
-    // Precargar Ajustes
     _settingsNativeAd = createNativeAd(
       onAdLoaded: (ad) => _isSettingsNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isSettingsNativeAdLoaded = false,
     )..load();
-    
-    // Precargar Alertas
+
     _alertsNativeAd = createNativeAd(
       onAdLoaded: (ad) => _isAlertsNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isAlertsNativeAdLoaded = false,
@@ -162,8 +155,6 @@ class AdService {
 
   /// --- BANNER ADS ---
 
-  /// Crea un Banner Ad con los parámetros configurados.
-  /// [isCollapsible] activa el banner desplegable de alto rendimiento.
   BannerAd createBannerAd({
     required void Function(Ad) onAdLoaded,
     required void Function(Ad, LoadAdError) onAdFailedToLoad,
@@ -194,7 +185,6 @@ class AdService {
   DateTime? _interstitialLoadTime;
   bool _isInterstitialLoading = false;
 
-  /// Carga un anuncio intersticial para mostrarlo más tarde.
   void loadInterstitialAd() {
     if (!canShowAds || _isInterstitialLoading) return;
 
@@ -216,9 +206,7 @@ class AdService {
     );
   }
 
-  /// Muestra el anuncio intersticial si está cargado y no ha expirado (> 1h).
   void showInterstitialAd() {
-    // Verificar expiración (1 hora para mantener frescura y eCPM alto)
     if (_interstitialAd != null && _interstitialLoadTime != null &&
         DateTime.now().difference(_interstitialLoadTime!) > const Duration(hours: 1)) {
       _interstitialAd!.dispose();
@@ -248,7 +236,6 @@ class AdService {
 
   /// --- NATIVE ADS ---
 
-  /// Crea un anuncio nativo configurado para el diseño de Alzitrans.
   NativeAd createNativeAd({
     required void Function(Ad) onAdLoaded,
     required void Function(Ad, LoadAdError) onAdFailedToLoad,
@@ -263,14 +250,13 @@ class AdService {
           onAdFailedToLoad(ad, error);
         },
       ),
-      // Usamos un template para no requerir código nativo (Java/Kotlin) adicional
       nativeTemplateStyle: NativeTemplateStyle(
         templateType: TemplateType.medium,
         mainBackgroundColor: Colors.white,
         cornerRadius: 20.0,
         callToActionTextStyle: NativeTemplateTextStyle(
           textColor: Colors.white,
-          backgroundColor: const Color(0xFF800020), // Borgoña Alzitrans
+          backgroundColor: const Color(0xFF800020),
           style: NativeTemplateFontStyle.bold,
           size: 16.0,
         ),
