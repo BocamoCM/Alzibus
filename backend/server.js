@@ -1737,6 +1737,24 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
 // - Avisos: total, activos, distribución por línea.
 // - Premium: número de usuarios premium y facturación estimada.
 // La paralelización con Promise.all minimiza la latencia total.
+// ── Estadísticas públicas para la Landing Page ──
+// GET /api/stats/public
+// Devuelve métricas básicas (usuarios totales) para mostrar en la web.
+// No requiere autenticación.
+app.get('/api/stats/public', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT COUNT(*) FROM users");
+        const count = parseInt(result.rows[0].count);
+
+        // Redondear a la baja para dar un efecto de "más de" (opcional)
+        // O devolver el número exacto. Devolveremos el exacto.
+        res.json({ totalUsers: count });
+    } catch (error) {
+        console.error('Error en /stats/public:', error);
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
 app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
     try {
         const [

@@ -1,5 +1,5 @@
 /* ============================================
-   ALZIBUS LANDING PAGE — Premium Design System
+   ALZITRANS LANDING PAGE — Premium Design System
    ============================================ */
 
 :root {
@@ -283,6 +283,16 @@ a {
 /* Hero phone floating animation */
 .hero-phone .phone-frame {
     animation: heroFloat 6s ease-in-out infinite;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: heroFloat 6s ease-in-out infinite, heroReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes heroReveal {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes heroFloat {
@@ -412,6 +422,18 @@ a {
 .feature-row.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Screenshot Reveal Animation */
+.phone-frame img {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visible .phone-frame img {
+    opacity: 1;
+    transform: scale(1) translateY(0);
 }
 
 .feature-row.reverse {

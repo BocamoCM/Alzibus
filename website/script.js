@@ -33,6 +33,41 @@ document.addEventListener('DOMContentLoaded', () => {
     animatedElements.forEach(el => observer.observe(el));
 
     // ========================
+    // Fetch User Count from API
+    // ========================
+    const userCountEl = document.getElementById('user-count');
+    async function fetchUserCount() {
+        if (!userCountEl) return;
+        try {
+            const response = await fetch('/api/stats/public');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.totalUsers !== undefined) {
+                    animateValue(userCountEl, 0, data.totalUsers, 1500);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching user count:', err);
+        }
+    }
+
+    function animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const value = Math.floor(progress * (end - start) + start);
+            obj.innerHTML = `+${value}`;
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    fetchUserCount();
+
+    // ========================
     // Navbar background on scroll
     // ========================
     const navbar = document.getElementById('navbar');
