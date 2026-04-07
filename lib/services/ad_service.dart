@@ -76,11 +76,11 @@ class AdService {
       return;
     }
 
-    // COOLDOWN: No mostrar más de una vez cada 5 minutos
+    // COOLDOWN: No mostrar más de una vez cada 3 minutos
     if (_lastAppOpenShowTime != null) {
       final diff = DateTime.now().difference(_lastAppOpenShowTime!);
-      if (diff.inMinutes < 5) {
-        debugPrint('AppOpenAd: Cooldown activo (${5 - diff.inMinutes} min restantes). Saltando.');
+      if (diff.inMinutes < 3) {
+        debugPrint('AppOpenAd: Cooldown activo (${3 - diff.inMinutes} min restantes). Saltando.');
         return;
       }
     }
