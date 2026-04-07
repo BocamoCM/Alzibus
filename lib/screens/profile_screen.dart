@@ -83,12 +83,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           padding: const EdgeInsets.only(bottom: 24),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
-                              minHeight: 200,
-                              maxHeight: 250,
+                              minHeight: 60,
+                              maxHeight: 70,
                             ),
                             child: AdBannerWidget(
-                              key: UniqueKey(),
-                              adUnitId: AppConfig.nativeAdId,
+                              adUnitId: AppConfig.settingsBannerAdId,
                             ),
                           ),
                         ),

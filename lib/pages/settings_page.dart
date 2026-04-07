@@ -248,10 +248,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 200, maxHeight: 250),
+              constraints: const BoxConstraints(minHeight: 60, maxHeight: 70),
               child: AdBannerWidget(
-                key: UniqueKey(),
-                adUnitId: AppConfig.nativeAdId,
+                adUnitId: AppConfig.settingsBannerAdId,
               ),
             ),
           ),
