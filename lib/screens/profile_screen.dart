@@ -69,8 +69,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ? _buildError(l)
               : RefreshIndicator(
                   onRefresh: _loadProfile,
-              : RefreshIndicator(
-                  onRefresh: _loadProfile,
                   child: ListView(
                     padding: const EdgeInsets.all(20),
                     children: [
@@ -84,9 +82,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
-        ),
-      );
-    }
+    );
+  }
 
   Widget _buildError(AppLocalizations l) {
     return Center(
