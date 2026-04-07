@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/bus_alert_service.dart';
 import '../services/bus_times_service.dart';
 import '../theme/app_theme.dart';
+import '../constants/app_config.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class ActiveAlertsScreen extends StatefulWidget {
   final Function(int stopId, String stopName)? onViewStop;
@@ -165,8 +167,20 @@ class _ActiveAlertsScreenState extends State<ActiveAlertsScreen> {
       onRefresh: _loadAlerts,
       child: ListView.builder(
         padding: const EdgeInsets.all(8),
-        itemCount: _alerts.length,
+        itemCount: AppConfig.showAds ? _alerts.length + 1 : _alerts.length,
         itemBuilder: (context, index) {
+          if (AppConfig.showAds && index == _alerts.length) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 300, maxHeight: 350),
+                child: AdBannerWidget(
+                  key: UniqueKey(),
+                  adUnitId: AppConfig.nativeAdId,
+                ),
+              ),
+            );
+          }
           final alert = _alerts[index];
           return _buildAlertCard(alert);
         },

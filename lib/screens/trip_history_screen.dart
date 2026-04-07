@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/auth_provider.dart';
 import '../models/trip_record.dart';
 import '../theme/app_theme.dart';
+import '../constants/app_config.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class TripHistoryScreen extends ConsumerStatefulWidget {
   const TripHistoryScreen({super.key});
@@ -788,6 +790,17 @@ class _TripHistoryScreenState extends ConsumerState<TripHistoryScreen> with Sing
                 ),
               ),
             ),
+            if (AppConfig.showAds && index % 2 == 0 && index != 0) 
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 300, maxHeight: 350),
+                  child: AdBannerWidget(
+                    key: UniqueKey(),
+                    adUnitId: AppConfig.nativeAdId,
+                  ),
+                ),
+              ),
             ...trips.map((trip) => _buildTripTile(trip)),
           ],
         );
