@@ -76,6 +76,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 24),
                       _buildStatsCards(theme, l),
                       const SizedBox(height: 24),
+                      if (AppConfig.showAds)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minHeight: 320,
+                              maxHeight: 400,
+                            ),
+                            child: AdBannerWidget(
+                              key: UniqueKey(),
+                              adUnitId: AppConfig.nativeAdId,
+                            ),
+                          ),
+                        ),
                       _buildInfoCard(theme, l),
                       const SizedBox(height: 16),
                       _buildActionsCard(theme, l),
