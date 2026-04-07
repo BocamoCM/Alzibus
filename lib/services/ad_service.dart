@@ -69,10 +69,19 @@ class AdService {
     );
   }
 
+  final DateTime _appStartTime = DateTime.now();
+
   /// Muestra el anuncio de apertura si está disponible y no ha expirado (< 4 horas según política Google).
   void showAppOpenAdIfAvailable() {
     if (!canShowAds || _appOpenAd == null || _isShowingAppOpenAd) {
       if (_appOpenAd == null) loadAppOpenAd();
+      return;
+    }
+
+    // DELAY INICIAL: No mostrar nada los primeros 120 segundos (2 min)
+    // Esto da tiempo al usuario para loguearse o registrarse sin interrupciones.
+    if (DateTime.now().difference(_appStartTime).inSeconds < 120) {
+      debugPrint('AppOpenAd: Postergado por inicio de sesión reciente.');
       return;
     }
 
