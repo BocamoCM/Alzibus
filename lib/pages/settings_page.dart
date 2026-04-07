@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/providers/gamification_provider.dart';
 import '../services/gamification_service.dart';
+import 'support_page.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   final bool notificationsEnabled;
@@ -184,6 +185,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ref.read(highVisibilityProvider.notifier).toggle(val);
           },
           secondary: const Icon(Icons.visibility),
+        ),
+        const Divider(),
+        Text(l.helpAndSupport.toUpperCase(),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.help_outline, color: AlzitransColors.burgundy),
+          title: Text(l.helpAndSupport),
+          subtitle: Text(l.helpAndSupportSubtitle),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SupportPage()),
+            );
+          },
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         ),
         const Divider(),
         Text(l.privacyAndPermissions,
