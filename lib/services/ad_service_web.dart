@@ -20,6 +20,7 @@ class AdService {
   // Stubs para App Open
   void loadAppOpenAd() {}
   void showAppOpenAdIfAvailable() {}
+  bool get hasAppOpenAdReady => false;
 
   // Stubs para Nativo
   void preloadNativeAds() {}

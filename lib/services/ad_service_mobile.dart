@@ -38,6 +38,9 @@ class AdService {
   /// Indica si los anuncios están habilitados y el SDK inicializado.
   bool get canShowAds => AppConfig.showAds && _isInitialized;
 
+  /// Indica si hay un App Open Ad cargado y listo para mostrar.
+  bool get hasAppOpenAdReady => _appOpenAd != null && !_isShowingAppOpenAd;
+
   /// --- APP OPEN ADS ---
 
   AppOpenAd? _appOpenAd;

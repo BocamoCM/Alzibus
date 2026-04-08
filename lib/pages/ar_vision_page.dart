@@ -218,31 +218,11 @@ class _ArVisionPageState extends State<ArVisionPage> {
   }
 
   List<Widget> _buildArMarkers() {
-    int markersRendered = 0;
-    
-    // UI de Debug para saber qué está fallando (lo quitaremos luego)
-    final debugWidget = Positioned(
-      top: 100,
-      left: 10,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        color: Colors.black87,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('GPS: ${_currentPosition?.latitude ?? "N/A"}, ${_currentPosition?.longitude ?? "N/A"}', style: const TextStyle(color: Colors.greenAccent, fontSize: 10)),
-            Text('Heading: ${_heading.toStringAsFixed(1)}', style: const TextStyle(color: Colors.amber, fontSize: 10)),
-            Text('Pitch: ${_pitch.toStringAsFixed(1)}', style: const TextStyle(color: Colors.orange, fontSize: 10)),
-          ],
-        ),
-      ),
-    );
-
-    if (_currentPosition == null) return [debugWidget];
+    if (_currentPosition == null) return [];
     
     final userLoc = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
     final screenWidth = MediaQuery.of(context).size.width;
-    final List<Widget> markers = [debugWidget];
+    final List<Widget> markers = [];
 
     // Filtrar paradas: Si hay una seleccionada, solo esa. Si no, las cercanas.
     final List<BusStop> stopsToRender = widget.targetStopId != null

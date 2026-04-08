@@ -223,11 +223,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       _checkPendingTrip();
       if (!kIsWeb) _startHeartbeat();
       
-      // Mostrar App Open Ad cada vez que el usuario vuelve (mejor impresiones)
+      // Mostrar App Open Ad al volver. Si se muestra, NO mostramos el intersticial también.
+      final hadAppOpenAd = adService.hasAppOpenAdReady;
       adService.showAppOpenAdIfAvailable();
       
-      // Mostrar Intersticial si el usuario estuvo fuera más de 5 minutos
-      if (!kIsWeb) {
+      // Mostrar Intersticial solo si NO había App Open Ad disponible
+      if (!kIsWeb && !hadAppOpenAd) {
         adService.showInterstitialOnResume(_lastPausedTime);
       }
       _lastPausedTime = null;
