@@ -39,6 +39,7 @@ services:
       - DB_NAME=${DB_NAME:-alzibus_db}
       - JWT_SECRET=${JWT_SECRET}
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - PORT=3000
     networks:
       - alzibus-net
 
