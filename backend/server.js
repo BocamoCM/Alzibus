@@ -54,6 +54,20 @@ const io = socketIo(server, {
     }
 });
 
+// Logs de depuración para WebSockets
+io.on('connection', (socket) => {
+    console.log(`[Socket.IO] Nuevo cliente conectado: ${socket.id} desde ${socket.handshake.address}`);
+
+    socket.on('disconnect', (reason) => {
+        console.log(`[Socket.IO] Cliente desconectado (${socket.id}): ${reason}`);
+    });
+});
+
+io.engine.on("connection_error", (err) => {
+    console.log(`[Socket.IO Engine Error] ${err.code}: ${err.message}`);
+    console.log(`[Socket.IO Engine context]:`, err.context);
+});
+
 // ── Middleware de depuración ──
 // Solo activo fuera de producción para no saturar los logs de Caddy con cada petición.
 if (process.env.NODE_ENV !== 'production') {
