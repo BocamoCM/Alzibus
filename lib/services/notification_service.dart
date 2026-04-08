@@ -8,7 +8,7 @@ class NotificationService {
   NotificationService(this._notif);
 
   Future<void> initialize(Function(String?)? onNotificationTap) async {
-    const android = AndroidInitializationSettings('ic_launcher');
+    const android = AndroidInitializationSettings('ic_notification');
     final initSettings = InitializationSettings(
       android: android,
     );
@@ -66,7 +66,7 @@ class NotificationService {
       category: AndroidNotificationCategory.navigation,
       visibility: NotificationVisibility.public,
       color: const Color(0xFF4A1D3D), // Color granate Alzitrans
-      icon: 'ic_launcher',
+      icon: 'ic_notification',
     );
     final details = NotificationDetails(android: androidDetails);
     
@@ -123,7 +123,7 @@ class NotificationService {
       ledOnMs: 1000,
       ledOffMs: 500,
       color: const Color(0xFF4A1D3D), // Color granate Alzitrans
-      icon: 'ic_launcher',
+      icon: 'ic_notification',
     );
     
     final details = NotificationDetails(android: androidDetails);

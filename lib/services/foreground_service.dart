@@ -25,7 +25,7 @@ Future<void> onStart(ServiceInstance service) async {
   final FlutterLocalNotificationsPlugin notif = FlutterLocalNotificationsPlugin();
   
   const initSettings = InitializationSettings(
-    android: AndroidInitializationSettings('@drawable/ic_launcher_foreground'),
+    android: AndroidInitializationSettings('ic_notification'),
   );
   await notif.initialize(initSettings);
   
@@ -168,7 +168,7 @@ Future<void> _showProximityNotificationStatic(
     importance: Importance.high,
     priority: Priority.high,
     ticker: 'Parada cercana',
-    icon: '@drawable/ic_launcher_foreground',
+    icon: 'ic_notification',
     color: const Color(0xFF4A1D3D),
     styleInformation: BigTextStyleInformation(
       '📍 $stopName\n🚌 Líneas: ${lines.join(", ")}\n📏 A ${distance.round()}m',
@@ -386,7 +386,7 @@ Future<void> _showBusArrivingNotificationStatic(
     importance: Importance.max,
     priority: Priority.max,
     ticker: 'Bus llegando',
-    icon: '@drawable/ic_launcher_foreground',
+    icon: 'ic_notification',
     color: const Color(0xFF1565C0),
     fullScreenIntent: true,
     playSound: true,
@@ -627,7 +627,7 @@ class ForegroundService {
     final FlutterLocalNotificationsPlugin notif = FlutterLocalNotificationsPlugin();
     
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@drawable/ic_launcher_foreground'),
+      android: AndroidInitializationSettings('ic_notification'),
     );
     await notif.initialize(initSettings);
     
@@ -638,7 +638,7 @@ class ForegroundService {
       importance: Importance.max,
       priority: Priority.max,
       ticker: 'Test',
-      icon: '@drawable/ic_launcher_foreground',
+      icon: 'ic_notification',
       color: Color(0xFF1565C0),
       fullScreenIntent: true,
     );
@@ -658,7 +658,7 @@ class ForegroundService {
     final FlutterLocalNotificationsPlugin notif = FlutterLocalNotificationsPlugin();
     
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@drawable/ic_launcher_foreground'),
+      android: AndroidInitializationSettings('ic_notification'),
     );
     await notif.initialize(initSettings);
     
