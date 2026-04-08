@@ -22,7 +22,7 @@ class SocketService {
     final wsUrl = AppConfig.baseUrl.replaceAll('/api', '');
     
     _socket = IO.io(wsUrl, <String, dynamic>{
-      'transports': ['websocket'],
+      // 'transports': ['websocket'], // Permite negociación (polling -> websocket) para mayor compatibilidad
       'autoConnect': true,
     });
 
