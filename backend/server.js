@@ -1185,6 +1185,75 @@ app.get('/api/users/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// ── Ranking de viajeros ──
+// GET /api/ranking?period=month|all
+// Devuelve el top 20 usuarios con más viajes + la posición del usuario autenticado.
+// Los emails se enmascaran por privacidad: "bo***@gmail.com"
+app.get('/api/ranking', authenticateToken, async (req, res) => {
+    const period = req.query.period === 'all' ? 'all' : 'month';
+    try {
+        const dateFilter = period === 'month'
+            ? `AND t.timestamp >= date_trunc('month', NOW())`
+            : '';
+
+        // Top 20 global
+        const top20 = await pool.query(`
+            SELECT
+                u.id,
+                u.email,
+                COUNT(t.id)::int AS trips,
+                RANK() OVER (ORDER BY COUNT(t.id) DESC) AS position
+            FROM users u
+            JOIN trips t ON t.user_id = u.id
+            WHERE 1=1 ${dateFilter}
+            GROUP BY u.id
+            ORDER BY trips DESC
+            LIMIT 20
+        `);
+
+        // Posición del usuario actual (puede estar fuera del top 20)
+        const myRank = await pool.query(`
+            SELECT position, trips FROM (
+                SELECT
+                    u.id,
+                    COUNT(t.id)::int AS trips,
+                    RANK() OVER (ORDER BY COUNT(t.id) DESC) AS position
+                FROM users u
+                JOIN trips t ON t.user_id = u.id
+                WHERE 1=1 ${dateFilter}
+                GROUP BY u.id
+            ) ranked
+            WHERE id = $1
+        `, [req.user.id]);
+
+        // Enmascarar emails: "bo***@gmail.com"
+        const maskEmail = (email) => {
+            const [local, domain] = email.split('@');
+            const visible = local.substring(0, Math.min(2, local.length));
+            return `${visible}***@${domain}`;
+        };
+
+        const ranking = top20.rows.map(r => ({
+            position: parseInt(r.position),
+            name: r.id === req.user.id ? maskEmail(r.email) + ' (tú)' : maskEmail(r.email),
+            trips: r.trips,
+            isMe: r.id === req.user.id,
+        }));
+
+        res.json({
+            ranking,
+            myPosition: myRank.rows[0] ? parseInt(myRank.rows[0].position) : null,
+            myTrips: myRank.rows[0] ? parseInt(myRank.rows[0].trips) : 0,
+            period,
+        });
+    } catch (error) {
+        console.error('Error en ranking:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+
+
 // ── Actualizar email del usuario ──
 // PUT /api/users/profile
 // Permite cambiar la dirección de email. Verifica que no esté en uso por otro usuario.

@@ -7,6 +7,7 @@ import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
+import '../screens/ranking_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
 import '../constants/app_config.dart';
@@ -287,6 +288,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             title: Text(l.tripHistory),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => const TripHistoryRoute().push(context),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: const Icon(Icons.emoji_events, color: Color(0xFFFFD700)),
+            title: const Text('🏆 Ranking de Viajeros', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Compite con otros viajeros de Alzira', style: TextStyle(fontSize: 11)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RankingScreen()),
+            ),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(

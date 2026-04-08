@@ -13,6 +13,7 @@ import '../../pages/reset_password_page.dart';
 import '../../pages/otp_verification_page.dart';
 import '../../pages/premium_page.dart';
 import '../../screens/trip_history_screen.dart';
+import '../../screens/ranking_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -79,6 +80,13 @@ class PremiumRoute extends GoRouteData with $PremiumRoute {
   const PremiumRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) => const PremiumPage();
+}
+
+@TypedGoRoute<RankingRoute>(path: '/ranking')
+class RankingRoute extends GoRouteData with $RankingRoute {
+  const RankingRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const RankingScreen();
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
