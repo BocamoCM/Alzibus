@@ -49,8 +49,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 // se emite un evento 'new_notice' y la app lo recibe al instante).
 const io = socketIo(server, {
     cors: {
-        origin: allowedOrigins,     // Solo acepta conexiones WebSocket desde estos orígenes
-        methods: ["GET", "POST"]     // Métodos HTTP permitidos en el handshake inicial
+        origin: (origin, callback) => callback(null, true), // Permitir todos los orígenes en Socket.IO
+        methods: ["GET", "POST"]
     }
 });
 
