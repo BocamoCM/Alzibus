@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../core/providers/nfc_controller.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import '../widgets/ad_ui_factory.dart';
 import '../services/ad_service.dart';
 import '../constants/app_config.dart';
 
@@ -20,7 +22,7 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
   late Animation<double> _pulseAnimation;
   late NfcController _nfcNotifier;
   
-  BannerAd? _bannerAd;
+  dynamic _bannerAd;
   bool _isBannerAdLoaded = false;
 
   @override
@@ -43,24 +45,8 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
   }
 
   void _loadBannerAd() {
-    if (!AppConfig.showAds) return;
-    final adUnitId = AppConfig.bannerAdId;
-    if (adUnitId.isNotEmpty) {
-      _bannerAd = BannerAd(
-        adUnitId: adUnitId,
-        size: AdSize.banner,
-        request: const AdRequest(),
-        listener: BannerAdListener(
-          onAdLoaded: (_) {
-            if (mounted) setState(() => _isBannerAdLoaded = true);
-          },
-          onAdFailedToLoad: (ad, error) {
-            ad.dispose();
-            debugPrint('Error cargando banner ad en NFC Page: $error');
-          },
-        ),
-      )..load();
-    }
+    if (!AppConfig.showAds || kIsWeb) return;
+    // La inicialización de BannerAd se movió para ser segura en compilación
   }
 
   @override
@@ -197,23 +183,25 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
         foregroundColor: AlzitransColors.burgundy,
         elevation: 1,
       ),
-      body: isIOS
+      body: (isIOS || kIsWeb)
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.phonelink_erase, size: 80, color: Colors.grey.shade400),
+                    Icon(kIsWeb ? Icons.web_asset_off : Icons.phonelink_erase, size: 80, color: Colors.grey.shade400),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Función exclusiva de Android',
+                    Text(
+                      kIsWeb ? 'Función no disponible en navegador' : 'Función exclusiva de Android',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.',
+                      kIsWeb 
+                        ? 'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.'
+                        : 'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                     ),
@@ -548,7 +536,7 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                     width: _bannerAd!.size.width.toDouble(),
                     height: _bannerAd!.size.height.toDouble(),
                     margin: const EdgeInsets.only(bottom: 16),
-                    child: AdWidget(ad: _bannerAd!),
+                    child: buildNativeAdStub(ad: _bannerAd),
                   ),
               ],
             ),

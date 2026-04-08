@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TtsService {
@@ -31,7 +32,9 @@ class TtsService {
       await _flutterTts.setPitch(1.0);
 
       // Configuraciones para evitar deletreo
-      await _flutterTts.setQueueMode(0); // Flush mode: interrumpir el anterior
+      if (!kIsWeb) {
+        await _flutterTts.setQueueMode(0); // Flush mode: interrumpir el anterior
+      }
 
       // Listeners de estado
       _flutterTts.setStartHandler(() {
@@ -87,7 +90,9 @@ class TtsService {
     // Intentar forzar motor de Google TTS que pronuncia mejor
     // NOTA: setEngine puede causar re-inicialización y errores en release si se llama mucho
     try {
-      await _flutterTts.setEngine('com.google.android.tts');
+      if (!kIsWeb) {
+        await _flutterTts.setEngine('com.google.android.tts');
+      }
     } catch (_) {
       // Si no está disponible, usar el motor por defecto
     }

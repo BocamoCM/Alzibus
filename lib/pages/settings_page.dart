@@ -8,9 +8,9 @@ import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import '../core/providers/locale_provider.dart';
 import '../constants/app_config.dart';
-import '../services/ad_service.dart';
-import '../core/providers/ad_provider.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import '../widgets/ad_ui_factory.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -154,16 +154,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 }
               : null,
         ),
-        SwitchListTile(
-          title: Text(l.vibration),
-          subtitle: Text(l.vibrationSubtitle),
-          value: _vibrationEnabled,
-          onChanged: _notificationsEnabled ? (val) {
-            setState(() => _vibrationEnabled = val);
-            widget.onVibrationChanged(val);
-          } : null,
-          secondary: const Icon(Icons.vibration),
-        ),
+        if (!kIsWeb)
+          SwitchListTile(
+            title: Text(l.vibration),
+            subtitle: Text(l.vibrationSubtitle),
+            value: _vibrationEnabled,
+            onChanged: _notificationsEnabled ? (val) {
+              setState(() => _vibrationEnabled = val);
+              widget.onVibrationChanged(val);
+            } : null,
+            secondary: const Icon(Icons.vibration),
+          ),
         const Divider(),
         Text(l.language,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
@@ -200,28 +201,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         Text(l.privacyAndPermissions,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
         const SizedBox(height: 8),
-        ListTile(
-          leading: const Icon(Icons.location_on, color: AlzitransColors.burgundy),
-          title: Text(l.backgroundAlerts),
-          subtitle: Text(l.backgroundAlertsSubtitle),
-          trailing: ElevatedButton(
-            onPressed: () async {
-              if (await Permission.locationAlways.isGranted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l.permissionActivated))
-                );
-              } else {
-                // Limpiar el flag de bloqueo para que la app pueda volver a pedirlo
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.remove('background_location_disabled');
-                
-                // Abrir ajustes para que sea el usuario el que lo active
-                await openAppSettings();
-              }
-            },
-            child: Text(l.configure),
+        if (!kIsWeb)
+          ListTile(
+            leading: const Icon(Icons.location_on, color: AlzitransColors.burgundy),
+            title: Text(l.backgroundAlerts),
+            subtitle: Text(l.backgroundAlertsSubtitle),
+            trailing: ElevatedButton(
+              onPressed: () async {
+                if (await Permission.locationAlways.isGranted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l.permissionActivated))
+                  );
+                } else {
+                  // Limpiar el flag de bloqueo para que la app pueda volver a pedirlo
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('background_location_disabled');
+                  
+                  // Abrir ajustes para que sea el usuario el que lo active
+                  await openAppSettings();
+                }
+              },
+              child: Text(l.configure),
+            ),
           ),
-        ),
         ListTile(
           leading: const Icon(Icons.privacy_tip, color: AlzitransColors.burgundy),
           title: Text(l.privacyPolicy),
@@ -262,11 +264,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildNativeAdOrBanner() {
+    if (kIsWeb) {
+      return AdBannerWidget(
+        adUnitId: AppConfig.settingsBannerAdId,
+      );
+    }
+    
     final adService = ref.read(adServiceProvider);
     final preloadedAd = adService.settingsNativeAd;
 
     if (preloadedAd != null) {
-      return AdWidget(ad: preloadedAd);
+      return buildNativeAdStub(ad: preloadedAd);
     }
 
     // Si no hay precargado, mostrar banner estándar como respaldo (pero con menor altura)

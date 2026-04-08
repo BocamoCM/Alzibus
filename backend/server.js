@@ -318,6 +318,33 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend Alzibus alcanzable' });
 });
 
+// ── Proxy para Tiempos de Bus (Bypass CORS para Web) ──
+// Este endpoint actúa como un puente entre la App Web (Frontend) y el servidor
+// de Autocares Lozano. Los navegadores bloquean peticiones directas por CORS,
+// pero el servidor (Backend) puede hacerlas sin restricciones.
+app.get('/api/proxy/bus-times', async (req, res) => {
+    const stopId = req.query.id;
+    if (!stopId) return res.status(400).json({ error: 'stopId is required' });
+
+    const https = require('https');
+    const targetUrl = `https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx?id=${stopId}`;
+
+    console.log(`[Proxy] Solicitando tiempos para parada ${stopId}...`);
+
+    https.get(targetUrl, (proxyRes) => {
+        let data = '';
+        proxyRes.on('data', (chunk) => { data += chunk; });
+        proxyRes.on('end', () => {
+            res.setHeader('Content-Type', 'text/html');
+            res.send(data);
+        });
+    }).on('error', (err) => {
+        console.error('[Proxy] Error:', err.message);
+        res.status(500).json({ error: 'Error al contactar con el servidor de transporte' });
+    });
+});
+
+
 // ── Rutas públicas para cumplimiento de Google Play ──
 // Google Play requiere que las apps tengan una URL pública accesible para:
 // 1. Política de privacidad: obligatoria para publicar en Play Store.

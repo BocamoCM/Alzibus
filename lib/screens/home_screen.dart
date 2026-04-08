@@ -110,23 +110,27 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     _loadNoticesCount();
     
     // Iniciar heartbeat cada 2 minutos
-    _startHeartbeat();
+    if (!kIsWeb) {
+      _startHeartbeat();
+    }
     
     // Verificar viaje pendiente inmediatamente al entrar
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _checkPendingTrip();
       
       // Arrancar el servicio de segundo plano
-      if (_notificationsEnabled) {
+      if (!kIsWeb && _notificationsEnabled) {
         await ForegroundService.start();
       }
       
       // Precargar anuncios tras iniciar (esperando a que AdMob se inicialice)
-      final adService = ref.read(adServiceProvider);
-      adService.initializationFuture.then((_) {
-        adService.loadRewardedAd();
-        adService.preloadNativeAds();
-      });
+      if (!kIsWeb) {
+        final adService = ref.read(adServiceProvider);
+        adService.initializationFuture.then((_) {
+          adService.loadRewardedAd();
+          adService.preloadNativeAds();
+        });
+      }
     });
 
     // Escuchar navegación desde Assistant / Shortcuts
@@ -217,16 +221,18 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     
     if (state == AppLifecycleState.resumed) {
       _checkPendingTrip();
-      _startHeartbeat();
+      if (!kIsWeb) _startHeartbeat();
       
       // Mostrar App Open Ad cada vez que el usuario vuelve (mejor impresiones)
       adService.showAppOpenAdIfAvailable();
       
       // Mostrar Intersticial si el usuario estuvo fuera más de 5 minutos
-      adService.showInterstitialOnResume(_lastPausedTime);
+      if (!kIsWeb) {
+        adService.showInterstitialOnResume(_lastPausedTime);
+      }
       _lastPausedTime = null;
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _heartbeatTimer?.cancel();
+      if (!kIsWeb) _heartbeatTimer?.cancel();
       _lastPausedTime ??= DateTime.now();
     }
   }
@@ -616,9 +622,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               setState(() => _notificationsEnabled = value);
               await _savePreferences();
               if (value) {
-                await ForegroundService.start();
+                if (!kIsWeb) await ForegroundService.start();
               } else {
-                await ForegroundService.stop();
+                if (!kIsWeb) await ForegroundService.stop();
               }
             },
             onDistanceChanged: (value) {

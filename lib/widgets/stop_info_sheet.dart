@@ -2,6 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import '../widgets/ad_ui_factory.dart';
+import '../services/ad_service.dart';
+import '../core/providers/ad_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
@@ -18,9 +23,6 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../services/tts_service.dart';
 import '../core/providers/tts_provider.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import '../services/ad_service.dart';
-import '../core/providers/ad_provider.dart';
 import 'simple_map_widget.dart';
 import '../services/socket_service.dart';
 import '../services/gamification_service.dart';
@@ -56,7 +58,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   List<TrainArrival>? _trainArrivals;
   bool _loadingTrains = false;
   
-  NativeAd? _nativeAd;
+  dynamic _nativeAd;
   bool _isNativeAdLoaded = false;
   
   // Gamificación y Social
@@ -79,7 +81,9 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
     if (_isRenfeStation) {
       _loadTrainTimes();
     }
-    _initNativeAd();
+    if (!kIsWeb) {
+      _initNativeAd();
+    }
     _setupAttendeesListener();
   }
 
@@ -99,14 +103,14 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   }
 
   void _initNativeAd() {
-    if (!AppConfig.showAds) return;
+    if (!AppConfig.showAds || kIsWeb) return;
 
     _nativeAd = ref.read(adServiceProvider).createNativeAd(
       onAdLoaded: (ad) {
-        setState(() => _isNativeAdLoaded = true);
+        if (mounted) setState(() => _isNativeAdLoaded = true);
       },
       onAdFailedToLoad: (ad, error) {
-        setState(() => _isNativeAdLoaded = false);
+        if (mounted) setState(() => _isNativeAdLoaded = false);
       },
     )..load();
   }
@@ -947,19 +951,20 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           ),
           const SizedBox(height: 12),
           // Botón de Alzitrans Vision AR
-          ElevatedButton.icon(
-            onPressed: _openArVision,
-            icon: const Icon(Icons.view_in_ar),
-            label: const Text('Alzitrans Vision (AR)'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AlzitransColors.burgundy,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          if (!kIsWeb)
+            ElevatedButton.icon(
+              onPressed: _openArVision,
+              icon: const Icon(Icons.view_in_ar),
+              label: const Text('Alzitrans Vision (AR)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AlzitransColors.burgundy,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-          ),
           
           // --- ANUNCIO NATIVO AVANZADO ---
           if (AppConfig.showAds && _nativeAd != null && _isNativeAdLoaded)
@@ -967,7 +972,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
               margin: const EdgeInsets.only(top: 24, bottom: 8),
               height: 320, // Altura estimada para un anuncio nativo con imagen
               alignment: Alignment.center,
-              child: AdWidget(ad: _nativeAd!),
+              child: buildNativeAdStub(ad: _nativeAd),
             ),
             
           const SizedBox(height: 20),

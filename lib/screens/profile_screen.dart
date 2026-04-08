@@ -11,9 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import '../widgets/ad_ui_factory.dart';
 import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
@@ -212,11 +214,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildNativeAdOrBanner() {
+    if (kIsWeb) {
+      return AdBannerWidget(
+        adUnitId: AppConfig.settingsBannerAdId,
+      );
+    }
+    
     final adService = ref.read(adServiceProvider);
     final preloadedAd = adService.profileNativeAd;
 
     if (preloadedAd != null) {
-      return AdWidget(ad: preloadedAd);
+      return buildNativeAdStub(ad: preloadedAd);
     }
 
     // Si no hay precargado, mostrar banner estándar como respaldo
@@ -287,7 +295,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: widget.onSettingsTap,
           ),
-          if (AppConfig.showAds) ...[
+          if (AppConfig.showAds && !kIsWeb) ...[
             const Divider(height: 1, indent: 56),
             ListTile(
               leading: const Icon(Icons.tv_off, color: Colors.green),

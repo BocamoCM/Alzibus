@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
 class BatteryPermissionScreen extends StatefulWidget {
@@ -29,7 +28,7 @@ class _BatteryPermissionScreenState extends State<BatteryPermissionScreen> {
   }
 
   Future<void> _detectDevice() async {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
       setState(() {
@@ -304,7 +303,7 @@ Future<bool> shouldShowBatteryPermission() async {
   if (alreadyShown) return false;
   
   // Solo mostrar en Android
-  if (!Platform.isAndroid) return false;
+  if (defaultTargetPlatform != TargetPlatform.android) return false;
   
   // Detectar si es Xiaomi/MIUI u otro fabricante problemático
   final deviceInfo = DeviceInfoPlugin();

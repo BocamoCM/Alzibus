@@ -38,6 +38,7 @@ class AuthService {
 
   /// Comprueba si el dispositivo soporta biometría y tiene huellas registradas.
   Future<bool> canCheckBiometrics() async {
+    if (kIsWeb) return false;
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
       final bool isDeviceSupported = await _auth.isDeviceSupported();

@@ -6,10 +6,12 @@ import '../services/bus_times_service.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/providers/ad_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import '../widgets/ad_ui_factory.dart';
 import '../services/ad_service.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../core/providers/ad_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ActiveAlertsScreen extends ConsumerStatefulWidget {
   final Function(int stopId, String stopName)? onViewStop;
@@ -340,11 +342,17 @@ class _ActiveAlertsScreenState extends ConsumerState<ActiveAlertsScreen> {
   }
 
   Widget _buildNativeAdOrBanner() {
+    if (kIsWeb) {
+      return AdBannerWidget(
+        adUnitId: AppConfig.nativeAdId,
+      );
+    }
+
     final adService = ref.read(adServiceProvider);
     final preloadedAd = adService.alertsNativeAd;
 
     if (preloadedAd != null) {
-      return AdWidget(ad: preloadedAd);
+      return buildNativeAdStub(ad: preloadedAd);
     }
 
     // Si no hay precargado, mostrar banner estándar como respaldo

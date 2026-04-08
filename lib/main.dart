@@ -57,6 +57,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // Asegurar inicialización antes de nada para usar PackageInfo
   WidgetsFlutterBinding.ensureInitialized();
+  
   final packageInfo = await PackageInfo.fromPlatform();
   final version = packageInfo.version;
   final buildNumber = packageInfo.buildNumber;
@@ -88,6 +89,10 @@ void main() async {
       }
     },
     appRunner: () async {
+      // Asegurar inicialización dentro del Zone de Sentry para evitar "Zone mismatch" en Web
+      // Aunque ya se llamó fuera, volver a llamarlo aquí asegura el vínculo con el Zone actual.
+      WidgetsFlutterBinding.ensureInitialized();
+      
       // 1. Inicialización crítica (rápida)
       final prefs = await SharedPreferences.getInstance();
       
@@ -111,10 +116,12 @@ void main() async {
       debugPrint('Main: Inicializando servicios a través de Providers...');
       
       // Premium
-      try {
-        await container.read(premiumServiceProvider).init();
-      } catch (e) {
-        debugPrint('Main: Error inicializando PremiumService: $e');
+      if (!kIsWeb) {
+        try {
+          await container.read(premiumServiceProvider).init();
+        } catch (e) {
+          debugPrint('Main: Error inicializando PremiumService: $e');
+        }
       }
 
       // AdMob
@@ -141,13 +148,16 @@ void main() async {
       });
     }
   }
-      
       // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
       Future.microtask(() async {
         // ESPERAR a que termine la lógica de permisos/avisos
-        await _requestPermissions();
+        if (!kIsWeb) {
+          await _requestPermissions();
+        }
         
-        final prefs = await SharedPreferences.getInstance();
+        // Reutilizamos prefs inicializado arriba o cargamos de nuevo si es necesario
+        // pero evitamos redeclarar 'final prefs' si ya existe en el ámbito.
+        await prefs.reload();
         final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
         
         if (!kIsWeb) {
@@ -162,6 +172,10 @@ void main() async {
           SocketService().initialize();
           GamificationService().initialize();
           await container.read(ttsProvider).init();
+          await container.read(localeProvider.notifier).loadLocale();
+        } else {
+          // Lógica simplificada para Web
+          SocketService().initialize();
           await container.read(localeProvider.notifier).loadLocale();
         }
 

@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:html/parser.dart' as html_parser;
 import '../core/network/api_client.dart';
+import '../constants/app_config.dart';
 
 class BusArrival {
   final String line;
@@ -18,7 +20,12 @@ class BusTimesService {
 
   Future<List<BusArrival>> getArrivalTimes(int stopId) async {
     try {
-      final response = await ApiClient().get('$baseUrl?id=$stopId');
+      // Usar el proxy del backend en Web para evitar errores de CORS
+      final url = kIsWeb 
+          ? '${AppConfig.baseUrl}/proxy/bus-times?id=$stopId'
+          : '$baseUrl?id=$stopId';
+          
+      final response = await ApiClient().get(url);
 
       if (response.statusCode != 200) {
         return [];
