@@ -13,11 +13,12 @@ alzitrans.duckdns.org {
         reverse_proxy alzibus_backend:3000
     }
 
+    # Redirigir /app a /app/ (Evita errores de rutas relativas)
+    redir /app /app/
+
     # Configuración para la App en subruta /app
-    handle_path /app/* {
+    handle /app/* {
         reverse_proxy alzibus_website:80
-        # Opcional: Si usas rutas de Flutter sin # (URL Strategy),
-        # podrías necesitar ruteo especial aquí, pero con /app/ suele bastar.
     }
 
     # El resto de peticiones van a la web principal (Landing Page)
