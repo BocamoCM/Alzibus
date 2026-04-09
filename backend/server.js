@@ -2230,6 +2230,71 @@ app.post('/api/payments/confirm-manual', authenticateToken, async (req, res) => 
     }
 });
 
+// ── Métricas y Notificaciones Adicionales (Discord) ──
+
+// POST /api/metrics/install
+// Notifica cuando se instala por primera vez la aplicación
+app.post('/api/metrics/install', async (req, res) => {
+    try {
+        const { referrer } = req.body;
+        const ip = req.ip || req.headers['x-forwarded-for'];
+        sendDiscordNotification({
+            embeds: [{
+                title: '🎉 Nueva Instalación de la App',
+                description: `Alguien acaba de abrir la app por primera vez (o ha borrado datos).`,
+                color: 0x2ECC71, // Verde
+                fields: [
+                    { name: 'Referrer', value: referrer || 'Orgánico / Ninguno', inline: false },
+                    { name: 'IP', value: ip || 'Desconocida', inline: true }
+                ]
+            }]
+        });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[Metrics] Error en install:', error);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// Middleware opcional de autenticación para obtener el email si está disponible
+const optionalToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+        jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+            if (!err) req.user = user;
+            next();
+        });
+    } else {
+        next();
+    }
+};
+
+// POST /api/metrics/app-open
+// Notifica cuando se abre o se resume la aplicación
+app.post('/api/metrics/app-open', optionalToken, async (req, res) => {
+    try {
+        const ip = req.ip || req.headers['x-forwarded-for'];
+        const identity = (req.user && req.user.email) ? req.user.email : 'Visitante Anónimo';
+        
+        sendDiscordNotification({
+            embeds: [{
+                title: '📱 Aplicación Abierta',
+                description: `Un usuario ha entrado en la app Alzitrans.`,
+                color: 0x3498DB, // Azul
+                fields: [
+                    { name: 'Usuario', value: identity, inline: true },
+                    { name: 'IP', value: ip || 'Desconocida', inline: true }
+                ]
+            }]
+        });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[Metrics] Error en app-open:', error);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
 // ── Iniciar el servidor HTTP ──
 // Escucha en todas las interfaces de red ('0.0.0.0') para aceptar
 // conexiones tanto locales como remotas (importante para la Raspberry Pi).

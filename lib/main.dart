@@ -11,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'core/network/api_client.dart';
 import 'core/router/app_router.dart';
 
 import 'screens/home_screen.dart';
@@ -268,6 +269,8 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Notificar al backend que se ha abierto la app
+    _notifyAppOpen();
   }
 
   @override
@@ -275,12 +278,23 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+  
+  void _notifyAppOpen() {
+    try {
+      ApiClient().post('/metrics/app-open').catchError((e) {
+        debugPrint('Error notificando app-open: $e');
+      });
+    } catch (_) {}
+  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Mostrar App Open Ad al volver a la app (resumed)
     if (state == AppLifecycleState.resumed) {
+      // Mostrar App Open Ad al volver a la app
       ref.read(adServiceProvider).showAppOpenAdIfAvailable();
+      
+      // Notificar al backend
+      _notifyAppOpen();
     }
   }
 
