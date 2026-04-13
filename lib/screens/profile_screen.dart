@@ -7,7 +7,6 @@ import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
-import '../screens/ranking_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
 import '../constants/app_config.dart';
@@ -291,14 +290,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.emoji_events, color: Color(0xFFFFD700)),
-            title: const Text('🏆 Ranking de Viajeros', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Compite con otros viajeros de Alzira', style: TextStyle(fontSize: 11)),
+            leading: const Icon(Icons.emoji_events, color: AlzitransColors.burgundy),
+            title: Text(l.rankingTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(l.rankingSubtitle, style: const TextStyle(fontSize: 11)),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RankingScreen()),
-            ),
+            onTap: () => const RankingRoute().push(context),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
@@ -310,10 +306,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (AppConfig.showAds && !kIsWeb) ...[
             const Divider(height: 1, indent: 56),
             ListTile(
-              leading: const Icon(Icons.tv_off, color: Colors.green),
-              title: const Text('Quitar Anuncios (30 min)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              leading: const Icon(Icons.tv_off, color: AlzitransColors.burgundy),
+              title: const Text('Quitar Anuncios (30 min)', style: TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
               subtitle: const Text('Ver un vídeo corto para ocultar banners', style: TextStyle(fontSize: 11)),
-              trailing: const Icon(Icons.stars, color: Colors.green),
+              trailing: const Icon(Icons.stars, color: AlzitransColors.burgundy),
               onTap: () {
                 final adService = ref.read(adServiceProvider);
                 if (adService.isRewardedAdReady) {

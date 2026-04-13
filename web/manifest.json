@@ -1,11 +1,11 @@
 {
-    "name": "alzitrans",
-    "short_name": "alzitrans",
+    "name": "Alzitrans",
+    "short_name": "Alzitrans",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Tu bus en Alzira, en tiempo real.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

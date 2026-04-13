@@ -505,4 +505,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String personasInteresadas(int n) {
     return '$n people interested';
   }
+
+  @override
+  String get rankingTitle => 'Traveler Ranking';
+
+  @override
+  String get rankingSubtitle => 'Compete with other travelers from Alzira';
+
+  @override
+  String yourPosition(int pos, int trips) {
+    return 'Your position: #$pos · $trips trips';
+  }
+
+  @override
+  String get thisMonthToggle => 'This month';
+
+  @override
+  String get allTimeToggle => 'All time';
+
+  @override
+  String get rankingLoadError => 'Could not load ranking';
+
+  @override
+  String get noTripsRankingMonth =>
+      'No one has traveled this month yet. Be the first!';
+
+  @override
+  String get noTripsRankingAll => 'No trips registered yet.';
+
+  @override
+  String get travelersRankingHeader => '🏆 Traveler Ranking';
 }

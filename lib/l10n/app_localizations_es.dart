@@ -509,4 +509,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String personasInteresadas(int n) {
     return '$n personas interesadas';
   }
+
+  @override
+  String get rankingTitle => 'Ranking de Viajeros';
+
+  @override
+  String get rankingSubtitle => 'Compite con otros viajeros de Alzira';
+
+  @override
+  String yourPosition(int pos, int trips) {
+    return 'Tu posición: #$pos · $trips viajes';
+  }
+
+  @override
+  String get thisMonthToggle => 'Este mes';
+
+  @override
+  String get allTimeToggle => 'Todo el tiempo';
+
+  @override
+  String get rankingLoadError => 'No se pudo cargar el ranking';
+
+  @override
+  String get noTripsRankingMonth =>
+      'Nadie ha viajado este mes aún. ¡Sé el primero!';
+
+  @override
+  String get noTripsRankingAll => 'Aún no hay viajes registrados.';
+
+  @override
+  String get travelersRankingHeader => '🏆 Ranking de Viajeros';
 }

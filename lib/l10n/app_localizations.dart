@@ -1048,6 +1048,60 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{n} personas interesadas'**
   String personasInteresadas(int n);
+
+  /// No description provided for @rankingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ranking de Viajeros'**
+  String get rankingTitle;
+
+  /// No description provided for @rankingSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Compite con otros viajeros de Alzira'**
+  String get rankingSubtitle;
+
+  /// No description provided for @yourPosition.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu posición: #{pos} · {trips} viajes'**
+  String yourPosition(int pos, int trips);
+
+  /// No description provided for @thisMonthToggle.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes'**
+  String get thisMonthToggle;
+
+  /// No description provided for @allTimeToggle.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo el tiempo'**
+  String get allTimeToggle;
+
+  /// No description provided for @rankingLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar el ranking'**
+  String get rankingLoadError;
+
+  /// No description provided for @noTripsRankingMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Nadie ha viajado este mes aún. ¡Sé el primero!'**
+  String get noTripsRankingMonth;
+
+  /// No description provided for @noTripsRankingAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay viajes registrados.'**
+  String get noTripsRankingAll;
+
+  /// No description provided for @travelersRankingHeader.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Ranking de Viajeros'**
+  String get travelersRankingHeader;
 }
 
 class _AppLocalizationsDelegate

@@ -191,5 +191,20 @@
   "teHemosApuntado": "Te hemos apuntado al bus",
   "alertaActiva": "(Alerta activa)",
   "personasInteresadas": "{n} personas interesadas",
-  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } }
+  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } },
+  "rankingTitle": "Ranking de Viajeros",
+  "rankingSubtitle": "Compite con otros viajeros de Alzira",
+  "yourPosition": "Tu posición: #{pos} · {trips} viajes",
+  "@yourPosition": {
+    "placeholders": {
+      "pos": { "type": "int" },
+      "trips": { "type": "int" }
+    }
+  },
+  "thisMonthToggle": "Este mes",
+  "allTimeToggle": "Todo el tiempo",
+  "rankingLoadError": "No se pudo cargar el ranking",
+  "noTripsRankingMonth": "Nadie ha viajado este mes aún. ¡Sé el primero!",
+  "noTripsRankingAll": "Aún no hay viajes registrados.",
+  "travelersRankingHeader": "🏆 Ranking de Viajeros"
 }

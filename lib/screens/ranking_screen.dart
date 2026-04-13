@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_localizations.dart';
 
 class RankingScreen extends ConsumerStatefulWidget {
   const RankingScreen({super.key});
@@ -61,19 +62,23 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
       });
       _animController.forward(from: 0);
     } catch (e) {
-      setState(() {
-        _error = 'No se pudo cargar el ranking';
-        _isLoading = false;
-      });
+      if (mounted) {
+        final l = AppLocalizations.of(context)!;
+        setState(() {
+          _error = l.rankingLoadError;
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: const Text('🏆 Ranking de Viajeros'),
+        title: Text(l.travelersRankingHeader),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -81,30 +86,30 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadRanking,
-            tooltip: 'Actualizar',
+            tooltip: l.update,
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildHeader(),
-          _buildPeriodToggle(),
+          _buildHeader(l),
+          _buildPeriodToggle(l),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? _buildError()
+                    ? _buildError(l)
                     : _ranking.isEmpty
-                        ? _buildEmpty()
+                        ? _buildEmpty(l)
                         : _buildList(),
           ),
-          if (_myPosition != null) _buildMyPositionBar(),
+          if (_myPosition != null) _buildMyPositionBar(l),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -117,9 +122,9 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
         children: [
-          const Text(
-            'Compite con otros viajeros de Alzira',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+          Text(
+            l.rankingSubtitle,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
           ),
           if (_myPosition != null) ...[
             const SizedBox(height: 12),
@@ -135,7 +140,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
                   const Icon(Icons.person, color: Colors.white, size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    'Tu posición: #$_myPosition · $_myTrips viajes',
+                    l.yourPosition(_myPosition!, _myTrips),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -151,14 +156,14 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
     );
   }
 
-  Widget _buildPeriodToggle() {
+  Widget _buildPeriodToggle(AppLocalizations l) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Row(
         children: [
           Expanded(
             child: _PeriodButton(
-              label: 'Este mes',
+              label: l.thisMonthToggle,
               icon: Icons.calendar_month,
               selected: _period == 'month',
               onTap: () {
@@ -172,7 +177,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
           const SizedBox(width: 12),
           Expanded(
             child: _PeriodButton(
-              label: 'Todo el tiempo',
+              label: l.allTimeToggle,
               icon: Icons.emoji_events,
               selected: _period == 'all',
               onTap: () {
@@ -380,7 +385,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
     );
   }
 
-  Widget _buildMyPositionBar() {
+  Widget _buildMyPositionBar(AppLocalizations l) {
     if (_ranking.any((e) => e['isMe'] == true)) return const SizedBox.shrink();
 
     return Container(
@@ -396,7 +401,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Tu posición: #$_myPosition · $_myTrips viajes este ${_period == 'month' ? 'mes' : 'tiempo'}',
+              l.yourPosition(_myPosition!, _myTrips),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -408,7 +413,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(AppLocalizations l) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -417,13 +422,13 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
           const SizedBox(height: 16),
           Text(_error!, style: TextStyle(color: Colors.grey[600])),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: _loadRanking, child: const Text('Reintentar')),
+          ElevatedButton(onPressed: _loadRanking, child: Text(l.retry)),
         ],
       ),
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(AppLocalizations l) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -432,8 +437,8 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
           const SizedBox(height: 16),
           Text(
             _period == 'month'
-                ? 'Nadie ha viajado este mes aún.\n¡Sé el primero!'
-                : 'Aún no hay viajes registrados.',
+                ? l.noTripsRankingMonth
+                : l.noTripsRankingAll,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey[600], fontSize: 16),
           ),

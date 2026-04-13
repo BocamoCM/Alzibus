@@ -191,5 +191,20 @@
   "teHemosApuntado": "You've been joined to the bus",
   "alertaActiva": "(Active alert)",
   "personasInteresadas": "{n} people interested",
-  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } }
+  "@personasInteresadas": { "placeholders": { "n": { "type": "int" } } },
+  "rankingTitle": "Traveler Ranking",
+  "rankingSubtitle": "Compete with other travelers from Alzira",
+  "yourPosition": "Your position: #{pos} · {trips} trips",
+  "@yourPosition": {
+    "placeholders": {
+      "pos": { "type": "int" },
+      "trips": { "type": "int" }
+    }
+  },
+  "thisMonthToggle": "This month",
+  "allTimeToggle": "All time",
+  "rankingLoadError": "Could not load ranking",
+  "noTripsRankingMonth": "No one has traveled this month yet. Be the first!",
+  "noTripsRankingAll": "No trips registered yet.",
+  "travelersRankingHeader": "🏆 Traveler Ranking"
 }
