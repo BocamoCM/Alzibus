@@ -23,6 +23,16 @@ class _StatsScreenState extends State<StatsScreen> {
   String _selectedPeriod = 'week';
   bool _showSensitiveData = false;
 
+  String get periodLabel {
+    switch (_selectedPeriod) {
+      case 'day': return 'Hoy';
+      case 'week': return 'Semana';
+      case 'month': return 'Mes';
+      case 'year': return 'Año';
+      default: return 'Periodo';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
