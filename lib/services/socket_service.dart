@@ -50,11 +50,14 @@ class SocketService {
       final response = await ApiClient().get('/notices');
       if (response == null) return;
 
+      // ApiClient devuelve el objeto Response de Dio — extraer los datos con .data
+      final rawData = response.data;
+      
       List<dynamic> notices;
-      if (response is List) {
-        notices = response;
-      } else if (response is Map && response['notices'] != null) {
-        notices = response['notices'] as List;
+      if (rawData is List) {
+        notices = rawData;
+      } else if (rawData is Map && rawData['notices'] != null) {
+        notices = rawData['notices'] as List;
       } else {
         return;
       }

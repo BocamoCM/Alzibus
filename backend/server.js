@@ -49,11 +49,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 // (por ejemplo, cuando se crea un nuevo aviso desde el panel de admin,
 // se emite un evento 'new_notice' y la app lo recibe al instante).
 const io = socketIo(server, {
-    path: '/realtime', // Nueva ruta dedicada y limpia para evitar conflictos con middlewares
     pingTimeout: 60000,
     pingInterval: 25000,
-    allowEIO3: true, // Compatibilidad con versiones anteriores del protocolo
-    transports: ['polling', 'websocket'], // Soportar ambos transportes explícitamente
     cors: {
         origin: (origin, callback) => callback(null, true),
         methods: ["GET", "POST"]
@@ -69,30 +66,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// ── Ruta Pública de Diagnóstico para Proxy ──
-app.get('/socket-check', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        message: 'Proxy Alzibus: Conexión alcanzada correctamente en el backend (PÚBLICO).',
-        timestamp: new Date().toISOString()
-    });
-});
 
-io.engine.on("connection_error", (err) => {
-    console.log(`[Socket.IO Engine Error] ${err.code}: ${err.message}`);
-    // Notificar a Discord errores críticos de conexión para depuración
-    sendDiscordNotification({
-        embeds: [{
-            title: '⚠️ Error de Motor WebSocket',
-            description: `Código: **${err.code}**\nMensaje: ${err.message}`,
-            color: 0xF1C40F, // Amarillo
-            fields: [
-                { name: 'Req. URL', value: err.req ? err.req.url : 'N/A', inline: false },
-                { name: 'Req. IP', value: err.req ? (err.req.ip || err.req.headers['x-forwarded-for']) : 'N/A', inline: true }
-            ]
-        }]
-    });
-});
 
 // ── Middleware de depuración ──
 // Solo activo fuera de producción para no saturar los logs de Caddy con cada petición.
@@ -294,7 +268,7 @@ const validateApiKey = (req, res, next) => {
 
     // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
     const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
-    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact', '/socket-check', '/realtime'];
+    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact'];
 
     if (publicRoutes.includes(originalPath)) {
         return next();
