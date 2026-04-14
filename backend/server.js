@@ -1431,6 +1431,7 @@ app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
 
         // Emitir evento por WebSockets a todos los clientes conectados
         io.emit('new_notice', newNotice);
+        console.log(`[Socket.IO] Nuevo aviso emitido: "${newNotice.title}" a todos los clientes.`);
 
         res.status(201).json(newNotice);
     } catch (error) {
