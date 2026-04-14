@@ -158,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: contactForm.name.value,
                 email: contactForm.email.value,
                 subject: contactForm.subject.value,
-                message: contactForm.message.value
+                message: contactForm.message.value,
+                website: contactForm.website.value // Honeypot field
             };
 
             try {

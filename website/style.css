@@ -932,6 +932,11 @@ a {
     padding: 120px 0;
 }
 
+/* Ocultar Honeypot para humanos */
+#website {
+    display: none !important;
+}
+
 .contact-grid {
     display: grid;
     grid-template-columns: 1fr 1.2fr;

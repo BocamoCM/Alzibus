@@ -494,6 +494,17 @@ const loginLimiter = rateLimit({
     }
 });
 
+// Limita el envío de mensajes de contacto:
+// Máximo 2 mensajes por hora desde la misma IP.
+// Previene el spam masivo por bots.
+const contactLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 2,
+    message: { error: 'Límite de mensajes alcanzado. Por favor, inténtalo de nuevo en una hora.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // ── Middleware de autenticación de Administrador ──
 // Similar a authenticateToken, pero además verifica que el usuario
 // tenga el rol 'admin' en el payload del JWT.
@@ -1878,12 +1889,30 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
 // ── Formulario de Contacto ──
 // POST /api/contact
 // Recibe mensajes de la web y los envía a Discord.
-app.post('/api/contact', express.json(), async (req, res) => {
-    const { name, email, subject, message } = req.body;
+// Protegido por contactLimiter y sistema de Honeypot.
+app.post('/api/contact', contactLimiter, express.json(), async (req, res) => {
+    const { name, email, subject, message, website } = req.body;
     const ip = req.ip;
 
+    // 1. Detección de Honeypot
+    // Si el campo invisible 'website' tiene algo, es un bot de spam.
+    if (website) {
+        console.warn(`[SPAM DETECTED] Honeypot activado por IP ${ip}. Ignorando petición.`);
+        return res.status(200).json({ success: true, message: 'Mensaje enviado correctamente' }); // Mentir al bot
+    }
+
+    // 2. Validación de campos obligatorios
     if (!name || !email || !message) {
         return res.status(400).json({ error: 'Nombre, email y mensaje son obligatorios' });
+    }
+
+    // 3. Validación de longitud (seguridad extra)
+    if (name.length > 100 || email.length > 255 || (subject && subject.length > 150) || message.length > 2000) {
+        return res.status(400).json({ error: 'El mensaje supera los límites de longitud permitidos.' });
+    }
+
+    if (message.length < 5) {
+        return res.status(400).json({ error: 'El mensaje es demasiado corto.' });
     }
 
     try {
