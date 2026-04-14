@@ -637,17 +637,19 @@ a {
 }
 
 .faq-item summary::after {
-    content: '+';
-    font-size: 24px;
-    font-weight: 300;
+    content: '›';
+    font-size: 28px;
+    font-weight: 400;
     color: var(--coral);
-    transition: transform 0.3s;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
     margin-left: 16px;
+    display: inline-block;
+    line-height: 1;
 }
 
 .faq-item[open] summary::after {
-    transform: rotate(45deg);
+    transform: rotate(90deg);
 }
 
 .faq-item summary h3 {

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargar Alzitrans</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/png" href="../assets/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0a0a0f;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Glow de fondo */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(107,27,61,0.45), transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 380px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Logo */
+        .logo-wrap {
+            width: 120px;
+            height: 120px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 5s ease-in-out infinite;
+            filter: drop-shadow(0 0 28px rgba(232,90,79,0.5)) drop-shadow(0 0 60px rgba(107,27,61,0.4));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Texto */
+        .app-name {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #ffffff, rgba(255,255,255,0.7));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 15px;
+            color: rgba(240,239,244,0.55);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .tagline strong {
+            color: #E85A4F;
+            font-weight: 600;
+        }
+
+        /* Divider */
+        .divider {
+            width: 48px;
+            height: 3px;
+            background: linear-gradient(90deg, #E85A4F, #6B1B3D);
+            border-radius: 2px;
+        }
+
+        /* Botón Play Store */
+        .btn-play {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: #1a1a24;
+            color: white;
+            text-decoration: none;
+            padding: 16px 28px;
+            border-radius: 16px;
+            font-family: 'Outfit', sans-serif;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.07);
+            width: 100%;
+            justify-content: center;
+            border: 1px solid rgba(232,90,79,0.25);
+        }
+
+        .btn-play:hover {
+            background: #221421;
+            border-color: rgba(232,90,79,0.6);
+            transform: translateY(-3px);
+            box-shadow:
+                0 12px 36px rgba(0,0,0,0.6),
+                0 0 20px rgba(107,27,61,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.07);
+        }
+
+        .btn-play:active { transform: translateY(0); }
+
+        .btn-play svg { flex-shrink: 0; }
+
+        .btn-play-text { text-align: left; }
+
+        .btn-play-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn-play-main {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.3px;
+        }
+
+        /* Footer */
+        .footer-note {
+            font-size: 13px;
+            color: rgba(240,239,244,0.3);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow"></div>
+
+    <div class="card">
+
+        <div class="logo-wrap">
+            <img src="../assets/logo.png" alt="Logo de Alzitrans">
+        </div>
+
+        <div>
+            <div class="app-name">Alzitrans</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="tagline">
+            ¡Gracias por escanear el código! 🎉<br>
+            Descarga la app y consulta el <strong>bus de Alzira</strong><br>en tiempo real, totalmente gratis.
+        </p>
+
+        <a href="https://play.google.com/store/apps/details?id=com.alzitrans.app&referrer=utm_source%3Dqr_paradas%26utm_medium%3Dfisico%26utm_campaign%3Dlanzamiento"
+           id="play-btn"
+           class="btn-play"
+           target="_blank"
+           rel="noopener noreferrer">
+            <!-- Play Store icon -->
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                <path d="M3.60889 2.34222L12.2667 11L3.60889 19.6578C3.22222 19.2711 3 18.7067 3 18V4C3 3.29333 3.22222 2.72889 3.60889 2.34222Z" fill="#00B4D8"/>
+                <path d="M14.4756 13.2089L5.26889 22.4156L16.6844 16.02L14.4756 13.2089Z" fill="#FF3A44"/>
+                <path d="M20.1622 10.1867L17.3822 11.7444L14.9422 9L17.3822 6.25556L20.1622 7.81333C21.2844 8.44 21.2844 9.56 20.1622 10.1867Z" fill="#FFD700"/>
+                <path d="M5.26889 1.58444L16.6844 7.98L14.4756 10.7911L5.26889 1.58444Z" fill="#00E676"/>
+            </svg>
+            <div class="btn-play-text">
+                <div class="btn-play-sub">Disponible en</div>
+                <div class="btn-play-main">Google Play</div>
+            </div>
+        </a>
+
+        <p class="footer-note">Gratuita · Solo para Android · Alzira (Valencia)</p>
+
+    </div>
+
+    <script>
+        // Registrar visita en métricas
+        fetch('/api/metrics/web', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_type: 'qr_descargar_visit' })
+        }).catch(() => {});
+
+        // Registrar clic en descarga
+        document.getElementById('play-btn').addEventListener('click', () => {
+            fetch('/api/metrics/web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event_type: 'qr_descargar_click' })
+            }).catch(() => {});
+        });
+    </script>
+
+</body>
+</html>

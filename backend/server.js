@@ -127,9 +127,8 @@ app.get('/qr', (req, res) => {
         }]
     });
 
-    // 2. Redirigir de inmediato a la App
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.alzitrans.app&referrer=utm_source%3Dqr_paradas%26utm_medium%3Dfisico%26utm_campaign%3Dlanzamiento';
-    res.redirect(playStoreUrl);
+    // 2. Redirigir a la página de descarga (Play Store styled landing)
+    res.redirect('/descargar?src=qr');
 });
 
 // ── Smart App Install Tracker ──
