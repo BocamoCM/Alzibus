@@ -1960,6 +1960,12 @@ app.get('/api/stats/public', async (req, res) => {
 
 app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
     try {
+        const period = req.query.period || 'week'; // day, week, month, year
+        let interval = "7 days";
+        if (period === 'day') interval = "24 hours";
+        else if (period === 'month') interval = "30 days";
+        else if (period === 'year') interval = "365 days";
+
         const [
             usersTotal,
             usersVerified,
@@ -1989,13 +1995,13 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
         ] = await Promise.all([
             pool.query("SELECT COUNT(*) FROM users"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true"),
-            pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
-            pool.query("SELECT COUNT(DISTINCT id) FROM users WHERE last_access >= NOW() - INTERVAL '7 days'"),
+            pool.query(`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT COUNT(DISTINCT id) FROM users WHERE last_access >= NOW() - INTERVAL '${interval}'`),
             pool.query("SELECT COUNT(*) FROM trips"),
             pool.query("SELECT COUNT(*) FROM trips WHERE confirmed = true"),
-            pool.query("SELECT line, COUNT(*) as cnt FROM trips GROUP BY line ORDER BY cnt DESC"),
-            pool.query("SELECT EXTRACT(HOUR FROM timestamp) as hour, COUNT(*) as cnt FROM trips GROUP BY hour ORDER BY hour"),
-            pool.query("SELECT stop_name, COUNT(*) as cnt FROM trips GROUP BY stop_name ORDER BY cnt DESC LIMIT 10"),
+            pool.query(`SELECT line, COUNT(*) as cnt FROM trips WHERE timestamp >= NOW() - INTERVAL '${interval}' GROUP BY line ORDER BY cnt DESC`),
+            pool.query(`SELECT EXTRACT(HOUR FROM timestamp) as hour, COUNT(*) as cnt FROM trips WHERE timestamp >= NOW() - INTERVAL '${interval}' GROUP BY hour ORDER BY hour`),
+            pool.query(`SELECT stop_name, COUNT(*) as cnt FROM trips WHERE timestamp >= NOW() - INTERVAL '${interval}' GROUP BY stop_name ORDER BY cnt DESC LIMIT 10`),
             pool.query(`SELECT DATE(created_at) as day, COUNT(*) as cnt FROM users
                         WHERE created_at >= NOW() - INTERVAL '30 days'
                         GROUP BY day ORDER BY day`),
@@ -2007,31 +2013,31 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
                          COUNT(*) as calls,
                          ROUND(MAX(duration_ms)) as max_ms
                         FROM api_logs
-                        WHERE created_at >= NOW() - INTERVAL '7 days'
+                        WHERE created_at >= NOW() - INTERVAL '${interval}'
                         GROUP BY endpoint ORDER BY calls DESC LIMIT 10`),
             pool.query("SELECT COUNT(*) FROM notices"),
             pool.query("SELECT COUNT(*) FROM notices WHERE active = true AND (expires_at IS NULL OR expires_at > NOW())"),
             pool.query("SELECT COALESCE(line, 'General') as line, COUNT(*) as cnt FROM notices GROUP BY line ORDER BY cnt DESC"),
-            pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at >= CURRENT_DATE"),
-            pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
-            pool.query("SELECT COUNT(*) FROM api_logs WHERE created_at < NOW() - INTERVAL '7 days' AND created_at >= NOW() - INTERVAL '14 days'"),
-            pool.query("SELECT AVG(duration_ms) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
+            pool.query(`SELECT COUNT(*) FROM api_logs WHERE created_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT COUNT(*) FROM api_logs WHERE created_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT COUNT(*) FROM api_logs WHERE created_at < NOW() - INTERVAL '${interval}' AND created_at >= NOW() - INTERVAL '14 days'`),
+            pool.query(`SELECT AVG(duration_ms) FROM api_logs WHERE created_at >= NOW() - INTERVAL '${interval}'`),
             pool.query("SELECT COUNT(*) FROM stops"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_premium = TRUE"),
             pool.query("SELECT COUNT(*) AS count FROM qr_scans"), // Total escaneos QR
-            pool.query("SELECT COUNT(*) AS count FROM qr_scans WHERE created_at >= NOW() - INTERVAL '24 hours'"), // Escaneos hoy
+            pool.query(`SELECT COUNT(*) AS count FROM qr_scans WHERE created_at >= NOW() - INTERVAL '${interval}'`), // Escaneos periodo
             pool.query(`SELECT stop_name as name, COUNT(*) as cnt 
                         FROM qr_scans 
-                        WHERE stop_name IS NOT NULL 
+                        WHERE stop_name IS NOT NULL AND created_at >= NOW() - INTERVAL '${interval}'
                         GROUP BY stop_name ORDER BY cnt DESC LIMIT 10`), // Top paradas QR
-            pool.query("SELECT device, COUNT(*) as cnt FROM qr_scans GROUP BY device ORDER BY cnt DESC"), // Dispositivos QR
+            pool.query(`SELECT device, COUNT(*) as cnt FROM qr_scans WHERE created_at >= NOW() - INTERVAL '${interval}' GROUP BY device ORDER BY cnt DESC`), // Dispositivos QR
         ]);
 
         const qrTotal = parseInt(qrTotalResult.rows[0].count || 0);
         const qrToday = parseInt(qrTodayResult.rows[0].count || 0);
 
         // Debug log para verificar por qué marca 0 si hay datos
-        console.log(`[DASHBOARD] QR Total: ${qrTotal}, Hoy: ${qrToday}, Filas: ${qrTotalResult.rows.length}`);
+        console.log(`[DASHBOARD] Period: ${period}, QR Total: ${qrTotal}, Filtrados: ${qrToday}`);
 
         const cur7 = parseInt(queries7d.rows[0].count);
         const prev7 = parseInt(queriesPrev7d.rows[0].count);
@@ -2042,7 +2048,7 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             todayQueries: parseInt(todayQueries.rows[0].count),
             weeklyGrowth: parseFloat(growth.toFixed(1)),
             avgResponseTime: Math.round(parseFloat(avgResponseTime.rows[0].avg || 0)),
-            activeUsers: parseInt(usersTotal.rows[0].count),
+            activeUsers: parseInt(usersActive7d.rows[0].count), // Usamos el activo del periodo
             totalStops: totalStopsCount,
             premiumUsers: parseInt(premiumUsersResult.rows[0].count || 0),
             totalRevenue: (parseInt(premiumUsersResult.rows[0].count || 0) * 2.99).toFixed(2),
@@ -2096,10 +2102,16 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
 
 app.get('/api/stats/usage', authenticateAdmin, async (req, res) => {
     try {
+        const period = req.query.period || 'week'; // day, week, month, year
+        let interval = "7 days";
+        if (period === 'day') interval = "24 hours";
+        else if (period === 'month') interval = "30 days";
+        else if (period === 'year') interval = "365 days";
+
         const result = await pool.query(`
             SELECT DATE(created_at) as day, COUNT(*) as queries 
             FROM api_logs 
-            WHERE created_at >= NOW() - INTERVAL '7 days'
+            WHERE created_at >= NOW() - INTERVAL '${interval}'
             GROUP BY day ORDER BY day
         `);
         res.json(result.rows);

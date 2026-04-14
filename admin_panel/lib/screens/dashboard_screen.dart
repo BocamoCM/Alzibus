@@ -81,13 +81,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
             _buildStatsCards(theme),
             const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 2, child: _buildUsageChart(theme)),
-                const SizedBox(width: 24),
-                Expanded(child: _buildLinesDistribution(theme)),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 900;
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      _buildUsageChart(theme),
+                      const SizedBox(height: 24),
+                      _buildLinesDistribution(theme),
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 2, child: _buildUsageChart(theme)),
+                    const SizedBox(width: 24),
+                    Expanded(child: _buildLinesDistribution(theme)),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
             _buildRecentActivity(theme),

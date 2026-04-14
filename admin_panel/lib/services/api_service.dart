@@ -167,8 +167,8 @@ class ApiService {
   }
 
   // Dashboard Stats (Admin Protected)
-  Future<Map<String, dynamic>> getDashboardStats() async {
-    final response = await _get('/stats/dashboard');
+  Future<Map<String, dynamic>> getDashboardStats([String period = 'week']) async {
+    final response = await _get('/stats/dashboard?period=$period');
     if (response != null && response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -186,8 +186,8 @@ class ApiService {
     };
   }
 
-  Future<List<Map<String, dynamic>>> getUsageData() async {
-    final response = await _get('/stats/usage');
+  Future<List<Map<String, dynamic>>> getUsageData([String period = 'week']) async {
+    final response = await _get('/stats/usage?period=$period');
     if (response != null && response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((e) => Map<String, dynamic>.from(e)).toList();

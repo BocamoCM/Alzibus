@@ -42,11 +42,12 @@ class _StatsScreenState extends State<StatsScreen> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        _api.getDashboardStats(),
-        _api.getUsageData(),
+        _api.getDashboardStats(_selectedPeriod),
+        _api.getUsageData(_selectedPeriod),
         _api.getTopStops(),
         _api.getPeakHours(),
       ]);
+      if (!mounted) return;
       setState(() {
         _stats = results[0] as Map<String, dynamic>;
         _usageData = results[1] as List<Map<String, dynamic>>;
@@ -55,6 +56,7 @@ class _StatsScreenState extends State<StatsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -140,28 +142,53 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSimpleCard(
-                theme,
-                'Escaneos Totales',
-                '$totalScans',
-                Icons.qr_code_2,
-                const Color(0xFFE85A4F),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildSimpleCard(
-                theme,
-                'Escaneos (24h)',
-                '$todayScans',
-                Icons.bolt,
-                const Color(0xFFFBC02D),
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 600;
+            return isNarrow 
+              ? Column(
+                  children: [
+                    _buildSimpleCard(
+                      theme,
+                      'Escaneos Totales',
+                      '$totalScans',
+                      Icons.qr_code_2,
+                      const Color(0xFFE85A4F),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleCard(
+                      theme,
+                      'Escaneos ($periodLabel)',
+                      '$todayScans',
+                      Icons.bolt,
+                      const Color(0xFFFBC02D),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: _buildSimpleCard(
+                        theme,
+                        'Escaneos Totales',
+                        '$totalScans',
+                        Icons.qr_code_2,
+                        const Color(0xFFE85A4F),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildSimpleCard(
+                        theme,
+                        'Escaneos ($periodLabel)',
+                        '$todayScans',
+                        Icons.bolt,
+                        const Color(0xFFFBC02D),
+                      ),
+                    ),
+                  ],
+                );
+          }
         ),
         const SizedBox(height: 16),
         Card(
@@ -259,6 +286,7 @@ class _StatsScreenState extends State<StatsScreen> {
               selected: {_selectedPeriod},
               onSelectionChanged: (selection) {
                 setState(() => _selectedPeriod = selection.first);
+                _loadData(); // RECARGAR DATOS AL CAMBIAR FILTRO
               },
             ),
             const Spacer(),
