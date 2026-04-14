@@ -25,13 +25,13 @@ class SocketService {
     
     debugPrint('[SocketService] 🔄 Iniciando conexión a: $wsUrl');
     _socket = IO.io(wsUrl, <String, dynamic>{
-      'transports': ['polling', 'websocket'], // Mantener ambos para negociación progresiva
+      'transports': ['websocket'], // Forzar websocket directo para evitar conflictos de upgrade con polling
       'autoConnect': true,
       'reconnection': true,
       'reconnectionAttempts': double.infinity,
       'reconnectionDelay': 1000,
       'reconnectionDelayMax': 5000,
-      'timeout': 45000, // Aumentar un poco más por seguridad en redes lentas
+      'timeout': 45000,
       'forceNew': true,
       'path': '/realtime', // TÚNEL REAL: Ruta dedicada, pública y segura
     });
