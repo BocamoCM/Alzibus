@@ -20,9 +20,10 @@ class SocketService {
   void initialize() {
     if (_socket != null && _socket!.connected) return;
 
-    // Remueve '/api' de la URL base para conectar al servidor raíz de WebSockets.
-    final wsUrl = AppConfig.baseUrl.replaceAll('/api', '');
+    // Remueve '/api' y slashes finales para evitar errores de construcción de URL en el cliente
+    final wsUrl = AppConfig.baseUrl.replaceAll('/api', '').trim().replaceAll(RegExp(r'/$'), '');
     
+    debugPrint('[SocketService] 🔄 Iniciando conexión a: $wsUrl');
     _socket = IO.io(wsUrl, <String, dynamic>{
       'transports': ['websocket'], // Forzar solo WebSocket para evitar cuellos de botella en polling
       'autoConnect': true,

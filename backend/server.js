@@ -64,6 +64,16 @@ io.on('connection', (socket) => {
     });
 });
 
+// ── Ruta de Diagnóstico para Proxy ──
+// Permite verificar que Caddy está redirigiendo correctamente al backend.
+app.get('/socket.io/diagnostic', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        message: 'Proxy Alzibus: Conexión alcanzada correctamente en el backend.',
+        timestamp: new Date().toISOString()
+    });
+});
+
 io.engine.on("connection_error", (err) => {
     console.log(`[Socket.IO Engine Error] ${err.code}: ${err.message}`);
     // Notificar a Discord errores críticos de conexión para depuración
