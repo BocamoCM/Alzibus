@@ -30,12 +30,8 @@ class SocketService {
       'reconnectionAttempts': double.infinity,
       'reconnectionDelay': 1000,
       'reconnectionDelayMax': 5000,
-      'timeout': 20000,
+      'timeout': 30000, // Aumentar a 30s
       'forceNew': true,
-      'path': '/socket.io', // Especificar el path explícitamente para el proxy
-      'extraHeaders': {
-        'Host': 'alzitrans.duckdns.org', // Ayuda al proxy a identificar el destino
-      }
     });
 
     _socket!.onConnect((_) {
@@ -44,9 +40,9 @@ class SocketService {
     });
 
     _socket!.onConnectError((err) {
-      debugPrint('[SocketService] ❌ Error de conexión: $err');
-      // ENVIAR ERROR A DISCORD VIA HTTP para finalmente saber qué pasa en el móvil
-      _sendDebugLog('ERROR DE CONEXIÓN WebSocket: $err');
+      debugPrint('[SocketService] ❌ Error de conexión ($wsUrl): $err');
+      // ENVIAR DATA DETALLADA A DISCORD
+      _sendDebugLog('ERROR DE CONEXIÓN WebSocket a URL ($wsUrl): $err');
     });
 
     _socket!.onError((err) {
