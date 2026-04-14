@@ -49,7 +49,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 // (por ejemplo, cuando se crea un nuevo aviso desde el panel de admin,
 // se emite un evento 'new_notice' y la app lo recibe al instante).
 const io = socketIo(server, {
-    path: '/api/socket.io',
+    path: '/realtime', // Nueva ruta dedicada y limpia para evitar conflictos con middlewares
     pingTimeout: 60000,
     pingInterval: 25000,
     allowEIO3: true, // Compatibilidad con versiones anteriores del protocolo
@@ -294,7 +294,7 @@ const validateApiKey = (req, res, next) => {
 
     // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
     const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
-    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact', '/socket-check'];
+    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact', '/socket-check', '/realtime'];
 
     if (publicRoutes.includes(originalPath)) {
         return next();

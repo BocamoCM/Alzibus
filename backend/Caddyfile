@@ -37,7 +37,17 @@ alzitrans.duckdns.org {
         reverse_proxy alzibus_backend:3000
     }
 
-    # Redirigir WebSockets y Polling de Socket.IO (Catch-all)
+    # Nuevo Túnel para WebSockets (Seguro y directo)
+    handle /realtime* {
+        reverse_proxy alzibus_backend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up Connection {>Connection}
+            header_up Upgrade {>Upgrade}
+        }
+    }
+
+    # Redirigir WebSockets y Polling de Socket.IO (Catch-all - Legado)
     handle /socket.io* {
         reverse_proxy alzibus_backend:3000 {
             header_up Host {host}

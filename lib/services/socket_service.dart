@@ -33,7 +33,7 @@ class SocketService {
       'reconnectionDelayMax': 5000,
       'timeout': 45000, // Aumentar un poco más por seguridad en redes lentas
       'forceNew': true,
-      'path': '/api/socket.io',
+      'path': '/realtime', // TÚNEL REAL: Ruta dedicada, pública y segura
     });
 
     _socket!.onConnect((_) {
