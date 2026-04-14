@@ -32,6 +32,11 @@ alzitrans.duckdns.org {
         reverse_proxy alzibus_backend:3000
     }
 
+    # Ruta de diagnóstico pública para WebSockets
+    handle /socket-check {
+        reverse_proxy alzibus_backend:3000
+    }
+
     # Redirigir WebSockets y Polling de Socket.IO (Catch-all)
     handle /socket.io* {
         reverse_proxy alzibus_backend:3000 {
