@@ -3,16 +3,16 @@
 }
 
 alzitrans.duckdns.org {
-    # Redirigir peticiones de la API al backend
-    handle /api/* {
+    # Smart QR Tracker — redirige al backend para registrar y luego a /descargar
+    handle /qr* {
         reverse_proxy alzibus_backend:3000 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
         }
     }
 
-    # Smart QR Tracker — redirige al backend para registrar y luego a /descargar
-    handle /qr {
+    # Redirigir peticiones de la API al backend
+    handle /api/* {
         reverse_proxy alzibus_backend:3000 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
