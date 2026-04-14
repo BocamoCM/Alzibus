@@ -105,6 +105,8 @@ class _StatsScreenState extends State<StatsScreen> {
           const SizedBox(height: 24),
           _buildSummaryCards(theme),
           const SizedBox(height: 24),
+          _buildQRSection(theme), // Nueva sección de Campaña QR
+          const SizedBox(height: 24),
           _buildUsageChart(theme),
           const SizedBox(height: 24),
           Row(
@@ -116,6 +118,125 @@ class _StatsScreenState extends State<StatsScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQRSection(ThemeData theme) {
+    final qrData = _stats['qr'] ?? {};
+    final totalScans = qrData['total'] ?? 0;
+    final todayScans = qrData['today'] ?? 0;
+    final topQrStops = (qrData['byStop'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '🔥 Campaña QR (Paradas)',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letter-spacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSimpleCard(
+                theme,
+                'Escaneos Totales',
+                '$totalScans',
+                Icons.qr_code_2,
+                const Color(0xFFE85A4F),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSimpleCard(
+                theme,
+                'Escaneos (24h)',
+                '$todayScans',
+                Icons.bolt,
+                const Color(0xFFFBC02D),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.leaderboard, size: 20, color: Color(0xFF6B1B3D)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ranking Escaneos por Parada',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (topQrStops.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text('Sin escaneos registrados aún', style: TextStyle(color: Colors.grey))),
+                  )
+                else
+                  ...topQrStops.take(5).map((stop) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              stop['name'] ?? 'Desconocida',
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              '${stop['cnt']} escaneos',
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6B1B3D)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSimpleCard(ThemeData theme, String title, String value, IconData icon, Color color) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 8),
+            Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }

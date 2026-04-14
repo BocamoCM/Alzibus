@@ -516,6 +516,34 @@
       </div>
     </div>
 
+    <!-- Campaña QR -->
+    <div class="section-title">📱 Campaña QR (Paradas)</div>
+    <div class="kpi-grid">
+      <div class="kpi" style="--color:#FF4757">
+        <div class="kpi-icon">🔗</div>
+        <div class="kpi-value" id="k-qr-total">—</div>
+        <div class="kpi-label">Escaneos Totales</div>
+        <div class="kpi-sub">historico acumulado</div>
+      </div>
+      <div class="kpi" style="--color:#FFA502">
+        <div class="kpi-icon">🔥</div>
+        <div class="kpi-value" id="k-qr-today">—</div>
+        <div class="kpi-label">Escaneos (24h)</div>
+        <div class="kpi-sub">últimas 24 horas</div>
+      </div>
+    </div>
+
+    <div class="chart-grid g-2">
+      <div class="card">
+        <h3>Ranking Paradas QR</h3>
+        <div id="qr-stops-table"></div>
+      </div>
+      <div class="card">
+        <h3>Dispositivos (Escaneos)</h3>
+        <div class="chart-wrap-sm"><canvas id="chartQrDevice"></canvas></div>
+      </div>
+    </div>
+
     <!-- Gráficas de tendencia -->
     <div class="section-title">📈 Tendencia (últimos 30 días)</div>
     <div class="chart-grid g-2">
@@ -749,6 +777,49 @@
         document.getElementById('k-notices').textContent = d.notices.active;
         document.getElementById('k-notices-sub').textContent = `${d.notices.total} historial total`;
         document.getElementById('k-newusers').textContent = d.users.thisWeek;
+
+        // ── Campaña QR ────────────────────────────────
+        document.getElementById('k-qr-total').textContent = d.qr.total;
+        document.getElementById('k-qr-today').textContent = d.qr.today;
+
+        // Tabla QR Stops
+        const qrTable = document.getElementById('qr-stops-table');
+        if (d.qr.byStop.length === 0) {
+          qrTable.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">Sin escaneos aún</p>';
+        } else {
+          qrTable.innerHTML = `
+            <table>
+              <thead>
+                <tr><th>Parada</th><th>Escaneos</th><th style="width:100px">Popularidad</th></tr>
+              </thead>
+              <tbody>
+                ${d.qr.byStop.map(s => `
+                  <tr>
+                    <td>${s.name}</td>
+                    <td style="font-weight:700;color:var(--accent)">${s.cnt}</td>
+                    <td>
+                      <div class="bar-wrap"><div class="bar-fill" style="width:${(s.cnt/d.qr.byStop[0].cnt)*100}%; background:#FF4757"></div></div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+
+        // Gráfica de Dispositivos QR
+        makeChart('chartQrDevice', 'doughnut', {
+          labels: d.qr.byDevice.map(x => x.device),
+          datasets: [{
+            data: d.qr.byDevice.map(x => x.cnt),
+            backgroundColor: ['#FF4757', '#3742fa', '#2ed573', '#eccc68', '#7f8c8d'],
+            borderWidth: 0
+          }]
+        }, {
+          plugins: {
+            legend: { display: true, position: 'right', labels: { color: '#9A8090', font: { size: 10 } } }
+          }
+        });
 
         // ── Registros diarios ──────────────────────────
         const usr = parseDates30(d.users_daily);

@@ -1982,6 +1982,10 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             avgResponseTime,
             totalStopsResult,
             premiumUsersResult,
+            qrTotalResult,
+            qrTodayResult,
+            qrByStopResult,
+            qrByDeviceResult,
         ] = await Promise.all([
             pool.query("SELECT COUNT(*) FROM users"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true"),
@@ -2014,7 +2018,17 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             pool.query("SELECT AVG(duration_ms) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
             pool.query("SELECT COUNT(*) FROM stops"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_premium = TRUE"),
+            pool.query("SELECT COUNT(*) FROM qr_scans"), // Total escaneos QR
+            pool.query("SELECT COUNT(*) FROM qr_scans WHERE created_at >= NOW() - INTERVAL '24 hours'"), // Escaneos hoy
+            pool.query(`SELECT stop_name as name, COUNT(*) as cnt 
+                        FROM qr_scans 
+                        WHERE stop_name IS NOT NULL 
+                        GROUP BY stop_name ORDER BY cnt DESC LIMIT 10`), // Top paradas QR
+            pool.query("SELECT device, COUNT(*) as cnt FROM qr_scans GROUP BY device ORDER BY cnt DESC"), // Dispositivos QR
         ]);
+
+        const qrTotal = parseInt(qrTotalResult.rows[0].count || 0);
+        const qrToday = parseInt(qrTodayResult.rows[0].count || 0);
 
         const cur7 = parseInt(queries7d.rows[0].count);
         const prev7 = parseInt(queriesPrev7d.rows[0].count);
@@ -2029,6 +2043,12 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             totalStops: totalStopsCount,
             premiumUsers: parseInt(premiumUsersResult.rows[0].count || 0),
             totalRevenue: (parseInt(premiumUsersResult.rows[0].count || 0) * 2.99).toFixed(2),
+            qr: {
+                total: qrTotal,
+                today: qrToday,
+                byStop: qrByStopResult.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
+                byDevice: qrByDeviceResult.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
+            },
             users: {
                 total: parseInt(usersTotal.rows[0].count),
                 verified: parseInt(usersVerified.rows[0].count),

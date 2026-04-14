@@ -12,18 +12,25 @@
         /* ============================
            CONFIGURACIÓN DE IMPRESIÓN
            ============================ */
-        @page {
-            size: A4 portrait;
-            margin: 0mm;
-        }
-
         @media print {
-            body { background: white !important; margin: 0; padding: 0; }
+            html, body { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                height: 297mm;
+                width: 210mm;
+            }
             .no-print { display: none !important; }
             .poster { 
                 box-shadow: none !important; 
                 border: none !important;
-                page-break-after: always; /* Nueva página por cartel */
+                margin: 0 !important; /* Elimina margen en impresión */
+                page-break-after: always;
+                break-after: page;
+            }
+            /* Evita página en blanco al final */
+            .poster:last-child {
+                page-break-after: auto;
+                break-after: auto;
             }
         }
 
@@ -88,30 +95,30 @@
             background: white;
             color: black;
             text-align: center;
-            padding: 15mm 10mm 10mm;
+            padding: 10mm 10mm 5mm;
         }
 
         .stop-label {
-            font-size: 18pt;
+            font-size: 16pt;
             font-weight: 800;
-            letter-spacing: 4px;
-            text-transform: uppercase;
+            letter-spacing: 3px;
             color: #ff4757;
-            margin-bottom: 5mm;
+            margin-bottom: 3mm;
+            line-height: 1.2;
         }
 
         .top-headline {
-            font-size: 44pt;
+            font-size: 38pt;
             font-weight: 900;
             line-height: 1.1;
-            letter-spacing: -2px;
+            letter-spacing: -1.5px;
             text-transform: uppercase;
         }
 
         .top-sub {
-            font-size: 16pt;
+            font-size: 14pt;
             font-weight: 500;
-            margin-top: 8mm;
+            margin-top: 5mm;
             line-height: 1.4;
             max-width: 85%;
             margin-left: auto;
@@ -124,13 +131,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10mm 15mm;
-            gap: 12mm;
+            padding: 5mm 15mm;
+            gap: 8mm;
         }
 
         .qr-box {
-            width: 120mm;
-            height: 120mm;
+            width: 105mm; /* Reducido de 120mm para asegurar espacio */
+            height: 105mm;
             border: 4pt solid black;
             display: flex;
             align-items: center;
