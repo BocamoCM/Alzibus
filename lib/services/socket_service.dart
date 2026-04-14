@@ -25,15 +25,15 @@ class SocketService {
     
     debugPrint('[SocketService] 🔄 Iniciando conexión a: $wsUrl');
     _socket = IO.io(wsUrl, <String, dynamic>{
-      'transports': ['polling', 'websocket'], // Permitir polling inicial para negociar la conexión
+      'transports': ['polling', 'websocket'], // Mantener ambos para negociación progresiva
       'autoConnect': true,
       'reconnection': true,
       'reconnectionAttempts': double.infinity,
       'reconnectionDelay': 1000,
       'reconnectionDelayMax': 5000,
-      'timeout': 30000,
+      'timeout': 45000, // Aumentar un poco más por seguridad en redes lentas
       'forceNew': true,
-      'path': '/api/socket.io', // RUTA CLAVE: Nueva ruta bajo el prefijo /api que ya funciona
+      'path': '/api/socket.io',
     });
 
     _socket!.onConnect((_) {

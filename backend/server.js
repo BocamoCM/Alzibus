@@ -49,11 +49,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 // (por ejemplo, cuando se crea un nuevo aviso desde el panel de admin,
 // se emite un evento 'new_notice' y la app lo recibe al instante).
 const io = socketIo(server, {
-    path: '/api/socket.io', // Mover a subruta de API para mayor estabilidad y evitar conflictos
+    path: '/api/socket.io',
     pingTimeout: 60000,
     pingInterval: 25000,
+    allowEIO3: true, // Compatibilidad con versiones anteriores del protocolo
+    transports: ['polling', 'websocket'], // Soportar ambos transportes explícitamente
     cors: {
-        origin: (origin, callback) => callback(null, true), // Permitir todos los orígenes en Socket.IO
+        origin: (origin, callback) => callback(null, true),
         methods: ["GET", "POST"]
     }
 });
@@ -67,11 +69,11 @@ io.on('connection', (socket) => {
     });
 });
 
-// ── Ruta de Diagnóstico para Proxy ──
-app.get('/api/socket.io/diagnostic', (req, res) => {
+// ── Ruta Pública de Diagnóstico para Proxy ──
+app.get('/socket-check', (req, res) => {
     res.json({ 
         status: 'OK', 
-        message: 'Proxy Alzibus (API Path): Conexión alcanzada correctamente en el backend.',
+        message: 'Proxy Alzibus: Conexión alcanzada correctamente en el backend (PÚBLICO).',
         timestamp: new Date().toISOString()
     });
 });
@@ -292,7 +294,7 @@ const validateApiKey = (req, res, next) => {
 
     // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
     const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
-    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact'];
+    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact', '/socket-check'];
 
     if (publicRoutes.includes(originalPath)) {
         return next();
