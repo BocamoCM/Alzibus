@@ -24,7 +24,7 @@ class SocketService {
     final wsUrl = AppConfig.baseUrl.replaceAll('/api', '');
     
     _socket = IO.io(wsUrl, <String, dynamic>{
-      'transports': ['polling', 'websocket'], // Permitir polling inicial para mayor compatibilidad
+      'transports': ['websocket'], // Forzar solo WebSocket para evitar cuellos de botella en polling
       'autoConnect': true,
       'reconnection': true,
       'reconnectionAttempts': double.infinity,

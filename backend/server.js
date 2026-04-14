@@ -66,7 +66,18 @@ io.on('connection', (socket) => {
 
 io.engine.on("connection_error", (err) => {
     console.log(`[Socket.IO Engine Error] ${err.code}: ${err.message}`);
-    console.log(`[Socket.IO Engine context]:`, err.context);
+    // Notificar a Discord errores críticos de conexión para depuración
+    sendDiscordNotification({
+        embeds: [{
+            title: '⚠️ Error de Motor WebSocket',
+            description: `Código: **${err.code}**\nMensaje: ${err.message}`,
+            color: 0xF1C40F, // Amarillo
+            fields: [
+                { name: 'Req. URL', value: err.req ? err.req.url : 'N/A', inline: false },
+                { name: 'Req. IP', value: err.req ? (err.req.ip || err.req.headers['x-forwarded-for']) : 'N/A', inline: true }
+            ]
+        }]
+    });
 });
 
 // ── Middleware de depuración ──
