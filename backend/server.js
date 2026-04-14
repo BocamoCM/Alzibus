@@ -268,7 +268,7 @@ const validateApiKey = (req, res, next) => {
 
     // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
     const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
-    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web'];
+    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact'];
 
     if (publicRoutes.includes(originalPath)) {
         return next();
