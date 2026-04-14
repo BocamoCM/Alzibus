@@ -1875,6 +1875,41 @@ app.delete('/api/trips', authenticateToken, async (req, res) => {
 // ── Telemetría de la Landing Page ──
 // POST /api/metrics/web
 // Registra visitas y clics en descarga.
+// ── Formulario de Contacto ──
+// POST /api/contact
+// Recibe mensajes de la web y los envía a Discord.
+app.post('/api/contact', express.json(), async (req, res) => {
+    const { name, email, subject, message } = req.body;
+    const ip = req.ip;
+
+    if (!name || !email || !message) {
+        return res.status(400).json({ error: 'Nombre, email y mensaje son obligatorios' });
+    }
+
+    try {
+        sendDiscordNotification({
+            embeds: [{
+                title: "📧 Mensaje de Contacto (Web)",
+                color: 0x3498db, // Azul
+                fields: [
+                    { name: "👤 Nombre", value: name, inline: true },
+                    { name: "📧 Email", value: email, inline: true },
+                    { name: "📌 Asunto", value: subject || 'Sin asunto', inline: false },
+                    { name: "💬 Mensaje", value: `\`\`\`${message}\`\`\``, inline: false },
+                    { name: "🌍 IP", value: ip, inline: true }
+                ],
+                timestamp: new Date(),
+                footer: { text: "Alzitrans Web Contact" }
+            }]
+        });
+
+        res.json({ success: true, message: 'Mensaje enviado correctamente' });
+    } catch (error) {
+        console.error('Error in /api/contact:', error);
+        res.status(500).json({ error: 'Fallo al enviar el mensaje' });
+    }
+});
+
 app.post('/api/metrics/web', express.json(), async (req, res) => {
     const { event_type } = req.body;
     const ip = req.ip;

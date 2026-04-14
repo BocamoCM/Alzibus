@@ -134,4 +134,58 @@ document.addEventListener('DOMContentLoaded', () => {
             phone.style.transform = '';
         });
     });
+
+    // ========================
+    // Contact Form Handler
+    // ========================
+    const contactForm = document.getElementById('contact-form');
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnLoader = document.getElementById('loader');
+    const formMessage = document.getElementById('form-message');
+
+    if (contactForm) {
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Deshabilitar botón y mostrar loader
+            btnSubmit.disabled = true;
+            btnSubmit.querySelector('span').style.opacity = '0.4';
+            btnLoader.style.display = 'block';
+            formMessage.innerHTML = '';
+            formMessage.className = 'form-result';
+
+            const formData = {
+                name: contactForm.name.value,
+                email: contactForm.email.value,
+                subject: contactForm.subject.value,
+                message: contactForm.message.value
+            };
+
+            try {
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    formMessage.innerHTML = '✅ ¡Mensaje enviado con éxito! Te contactaremos pronto.';
+                    formMessage.classList.add('success');
+                    contactForm.reset();
+                } else {
+                    formMessage.innerHTML = `❌ Error: ${result.error || 'No se pudo enviar el mensaje.'}`;
+                    formMessage.classList.add('error');
+                }
+            } catch (err) {
+                formMessage.innerHTML = '❌ Error de conexión. Inténtalo de nuevo más tarde.';
+                formMessage.classList.add('error');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.querySelector('span').style.opacity = '1';
+                btnLoader.style.display = 'none';
+            }
+        });
+    }
 });
