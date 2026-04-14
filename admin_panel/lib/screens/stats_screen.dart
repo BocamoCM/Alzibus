@@ -117,6 +117,8 @@ class _StatsScreenState extends State<StatsScreen> {
           const SizedBox(height: 24),
           _buildSummaryCards(theme),
           const SizedBox(height: 24),
+          _buildConversionFunnel(theme),
+          const SizedBox(height: 24),
           _buildQRSection(theme), // Nueva sección de Campaña QR
           const SizedBox(height: 24),
           _buildUsageChart(theme),
@@ -686,6 +688,127 @@ class _StatsScreenState extends State<StatsScreen> {
                   ),
                 );
               }),
+          ],
+        ),
+      ),
+    );
+  Widget _buildConversionFunnel(ThemeData theme) {
+    final qrData = _stats['qr'] ?? {};
+    final scans = qrData['total'] ?? 0;
+    final attempts = qrData['attempts'] ?? 0;
+    final verified = qrData['today'] ?? 0;
+
+    double regRate = scans > 0 ? (attempts / scans) * 100 : 0;
+    double verifyRate = attempts > 0 ? (verified / attempts) * 100 : 0;
+    double totalRate = scans > 0 ? (verified / scans) * 100 : 0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Embudo de Conversión ($periodLabel)', 
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            _buildFunnelStep(
+              theme,
+              '1. Escaneos QR',
+              '$scans',
+              'Total de impactos físicos',
+              Colors.blue,
+              1.0,
+            ),
+            _buildFunnelArrow(theme, '${regRate.toStringAsFixed(1)}% inician registro'),
+            _buildFunnelStep(
+              theme,
+              '2. Intentos de Registro',
+              '$attempts',
+              'Usuarios que abrieron la App y pusieron su email',
+              Colors.orange,
+              scans > 0 ? (attempts / scans).clamp(0.1, 1.0) : 0.1,
+            ),
+            _buildFunnelArrow(theme, '${verifyRate.toStringAsFixed(1)}% completan OTP'),
+            _buildFunnelStep(
+              theme,
+              '3. Usuarios Verificados',
+              '$verified',
+              'Usuarios reales listos para usar la App',
+              Colors.green,
+              attempts > 0 ? (verified / attempts).clamp(0.1, 1.0) : 0.1,
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.primaryColor.withOpacity(0.1)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.insights, color: theme.primaryColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Rendimiento total de la campaña: ${totalRate.toStringAsFixed(1)}% de los escaneos terminan en usuarios reales.',
+                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFunnelStep(ThemeData theme, String title, String value, String sub, Color color, double widthFactor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text(value, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Stack(
+          children: [
+            Container(
+              height: 12,
+              width: double.infinity,
+              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(6)),
+            ),
+            FractionallySizedBox(
+              widthFactor: widthFactor,
+              child: Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color.withOpacity(0.7), color]),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(sub, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
+      ],
+    );
+  }
+
+  Widget _buildFunnelArrow(ThemeData theme, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Column(
+          children: [
+            const Icon(Icons.arrow_downward, color: Colors.grey, size: 20),
+            Text(label, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600], fontStyle: FontStyle.italic)),
           ],
         ),
       ),

@@ -615,33 +615,6 @@ app.post('/api/register', registerLimiter, async (req, res) => {
     }
 
     try {
-        // Limpieza anti-basura: eliminar cuentas no verificadas creadas hace más de 5 minutos.
-        // Evita que el sistema se llene de cuentas abandonadas en el proceso de registro.
-        await pool.query(
-            "DELETE FROM users WHERE is_verified = false AND created_at < NOW() - INTERVAL '5 minutes'"
-        );
-
-        // Comprobar si ya existe un usuario con este email
-        const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userExists.rows.length > 0) {
-            const existingUser = userExists.rows[0];
-            // Si ya está verificado, no se puede registrar de nuevo
-            if (existingUser.is_verified) {
-                return res.status(400).json({ error: 'El usuario ya existe' });
-            }
-            // Si NO está verificado, permitir re-registro: actualizar contraseña y generar nuevo código
-            // (el usuario quizá perdió el email anterior o el código caducó)
-            const saltRounds = 10;
-            const passwordHash = await bcrypt.hash(password, saltRounds);
-            const verificationCode = email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString(); // 6 dígitos aleatorios
-            await pool.query(
-                'UPDATE users SET password_hash = $1, verification_code = $2, created_at = NOW() WHERE id = $3',
-                [passwordHash, verificationCode, existingUser.id]
-            );
-            const newUser = { rows: [{ id: existingUser.id, email: existingUser.email }] };
-            return sendVerificationAndRespond(res, email, verificationCode, newUser);
-        }
-
         // ── Nuevo usuario ──
         // Hashear la contraseña con bcrypt:
         // bcrypt añade una "sal" aleatoria (10 rondas) a la contraseña antes de hashearla.
@@ -1992,8 +1965,10 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             qrTodayResult,
             qrByStopResult,
             qrByDeviceResult,
+            usersUnverifiedResult,
+            usersAttemptsResult,
         ] = await Promise.all([
-            pool.query("SELECT COUNT(*) FROM users"),
+            pool.query("SELECT COUNT(*) FROM users WHERE is_verified = TRUE"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_verified = true"),
             pool.query(`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '${interval}'`),
             pool.query(`SELECT COUNT(DISTINCT id) FROM users WHERE last_access >= NOW() - INTERVAL '${interval}'`),
@@ -2031,10 +2006,14 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
                         WHERE stop_name IS NOT NULL AND created_at >= NOW() - INTERVAL '${interval}'
                         GROUP BY stop_name ORDER BY cnt DESC LIMIT 10`), // Top paradas QR
             pool.query(`SELECT device, COUNT(*) as cnt FROM qr_scans WHERE created_at >= NOW() - INTERVAL '${interval}' GROUP BY device ORDER BY cnt DESC`), // Dispositivos QR
+            pool.query(`SELECT COUNT(*) FROM users WHERE is_verified = FALSE AND created_at >= NOW() - INTERVAL '${interval}'`), // Abandonos periodo
+            pool.query(`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '${interval}'`), // Intentos registro periodo
         ]);
 
         const qrTotal = parseInt(qrTotalResult.rows[0].count || 0);
         const qrToday = parseInt(qrTodayResult.rows[0].count || 0);
+        const abandoned = parseInt(usersUnverifiedResult.rows[0].count || 0);
+        const attempts = parseInt(usersAttemptsResult.rows[0].count || 0);
 
         // Debug log para verificar por qué marca 0 si hay datos
         console.log(`[DASHBOARD] Period: ${period}, QR Total: ${qrTotal}, Filtrados: ${qrToday}`);
@@ -2055,6 +2034,8 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             qr: {
                 total: qrTotal,
                 today: qrToday,
+                abandoned: abandoned,
+                attempts: attempts,
                 byStop: qrByStopResult.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
                 byDevice: qrByDeviceResult.rows.map(r => ({ ...r, cnt: parseInt(r.cnt) })),
             },
