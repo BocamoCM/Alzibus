@@ -1413,12 +1413,30 @@ app.get('/api/admin/notices', authenticateAdmin, async (req, res) => {
     }
 });
 
+// ── Endpoint de diagnóstico para WebSockets ──
+// Permite que la app móvil reporte si recibió un evento correctamente a través de Discord.
+app.post('/api/debug/mobile-log', async (req, res) => {
+    const { message, data } = req.body;
+    const ip = req.ip || req.headers['x-forwarded-for'];
+    console.log(`[DEBUG MOBILE] (${ip}): ${message}`);
+    
+    sendDiscordNotification({
+        embeds: [{
+            title: '🛠 Diagnóstico Móvil',
+            description: message,
+            color: 0x9B59B6, // Púrpura
+            fields: [
+                { name: 'IP', value: ip || 'Desconocida', inline: true },
+                { name: 'Data', value: JSON.stringify(data || {}), inline: false }
+            ],
+            footer: { text: 'Alzitrans Debug Bridge' }
+        }]
+    });
+    res.json({ success: true });
+});
+
 // ── Crear un nuevo aviso ──
 // POST /api/admin/notices
-// Crea un aviso con título, cuerpo, línea afectada (opcional) y fecha de expiración (opcional).
-// IMPORTANTE: Al crear un aviso, se emite un evento 'new_notice' por WebSocket
-// a todos los clientes conectados. La app Flutter lo recibe al instante y
-// muestra el badge de notificación sin necesidad de hacer pull-to-refresh.
 app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
     const { title, body, line, expiresAt } = req.body;
     if (!title || !body) return res.status(400).json({ error: 'Título y cuerpo requeridos' });
@@ -1429,9 +1447,12 @@ app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
         );
         const newNotice = result.rows[0];
 
+        // Obtener número de clientes conectados actualmente
+        const connectedClients = io.sockets.sockets.size;
+
         // Emitir evento por WebSockets a todos los clientes conectados
         io.emit('new_notice', newNotice);
-        console.log(`[Socket.IO] Nuevo aviso emitido: "${newNotice.title}" a todos los clientes.`);
+        console.log(`[Socket.IO] 📢 Emitiendo aviso "${newNotice.title}" a ${connectedClients} clientes.`);
 
         res.status(201).json(newNotice);
     } catch (error) {
@@ -2364,9 +2385,18 @@ const optionalToken = (req, res, next) => {
     }
 };
 
+// Rate Limiting para evitar spam de métricas en Discord
+const metricsLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutos
+    max: 2, // Límite de 2 peticiones por cada 5 minutos por IP
+    message: { error: 'Demasiadas notificaciones desde esta IP' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // POST /api/metrics/app-open
 // Notifica cuando se abre o se resume la aplicación
-app.post('/api/metrics/app-open', optionalToken, async (req, res) => {
+app.post('/api/metrics/app-open', metricsLimiter, optionalToken, async (req, res) => {
     try {
         const ip = req.ip || req.headers['x-forwarded-for'];
         const identity = (req.user && req.user.email) ? req.user.email : 'Visitante Anónimo';

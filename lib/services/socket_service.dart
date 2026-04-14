@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../constants/app_config.dart';
 import '../theme/app_theme.dart';
+import '../core/network/api_client.dart';
 import '../main.dart'; // Para navigatorKey
 
 class SocketService {
@@ -22,16 +24,29 @@ class SocketService {
     final wsUrl = AppConfig.baseUrl.replaceAll('/api', '');
     
     _socket = IO.io(wsUrl, <String, dynamic>{
-      // 'transports': ['websocket'], // Permite negociación (polling -> websocket) para mayor compatibilidad
+      'transports': ['polling', 'websocket'], // Permitir polling inicial para mayor compatibilidad
       'autoConnect': true,
+      'reconnection': true,
+      'reconnectionAttempts': double.infinity,
+      'reconnectionDelay': 1000,
+      'reconnectionDelayMax': 5000,
+      'timeout': 20000,
+      'forceNew': true,
+      'path': '/socket.io', // Especificar el path explícitamente para el proxy
+      'extraHeaders': {
+        'Host': 'alzitrans.duckdns.org', // Ayuda al proxy a identificar el destino
+      }
     });
 
     _socket!.onConnect((_) {
       debugPrint('[SocketService] ✅ Conectado a WebSockets (ID: ${_socket!.id})');
+      _sendDebugLog('App móvil conectada exitosamente a WebSockets.');
     });
 
     _socket!.onConnectError((err) {
       debugPrint('[SocketService] ❌ Error de conexión: $err');
+      // ENVIAR ERROR A DISCORD VIA HTTP para finalmente saber qué pasa en el móvil
+      _sendDebugLog('ERROR DE CONEXIÓN WebSocket: $err');
     });
 
     _socket!.onError((err) {
@@ -42,9 +57,14 @@ class SocketService {
       debugPrint('[SocketService] 🔔 Nuevo aviso recibido: $data');
       try {
         final noticeData = data is String ? jsonDecode(data) : data;
+        
+        // PUENTE DE DIAGNÓSTICO: Notificar a Discord que el evento LLEGÓ al móvil
+        _sendDebugLog('Aviso recibido vía WebSocket en el móvil.', data: noticeData);
+        
         _showNoticeDialog(noticeData);
       } catch (e) {
         debugPrint('[SocketService] ❌ Error al procesar aviso: $e');
+        _sendDebugLog('Error al procesar el aviso recibido en el móvil: $e');
       }
     });
 
@@ -55,6 +75,7 @@ class SocketService {
 
     _socket!.onDisconnect((reason) {
       debugPrint('[SocketService] 🔌 Desconectado de WebSockets: $reason');
+      _sendDebugLog('Desconectado de WebSockets. Razón: $reason');
       // Intentar reconectar si la desconexión fue inesperada
       if (reason != 'io client disconnect') {
         Future.delayed(const Duration(seconds: 5), () {
@@ -67,14 +88,29 @@ class SocketService {
     });
   }
 
+  /// Envía un log de diagnóstico al servidor para que aparezca en Discord.
+  Future<void> _sendDebugLog(String message, {dynamic data}) async {
+    try {
+      // Usar ApiClient para enviar el log de depuración al backend
+      // El endpoint /api/debug/mobile-log reenviará esto a Discord
+      await ApiClient().post('/debug/mobile-log', data: {
+        'message': '[MOBILE] $message',
+        'data': data ?? {},
+      });
+    } catch (e) {
+      debugPrint('[SocketService] Fallo al enviar debug log: $e');
+    }
+  }
+
   void _showNoticeDialog(dynamic data) {
-    // 1. Verificar contexto disponible
+    // 1. Verificar contexto disponible con reintento si es null
     if (navigatorKey.currentContext == null) {
-      debugPrint('[SocketService] ⚠️ No se puede mostrar diálogo: navigatorKey.currentContext es null');
+      debugPrint('[SocketService] ⚠️ Contexto null, reintentando mostrar diálogo en 1s...');
+      Future.delayed(const Duration(seconds: 1), () => _showNoticeDialog(data));
       return;
     }
     
-    // 2. Ejecutar tras el frame actual para evitar conflictos de construcción (build phase)
+    // 2. Ejecutar tras el frame actual para evitar conflictos de construcción
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = navigatorKey.currentContext;
       if (context == null) return;
@@ -82,7 +118,8 @@ class SocketService {
       try {
         final l = AppLocalizations.of(context);
         if (l == null) {
-          debugPrint('[SocketService] ⚠️ No se encontró AppLocalizations en el contexto actual');
+          debugPrint('[SocketService] ⚠️ No se encontró AppLocalizations en este frame. Reintentando...');
+          Future.delayed(const Duration(seconds: 1), () => _showNoticeDialog(data));
           return;
         }
         
@@ -96,46 +133,50 @@ class SocketService {
         showDialog(
           context: context,
           barrierDismissible: true,
+          useRootNavigator: true, // Asegurar que sale sobre cualquier otra pantalla/overlay
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
               children: [
                 const Icon(Icons.campaign, color: AlzitransColors.burgundy, size: 28),
                 const SizedBox(width: 8),
-                Expanded(child: Text(title)),
+                Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold))),
               ],
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (line != null && line.toString().trim().isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AlzitransColors.coral,
-                      borderRadius: BorderRadius.circular(12),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (line != null && line.toString().trim().isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AlzitransColors.coral,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${l.line} $line',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    child: Text(
-                      '${l.line} $line',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
+                  Text(body, style: const TextStyle(fontSize: 16)),
                 ],
-                Text(body),
-              ],
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(l.understood),
+                child: Text(l.understood, style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
         );
       } catch (e) {
         debugPrint('[SocketService] ❌ Error fatal mostrando diálogo: $e');
+        _sendDebugLog('Fallo al mostrar el diálogo en el móvil: $e');
       }
     });
   }

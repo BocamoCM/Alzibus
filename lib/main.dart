@@ -97,6 +97,16 @@ void main() async {
       // 1. Inicialización crítica (rápida)
       final prefs = await SharedPreferences.getInstance();
       
+      // Determinar si mostrar anuncios (evitar en onboarding/registro)
+      final token = prefs.getString('jwt_token');
+      final isPremium = prefs.getBool('is_premium') ?? false;
+      
+      // REGLA: Solo mostrar anuncios si el usuario está logueado Y no es premium.
+      // Esto elimina la fricción durante el registro para nuevos usuarios.
+      AppConfig.showAds = (token != null && !isPremium);
+      
+      debugPrint('Main: Publicidad habilitada: ${AppConfig.showAds} (Token: ${token != null}, Premium: $isPremium)');
+
       // Inicializar rastreo de instalaciones (asíncrono, no bloqueante)
       InstallTrackingService.checkAndSendReferrer(prefs).catchError((e) {
         debugPrint('Error en tracking de instalación: $e');
@@ -279,10 +289,24 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
     super.dispose();
   }
   
+  static DateTime? _lastNotifyTimestamp;
+
   void _notifyAppOpen() {
+    // Cooldown de 5 minutos para evitar spam en Discord
+    if (_lastNotifyTimestamp != null &&
+        DateTime.now().difference(_lastNotifyTimestamp!).inMinutes < 5) {
+      return;
+    }
+
     try {
-      ApiClient().post('/metrics/app-open').catchError((e) {
-        debugPrint('Error notificando app-open: $e');
+      _lastNotifyTimestamp = DateTime.now();
+      
+      // Pequeño retardo inicial para asegurar que el ApiClient tenga tiempo de cargar el token
+      // si el usuario ya estaba logueado.
+      Future.delayed(const Duration(seconds: 2), () {
+        ApiClient().post('/metrics/app-open').catchError((e) {
+          debugPrint('Error notificando app-open: $e');
+        });
       });
     } catch (_) {}
   }
@@ -290,10 +314,16 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Mostrar App Open Ad al volver a la app
-      ref.read(adServiceProvider).showAppOpenAdIfAvailable();
+      // Solo mostrar anuncios si el usuario ya está logueado
+      // (Evitamos molestar durante el registro o verificación OTP)
+      final authService = ref.read(authServiceProvider);
+      authService.isLoggedIn().then((isLoggedIn) {
+        if (isLoggedIn) {
+          ref.read(adServiceProvider).showAppOpenAdIfAvailable();
+        }
+      });
       
-      // Notificar al backend
+      // Notificar al backend (con el cooldown aplicado dentro de la función)
       _notifyAppOpen();
     }
   }

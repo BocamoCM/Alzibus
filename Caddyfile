@@ -32,10 +32,16 @@ alzitrans.duckdns.org {
 
     # Redirigir WebSockets y Polling de Socket.IO
     handle /socket.io/* {
-        reverse_proxy alzibus_backend:3000
+        reverse_proxy alzibus_backend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
     }
     handle /socket.io {
-        reverse_proxy alzibus_backend:3000
+        reverse_proxy alzibus_backend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
     }
 
     # Redirigir /app a /app/ (Evita errores de rutas relativas)
