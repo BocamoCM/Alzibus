@@ -136,7 +136,7 @@ class _StatsScreenState extends State<StatsScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            letter-spacing: 0.5,
+            letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 16),
