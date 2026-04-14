@@ -436,6 +436,58 @@ class ApiService {
       return false;
     }
   }
+  // ==========================================
+  // FEEDBACK & TICKETS
+  // ==========================================
+  Future<List<Map<String, dynamic>>> getFeedbackTickets() async {
+    final response = await _get('/admin/feedback');
+    if (response != null && response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    }
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> getFeedbackReplies(int ticketId) async {
+    final response = await _get('/admin/feedback/$ticketId/replies');
+    if (response != null && response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    }
+    return [];
+  }
+
+  Future<bool> replyToFeedbackTicket(int ticketId, String message) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/admin/feedback/$ticketId/reply'),
+            headers: _headers,
+            body: json.encode({'message': message}),
+          )
+          .timeout(_timeout);
+      _handleResponse(response);
+      return response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Error enviando respuesta de ticket: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateFeedbackTicketStatus(int ticketId, String status) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('$_baseUrl/admin/feedback/$ticketId/status'),
+            headers: _headers,
+            body: json.encode({'status': status}),
+          )
+          .timeout(_timeout);
+      _handleResponse(response);
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error actualizando estado de ticket: $e');
+      return false;
+    }
+  }
 
   void clearCache() {
     _stopsCache = null;

@@ -2542,6 +2542,157 @@ app.post('/api/metrics/app-open', metricsLimiter, optionalToken, async (req, res
     }
 });
 
+// ==========================================
+// RUTAS DE FEEDBACK Y SOPORTE (TICKETS)
+// ==========================================
+
+// ── Crear Ticket de Feedback ──
+app.post('/api/feedback', authenticateToken, async (req, res) => {
+    const { tag, title, description } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO feedback_tickets (user_email, tag, title, description) VALUES ($1, $2, $3, $4) RETURNING *',
+            [req.user.email, tag, title, description]
+        );
+        const ticket = result.rows[0];
+
+        // Notificar al Discord de soporte
+        sendDiscordNotification({
+            embeds: [{
+                title: `🎫 Nuevo Ticket de Soporte: ${tag}`,
+                description: `**Asunto:** ${title}\n\n${description}`,
+                color: 0xE67E22, // Naranja
+                fields: [
+                    { name: 'Usuario', value: req.user.email, inline: true },
+                    { name: 'ID Ticket', value: ticket.id.toString(), inline: true }
+                ]
+            }]
+        });
+
+        res.status(201).json(ticket);
+    } catch (error) {
+        console.error('Error creando ticket:', error);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ── Obtener Tickets del Usuario ──
+app.get('/api/feedback', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT t.*, 
+                   (SELECT MAX(id) FROM feedback_replies fr WHERE fr.ticket_id = t.id AND fr.sender_type = 'admin') as last_admin_reply_id
+            FROM feedback_tickets t
+            WHERE t.user_email = $1
+            ORDER BY t.created_at DESC
+        `, [req.user.email]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo tickets:', error);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ── Obtener Mensajes de un Ticket ──
+app.get('/api/feedback/:id/messages', authenticateToken, async (req, res) => {
+    const ticketId = req.params.id;
+    try {
+        // Verificar permisos
+        const ticket = await pool.query('SELECT user_email FROM feedback_tickets WHERE id = $1', [ticketId]);
+        if (ticket.rows.length === 0) return res.status(404).json({ error: 'Ticket no encontrado' });
+        
+        if (req.user.email !== ticket.rows[0].user_email) return res.status(403).json({ error: 'No autorizado' });
+        
+        const result = await pool.query('SELECT * FROM feedback_replies WHERE ticket_id = $1 ORDER BY created_at ASC', [ticketId]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo mensajes de feedback:', error);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ── Responder a un Ticket (Usuario) ──
+app.post('/api/feedback/:id/reply', authenticateToken, async (req, res) => {
+    const ticketId = req.params.id;
+    const { message } = req.body;
+    try {
+        const ticket = await pool.query('SELECT user_email, title, status FROM feedback_tickets WHERE id = $1', [ticketId]);
+        if (ticket.rows.length === 0) return res.status(404).json({ error: 'Ticket no encontrado' });
+        if (ticket.rows[0].user_email !== req.user.email) return res.status(403).json({ error: 'No autorizado' });
+
+        const result = await pool.query(
+            'INSERT INTO feedback_replies (ticket_id, sender_type, message) VALUES ($1, $2, $3) RETURNING *',
+            [ticketId, 'user', message]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error en respuesta de feedback:', error);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ==========================================
+// ENDPOINTS ADMIN PARA FEEDBACK
+// ==========================================
+
+// ── Obtener TODOS los Tickets ──
+app.get('/api/admin/feedback', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM feedback_tickets ORDER BY created_at DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ── Responder a un Ticket (Admin) ──
+app.post('/api/admin/feedback/:id/reply', authenticateAdmin, async (req, res) => {
+    const ticketId = req.params.id;
+    const { message } = req.body;
+    try {
+        const ticket = await pool.query('SELECT * FROM feedback_tickets WHERE id = $1', [ticketId]);
+        if (ticket.rows.length === 0) return res.status(404).json({ error: 'Ticket no encontrado' });
+
+        const result = await pool.query(
+            'INSERT INTO feedback_replies (ticket_id, sender_type, message) VALUES ($1, $2, $3) RETURNING *',
+            [ticketId, 'admin', message]
+        );
+        
+        // Si estaba cerrado/resuelto, reabrimos el ticket
+        if (ticket.rows[0].status === 'Resuelto' || ticket.rows[0].status === 'Cerrado') {
+            await pool.query("UPDATE feedback_tickets SET status = 'En progreso' WHERE id = $1", [ticketId]);
+        }
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ── Cambiar Estado de un Ticket (Admin) ──
+app.put('/api/admin/feedback/:id/status', authenticateAdmin, async (req, res) => {
+    const ticketId = req.params.id;
+    const { status } = req.body;
+    try {
+        const result = await pool.query('UPDATE feedback_tickets SET status = $1 WHERE id = $2 RETURNING *', [status, ticketId]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
+// ── Obtener Mensajes de un Ticket (Admin) ──
+app.get('/api/admin/feedback/:id/replies', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM feedback_replies WHERE ticket_id = $1 ORDER BY created_at ASC',
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+});
+
 // ── Iniciar el servidor HTTP ──
 // Escucha en todas las interfaces de red ('0.0.0.0') para aceptar
 // conexiones tanto locales como remotas (importante para la Raspberry Pi).

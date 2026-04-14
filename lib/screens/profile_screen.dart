@@ -7,6 +7,7 @@ import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
+import '../screens/feedback_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/premium_page.dart';
 import '../constants/app_config.dart';
@@ -302,6 +303,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             title: Text(l.tabSettings),
             trailing: const Icon(Icons.chevron_right),
             onTap: widget.onSettingsTap,
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: const Icon(Icons.support_agent, color: AlzitransColors.burgundy),
+            title: const Text('Ayuda y Soporte', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Reportar bugs, quejas o sugerencias', style: TextStyle(fontSize: 11)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FeedbackScreen()),
+              );
+            },
           ),
           if (AppConfig.showAds && !kIsWeb) ...[
             const Divider(height: 1, indent: 56),

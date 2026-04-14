@@ -153,3 +153,27 @@ CREATE INDEX IF NOT EXISTS idx_replies_notice ON notice_replies(notice_id);
 
 -- sender_type: 'user' = mensaje del usuario, 'admin' = respuesta del administrador
 ALTER TABLE notice_replies ADD COLUMN IF NOT EXISTS sender_type VARCHAR(10) DEFAULT 'user';
+
+-- ==========================================
+-- SISTEMA DE FEEDBACK Y SOPORTE
+-- ==========================================
+CREATE TABLE IF NOT EXISTS feedback_tickets (
+    id SERIAL PRIMARY KEY,
+    user_email VARCHAR(255) NOT NULL REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
+    tag VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'Abierto',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback_tickets(user_email);
+CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback_tickets(status);
+
+CREATE TABLE IF NOT EXISTS feedback_replies (
+    id SERIAL PRIMARY KEY,
+    ticket_id INTEGER NOT NULL REFERENCES feedback_tickets(id) ON DELETE CASCADE,
+    sender_type VARCHAR(10) DEFAULT 'user',
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_replies_ticket ON feedback_replies(ticket_id);
