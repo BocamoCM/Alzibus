@@ -49,6 +49,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 // (por ejemplo, cuando se crea un nuevo aviso desde el panel de admin,
 // se emite un evento 'new_notice' y la app lo recibe al instante).
 const io = socketIo(server, {
+    path: '/api/socket.io', // Mover a subruta de API para mayor estabilidad y evitar conflictos
+    pingTimeout: 60000,
+    pingInterval: 25000,
     cors: {
         origin: (origin, callback) => callback(null, true), // Permitir todos los orígenes en Socket.IO
         methods: ["GET", "POST"]
@@ -65,11 +68,10 @@ io.on('connection', (socket) => {
 });
 
 // ── Ruta de Diagnóstico para Proxy ──
-// Permite verificar que Caddy está redirigiendo correctamente al backend.
-app.get('/socket.io/diagnostic', (req, res) => {
+app.get('/api/socket.io/diagnostic', (req, res) => {
     res.json({ 
         status: 'OK', 
-        message: 'Proxy Alzibus: Conexión alcanzada correctamente en el backend.',
+        message: 'Proxy Alzibus (API Path): Conexión alcanzada correctamente en el backend.',
         timestamp: new Date().toISOString()
     });
 });
