@@ -1040,13 +1040,17 @@ a {
     padding: 18px;
     font-size: 18px;
     background: linear-gradient(135deg, var(--burgundy), var(--coral));
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
     cursor: pointer;
     position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .contact-form .btn-main:hover {
-    box-shadow: 0 10px 30px rgba(232, 90, 79, 0.3);
+    box-shadow: 0 8px 25px rgba(232, 90, 79, 0.4);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .btn-loader {
