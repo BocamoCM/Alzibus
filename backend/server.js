@@ -2018,8 +2018,8 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
             pool.query("SELECT AVG(duration_ms) FROM api_logs WHERE created_at >= NOW() - INTERVAL '7 days'"),
             pool.query("SELECT COUNT(*) FROM stops"),
             pool.query("SELECT COUNT(*) FROM users WHERE is_premium = TRUE"),
-            pool.query("SELECT COUNT(*) FROM qr_scans"), // Total escaneos QR
-            pool.query("SELECT COUNT(*) FROM qr_scans WHERE created_at >= NOW() - INTERVAL '24 hours'"), // Escaneos hoy
+            pool.query("SELECT COUNT(*) AS count FROM qr_scans"), // Total escaneos QR
+            pool.query("SELECT COUNT(*) AS count FROM qr_scans WHERE created_at >= NOW() - INTERVAL '24 hours'"), // Escaneos hoy
             pool.query(`SELECT stop_name as name, COUNT(*) as cnt 
                         FROM qr_scans 
                         WHERE stop_name IS NOT NULL 
@@ -2029,6 +2029,9 @@ app.get('/api/stats/dashboard', authenticateAdmin, async (req, res) => {
 
         const qrTotal = parseInt(qrTotalResult.rows[0].count || 0);
         const qrToday = parseInt(qrTodayResult.rows[0].count || 0);
+
+        // Debug log para verificar por qué marca 0 si hay datos
+        console.log(`[DASHBOARD] QR Total: ${qrTotal}, Hoy: ${qrToday}, Filas: ${qrTotalResult.rows.length}`);
 
         const cur7 = parseInt(queries7d.rows[0].count);
         const prev7 = parseInt(queriesPrev7d.rows[0].count);
