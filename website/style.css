@@ -1034,14 +1034,31 @@ a {
     box-shadow: 0 0 15px rgba(232, 90, 79, 0.1);
 }
 
+.contact-form .btn-main {
+    width: 100%;
+    justify-content: center;
+    padding: 18px;
+    font-size: 18px;
+    background: linear-gradient(135deg, var(--burgundy), var(--coral));
+    border: none;
+    cursor: pointer;
+    position: relative;
+}
+
+.contact-form .btn-main:hover {
+    box-shadow: 0 10px 30px rgba(232, 90, 79, 0.3);
+}
+
 .btn-loader {
     display: none;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid white;
     border-radius: 50%;
     animation: spin-btn 0.8s linear infinite;
+    position: absolute;
+    right: 30px;
 }
 
 @keyframes spin-btn {
