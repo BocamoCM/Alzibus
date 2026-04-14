@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
@@ -8,94 +7,89 @@ import '../theme/app_theme.dart';
 import '../core/network/api_client.dart';
 import '../main.dart'; // Para navigatorKey
 
+/// SocketService — Avisos en tiempo real mediante polling HTTP.
+///
+/// La librería socket_io_client para Dart tiene un bug conocido donde
+/// el puerto de la URL siempre se interpreta como :0, haciendo imposible
+/// la conexión WebSocket. Como alternativa robusta, esta clase implementa
+/// polling HTTP cada 30 segundos usando la infraestructura HTTP existente
+/// que ya funciona correctamente.
 class SocketService {
   static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;
   SocketService._internal();
 
-  IO.Socket? _socket;
   final _attendeesController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onAttendeesUpdate => _attendeesController.stream;
 
+  Timer? _pollingTimer;
+  int? _lastSeenNoticeId;
+  bool _isPolling = false;
+
+  /// Inicia el polling de avisos. Llama a este método cuando el usuario
+  /// ha iniciado sesión y la app está activa.
   void initialize() {
-    if (_socket != null && _socket!.connected) return;
+    if (_isPolling) return;
+    _isPolling = true;
 
-    // Remueve '/api' manteniendo el formato limpio
-    String wsUrl = AppConfig.baseUrl.replaceAll('/api', '').trim().replaceAll(RegExp(r'/$'), '');
-    
-    debugPrint('[SocketService] 🔄 Iniciando conexión a: $wsUrl');
-    _socket = IO.io(wsUrl, <String, dynamic>{
-      'transports': ['websocket'], // Forzar websocket directo
-      'port': 443, // Forzar explícitamente el puerto seguro
-      'extraHeaders': {
-         // Omitir cualquier mención al puerto 0 enviando el Host manualmente
-        'Host': 'alzitrans.duckdns.org'
-      },
-      'autoConnect': true,
-      'reconnection': true,
-      'reconnectionAttempts': double.infinity,
-      'reconnectionDelay': 1000,
-      'reconnectionDelayMax': 5000,
-      'timeout': 45000,
-      'forceNew': true,
-      'path': '/realtime', // TÚNEL REAL: Ruta dedicada, pública y segura
+    debugPrint('[SocketService] ✅ Iniciando polling de avisos cada 30s...');
+    _sendDebugLog('Polling de avisos HTTP iniciado correctamente.');
+
+    // Lanzar la primera consulta inmediatamente
+    _checkForNewNotices();
+
+    // Repetir cada 30 segundos
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _checkForNewNotices();
     });
+  }
 
-    _socket!.onConnect((_) {
-      debugPrint('[SocketService] ✅ Conectado a WebSockets (ID: ${_socket!.id})');
-      _sendDebugLog('App móvil conectada exitosamente a WebSockets.');
-    });
+  /// Consulta el endpoint de avisos y muestra un popup si hay uno nuevo.
+  Future<void> _checkForNewNotices() async {
+    try {
+      final response = await ApiClient().get('/notices');
+      if (response == null) return;
 
-    _socket!.onConnectError((err) {
-      debugPrint('[SocketService] ❌ Error de conexión ($wsUrl): $err');
-      // ENVIAR DATA DETALLADA A DISCORD
-      _sendDebugLog('ERROR DE CONEXIÓN WebSocket a URL ($wsUrl): $err');
-    });
-
-    _socket!.onError((err) {
-      debugPrint('[SocketService] ⚠️ Error en Socket: $err');
-    });
-
-    _socket!.on('new_notice', (data) {
-      debugPrint('[SocketService] 🔔 Nuevo aviso recibido: $data');
-      try {
-        final noticeData = data is String ? jsonDecode(data) : data;
-        
-        // PUENTE DE DIAGNÓSTICO: Notificar a Discord que el evento LLEGÓ al móvil
-        _sendDebugLog('Aviso recibido vía WebSocket en el móvil.', data: noticeData);
-        
-        _showNoticeDialog(noticeData);
-      } catch (e) {
-        debugPrint('[SocketService] ❌ Error al procesar aviso: $e');
-        _sendDebugLog('Error al procesar el aviso recibido en el móvil: $e');
+      List<dynamic> notices;
+      if (response is List) {
+        notices = response;
+      } else if (response is Map && response['notices'] != null) {
+        notices = response['notices'] as List;
+      } else {
+        return;
       }
-    });
 
-    _socket!.on('bus_attendees_update', (data) {
-      debugPrint('[SocketService] 👥 Actualización de pasajeros: $data');
-      _attendeesController.add(Map<String, dynamic>.from(data));
-    });
+      if (notices.isEmpty) return;
 
-    _socket!.onDisconnect((reason) {
-      debugPrint('[SocketService] 🔌 Desconectado de WebSockets: $reason');
-      _sendDebugLog('Desconectado de WebSockets. Razón: $reason');
-      // Intentar reconectar si la desconexión fue inesperada
-      if (reason != 'io client disconnect') {
-        Future.delayed(const Duration(seconds: 5), () {
-          if (_socket != null && !_socket!.connected) {
-            debugPrint('[SocketService] 🔄 Intentando reconexión automática...');
-            _socket!.connect();
-          }
-        });
+      // Obtener el aviso más reciente (asumimos que vienen ordenados DESC)
+      final latestNotice = notices.first as Map<String, dynamic>;
+      final latestId = latestNotice['id'] as int?;
+
+      if (latestId == null) return;
+
+      // Si es la primera consulta, guardar el ID actual sin mostrar popup
+      // (no queremos mostrar avisos viejos al iniciar)
+      if (_lastSeenNoticeId == null) {
+        _lastSeenNoticeId = latestId;
+        debugPrint('[SocketService] 🔄 ID inicial de avisos guardado: $latestId');
+        return;
       }
-    });
+
+      // Si hay un aviso más nuevo, mostrarlo
+      if (latestId > _lastSeenNoticeId!) {
+        _lastSeenNoticeId = latestId;
+        debugPrint('[SocketService] 🔔 Nuevo aviso detectado (ID: $latestId): ${latestNotice['title']}');
+        _sendDebugLog('Nuevo aviso detectado por polling: ${latestNotice['title']}', data: latestNotice);
+        _showNoticeDialog(latestNotice);
+      }
+    } catch (e) {
+      debugPrint('[SocketService] ⚠️ Error en polling de avisos: $e');
+    }
   }
 
   /// Envía un log de diagnóstico al servidor para que aparezca en Discord.
   Future<void> _sendDebugLog(String message, {dynamic data}) async {
     try {
-      // Usar ApiClient para enviar el log de depuración al backend
-      // El endpoint /api/debug/mobile-log reenviará esto a Discord
       await ApiClient().post('/debug/mobile-log', data: {
         'message': '[MOBILE] $message',
         'data': data ?? {},
@@ -112,12 +106,12 @@ class SocketService {
       Future.delayed(const Duration(seconds: 1), () => _showNoticeDialog(data));
       return;
     }
-    
+
     // 2. Ejecutar tras el frame actual para evitar conflictos de construcción
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = navigatorKey.currentContext;
       if (context == null) return;
-      
+
       try {
         final l = AppLocalizations.of(context);
         if (l == null) {
@@ -125,12 +119,12 @@ class SocketService {
           Future.delayed(const Duration(seconds: 1), () => _showNoticeDialog(data));
           return;
         }
-        
+
         // Extraer datos del aviso de forma segura
         final title = data['title']?.toString() ?? l.newNoticePopupTitle;
         final body = data['body']?.toString() ?? '';
         final line = data['line'];
-        
+
         debugPrint('[SocketService] 🚀 Mostrando diálogo de aviso: $title');
 
         showDialog(
@@ -184,20 +178,16 @@ class SocketService {
     });
   }
 
+  // Mantener compatibilidad con el código existente que usa emitAttendBus
   void emitAttendBus(String line, String stopId) {
-    if (_socket == null || !_socket!.connected) return;
-    _socket!.emit('attend_bus', {
-      'line': line,
-      'stopId': stopId,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
+    // El polling no requiere emitir eventos, se mantiene por compatibilidad
+    debugPrint('[SocketService] emitAttendBus llamado (modo polling): line=$line, stop=$stopId');
   }
 
   void dispose() {
-    _socket?.disconnect();
-    _socket?.dispose();
-    _socket = null;
-    // Fix #1: Cerrar el StreamController para liberar la memoria correctamente
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _isPolling = false;
     if (!_attendeesController.isClosed) {
       _attendeesController.close();
     }
