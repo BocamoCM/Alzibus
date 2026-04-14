@@ -16,6 +16,7 @@ const path = require('path');                     // Módulo para manejar rutas 
 
 const express = require('express');               // Framework web para crear la API REST
 const { sendDiscordNotification } = require('./utils/discord'); // Utilidad para enviar alertas a Discord
+const { sendEmail, sendContactNotification } = require('./utils/email'); // Utilidad para correos
 const http = require('http');                     // Módulo HTTP nativo de Node.js (necesario para Socket.IO)
 const socketIo = require('socket.io');            // WebSockets para comunicación bidireccional en tiempo real
 const cors = require('cors');                     // Middleware para permitir peticiones desde otros dominios (Cross-Origin)
@@ -562,34 +563,18 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
 // Usa Nodemailer con un servidor SMTP configurado en las variables de entorno.
 // El envío es NO BLOQUEANTE: la función regresa inmediatamente y el correo
 // se envía en segundo plano (para no retrasar la respuesta HTTP al usuario).
+// ==========================================
+// HELPER: Envío de email con código OTP
+// ==========================================
+// AHORA USA EL UTILITY CENTRALIZADO
 async function sendOtpEmail(email, verificationCode) {
-    // Log del código en consola (solo visible para el desarrollador, útil en desarrollo)
     console.log(`[OTP] Código de verificación para ${email}: ${verificationCode}`);
-
-    // Configurar el transportador SMTP con los datos del .env
-    const transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST || 'localhost',       // Servidor SMTP
-        port: parseInt(process.env.EMAIL_PORT) || 587,     // Puerto SMTP (587 = STARTTLS)
-        secure: false,                                      // false para STARTTLS, true para SSL directo (465)
-        auth: {
-            user: process.env.EMAIL_USER,                   // Usuario del servidor de correo
-            pass: process.env.EMAIL_PASS                    // Contraseña del servidor de correo
-        },
-        tls: { rejectUnauthorized: false }                  // Permite certificados autofirmados (común en servidores locales)
+    
+    return sendEmail({
+        to: email,
+        subject: 'Verifica tu cuenta de Alzibus',
+        text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.`
     });
-
-    // Definir el contenido del email
-    const mailOptions = {
-        from: process.env.EMAIL_FROM || 'AlziTrans <bcarreres55@gmail.com>', // Remitente
-        to: email,                                                             // Destinatario
-        subject: 'Verifica tu cuenta de Alzibus',                              // Asunto
-        text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.` // Cuerpo (texto plano)
-    };
-
-    // Enviar sin bloquear la respuesta HTTP al cliente
-    transporter.sendMail(mailOptions)
-        .then(() => console.log('Correo OTP enviado a', email))
-        .catch(err => console.error('Error enviando correo:', err.message));
 }
 
 // Helper que combina el envío del OTP con la respuesta HTTP de registro exitoso.
@@ -1933,6 +1918,11 @@ app.post('/api/contact', contactLimiter, express.json(), async (req, res) => {
         });
 
         res.json({ success: true, message: 'Mensaje enviado correctamente' });
+
+        // Enviar notificación por EMAIL en segundo plano
+        sendContactNotification({ name, email, subject, message })
+            .catch(err => console.error('[Email Notification Error]', err));
+
     } catch (error) {
         console.error('Error in /api/contact:', error);
         res.status(500).json({ error: 'Fallo al enviar el mensaje' });
