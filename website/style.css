@@ -1039,18 +1039,17 @@ a {
     justify-content: center;
     padding: 18px;
     font-size: 18px;
-    background: linear-gradient(135deg, var(--burgundy), var(--coral));
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--burgundy);
+    border: none;
     border-radius: 16px;
     cursor: pointer;
     position: relative;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s;
 }
 
 .contact-form .btn-main:hover {
-    box-shadow: 0 8px 25px rgba(232, 90, 79, 0.4);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(107, 27, 61, 0.5);
 }
 
 .btn-loader {
