@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Tu bus en Alzira, en tiempo real.",
+    "description": "Tu bus en Alzira en tiempo real. Líneas L1, L2 y L3 de Alzibus.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
