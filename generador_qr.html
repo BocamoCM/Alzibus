@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de QR — Alzitrans</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/kjua@0.9.0/dist/kjua.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #ff4757;
+            --dark: #1a1a24;
+            --light: #f4f4f9;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-weight: 900;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+            color: var(--dark);
+        }
+
+        p {
+            opacity: 0.6;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        #qr-result {
+            margin: 30px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 16px;
+            display: inline-block;
+            min-width: 200px;
+            min-height: 200px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto !important;
+            display: block;
+        }
+
+        button {
+            background: var(--dark);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.2);
+        }
+
+        .hint {
+            margin-top: 15px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Generador de QR</h1>
+        <p>Introduce la URL para generar el código oficial de Alzitrans.</p>
+
+        <div class="input-group">
+            <label for="url">URL de destino</label>
+            <input type="text" id="url" value="https://alzitrans.duckdns.org/qr" placeholder="https://...">
+        </div>
+
+        <div id="qr-result"></div>
+
+        <button id="download-btn">
+            <span>⬇️ Descargar PNG</span>
+        </button>
+
+        <div class="hint">
+            Uso local: Abre este archivo en tu PC para generar nuevos códigos.
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('url');
+        const qrResult = document.getElementById('qr-result');
+        const downloadBtn = document.getElementById('download-btn');
+
+        function generateQR() {
+            const text = urlInput.value || "https://alzitrans.duckdns.org/qr";
+            qrResult.innerHTML = '';
+            
+            const qr = kjua({
+                render: 'canvas', // Usamos canvas para poder descargar como PNG
+                text: text,
+                size: 1000, // Alta resolución para impresión
+                fill: '#000000',
+                back: '#ffffff',
+                rounded: 0,
+                quiet: 1,
+                mumble: true
+            });
+
+            qrResult.appendChild(qr);
+        }
+
+        // Generar al escribir
+        urlInput.addEventListener('input', generateQR);
+
+        // Descargar imagen
+        downloadBtn.addEventListener('click', () => {
+            const canvas = qrResult.querySelector('canvas');
+            if (!canvas) return;
+
+            const link = document.createElement('a');
+            link.download = 'alzitrans-qr.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Inicial
+        generateQR();
+    </script>
+</body>
+</html>

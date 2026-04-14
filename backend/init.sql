@@ -117,4 +117,17 @@ CREATE TABLE IF NOT EXISTS notices (
 -- Índices para optimizar la consulta de avisos activos y no expirados:
 -- La app hace esta consulta cada vez que se abre la pantalla de avisos.
 CREATE INDEX IF NOT EXISTS idx_notices_active ON notices(active);
-CREATE INDEX IF NOT EXISTS idx_notices_expires ON notices(expires_at);
+-- ─── TABLA: qr_scans ───
+-- Registro de cada vez que se escanea el QR físico de las paradas.
+-- Permite telemetría detallada independiente de Discord.
+CREATE TABLE IF NOT EXISTS qr_scans (
+    id SERIAL PRIMARY KEY,
+    ip VARCHAR(45),                    -- IP del usuario (soporta IPv6)
+    user_agent TEXT,                   -- User-Agent completo del navegador
+    device VARCHAR(100),               -- Dispositivo detectado (ej: "iPhone", "Android")
+    source VARCHAR(100) DEFAULT 'qr_paradas', -- Origen del escaneo (por si hay varios QR)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índice para búsquedas rápidas por fecha
+CREATE INDEX IF NOT EXISTS idx_qr_scans_created ON qr_scans(created_at DESC);

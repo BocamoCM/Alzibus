@@ -105,30 +105,50 @@ app.get('/app-ads.txt', (req, res) => {
 });
 
 // ── Smart QR Tracker (Redirección dinámica) ──
-// Intercepta escaneos de códigos QR físicos, avisa a Discord y redirige a la Google Play Store.
-app.get('/qr', (req, res) => {
+// Intercepta escaneos de códigos QR físicos, registra en BD, avisa a Discord y redirige.
+app.get('/qr', async (req, res) => {
     const userAgent = req.get('User-Agent') || 'Desconocido';
-    let device = 'Móvil o Web';
-    if (/android/i.test(userAgent)) device = 'Android 🤖';
-    else if (/iphone|ipad|ipod/i.test(userAgent)) device = 'iOS (iPhone/iPad) 🍏';
-    else if (/windows/i.test(userAgent)) device = 'Windows 💻';
-    else if (/mac/i.test(userAgent)) device = 'Mac 💻';
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const source = req.query.src || 'qr_paradas'; // Permite trackear distintos carteles si se desea
 
-    // 1. Enviar notificación a Discord con Embed enriquecido
+    // Detección simple pero efectiva de dispositivo
+    let device = 'Móvil o Web';
+    let emoji = '📱';
+    if (/android/i.test(userAgent)) { device = 'Android'; emoji = '🤖'; }
+    else if (/iphone|ipad|ipod/i.test(userAgent)) { device = 'iOS (iPhone/iPad)'; emoji = '🍏'; }
+    else if (/windows/i.test(userAgent)) { device = 'Windows'; emoji = '💻'; }
+    else if (/macintosh|mac os x/i.test(userAgent)) { device = 'macOS'; emoji = '🍎'; }
+    else if (/linux/i.test(userAgent)) { device = 'Linux'; emoji = '🐧'; }
+
+    // 1. Registrar en la Base de Datos para métricas detalladas (Asíncrono)
+    try {
+        await pool.query(
+            'INSERT INTO qr_scans (ip, user_agent, device, source) VALUES ($1, $2, $3, $4)',
+            [ip, userAgent, device, source]
+        );
+    } catch (err) {
+        console.error('[ERROR] Error al registrar scan de QR:', err.message);
+    }
+
+    // 2. Enviar notificación a Discord con Embed enriquecido
     sendDiscordNotification({
         embeds: [{
-            title: "📲 Nuevo Escaneo de QR",
-            description: "Un usuario ha escaneado el código físico en las paradas.",
+            title: `${emoji} Nuevo Escaneo de QR detectado`,
+            color: 0xff4757, // Coral Alzitrans
+            description: `Se ha escaneado un código físico de la campaña **${source}**.`,
             fields: [
-                { name: "Dispositivo", value: device, inline: true },
-                { name: "Navegador", value: userAgent.substring(0, 100), inline: false }
+                { name: "Dispositivo", value: `${emoji} ${device}`, inline: true },
+                { name: "Origen", value: `📍 ${source}`, inline: true },
+                { name: "IP (Ofuscada)", value: `||${ip.substring(0, 7)}...||`, inline: true },
+                { name: "User-Agent", value: `\`\`\`${userAgent.substring(0, 150)}...\`\`\``, inline: false }
             ],
-            footer: { text: "Campaña Física Alzira" }
+            timestamp: new Date(),
+            footer: { text: "Telemetría Alzitrans" }
         }]
     });
 
-    // 2. Redirigir a la página de descarga (Play Store styled landing)
-    res.redirect('/descargar?src=qr');
+    // 3. Redirigir a la landing page de descarga
+    res.redirect(`/descargar?src=${source}`);
 });
 
 // ── Smart App Install Tracker ──
