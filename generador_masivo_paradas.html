@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Súper Generador de Carteles (53 Paradas) — Alzitrans</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/kjua@0.9.0/dist/kjua.min.js"></script>
+
+    <style>
+        /* ============================
+           CONFIGURACIÓN DE IMPRESIÓN
+           ============================ */
+        @page {
+            size: A4 portrait;
+            margin: 0mm;
+        }
+
+        @media print {
+            body { background: white !important; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .poster { 
+                box-shadow: none !important; 
+                border: none !important;
+                page-break-after: always; /* Nueva página por cartel */
+            }
+        }
+
+        /* ============================
+           VISTA EN PANTALLA
+           ============================ */
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 40px 0;
+        }
+
+        .no-print {
+            background: white;
+            padding: 20px 40px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            text-align: center;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 600px;
+        }
+
+        .no-print h2 { margin: 0 0 10px; color: #ff4757; }
+        .no-print p { margin: 0 0 20px; font-size: 14px; opacity: 0.7; }
+        .no-print button {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* ============================
+           DISEÑO DEL CARTEL (A4)
+           ============================ */
+        .poster {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #eee;
+            box-shadow: 0 0 50px rgba(0,0,0,0.2);
+            margin-bottom: 40px; /* Separación en pantalla */
+        }
+
+        .top-band {
+            background: white;
+            color: black;
+            text-align: center;
+            padding: 15mm 10mm 10mm;
+        }
+
+        .stop-label {
+            font-size: 18pt;
+            font-weight: 800;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #ff4757;
+            margin-bottom: 5mm;
+        }
+
+        .top-headline {
+            font-size: 44pt;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            text-transform: uppercase;
+        }
+
+        .top-sub {
+            font-size: 16pt;
+            font-weight: 500;
+            margin-top: 8mm;
+            line-height: 1.4;
+            max-width: 85%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10mm 15mm;
+            gap: 12mm;
+        }
+
+        .qr-box {
+            width: 120mm;
+            height: 120mm;
+            border: 4pt solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .qr-box::before, .qr-box::after {
+            content: '';
+            position: absolute;
+            width: 20mm;
+            height: 20mm;
+            border-color: black;
+            border-style: solid;
+        }
+
+        .qr-box::before { top: -8pt; left: -8pt; border-width: 8pt 0 0 8pt; }
+        .qr-box::after { bottom: -8pt; right: -8pt; border-width: 0 8pt 8pt 0; }
+
+        .benefits {
+            list-style: none;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 3mm;
+            padding: 0;
+            margin: 0;
+        }
+
+        .benefits li {
+            font-size: 11pt;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4mm;
+            padding: 3mm 5mm;
+            border: 1pt solid #ddd;
+            border-radius: 4mm;
+        }
+
+        .benefits li .ico { font-size: 14pt; flex-shrink: 0; }
+
+        .bottom-band {
+            background: white;
+            color: black;
+            padding: 12mm 10mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15mm;
+            border-top: 2pt solid #eee;
+        }
+
+        .app-name-big { font-size: 32pt; font-weight: 900; letter-spacing: -1.5px; }
+
+        .app-meta { text-align: left; }
+        .app-meta .free { font-size: 16pt; font-weight: 700; }
+        .app-meta .platform { font-size: 10pt; opacity: 0.6; letter-spacing: 1px; text-transform: uppercase; }
+
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <h2>Súper Generador de Carteles (53 Paradas)</h2>
+        <p>Este sistema genera un folio A4 individual por cada parada de Alzira. Cada QR es único y registrará la parada exacta en tus estadísticas de Discord y Base de Datos.</p>
+        <button onclick="window.print()">🖨️ Generar PDF / Imprimir todo</button>
+    </div>
+
+    <div id="posters-container">
+        <!-- Los 53 carteles se cargarán aquí -->
+    </div>
+
+    <script>
+        // DATOS DE LAS 53 PARADAS (Extraídos de assets/stops.json)
+        const stops = [
+          {"id": 1, "name": "ESTACIO RENFE"},
+          {"id": 2, "name": "CENTRE DE SALUT I"},
+          {"id": 3, "name": "PLAÇA DEL REGNE (HOSPITAL)"},
+          {"id": 4, "name": "PLAÇA MAJOR (HOSPITAL)"},
+          {"id": 5, "name": "PEREZ GALDÓS"},
+          {"id": 6, "name": "GANDIA-DR. FLEMING"},
+          {"id": 7, "name": "ALQUENENCIA-AV. DEL PARC"},
+          {"id": 8, "name": "PERE ESPLUGUES-Ma DE DEU DEL LLUCH"},
+          {"id": 9, "name": "PERE ESPLUGUES-FAVARETA"},
+          {"id": 10, "name": "PERE ESPLUGUES-JAUME D'OLID"},
+          {"id": 11, "name": "PERE ESPLUGUES-ESPERANÇA"},
+          {"id": 12, "name": "GENERAL ESPARTERO"},
+          {"id": 13, "name": "AV. MEDITERRANIA-RESIDENCIA"},
+          {"id": 14, "name": "HOSPITAL"},
+          {"id": 16, "name": "AV. MEDITERRANIA-DIPUTACIO"},
+          {"id": 18, "name": "AV. DELS ESPORTS-CIPFP LLUIS SUÑER"},
+          {"id": 20, "name": "AV. PARE POMPILI-IES JOSEP Ma PARRA"},
+          {"id": 21, "name": "AV. PARE POMPILI-HORT DE GORRETA"},
+          {"id": 22, "name": "JAUME D'OLID"},
+          {"id": 23, "name": "CAMIL DOLZ- J. PAU"},
+          {"id": 24, "name": "HORT DELS FRARES-PL. PRIMER DE MAIG"},
+          {"id": 25, "name": "HORT DELS FRARES-CENTRE DE SALUT II"},
+          {"id": 26, "name": "SANTS. PATRONS - CORREUS"},
+          {"id": 27, "name": "PLAÇA DEL REGNE"},
+          {"id": 82, "name": "DR. FERRAN-BENIMUSLEM"},
+          {"id": 83, "name": "GV. COMUNITAT VALENCIANA-I. S. TULELL"},
+          {"id": 17, "name": "AV. DELS ESPORTS-AV. LLIBERTAT"},
+          {"id": 19, "name": "AV. DIGNITAT HUMANA-C. C. CARREFOUR"},
+          {"id": 29, "name": "UNIO-TARONGER"},
+          {"id": 30, "name": "UNIO-SAGUNT"},
+          {"id": 31, "name": "GANDIA-SERVEF"},
+          {"id": 32, "name": "JOSEFINA FERNÁNDEZ-COL. AUSIAS MARCH"},
+          {"id": 33, "name": "JOSEFINA FERNÁNDEZ- AV. DEL PARC"},
+          {"id": 34, "name": "AV. PARE POMPILI-LA MUNTANYETA"},
+          {"id": 35, "name": "AV. PARE POMPILI-ALQUERIETA"},
+          {"id": 36, "name": "AV. PARE POMPILI-HORT DE GORRETA (H)"},
+          {"id": 37, "name": "AV. PARE POMPILI- MUNTANYETA (H)"},
+          {"id": 38, "name": "AV. DEL PARC-FERNANDO ROJAS"},
+          {"id": 39, "name": "CARRER SABATERS"},
+          {"id": 43, "name": "CASAL FESTER"},
+          {"id": 59, "name": "ESTACIÓ D'AUTOBUSOS"},
+          {"id": 84, "name": "CRISTOBAL MONTERDE-MATOSES FALCO"},
+          {"id": 85, "name": "TRINIDAD REDAL-SALVADOR PERLES"},
+          {"id": 86, "name": "TRINIDAD REDAL-VELAZQUEZ"},
+          {"id": 87, "name": "PL REGNE 2 (HOSPITAL)"},
+          {"id": 88, "name": "GANDIA-SERVEF (ESTACIÓ)"},
+          {"id": 40, "name": "AV. SANTS PATRONS-HOTEL"},
+          {"id": 41, "name": "JOANOT MARTORELL-SANTOCILDES"},
+          {"id": 42, "name": "SUECA-HOTEL"},
+          {"id": 45, "name": "JOANOT MARTORELL"},
+          {"id": 46, "name": "AV. SANTS PATRONS-PLAÇA GENERALITAT"},
+          {"id": 73, "name": "SUECA"}
+        ];
+
+        const container = document.getElementById('posters-container');
+
+        stops.forEach(stop => {
+            const poster = document.createElement('div');
+            poster.className = 'poster';
+            
+            // Generar URL única para esta parada
+            const qrUrl = `https://alzitrans.duckdns.org/qr?id=${stop.id}&name=${encodeURIComponent(stop.name)}`;
+
+            poster.innerHTML = `
+                <div class="top-band">
+                    <div class="stop-label">PARADA: ${stop.name}</div>
+                    <div class="top-headline">¿A qué hora<br>pasa el bus?</div>
+                    <div class="top-sub">Escanea y consulta en tiempo real<br>cuánto falta para que llegue</div>
+                </div>
+
+                <div class="body">
+                    <div class="qr-box" id="qr-${stop.id}"></div>
+                    <ul class="benefits">
+                        <li><span class="ico">⏱</span> Tiempos de llegada exactos</li>
+                        <li><span class="ico">🔔</span> Avisos antes de que llegue el bus</li>
+                        <li><span class="ico">💳</span> Tu tarjeta de transporte NFC</li>
+                    </ul>
+                </div>
+
+                <div class="bottom-band">
+                    <div class="app-name-big">Alzitrans</div>
+                    <div class="app-meta">
+                        <div class="free">App 100% Gratis</div>
+                        <div class="platform">Descarga para Android</div>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(poster);
+
+            // Generar el QR usando kjua
+            const qrElement = kjua({
+                render: 'svg',
+                text: qrUrl,
+                size: 400,
+                fill: '#000000',
+                back: '#ffffff',
+                rounded: 0,
+                quiet: 1,
+                mumble: true
+            });
+
+            document.getElementById(`qr-${stop.id}`).appendChild(qrElement);
+        });
+    </script>
+
+</body>
+</html>

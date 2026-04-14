@@ -109,7 +109,9 @@ app.get('/app-ads.txt', (req, res) => {
 app.get('/qr', async (req, res) => {
     const userAgent = req.get('User-Agent') || 'Desconocido';
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const source = req.query.src || 'qr_paradas'; // Permite trackear distintos carteles si se desea
+    const source = req.query.src || 'qr_paradas'; // Permite trackear distintos carteles
+    const stopId = req.query.id ? parseInt(req.query.id) : null;
+    const stopName = req.query.name || null;
 
     // Detección simple pero efectiva de dispositivo
     let device = 'Móvil o Web';
@@ -123,22 +125,24 @@ app.get('/qr', async (req, res) => {
     // 1. Registrar en la Base de Datos para métricas detalladas (Asíncrono)
     try {
         await pool.query(
-            'INSERT INTO qr_scans (ip, user_agent, device, source) VALUES ($1, $2, $3, $4)',
-            [ip, userAgent, device, source]
+            'INSERT INTO qr_scans (ip, user_agent, device, source, stop_id, stop_name) VALUES ($1, $2, $3, $4, $5, $6)',
+            [ip, userAgent, device, source, stopId, stopName]
         );
     } catch (err) {
         console.error('[ERROR] Error al registrar scan de QR:', err.message);
     }
 
     // 2. Enviar notificación a Discord con Embed enriquecido
+    const stopInfo = stopName ? `\n📍 Parada: **${stopName}** (#${stopId})` : '';
     sendDiscordNotification({
         embeds: [{
             title: `${emoji} Nuevo Escaneo de QR detectado`,
             color: 0xff4757, // Coral Alzitrans
-            description: `Se ha escaneado un código físico de la campaña **${source}**.`,
+            description: `Se ha escaneado un código físico de la campaña **${source}**. ${stopInfo}`,
             fields: [
                 { name: "Dispositivo", value: `${emoji} ${device}`, inline: true },
                 { name: "Origen", value: `📍 ${source}`, inline: true },
+                { name: "Parada", value: stopName || 'No especificada', inline: true },
                 { name: "IP (Ofuscada)", value: `||${ip.substring(0, 7)}...||`, inline: true },
                 { name: "User-Agent", value: `\`\`\`${userAgent.substring(0, 150)}...\`\`\``, inline: false }
             ],

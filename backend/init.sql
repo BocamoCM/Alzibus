@@ -126,6 +126,8 @@ CREATE TABLE IF NOT EXISTS qr_scans (
     user_agent TEXT,                   -- User-Agent completo del navegador
     device VARCHAR(100),               -- Dispositivo detectado (ej: "iPhone", "Android")
     source VARCHAR(100) DEFAULT 'qr_paradas', -- Origen del escaneo (por si hay varios QR)
+    stop_id INTEGER,                   -- ID de la parada de la tabla stops
+    stop_name VARCHAR(255),            -- Nombre de la parada escaneada
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
