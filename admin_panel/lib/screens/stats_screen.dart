@@ -692,6 +692,8 @@ class _StatsScreenState extends State<StatsScreen> {
         ),
       ),
     );
+  }
+
   Widget _buildConversionFunnel(ThemeData theme) {
     final qrData = _stats['qr'] ?? {};
     final scans = qrData['total'] ?? 0;
