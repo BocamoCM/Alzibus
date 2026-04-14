@@ -611,8 +611,12 @@
     // - Auto-refresh cada 60 segundos.
 
     // ── Configuración ──
-    // URL del servidor backend. Cambiar a la IP de producción si se despliega.
-    const SERVER = 'http://localhost:3000';
+    // Detecta automáticamente si estamos en local o en producción.
+    // Si abres el archivo localmente, puedes cambiar esto a la IP de tu Raspberry.
+    const SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || !window.location.hostname 
+                   ? 'http://149.74.26.171:4000' // Tu Raspberry Pi (IP fija)
+                   : window.location.origin;     // El mismo dominio si está desplegado
+    
     document.getElementById('server-url').textContent = SERVER;
 
     // Opciones por defecto para todas las gráficas de Chart.js.
