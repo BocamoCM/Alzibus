@@ -20,12 +20,17 @@ class SocketService {
   void initialize() {
     if (_socket != null && _socket!.connected) return;
 
-    // Remueve '/api' y slashes finales para evitar errores de construcción de URL en el cliente
-    final wsUrl = AppConfig.baseUrl.replaceAll('/api', '').trim().replaceAll(RegExp(r'/$'), '');
+    // Remueve '/api' manteniendo el formato limpio
+    String wsUrl = AppConfig.baseUrl.replaceAll('/api', '').trim().replaceAll(RegExp(r'/$'), '');
     
     debugPrint('[SocketService] 🔄 Iniciando conexión a: $wsUrl');
     _socket = IO.io(wsUrl, <String, dynamic>{
-      'transports': ['websocket'], // Forzar websocket directo para evitar conflictos de upgrade con polling
+      'transports': ['websocket'], // Forzar websocket directo
+      'port': 443, // Forzar explícitamente el puerto seguro
+      'extraHeaders': {
+         // Omitir cualquier mención al puerto 0 enviando el Host manualmente
+        'Host': 'alzitrans.duckdns.org'
+      },
       'autoConnect': true,
       'reconnection': true,
       'reconnectionAttempts': double.infinity,
