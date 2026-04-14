@@ -1381,15 +1381,31 @@ app.patch('/api/admin/users/:id/toggle', authenticateAdmin, async (req, res) => 
 // GET /api/notices
 // Solo devuelve avisos que están activos (active=TRUE) y no han expirado.
 // Ordenados por fecha de creación descendente (los más recientes primero).
+// ── Obtener avisos activos (público, accesible desde la app) ──
+// GET /api/notices
+// Devuelve avisos generales + avisos personales dirigidos al usuario autenticado.
+// Si no hay JWT, solo devuelve avisos generales (target_email IS NULL).
 app.get('/api/notices', async (req, res) => {
     try {
+        // Extraer email del JWT si viene en la cabecera Authorization
+        let userEmail = null;
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                userEmail = decoded.email || null;
+            } catch (_) { /* Token inválido: solo avisos generales */ }
+        }
+
         const result = await pool.query(`
-            SELECT id, title, body, line, active, expires_at, created_at
+            SELECT id, title, body, line, active, expires_at, created_at, target_email
             FROM notices
             WHERE active = TRUE
               AND (expires_at IS NULL OR expires_at > NOW())
+              AND (target_email IS NULL OR target_email = $1)
             ORDER BY created_at DESC
-        `);
+        `, [userEmail]);
         res.json(result.rows);
     } catch (error) {
         console.error('Error obteniendo avisos:', error);
@@ -1437,25 +1453,70 @@ app.post('/api/debug/mobile-log', async (req, res) => {
 // ── Crear un nuevo aviso ──
 // POST /api/admin/notices
 app.post('/api/admin/notices', authenticateAdmin, async (req, res) => {
-    const { title, body, line, expiresAt } = req.body;
+    const { title, body, line, expiresAt, targetEmail } = req.body;
     if (!title || !body) return res.status(400).json({ error: 'Título y cuerpo requeridos' });
     try {
         const result = await pool.query(
-            'INSERT INTO notices (title, body, line, expires_at) VALUES ($1, $2, $3, $4) RETURNING *',
-            [title, body, line || null, expiresAt || null]
+            'INSERT INTO notices (title, body, line, expires_at, target_email) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [title, body, line || null, expiresAt || null, targetEmail || null]
         );
         const newNotice = result.rows[0];
-
-        // Obtener número de clientes conectados actualmente
-        const connectedClients = io.sockets.sockets.size;
-
-        // Emitir evento por WebSockets a todos los clientes conectados
         io.emit('new_notice', newNotice);
-        console.log(`[Socket.IO] 📢 Emitiendo aviso "${newNotice.title}" a ${connectedClients} clientes.`);
-
         res.status(201).json(newNotice);
     } catch (error) {
         console.error('Error creando aviso:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ── Responder a un aviso personal ──
+// POST /api/notices/:id/reply
+// Solo el usuario destinatario puede responder a su propio aviso personal.
+app.post('/api/notices/:id/reply', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { message } = req.body;
+    const userEmail = req.user.email;
+
+    if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
+    }
+    try {
+        // Verificar que el aviso existe, está activo y pertenece al usuario
+        const noticeResult = await pool.query(
+            'SELECT id, title, target_email FROM notices WHERE id = $1 AND active = TRUE AND (expires_at IS NULL OR expires_at > NOW())',
+            [id]
+        );
+        if (noticeResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Aviso no encontrado o inactivo' });
+        }
+        const notice = noticeResult.rows[0];
+        if (notice.target_email !== userEmail) {
+            return res.status(403).json({ error: 'No puedes responder a este aviso' });
+        }
+        const replyResult = await pool.query(
+            'INSERT INTO notice_replies (notice_id, user_email, message) VALUES ($1, $2, $3) RETURNING *',
+            [id, userEmail, message.trim()]
+        );
+        console.log(`[Notices] 💬 Respuesta de ${userEmail} al aviso "${notice.title}"`);
+        res.status(201).json(replyResult.rows[0]);
+    } catch (error) {
+        console.error('Error guardando respuesta:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// ── Ver respuestas de un aviso (admin) ──
+// GET /api/admin/notices/:id/replies
+app.get('/api/admin/notices/:id/replies', authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM notice_replies WHERE notice_id = $1 ORDER BY created_at ASC',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo respuestas:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notices_service.dart';
+import '../theme/app_theme.dart';
 
 /// Pantalla de avisos e incidencias activas del servicio de autobus.
 class NoticesScreen extends StatefulWidget {
@@ -25,7 +26,6 @@ class _NoticesScreenState extends State<NoticesScreen> {
   Future<void> _load() async {
     setState(() => _isLoading = true);
     _notices = await _service.loadNotices();
-    // Marcar avisos como vistos
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('last_seen_notices_at', DateTime.now().toIso8601String());
     if (mounted) setState(() => _isLoading = false);
@@ -43,8 +43,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inSeconds < 0) return _formatFutureDate(dt, now); // Future date
-    
+    if (diff.inSeconds < 0) return _formatFutureDate(dt, now);
     if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
     if (diff.inHours < 24) return 'Hace ${diff.inHours}h';
     return '${dt.day}/${dt.month}/${dt.year}';
@@ -117,15 +116,22 @@ class _NoticesScreenState extends State<NoticesScreen> {
     final l = AppLocalizations.of(context)!;
     final hasLine = notice.line != null;
     final lineColor = _lineColor(notice.line);
+    final isPersonal = notice.isPersonal;
+
+    // Avisos personales tienen borde y estilo diferenciado
+    final borderColor = isPersonal
+        ? AlzitransColors.burgundy.withOpacity(0.5)
+        : (hasLine ? lineColor.withOpacity(0.3) : Colors.orange.withOpacity(0.3));
+    final headerColor = isPersonal
+        ? AlzitransColors.burgundy.withOpacity(0.08)
+        : (hasLine ? lineColor.withOpacity(0.1) : Colors.orange.withOpacity(0.1));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: hasLine ? lineColor.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
-        ),
+        border: Border.all(color: borderColor, width: isPersonal ? 1.5 : 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -143,13 +149,28 @@ class _NoticesScreenState extends State<NoticesScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: hasLine ? lineColor.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+              color: headerColor,
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: hasLine ? lineColor : Colors.orange, size: 20),
+                  Icon(
+                    isPersonal ? Icons.mark_email_unread_rounded : Icons.warning_amber_rounded,
+                    color: isPersonal ? AlzitransColors.burgundy : (hasLine ? lineColor : Colors.orange),
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
-                  if (hasLine) ...[
+                  if (isPersonal) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AlzitransColors.burgundy,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text('Mensaje para ti',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (hasLine && !isPersonal) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       decoration: BoxDecoration(
@@ -157,8 +178,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(notice.line!,
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -177,12 +197,10 @@ class _NoticesScreenState extends State<NoticesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(notice.title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Text(notice.body,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: Colors.grey[700])),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
                   if (notice.expiresAt != null) ...[
                     const SizedBox(height: 10),
                     Row(
@@ -196,12 +214,116 @@ class _NoticesScreenState extends State<NoticesScreen> {
                       ],
                     ),
                   ],
+                  // ── Sección de respuesta (solo avisos personales) ──
+                  if (isPersonal) ...[
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    _ReplyWidget(
+                      notice: notice,
+                      service: _service,
+                    ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Widget de respuesta embebido en la tarjeta del aviso personal.
+class _ReplyWidget extends StatefulWidget {
+  final NoticeRecord notice;
+  final NoticesService service;
+
+  const _ReplyWidget({required this.notice, required this.service});
+
+  @override
+  State<_ReplyWidget> createState() => _ReplyWidgetState();
+}
+
+class _ReplyWidgetState extends State<_ReplyWidget> {
+  final _controller = TextEditingController();
+  bool _sent = false;
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final msg = _controller.text.trim();
+    if (msg.isEmpty) return;
+    setState(() => _sending = true);
+    final ok = await widget.service.replyToNotice(widget.notice.id, msg);
+    if (mounted) {
+      setState(() {
+        _sending = false;
+        _sent = ok;
+      });
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo enviar la respuesta. Inténtalo de nuevo.'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_sent) {
+      return Row(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+          const SizedBox(width: 8),
+          Text('Respuesta enviada', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Responder al administrador',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: AlzitransColors.burgundy,
+            )),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _controller,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: 'Escribe tu respuesta...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _sending ? null : _send,
+            icon: _sending
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.send, size: 18),
+            label: Text(_sending ? 'Enviando...' : 'Enviar respuesta'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AlzitransColors.burgundy,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

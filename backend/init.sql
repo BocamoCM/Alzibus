@@ -133,3 +133,20 @@ CREATE TABLE IF NOT EXISTS qr_scans (
 
 -- Índice para búsquedas rápidas por fecha
 CREATE INDEX IF NOT EXISTS idx_qr_scans_created ON qr_scans(created_at DESC);
+
+-- ─── MIGRACIONES: Avisos personales y respuestas ───
+-- Permite dirigir un aviso a un usuario concreto (NULL = general para todos).
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS target_email VARCHAR(255);
+CREATE INDEX IF NOT EXISTS idx_notices_target_email ON notices(target_email);
+
+-- ─── TABLA: notice_replies ───
+-- Almacena las respuestas que los usuarios envían a los avisos personales.
+-- Solo los avisos con target_email pueden recibir respuestas.
+CREATE TABLE IF NOT EXISTS notice_replies (
+    id SERIAL PRIMARY KEY,
+    notice_id INTEGER NOT NULL REFERENCES notices(id) ON DELETE CASCADE,
+    user_email VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_replies_notice ON notice_replies(notice_id);

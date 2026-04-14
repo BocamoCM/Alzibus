@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../core/network/api_client.dart';
-import '../constants/app_config.dart';
 
 class NoticeRecord {
   final int id;
@@ -11,6 +9,8 @@ class NoticeRecord {
   final bool active;
   final DateTime? expiresAt;
   final DateTime createdAt;
+  /// Si no es null, este aviso es personal y solo visible para ese email.
+  final String? targetEmail;
 
   const NoticeRecord({
     required this.id,
@@ -20,7 +20,11 @@ class NoticeRecord {
     required this.active,
     this.expiresAt,
     required this.createdAt,
+    this.targetEmail,
   });
+
+  /// True si el aviso es personal (tiene destinatario concreto).
+  bool get isPersonal => targetEmail != null;
 
   factory NoticeRecord.fromJson(Map<String, dynamic> json) => NoticeRecord(
         id: json['id'] as int,
@@ -32,6 +36,7 @@ class NoticeRecord {
             ? DateTime.tryParse(json['expires_at'] as String)
             : null,
         createdAt: DateTime.parse(json['created_at'] as String),
+        targetEmail: json['target_email'] as String?,
       );
 }
 
@@ -42,6 +47,7 @@ class NoticesService {
   bool get hasActiveNotices => _notices.isNotEmpty;
 
   /// Carga los avisos activos desde la API.
+  /// El servidor filtra automáticamente por usuario autenticado (via JWT).
   Future<List<NoticeRecord>> loadNotices() async {
     try {
       final response = await ApiClient().get('/notices');
@@ -55,5 +61,20 @@ class NoticesService {
       debugPrint('[NoticesService] Error cargando avisos: $e');
     }
     return _notices;
+  }
+
+  /// Envía una respuesta al aviso personal con el [noticeId] dado.
+  /// Devuelve true si se guardó correctamente.
+  Future<bool> replyToNotice(int noticeId, String message) async {
+    try {
+      final response = await ApiClient().post(
+        '/notices/$noticeId/reply',
+        data: {'message': message},
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      debugPrint('[NoticesService] Error enviando respuesta: $e');
+      return false;
+    }
   }
 }

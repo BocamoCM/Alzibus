@@ -345,6 +345,7 @@ class ApiService {
     required String body,
     String? line,
     DateTime? expiresAt,
+    String? targetEmail, // null = aviso general, email = aviso personal
   }) async {
     try {
       final response = await http
@@ -356,6 +357,7 @@ class ApiService {
               'body': body,
               if (line != null) 'line': line,
               if (expiresAt != null) 'expiresAt': expiresAt.toIso8601String(),
+              if (targetEmail != null && targetEmail.isNotEmpty) 'targetEmail': targetEmail,
             }),
           )
           .timeout(_timeout);
@@ -367,6 +369,16 @@ class ApiService {
       debugPrint('Error creando aviso: $e');
     }
     return null;
+  }
+
+  /// Obtiene las respuestas recibidas para un aviso personal concreto.
+  Future<List<Map<String, dynamic>>> getNoticeReplies(int noticeId) async {
+    final response = await _get('/admin/notices/$noticeId/replies');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return [];
   }
 
   Future<void> toggleNotice(int noticeId) async {

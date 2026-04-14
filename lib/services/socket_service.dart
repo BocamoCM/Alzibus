@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
-import '../constants/app_config.dart';
 import '../theme/app_theme.dart';
-import '../core/network/api_client.dart';
 import '../main.dart'; // Para navigatorKey
+import '../services/notices_service.dart';
 
 /// SocketService — Avisos en tiempo real mediante polling HTTP.
 ///
@@ -33,7 +31,6 @@ class SocketService {
     _isPolling = true;
 
     debugPrint('[SocketService] ✅ Iniciando polling de avisos cada 30s...');
-    _sendDebugLog('Polling de avisos HTTP iniciado correctamente.');
 
     // Lanzar la primera consulta inmediatamente
     _checkForNewNotices();
@@ -82,7 +79,6 @@ class SocketService {
       if (latestId > _lastSeenNoticeId!) {
         _lastSeenNoticeId = latestId;
         debugPrint('[SocketService] 🔔 Nuevo aviso detectado (ID: $latestId): ${latestNotice['title']}');
-        _sendDebugLog('Nuevo aviso detectado por polling: ${latestNotice['title']}', data: latestNotice);
         _showNoticeDialog(latestNotice);
       }
     } catch (e) {
@@ -90,16 +86,10 @@ class SocketService {
     }
   }
 
-  /// Envía un log de diagnóstico al servidor para que aparezca en Discord.
+  /// Método mantenido por compatibilidad interna.
   Future<void> _sendDebugLog(String message, {dynamic data}) async {
-    try {
-      await ApiClient().post('/debug/mobile-log', data: {
-        'message': '[MOBILE] $message',
-        'data': data ?? {},
-      });
-    } catch (e) {
-      debugPrint('[SocketService] Fallo al enviar debug log: $e');
-    }
+    // Debug logging desactivado — el sistema ya funciona correctamente.
+    debugPrint('[SocketService] $message');
   }
 
   void _showNoticeDialog(dynamic data) {
@@ -127,56 +117,64 @@ class SocketService {
         final title = data['title']?.toString() ?? l.newNoticePopupTitle;
         final body = data['body']?.toString() ?? '';
         final line = data['line'];
+        final targetEmail = data['target_email'] as String?;
+        final noticeId = data['id'] as int?;
+        final isPersonal = targetEmail != null && noticeId != null;
 
-        debugPrint('[SocketService] 🚀 Mostrando diálogo de aviso: $title');
+        debugPrint('[SocketService] 🚀 Mostrando diálogo de aviso (${isPersonal ? "personal" : "general"}): $title');
 
         showDialog(
           context: context,
           barrierDismissible: true,
-          useRootNavigator: true, // Asegurar que sale sobre cualquier otra pantalla/overlay
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.campaign, color: AlzitransColors.burgundy, size: 28),
-                const SizedBox(width: 8),
-                Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold))),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (line != null && line.toString().trim().isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AlzitransColors.coral,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${l.line} $line',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
+          useRootNavigator: true,
+          builder: (ctx) => isPersonal
+              ? _PersonalNoticeDialog(
+                  title: title,
+                  body: body,
+                  noticeId: noticeId!,
+                )
+              : AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Row(
+                    children: [
+                      const Icon(Icons.campaign, color: AlzitransColors.burgundy, size: 28),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold))),
+                    ],
+                  ),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (line != null && line.toString().trim().isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AlzitransColors.coral,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${l.line} $line',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Text(body, style: const TextStyle(fontSize: 16)),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(l.understood, style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
+                    ),
                   ],
-                  Text(body, style: const TextStyle(fontSize: 16)),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(l.understood, style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
+                ),
         );
       } catch (e) {
         debugPrint('[SocketService] ❌ Error fatal mostrando diálogo: $e');
-        _sendDebugLog('Fallo al mostrar el diálogo en el móvil: $e');
       }
     });
   }
@@ -194,5 +192,127 @@ class SocketService {
     if (!_attendeesController.isClosed) {
       _attendeesController.close();
     }
+  }
+}
+
+/// Diálogo emergente para avisos personales.
+/// Incluye campo de texto para responder desde el momento en que llega el aviso.
+/// Si el usuario prefiere responder luego, puede cerrar y hacerlo desde la pantalla de Avisos.
+class _PersonalNoticeDialog extends StatefulWidget {
+  final String title;
+  final String body;
+  final int noticeId;
+
+  const _PersonalNoticeDialog({
+    required this.title,
+    required this.body,
+    required this.noticeId,
+  });
+
+  @override
+  State<_PersonalNoticeDialog> createState() => _PersonalNoticeDialogState();
+}
+
+class _PersonalNoticeDialogState extends State<_PersonalNoticeDialog> {
+  final _controller = TextEditingController();
+  final _service = NoticesService();
+  bool _sending = false;
+  bool _sent = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final msg = _controller.text.trim();
+    if (msg.isEmpty) return;
+    setState(() => _sending = true);
+    final ok = await _service.replyToNotice(widget.noticeId, msg);
+    if (mounted) setState(() { _sending = false; _sent = ok; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.mark_email_unread_rounded, color: AlzitransColors.burgundy, size: 26),
+          const SizedBox(width: 8),
+          Expanded(child: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold))),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.body, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            if (_sent) ...
+              [
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text('¡Respuesta enviada!',
+                        style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ]
+            else ...
+              [
+                Text('Responder al administrador',
+                    style: TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _controller,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Escribe tu respuesta...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ],
+          ],
+        ),
+      ),
+      actions: [
+        // "Más tarde" — cierra el popup, el aviso sigue en la pantalla de Avisos
+        if (!_sent)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Responder más tarde',
+                style: TextStyle(color: Colors.grey)),
+          ),
+        if (_sent)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l.understood,
+                style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
+          )
+        else
+          ElevatedButton.icon(
+            onPressed: _sending ? null : _send,
+            icon: _sending
+                ? const SizedBox(width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.send, size: 18),
+            label: Text(_sending ? 'Enviando...' : 'Enviar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AlzitransColors.burgundy,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+      ],
+    );
   }
 }
