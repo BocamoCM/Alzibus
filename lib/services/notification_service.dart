@@ -43,11 +43,23 @@ class NotificationService {
       showBadge: true,
     );
 
+    // Canal para avisos y mensajes del admin
+    const noticesChannel = AndroidNotificationChannel(
+      'alzibus-notices',
+      'Avisos y Mensajes',
+      description: 'Notificaciones sobre nuevos avisos y respuestas del administrador',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
     final plugin = _notif
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     
     await plugin?.createNotificationChannel(androidChannel);
     await plugin?.createNotificationChannel(alertsChannel);
+    await plugin?.createNotificationChannel(noticesChannel);
   }
 
   Future<void> showProximityNotification(String stopName, List<String> lines, double distance) async {
@@ -140,6 +152,31 @@ class NotificationService {
       '$stopName → $destination\n$timeText',
       details,
       payload: payload,
+    );
+  }
+
+  Future<void> showNoticeNotification(String title, String body) async {
+    final androidDetails = AndroidNotificationDetails(
+      'alzibus-notices',
+      'Avisos y Mensajes',
+      channelDescription: 'Notificaciones sobre nuevos avisos y respuestas del administrador',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 400, 200, 400]),
+      ticker: 'Nuevo Aviso',
+      styleInformation: BigTextStyleInformation(body),
+      color: const Color(0xFF4A1D3D), // Color granate Alzitrans
+      icon: 'ic_notification',
+    );
+    final details = NotificationDetails(android: androidDetails);
+    
+    await _notif.show(
+      title.hashCode, // Usar un hash simple
+      title,
+      body,
+      details,
     );
   }
 }

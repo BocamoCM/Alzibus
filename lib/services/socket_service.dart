@@ -4,6 +4,8 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../main.dart'; // Para navigatorKey
 import '../services/notices_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../services/notification_service.dart';
 
 /// SocketService — Avisos en tiempo real mediante polling HTTP.
 ///
@@ -20,8 +22,10 @@ class SocketService {
   final _attendeesController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onAttendeesUpdate => _attendeesController.stream;
 
+  final _noticesService = NoticesService();
   Timer? _pollingTimer;
   int? _lastSeenNoticeId;
+  int? _lastSeenAdminReplyId;
   bool _isPolling = false;
 
   /// Inicia el polling de avisos. Llama a este método cuando el usuario
@@ -42,44 +46,72 @@ class SocketService {
   }
 
   /// Consulta el endpoint de avisos y muestra un popup si hay uno nuevo.
+  /// Delega en NoticesService para no duplicar la lógica HTTP.
   Future<void> _checkForNewNotices() async {
     try {
-      final response = await ApiClient().get('/notices');
-      if (response == null) return;
-
-      // ApiClient devuelve el objeto Response de Dio — extraer los datos con .data
-      final rawData = response.data;
-      
-      List<dynamic> notices;
-      if (rawData is List) {
-        notices = rawData;
-      } else if (rawData is Map && rawData['notices'] != null) {
-        notices = rawData['notices'] as List;
-      } else {
-        return;
-      }
-
+      final notices = await _noticesService.loadNotices();
       if (notices.isEmpty) return;
 
-      // Obtener el aviso más reciente (asumimos que vienen ordenados DESC)
-      final latestNotice = notices.first as Map<String, dynamic>;
-      final latestId = latestNotice['id'] as int?;
+      // Obtener el aviso más reciente (vienen ordenados DESC del servidor)
+      final latestNotice = notices.first;
+      final latestId = latestNotice.id;
 
-      if (latestId == null) return;
+      // Buscar el ID máximo de respuesta del admin
+      int currentMaxReplyId = 0;
+      for (final n in notices) {
+        if (n.lastAdminReplyId != null && n.lastAdminReplyId! > currentMaxReplyId) {
+          currentMaxReplyId = n.lastAdminReplyId!;
+        }
+      }
 
       // Si es la primera consulta, guardar el ID actual sin mostrar popup
-      // (no queremos mostrar avisos viejos al iniciar)
+      // (no queremos mostrar avisos viejos al iniciar la app)
       if (_lastSeenNoticeId == null) {
         _lastSeenNoticeId = latestId;
-        debugPrint('[SocketService] 🔄 ID inicial de avisos guardado: $latestId');
+        _lastSeenAdminReplyId = currentMaxReplyId;
+        debugPrint('[SocketService] 🔄 ID inicial de avisos guardado: $latestId, respuestas: $currentMaxReplyId');
         return;
       }
 
-      // Si hay un aviso más nuevo, mostrarlo
+      bool showPopup = false;
+      dynamic noticeData;
+
+      // Si hay un aviso más nuevo que el último visto, mostrarlo
       if (latestId > _lastSeenNoticeId!) {
         _lastSeenNoticeId = latestId;
-        debugPrint('[SocketService] 🔔 Nuevo aviso detectado (ID: $latestId): ${latestNotice['title']}');
-        _showNoticeDialog(latestNotice);
+        showPopup = true;
+        noticeData = {
+          'id': latestNotice.id,
+          'title': latestNotice.title,
+          'body': latestNotice.body,
+          'line': latestNotice.line,
+          'target_email': latestNotice.targetEmail,
+        };
+        debugPrint('[SocketService] 🔔 Nuevo aviso detectado (ID: $latestId): ${latestNotice.title}');
+        
+        final notifService = NotificationService(FlutterLocalNotificationsPlugin());
+        notifService.showNoticeNotification('Nuevo aviso de Alzibus', latestNotice.title);
+      } 
+      // O si hay una respuesta nueva a un aviso existente
+      else if (_lastSeenAdminReplyId != null && currentMaxReplyId > _lastSeenAdminReplyId!) {
+        _lastSeenAdminReplyId = currentMaxReplyId;
+        final repliedNotice = notices.firstWhere((n) => n.lastAdminReplyId == currentMaxReplyId);
+        showPopup = true;
+        noticeData = {
+          'id': repliedNotice.id,
+          'title': 'Nueva respuesta',
+          'body': 'El administrador ha respondido en el aviso "${repliedNotice.title}".',
+          'line': repliedNotice.line,
+          'target_email': repliedNotice.targetEmail,
+        };
+        debugPrint('[SocketService] 🔔 Nueva respuesta detectada (ReplyID: $currentMaxReplyId)');
+        
+        final notifService = NotificationService(FlutterLocalNotificationsPlugin());
+        notifService.showNoticeNotification('Respuesta del Administrador', repliedNotice.title);
+      }
+
+      if (showPopup && noticeData != null) {
+        _showNoticeDialog(noticeData);
       }
     } catch (e) {
       debugPrint('[SocketService] ⚠️ Error en polling de avisos: $e');
@@ -198,7 +230,7 @@ class SocketService {
 /// Diálogo emergente para avisos personales.
 /// Incluye campo de texto para responder desde el momento en que llega el aviso.
 /// Si el usuario prefiere responder luego, puede cerrar y hacerlo desde la pantalla de Avisos.
-class _PersonalNoticeDialog extends StatefulWidget {
+class _PersonalNoticeDialog extends StatelessWidget {
   final String title;
   final String body;
   final int noticeId;
@@ -210,39 +242,14 @@ class _PersonalNoticeDialog extends StatefulWidget {
   });
 
   @override
-  State<_PersonalNoticeDialog> createState() => _PersonalNoticeDialogState();
-}
-
-class _PersonalNoticeDialogState extends State<_PersonalNoticeDialog> {
-  final _controller = TextEditingController();
-  final _service = NoticesService();
-  bool _sending = false;
-  bool _sent = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _send() async {
-    final msg = _controller.text.trim();
-    if (msg.isEmpty) return;
-    setState(() => _sending = true);
-    final ok = await _service.replyToNotice(widget.noticeId, msg);
-    if (mounted) setState(() { _sending = false; _sent = ok; });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           const Icon(Icons.mark_email_unread_rounded, color: AlzitransColors.burgundy, size: 26),
           const SizedBox(width: 8),
-          Expanded(child: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold))),
+          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold))),
         ],
       ),
       content: SingleChildScrollView(
@@ -250,68 +257,44 @@ class _PersonalNoticeDialogState extends State<_PersonalNoticeDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.body, style: const TextStyle(fontSize: 16)),
+            Text(body, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 12),
-            if (_sent) ...
-              [
-                Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.green),
-                    const SizedBox(width: 8),
-                    Text('¡Respuesta enviada!',
-                        style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ]
-            else ...
-              [
-                Text('Responder al administrador',
-                    style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _controller,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Escribe tu respuesta...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
+            Row(
+              children: [
+                const Icon(Icons.forum, color: AlzitransColors.burgundy, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Tienes un chat abierto con el administrador para este aviso.',
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                 ),
               ],
+            ),
           ],
         ),
       ),
       actions: [
-        // "Más tarde" — cierra el popup, el aviso sigue en la pantalla de Avisos
-        if (!_sent)
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Responder más tarde',
-                style: TextStyle(color: Colors.grey)),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar', style: TextStyle(color: Colors.grey)),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            // TODO: Podríamos navegar directamente a la pantalla de avisos aquí si tuviéramos un router
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Ve a la pestaña "Avisos" para responder.')),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AlzitransColors.burgundy,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-        if (_sent)
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l.understood,
-                style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
-          )
-        else
-          ElevatedButton.icon(
-            onPressed: _sending ? null : _send,
-            icon: _sending
-                ? const SizedBox(width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.send, size: 18),
-            label: Text(_sending ? 'Enviando...' : 'Enviar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AlzitransColors.burgundy,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
+          child: const Text('Ir a mensajes'),
+        ),
       ],
     );
   }

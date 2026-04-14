@@ -409,6 +409,34 @@ class ApiService {
     }
   }
 
+  /// Lista de emails de usuarios verificados para el autocompletado.
+  Future<List<String>> getUserEmails() async {
+    final response = await _get('/admin/users/emails');
+    if (response != null && response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => e as String).toList();
+    }
+    return [];
+  }
+
+  /// Admin responde en la conversación de un aviso personal.
+  Future<bool> replyToNoticeAsAdmin(int noticeId, String message) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/admin/notices/$noticeId/reply'),
+            headers: _headers,
+            body: json.encode({'message': message}),
+          )
+          .timeout(_timeout);
+      _handleResponse(response);
+      return response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Error enviando respuesta del admin: $e');
+      return false;
+    }
+  }
+
   void clearCache() {
     _stopsCache = null;
     _routesCache = null;

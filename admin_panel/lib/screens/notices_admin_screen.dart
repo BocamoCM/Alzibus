@@ -87,17 +87,39 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Email del destinatario (aviso personal)
-                  TextField(
-                    controller: targetEmailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email del destinatario (opcional)',
-                      hintText: 'Dejar vacío para aviso general',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      helperText: 'Si lo rellenas, solo ese usuario verá el aviso y podrá responderte.',
-                    ),
+                  // Email del destinatario con autocompletado de usuarios
+                  FutureBuilder<List<String>>(
+                    future: _api.getUserEmails(),
+                    builder: (context, snapshot) {
+                      final emails = snapshot.data ?? [];
+                      return Autocomplete<String>(
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text.isEmpty) return const Iterable<String>.empty();
+                          return emails.where((String option) {
+                            return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                          });
+                        },
+                        onSelected: (String selection) {
+                          targetEmailCtrl.text = selection;
+                        },
+                        fieldViewBuilder: (ctx, ctrl, focusNode, onFieldSubmitted) {
+                          // Sincronizar el controlador local con el controlador del Autocompletado
+                          ctrl.addListener(() => targetEmailCtrl.text = ctrl.text);
+                          return TextField(
+                            controller: ctrl,
+                            focusNode: focusNode,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: 'Email del destinatario (opcional)',
+                              hintText: 'Dejar vacío para aviso general',
+                              prefixIcon: const Icon(Icons.person_outline),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              helperText: 'Si lo rellenas, solo ese usuario verá el aviso y podrá responderte.',
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   // Selector de línea
@@ -200,58 +222,12 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
     );
   }
 
-  /// Muestra el hilo de respuestas de un aviso personal.
-  void _showReplies(Map<String, dynamic> notice) async {
+  /// Muestra el hilo de chat de un aviso personal.
+  void _showReplies(Map<String, dynamic> notice) {
     final noticeId = notice['id'] as int;
-    final replies = await _api.getNoticeReplies(noticeId);
-
-    if (!mounted) return;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.forum_outlined, color: Color(0xFF6B1B3D)),
-            const SizedBox(width: 10),
-            Expanded(child: Text('Respuestas: ${notice['title']}', overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-        content: SizedBox(
-          width: 500,
-          child: replies.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: Text('Sin respuestas todavía.')),
-                )
-              : ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: replies.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (ctx, i) {
-                    final reply = replies[i];
-                    return ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFF6B1B3D),
-                        child: Icon(Icons.person, color: Colors.white, size: 18),
-                      ),
-                      title: Text(reply['user_email'] as String),
-                      subtitle: Text(reply['message'] as String),
-                      trailing: Text(
-                        _formatDate(reply['created_at'] as String?),
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
+      builder: (ctx) => _AdminChatDialog(noticeId: noticeId, title: notice['title'], api: _api),
     );
   }
 
@@ -508,6 +484,232 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AdminChatDialog extends StatefulWidget {
+  final int noticeId;
+  final String title;
+  final ApiService api;
+
+  const _AdminChatDialog({required this.noticeId, required this.title, required this.api});
+
+  @override
+  State<_AdminChatDialog> createState() => _AdminChatDialogState();
+}
+
+class _AdminChatDialogState extends State<_AdminChatDialog> {
+  final _controller = TextEditingController();
+  final _scrollController = ScrollController();
+  List<Map<String, dynamic>> _messages = [];
+  bool _isLoading = true;
+  bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMessages() async {
+    final msgs = await widget.api.getNoticeReplies(widget.noticeId);
+    if (mounted) {
+      setState(() {
+        _messages = msgs;
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _isSending = true);
+    final ok = await widget.api.replyToNoticeAsAdmin(widget.noticeId, text);
+    
+    if (mounted) {
+      if (ok) {
+        _controller.clear();
+        await _loadMessages(); // Recargar para ver el nuevo mensaje
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al enviar el mensaje'), backgroundColor: Colors.red),
+        );
+      }
+      setState(() => _isSending = false);
+    }
+  }
+
+  String _formatDate(String? iso) {
+    if (iso == null) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.forum_outlined, color: Color(0xFF6B1B3D)),
+          const SizedBox(width: 10),
+          Expanded(child: Text('Chat: ${widget.title}', overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        height: 400,
+        child: Column(
+          children: [
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _messages.isEmpty
+                      ? const Center(child: Text('Sin mensajes.', style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _messages.length,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemBuilder: (ctx, i) {
+                            final msg = _messages[i];
+                            final isAdmin = msg['sender_type'] == 'admin';
+                            
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isAdmin) ...[
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.grey[300],
+                                      child: const Icon(Icons.person, size: 18, color: Colors.grey),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: isAdmin ? const Color(0xFF6B1B3D) : Colors.grey[100],
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(16),
+                                          topRight: const Radius.circular(16),
+                                          bottomLeft: Radius.circular(isAdmin ? 16 : 4),
+                                          bottomRight: Radius.circular(isAdmin ? 4 : 16),
+                                        ),
+                                        border: isAdmin ? null : Border.all(color: Colors.grey[300]!),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: isAdmin ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                        children: [
+                                          if (!isAdmin)
+                                            Text(msg['user_email'] ?? 'Usuario',
+                                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700])),
+                                          Text(
+                                            msg['message'] ?? '',
+                                            style: TextStyle(
+                                              color: isAdmin ? Colors.white : Colors.black87,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _formatDate(msg['created_at']),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: isAdmin ? Colors.white70 : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  if (isAdmin) ...[
+                                    const SizedBox(width: 8),
+                                    const CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Color(0xFF6B1B3D),
+                                      child: Icon(Icons.admin_panel_settings, size: 18, color: Colors.white),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      maxLines: null,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                      decoration: InputDecoration(
+                        hintText: 'Escribe una respuesta...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF6B1B3D),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: _isSending
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.send, color: Colors.white),
+                      onPressed: _isSending ? null : _sendMessage,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cerrar', style: TextStyle(color: Colors.grey)),
+        ),
+      ],
     );
   }
 }

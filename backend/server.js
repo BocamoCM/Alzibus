@@ -1399,12 +1399,13 @@ app.get('/api/notices', async (req, res) => {
         }
 
         const result = await pool.query(`
-            SELECT id, title, body, line, active, expires_at, created_at, target_email
-            FROM notices
-            WHERE active = TRUE
-              AND (expires_at IS NULL OR expires_at > NOW())
-              AND (target_email IS NULL OR target_email = $1)
-            ORDER BY created_at DESC
+            SELECT n.id, n.title, n.body, n.line, n.active, n.expires_at, n.created_at, n.target_email,
+                   (SELECT MAX(id) FROM notice_replies nr WHERE nr.notice_id = n.id AND nr.sender_type = 'admin') as last_admin_reply_id
+            FROM notices n
+            WHERE n.active = TRUE
+              AND (n.expires_at IS NULL OR n.expires_at > NOW())
+              AND (n.target_email IS NULL OR n.target_email = $1)
+            ORDER BY n.created_at DESC
         `, [userEmail]);
         res.json(result.rows);
     } catch (error) {
@@ -1506,17 +1507,79 @@ app.post('/api/notices/:id/reply', authenticateToken, async (req, res) => {
 });
 
 // ── Ver respuestas de un aviso (admin) ──
-// GET /api/admin/notices/:id/replies
+// GET /api/admin/notices/:id/replies — Ver conversación completa (admin)
 app.get('/api/admin/notices/:id/replies', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            'SELECT * FROM notice_replies WHERE notice_id = $1 ORDER BY created_at ASC',
+            'SELECT id, notice_id, user_email, message, sender_type, created_at FROM notice_replies WHERE notice_id = $1 ORDER BY created_at ASC',
             [id]
         );
         res.json(result.rows);
     } catch (error) {
-        console.error('Error obteniendo respuestas:', error);
+        console.error('Error obteniendo conversación:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// POST /api/admin/notices/:id/reply — Admin responde en la conversación
+app.post('/api/admin/notices/:id/reply', authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { message } = req.body;
+    if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
+    }
+    try {
+        // Obtener el email del destinatario para usarlo como referencia
+        const noticeResult = await pool.query('SELECT target_email FROM notices WHERE id = $1', [id]);
+        if (noticeResult.rows.length === 0) return res.status(404).json({ error: 'Aviso no encontrado' });
+        const { target_email } = noticeResult.rows[0];
+        const result = await pool.query(
+            'INSERT INTO notice_replies (notice_id, user_email, message, sender_type) VALUES ($1, $2, $3, $4) RETURNING *',
+            [id, target_email || 'admin', message.trim(), 'admin']
+        );
+        console.log(`[Notices] 💬 Admin respondió al aviso #${id}`);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error guardando respuesta del admin:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// GET /api/notices/:id/messages — Conversación completa (app móvil)
+// El usuario ve todos los mensajes del hilo: los suyos y las respuestas del admin.
+app.get('/api/notices/:id/messages', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const userEmail = req.user.email;
+    try {
+        // Solo puede ver los mensajes si el aviso le pertenece
+        const noticeResult = await pool.query(
+            'SELECT target_email FROM notices WHERE id = $1 AND active = TRUE',
+            [id]
+        );
+        if (noticeResult.rows.length === 0) return res.status(404).json({ error: 'Aviso no encontrado' });
+        if (noticeResult.rows[0].target_email !== userEmail) return res.status(403).json({ error: 'Sin acceso' });
+
+        const result = await pool.query(
+            'SELECT id, message, sender_type, created_at FROM notice_replies WHERE notice_id = $1 ORDER BY created_at ASC',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo mensajes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// GET /api/admin/users/emails — Lista de emails para autocompletado
+app.get('/api/admin/users/emails', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT email FROM users WHERE is_verified = TRUE AND active = TRUE ORDER BY email ASC'
+        );
+        res.json(result.rows.map(r => r.email));
+    } catch (error) {
+        console.error('Error obteniendo emails de usuarios:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

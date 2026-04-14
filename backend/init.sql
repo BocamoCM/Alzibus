@@ -150,3 +150,6 @@ CREATE TABLE IF NOT EXISTS notice_replies (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_replies_notice ON notice_replies(notice_id);
+
+-- sender_type: 'user' = mensaje del usuario, 'admin' = respuesta del administrador
+ALTER TABLE notice_replies ADD COLUMN IF NOT EXISTS sender_type VARCHAR(10) DEFAULT 'user';
