@@ -63,6 +63,111 @@ class UserRepository {
     async updateLastAccess(userId) {
          await pool.query('UPDATE users SET last_access = NOW() WHERE id = $1', [userId]);
     }
+
+    async getActiveUsers(minutes) {
+        const result = await pool.query(
+            "SELECT email, last_access FROM users WHERE last_access > NOW() - INTERVAL '" + minutes + " minutes' ORDER BY last_access DESC"
+        );
+        return result.rows;
+    }
+
+    async findById(userId) {
+        const result = await pool.query('SELECT id, email, created_at, last_access, is_premium FROM users WHERE id = $1', [userId]);
+        return result.rows[0];
+    }
+
+    async findByIdWithPassword(userId) {
+        const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+        return result.rows[0];
+    }
+
+    async findByEmailExcludeId(email, excludeUserId) {
+        const result = await pool.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, excludeUserId]);
+        return result.rows[0];
+    }
+
+    async updateEmail(userId, newEmail) {
+        await pool.query('UPDATE users SET email = $1 WHERE id = $2', [newEmail, userId]);
+    }
+
+    async deleteUser(userId) {
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+    }
+
+    async deleteUserTrips(userId) {
+         await pool.query('DELETE FROM trips WHERE user_id = $1', [userId]);
+    }
+
+    async getTotalTrips(userId) {
+        const result = await pool.query('SELECT COUNT(*) FROM trips WHERE user_id = $1', [userId]);
+        return result.rows[0].count;
+    }
+
+    async getMostUsedLine(userId) {
+        const result = await pool.query(
+            'SELECT line, COUNT(*) as count FROM trips WHERE user_id = $1 GROUP BY line ORDER BY count DESC LIMIT 1', 
+            [userId]
+        );
+        return result.rows[0]?.line;
+    }
+
+    async getThisMonthTrips(userId) {
+        const result = await pool.query(
+            "SELECT COUNT(*) FROM trips WHERE user_id = $1 AND timestamp >= date_trunc('month', NOW())", 
+            [userId]
+        );
+        return result.rows[0].count;
+    }
+
+    async getTopRanking(period) {
+        const dateFilter = period === 'month' ? "AND t.timestamp >= date_trunc('month', NOW())" : '';
+        const query = `
+            SELECT
+                u.id,
+                u.email,
+                COUNT(t.id)::int AS trips,
+                RANK() OVER (ORDER BY COUNT(t.id) DESC) AS position
+            FROM users u
+            JOIN trips t ON t.user_id = u.id
+            WHERE 1=1 ${dateFilter}
+            GROUP BY u.id
+            ORDER BY trips DESC
+            LIMIT 20
+        `;
+        const result = await pool.query(query);
+        return result.rows;
+    }
+
+    async getUserRanking(userId, period) {
+        const dateFilter = period === 'month' ? "AND t.timestamp >= date_trunc('month', NOW())" : '';
+        const query = `
+            SELECT position, trips FROM (
+                SELECT
+                    u.id,
+                    COUNT(t.id)::int AS trips,
+                    RANK() OVER (ORDER BY COUNT(t.id) DESC) AS position
+                FROM users u
+                JOIN trips t ON t.user_id = u.id
+                WHERE 1=1 ${dateFilter}
+                GROUP BY u.id
+            ) ranked
+            WHERE id = $1
+        `;
+        const result = await pool.query(query, [userId]);
+        return result.rows[0];
+    }
+
+    async getAllUsersOverview() {
+        const result = await pool.query(
+            "SELECT id, email, created_at, last_access, is_premium, active, is_verified FROM users ORDER BY created_at DESC"
+        );
+        return result.rows;
+    }
+
+    async getAllUserEmails() {
+        const result = await pool.query("SELECT email FROM users WHERE is_verified = TRUE");
+        return result.rows.map(row => row.email);
+    }
 }
 
 module.exports = new UserRepository();
