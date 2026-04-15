@@ -27,7 +27,7 @@ class FeedbackRepository {
 
     async getTicketReplies(ticketId) {
         const result = await pool.query(
-            'SELECT id, message, sender_type, created_at FROM feedback_replies WHERE ticket_id = $1 ORDER BY created_at ASC',
+            'SELECT id, ticket_id, message, sender_type, created_at FROM feedback_replies WHERE ticket_id = $1 ORDER BY created_at ASC',
             [ticketId]
         );
         return result.rows;
