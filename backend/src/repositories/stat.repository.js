@@ -41,7 +41,10 @@ class StatRepository {
             WHERE created_at >= NOW() - INTERVAL '${interval}'
             GROUP BY day ORDER BY day
         `);
-        return result.rows;
+        return result.rows.map(r => ({
+            day: r.day.toISOString().split('T')[0],
+            queries: parseInt(r.queries)
+        }));
     }
 
     async getActivityStats() {
@@ -57,7 +60,10 @@ class StatRepository {
             SELECT stop_name as name, COUNT(*) as visits 
             FROM trips GROUP BY stop_name ORDER BY visits DESC LIMIT 10
         `);
-        return result.rows;
+        return result.rows.map(r => ({
+            ...r,
+            visits: parseInt(r.visits)
+        }));
     }
 
     async getPeakHours() {
