@@ -27,7 +27,6 @@ const nodemailer = require('nodemailer');          // Envío de emails SMTP (usa
 const helmet = require('helmet');                 // Establece cabeceras HTTP de seguridad (X-Frame-Options, CSP, etc.)
 const pool = require('./db');                     // Pool de conexiones a PostgreSQL (importado desde db.js)
 require('dotenv').config();                       // Carga las variables de entorno desde el archivo .env
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // SDK de Stripe inicializado con la clave secreta
 
 const app = express();                // Instancia de la aplicación Express
 const server = http.createServer(app); // Servidor HTTP que envuelve Express (necesario para poder adjuntar Socket.IO)
@@ -182,59 +181,6 @@ app.post('/api/metrics/install', express.json(), (req, res) => {
 
     // Devolvemos status 200 sin bloquear a la app móvil.
     res.status(200).json({ received: true });
-});
-
-// ── Webhook de Stripe ──
-// IMPORTANTE: Este endpoint DEBE estar definido ANTES de express.json().
-// Razón: Stripe envía el body como datos crudos (raw bytes), y express.json()
-// lo parseaería como JSON antes de que podamos validar la firma criptográfica.
-// La firma se genera sobre los bytes originales, no sobre el JSON parseado.
-//
-// Flujo del webhook:
-// 1. Stripe envía un POST a esta URL cuando ocurre un evento de pago.
-// 2. Verificamos que la firma del header 'stripe-signature' coincida con nuestro secret.
-// 3. Si el pago fue exitoso (payment_intent.succeeded), activamos Premium al usuario.
-// 4. Respondemos 200 para que Stripe sepa que procesamos el webhook correctamente.
-app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    const sig = req.headers['stripe-signature']; // Firma criptográfica enviada por Stripe
-    let event;
-
-    try {
-        // Si no hay webhook secret configurado, estamos en modo desarrollo:
-        // parseamos el body directamente sin validar firma (NO SEGURO para producción)
-        if (!process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET === 'whsec_...') {
-            console.warn('[Webhook] STRIPE_WEBHOOK_SECRET no configurado. Procesando sin validar firma (SOLO DESARROLLO)');
-            event = JSON.parse(req.body);
-        } else {
-            // En producción: validar la firma criptográfica para asegurar que
-            // el webhook realmente viene de Stripe y no de un atacante
-            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-        }
-    } catch (err) {
-        console.error(`[Webhook] Error de firma: ${err.message}`);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    // Solo procesamos el evento de "pago completado exitosamente"
-    if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;      // Objeto completo del PaymentIntent
-        const userId = paymentIntent.metadata.userId;  // ID del usuario que pagó (se envió como metadata al crear el intent)
-
-        if (userId) {
-            try {
-                // Marcar al usuario como Premium en la base de datos
-                await pool.query('UPDATE users SET is_premium = TRUE WHERE id = $1', [userId]);
-                console.log(`[Stripe] Usuario ${userId} ahora es PREMIUM`);
-                // Notificar al equipo vía Discord
-                sendDiscordNotification(`💎 **Nuevo Usuario Premium**: El usuario ID \`${userId}\` ha completado su pago.`);
-            } catch (dbErr) {
-                console.error('[Stripe] Error actualizando DB:', dbErr);
-            }
-        }
-    }
-
-    // Siempre responder 200 a Stripe para confirmar recepción del webhook
-    res.json({ received: true });
 });
 
 // express.json(): Middleware que parsea el body de las peticiones con Content-Type: application/json.
@@ -2412,64 +2358,6 @@ setInterval(async () => {
         }
     }
 }, 300000); // Revisar cada 5 minutos
-
-// ==========================================
-// PAGOS PREMIUM (STRIPE + BIZUM)
-// ==========================================
-// Estos endpoints gestionan el flujo de pago para la suscripción Premium.
-// Flujo completo:
-// 1. La app llama a /create-intent para crear un PaymentIntent en Stripe.
-// 2. Stripe devuelve un clientSecret que la app usa para mostrar el Payment Sheet.
-// 3. El usuario paga con tarjeta o Bizum.
-// 4. Stripe notifica vía webhook (/api/payments/webhook) que el pago fue exitoso.
-// 5. El webhook actualiza is_premium = TRUE en la DB.
-// 6. Si el webhook falla, la app puede usar /confirm-manual como fallback.
-
-// ── Crear Intención de Pago (PaymentIntent) ──
-// POST /api/payments/create-intent
-// Crea un PaymentIntent en Stripe por 2,99€ (299 céntimos).
-// El metadata incluye el userId y email para identificar al usuario en el webhook.
-app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
-    const { amount = 299 } = req.body; // Precio por defecto: 2,99€ en céntimos
-
-    try {
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
-            currency: 'eur',
-            payment_method_types: ['card', 'bizum'], // Soporte para Bizum y Tarjeta
-            metadata: {
-                userId: req.user.id.toString(),
-                email: req.user.email
-            },
-        });
-
-        res.json({
-            clientSecret: paymentIntent.client_secret,
-        });
-    } catch (error) {
-        console.error('[Stripe] Error creando intent:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// ── Confirmación Manual de Premium ──
-// POST /api/payments/confirm-manual
-// Fallback si el webhook de Stripe no funciona (por ejemplo, si el servidor
-// no es accesible desde Internet).
-// La app detecta que el pago fue exitoso y llama directamente a este endpoint
-// para activar Premium. Menos seguro que el webhook, pero funcional.
-app.post('/api/payments/confirm-manual', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        await pool.query('UPDATE users SET is_premium = TRUE WHERE id = $1', [userId]);
-        console.log(`[Stripe] Usuario ${userId} confirmado manualmente como PREMIUM`);
-        sendDiscordNotification(`💎 **Nuevo Usuario Premium (Confirmación Manual)**: El usuario ID \`${userId}\` ha sido activado.`);
-        res.json({ success: true, message: 'Usuario actualizado a Premium' });
-    } catch (error) {
-        console.error('[Stripe] Error en confirmación manual:', error);
-        res.status(500).json({ error: 'Error al actualizar estado Premium' });
-    }
-});
 
 // ── Métricas y Notificaciones Adicionales (Discord) ──
 
