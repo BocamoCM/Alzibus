@@ -602,7 +602,10 @@ function sendVerificationAndRespond(res, email, verificationCode, newUser) {
 // 7. Guardar en la DB como usuario NO verificado.
 // 8. Enviar el código por email y responder al cliente.
 // Protección: registerLimiter (máx 5 registros/hora por IP).
-app.post('/api/register', registerLimiter, async (req, res) => {
+// ── CONEXIÓN DE MÓDULOS DE ARQUITECTURA HEXAGONAL ──
+app.use('/api', require('./src/routes/auth.routes'));
+
+// app.post('/api/register', registerLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -2692,6 +2695,10 @@ app.get('/api/admin/feedback/:id/replies', authenticateAdmin, async (req, res) =
         res.status(500).json({ error: 'Error del servidor' });
     }
 });
+
+// ── MANEJADOR GLOBAL DE ERRORES (Arquitectura Hexagonal) ──
+const errorHandler = require('./src/middlewares/errorHandler');
+app.use(errorHandler);
 
 // ── Iniciar el servidor HTTP ──
 // Escucha en todas las interfaces de red ('0.0.0.0') para aceptar
