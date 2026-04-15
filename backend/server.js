@@ -255,8 +255,11 @@ async function initDatabase() {
             );
             CREATE INDEX IF NOT EXISTS idx_web_metrics_event ON web_metrics(event_type);
             CREATE INDEX IF NOT EXISTS idx_web_metrics_date ON web_metrics(created_at);
+
+            -- Migración para Feedback Replies (Añadir columna faltante)
+            ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
         `);
-        console.log('✅ Base de datos verificada (web_metrics ok)');
+        console.log('✅ Base de datos verificada (web_metrics y migraciones ok)');
     } catch (err) {
         console.error('❌ Error inicializando base de datos:', err);
     }

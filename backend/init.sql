@@ -172,8 +172,10 @@ CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback_tickets(status);
 CREATE TABLE IF NOT EXISTS feedback_replies (
     id SERIAL PRIMARY KEY,
     ticket_id INTEGER NOT NULL REFERENCES feedback_tickets(id) ON DELETE CASCADE,
+    user_email VARCHAR(255) NOT NULL,
     sender_type VARCHAR(10) DEFAULT 'user',
     message TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
 CREATE INDEX IF NOT EXISTS idx_feedback_replies_ticket ON feedback_replies(ticket_id);
