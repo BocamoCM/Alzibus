@@ -258,6 +258,9 @@ async function initDatabase() {
 
             -- Migración para Feedback Replies (Añadir columna faltante)
             ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
+
+            -- Migración para Feedback Tickets (Añadir columna para refrescar estado)
+            ALTER TABLE feedback_tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
         `);
         console.log('✅ Base de datos verificada (web_metrics y migraciones ok)');
     } catch (err) {

@@ -164,8 +164,10 @@ CREATE TABLE IF NOT EXISTS feedback_tickets (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'Abierto',
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE feedback_tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
 CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback_tickets(user_email);
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback_tickets(status);
 
