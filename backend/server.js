@@ -605,7 +605,7 @@ function sendVerificationAndRespond(res, email, verificationCode, newUser) {
 // ── CONEXIÓN DE MÓDULOS DE ARQUITECTURA HEXAGONAL ──
 app.use('/api', require('./src/routes/auth.routes'));
 
-// app.post('/api/register', registerLimiter, async (req, res) => {
+app.post('/api/register', registerLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
