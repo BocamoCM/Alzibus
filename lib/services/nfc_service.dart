@@ -44,11 +44,18 @@ class NfcService {
         }
       }
 
+      bool isUnlimited = false;
+
       // Leer tipo y otros metadatos de Block 5
       if (blocks.length > 5 && blocks[5].length >= 16) {
         final block5 = blocks[5];
         cardType = block5[1]; // Tipo de bono
         
+        if ((block5[2] == 0 && block5[3] == 0) || block5[6] == 0x01) {
+          isUnlimited = true;
+          cardType = 5;
+        }
+
         // Decodificar fecha del último uso (bytes 10-13)
         lastUse = _decodeDate(block5.sublist(10, 14));
       }
@@ -69,6 +76,7 @@ class NfcService {
         balance: balance,
         trips: trips,
         cardType: cardType,
+        isUnlimited: isUnlimited,
         lastUse: lastUse,
         tripHistory: tripHistory,
       );
@@ -193,6 +201,7 @@ class NfcService {
       balance: 450, // 4.50€ (cercano a 4.17€ reportado)
       trips: 27,
       cardType: 4,
+      isUnlimited: false,
       lastUse: DateTime(2024, 5, 10),
       tripHistory: [
         TripRecord(lineCode: 1, stopCode: 15, timestamp: DateTime(2024, 5, 10), fare: 96),
@@ -208,6 +217,7 @@ class NfcService {
       balance: 150, // 1.50€
       trips: 1,
       cardType: 1,
+      isUnlimited: false,
       lastUse: DateTime(2024, 4, 25),
       tripHistory: [],
     );

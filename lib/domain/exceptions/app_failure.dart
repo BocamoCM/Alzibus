@@ -112,6 +112,15 @@ final class BiometricUnavailableFailure extends AuthFailure {
       : super(code: 'auth.biometric_unavailable');
 }
 
+/// Fallo derivado de problemas de red en la capa de Auth.
+final class NetworkAuthFailure extends AuthFailure {
+  const NetworkAuthFailure(AppFailure inner)
+      : super(
+          code: 'auth.network_error',
+          cause: inner,
+        );
+}
+
 /// La sesión ha expirado o el JWT es inválido.
 final class SessionExpiredFailure extends AuthFailure {
   const SessionExpiredFailure() : super(code: 'auth.session_expired');

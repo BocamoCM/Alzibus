@@ -152,7 +152,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     }
 
     // En cualquier caso limpiamos las credenciales cacheadas.
-    ref.read(pendingLoginCredentialsProvider.notifier).state = null;
+    ref.read(pendingLoginCredentialsProvider.notifier).update(null);
 
     if (!mounted) return;
     await ref.read(authProvider.notifier).checkLogin();

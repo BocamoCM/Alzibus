@@ -8,6 +8,7 @@ import '../domain/exceptions/app_failure.dart';
 import '../domain/ports/outbound/auth_repository.dart';
 import '../domain/shared/result.dart';
 import '../presentation/providers/di.dart';
+import '../application/auth/login_with_biometrics.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 import '../constants/app_config.dart';
@@ -126,8 +127,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       case Ok(value: LoginSucceeded()):
         // Guardamos las credenciales pendientes por si tras OTP o directamente
         // se ofrece activar biometría.
-        ref.read(pendingLoginCredentialsProvider.notifier).state =
-            PendingLoginCredentials(email: rawEmail, password: rawPassword);
+        ref.read(pendingLoginCredentialsProvider.notifier).update(
+            PendingLoginCredentials(email: rawEmail, password: rawPassword));
         TextInput.finishAutofillContext();
         await _onLoginSucceeded();
         return;
@@ -135,8 +136,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       case Ok(value: LoginRequiresOtp(:final email)):
         // Guardamos las credenciales: la OTP page las leerá si el usuario
         // decide activar biometría tras verificar.
-        ref.read(pendingLoginCredentialsProvider.notifier).state =
-            PendingLoginCredentials(email: rawEmail, password: rawPassword);
+        ref.read(pendingLoginCredentialsProvider.notifier).update(
+            PendingLoginCredentials(email: rawEmail, password: rawPassword));
 
         setState(() => _isLoading = false);
         TextInput.finishAutofillContext();

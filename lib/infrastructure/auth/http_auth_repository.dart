@@ -245,18 +245,6 @@ class HttpAuthRepository implements AuthRepository {
     if (f is ServerFailure && f.statusCode == 401) {
       return const SessionExpiredFailure();
     }
-    return _NetworkAuthFailure(f);
+    return NetworkAuthFailure(f);
   }
-}
-
-/// Wrapper interno: representa un fallo de auth originado por la red. Lo
-/// dejamos privado al adaptador para no contaminar el dominio.
-class _NetworkAuthFailure extends AuthFailure {
-  final NetworkFailure inner;
-  _NetworkAuthFailure(this.inner)
-      : super(
-          code: 'auth.network',
-          cause: inner.cause ?? inner,
-          stackTrace: inner.stackTrace,
-        );
 }

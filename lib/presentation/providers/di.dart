@@ -168,5 +168,15 @@ class PendingLoginCredentials {
   const PendingLoginCredentials({required this.email, required this.password});
 }
 
+class PendingLoginCredentialsNotifier extends Notifier<PendingLoginCredentials?> {
+  @override
+  PendingLoginCredentials? build() => null;
+
+  void update(PendingLoginCredentials? state) {
+    this.state = state;
+  }
+}
+
 final pendingLoginCredentialsProvider =
-    StateProvider<PendingLoginCredentials?>((_) => null);
+    NotifierProvider<PendingLoginCredentialsNotifier, PendingLoginCredentials?>(
+        PendingLoginCredentialsNotifier.new);
