@@ -123,6 +123,17 @@ Todos los providers cableados:
   - navegar a login sólo cuando `logout()` devuelve `true`;
   - mostrar `SnackBar` de error cuando el logout falla.
 
+### 3.9 Migración parcial de `AuthNotifier` (check/login/register)
+- `checkLogin()` ya no usa `AuthService.isLoggedIn()`: ahora lee sesión desde
+  `sessionStorageProvider` y valida expiración del JWT con `JwtToken`.
+- `login()` ya no usa `AuthService.login()`: ahora delega en
+  `loginWithPasswordProvider` (use case hexagonal).
+  - Mantiene compatibilidad legacy mapeando `AppFailure` a las excepciones
+    existentes (`AuthInvalidCredentialsException`,
+    `AuthLoginOtpRequiredException`, `AuthNetworkException`).
+- `register()` ya no usa `AuthService.register()`: ahora delega en
+  `registerUserProvider` y mapea fallos a excepciones de presentación.
+
 ### 3.7 Parches Sentry (silent catches críticos)
 Convertidos de `catch (_) {}` a `catch (e, s)` + `Sentry.captureException` con
 tag `failure_code`:
@@ -143,8 +154,9 @@ tag `failure_code`:
   línea 282. El resto del fichero sigue intacto. La nueva arquitectura
   **coexiste** con la legacy; ambas leen/escriben las mismas keys.
 - `lib/core/providers/auth_provider.dart` — **parcialmente migrado**:
-  `logout()` ya usa el caso de uso hexagonal. El resto (build/checkLogin/login/register)
-  aún consume `AuthService` legacy y `JwtDecoder`.
+  `checkLogin/login/register/logout` ya usan puertos/use cases hexagonales.
+  Permanece legacy para `deleteAccount()` y para el provider
+  `authServiceProvider` usado por otras partes de la app.
 - `lib/core/network/api_client.dart` — sin tocar. El nuevo `DioHttpAdapter`
   **reusa** el singleton existente.
 - `lib/pages/login_page.dart` — sin tocar. Sigue consumiendo `AuthService` viejo.
@@ -242,6 +254,7 @@ ficheros editados se normalizaron a LF antes de comitearlos.
 - [x] `lib/ARCHITECTURE.md` — creado (sección 3).
 - [x] Commits por fase (sección 7).
 - [x] Migrar logout a use case `Logout` en provider/UI.
+- [x] Migrar `checkLogin/login/register` de `AuthNotifier` a hexagonal.
 - [ ] `flutter pub get && flutter analyze && flutter test` — verificar en local.
 - [ ] (Opcional) Migrar UI de login al nuevo pipeline.
 - [ ] (Opcional) Silent catches restantes (sección 5).
