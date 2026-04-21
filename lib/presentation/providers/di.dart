@@ -1,10 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/auth/enable_biometrics.dart';
+import '../../application/auth/delete_account.dart';
 import '../../application/auth/login_with_biometrics.dart';
 import '../../application/auth/login_with_password.dart';
 import '../../application/auth/logout.dart';
+import '../../application/auth/request_password_reset.dart';
 import '../../application/auth/register_user.dart';
+import '../../application/auth/reset_password.dart';
 import '../../application/auth/verify_login_otp.dart';
 import '../../core/network/api_client.dart';
 import '../../domain/ports/outbound/auth_repository.dart';
@@ -119,3 +123,50 @@ final loginWithBiometricsProvider = Provider<LoginWithBiometrics>(
     loginWithPassword: ref.watch(loginWithPasswordProvider),
   ),
 );
+
+final enableBiometricsProvider = Provider<EnableBiometrics>(
+  (ref) => EnableBiometrics(
+    storage: ref.watch(biometricCredentialsStorageProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final requestPasswordResetProvider = Provider<RequestPasswordReset>(
+  (ref) => RequestPasswordReset(
+    authRepository: ref.watch(authRepositoryProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final resetPasswordProvider = Provider<ResetPassword>(
+  (ref) => ResetPassword(
+    authRepository: ref.watch(authRepositoryProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final deleteAccountProvider = Provider<DeleteAccount>(
+  (ref) => DeleteAccount(
+    authRepository: ref.watch(authRepositoryProvider),
+    sessionStorage: ref.watch(sessionStorageProvider),
+    biometricStorage: ref.watch(biometricCredentialsStorageProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+// ───────── Auth: estado transitorio UI ─────────
+
+/// Credenciales recién introducidas por el usuario en la pantalla de login que
+/// pueden necesitarse en la siguiente pantalla (por ejemplo, para ofrecer
+/// activar la biometría tras completar el OTP).
+///
+/// Se limpia explícitamente cuando el flujo termina (éxito, rechazo o
+/// navegación a otra pantalla).
+class PendingLoginCredentials {
+  final String email;
+  final String password;
+  const PendingLoginCredentials({required this.email, required this.password});
+}
+
+final pendingLoginCredentialsProvider =
+    StateProvider<PendingLoginCredentials?>((_) => null);

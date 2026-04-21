@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import 'package:alzitrans/pages/otp_verification_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/providers/auth_provider.dart';
-import '../services/auth_service.dart';
+import '../domain/exceptions/app_failure.dart';
+import '../domain/shared/result.dart';
+import '../presentation/providers/di.dart';
 import '../core/router/app_router.dart';
 
+/// Página de registro — migrada a la arquitectura hexagonal.
+///
+/// Usa [registerUserProvider] y mapea los [AppFailure] a mensajes de UI
+/// equivalentes a los que devolvía la API legacy.
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
@@ -39,40 +43,40 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       _success = false;
     });
 
-    try {
-      final authService = ref.read(authServiceProvider);
-      final errorMessage = await authService.register(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+    final registerUser = ref.read(registerUserProvider);
+    final result = await registerUser(
+      rawEmail: _emailController.text.trim(),
+      rawPassword: _passwordController.text.trim(),
+    );
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (errorMessage == null) {
-        // Notificar al sistema para activar el guardado de contraseña
+    switch (result) {
+      case Ok():
         TextInput.finishAutofillContext();
-        
-        setState(() {
-          _isLoading = false;
-        });
-        
-        // Redirigir a verificación
+        setState(() => _isLoading = false);
         if (mounted) {
           VerifyRoute(email: _emailController.text.trim()).pushReplacement(context);
         }
-      } else {
+        return;
+      case Err(failure: final f):
         setState(() {
           _isLoading = false;
-          _message = errorMessage;
+          _message = _mapFailureToMessage(f);
         });
-      }
-    } on AuthNetworkException {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _message = 'Sin conexión al servidor. Comprueba tu red.';
-      });
+        return;
     }
+  }
+
+  String _mapFailureToMessage(AppFailure failure) {
+    return switch (failure) {
+      RegistrationFailure(serverMessage: final msg) =>
+        msg ?? 'No se pudo completar el registro.',
+      ValidationFailure(fieldErrors: final errors) =>
+        errors.values.isNotEmpty ? errors.values.first : 'Datos inválidos.',
+      NetworkFailure() => 'Sin conexión al servidor. Comprueba tu red.',
+      _ => 'Error inesperado: ${failure.code}',
+    };
   }
 
   @override

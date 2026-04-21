@@ -134,6 +134,23 @@ Todos los providers cableados:
 - `register()` ya no usa `AuthService.register()`: ahora delega en
   `registerUserProvider` y mapea fallos a excepciones de presentación.
 
+### 3.10 Bloque Auth completado: recuperación de contraseña + borrado de cuenta
+- Nuevos use cases en `lib/application/auth/`:
+  - `request_password_reset.dart`
+  - `reset_password.dart`
+  - `delete_account.dart`
+- `AuthRepository` amplía contrato con `deleteAccount()` y
+  `HttpAuthRepository` lo implementa sobre `DELETE /users/profile`.
+- DI (`lib/presentation/providers/di.dart`) añade providers:
+  - `requestPasswordResetProvider`
+  - `resetPasswordProvider`
+  - `deleteAccountProvider`
+- `ForgotPasswordPage` y `ResetPasswordPage` migradas al pipeline hexagonal
+  (sin `AuthService` legacy).
+- `AuthNotifier.deleteAccount()` migrado a `deleteAccountProvider`.
+- `LoginPage` deja de depender de `AuthService.isUserPremium()` y lee el estado
+  premium desde `SessionStorage`.
+
 ### 3.7 Parches Sentry (silent catches críticos)
 Convertidos de `catch (_) {}` a `catch (e, s)` + `Sentry.captureException` con
 tag `failure_code`:
@@ -154,9 +171,9 @@ tag `failure_code`:
   línea 282. El resto del fichero sigue intacto. La nueva arquitectura
   **coexiste** con la legacy; ambas leen/escriben las mismas keys.
 - `lib/core/providers/auth_provider.dart` — **parcialmente migrado**:
-  `checkLogin/login/register/logout` ya usan puertos/use cases hexagonales.
-  Permanece legacy para `deleteAccount()` y para el provider
-  `authServiceProvider` usado por otras partes de la app.
+  `checkLogin/login/register/logout/deleteAccount` ya usan puertos/use cases
+  hexagonales. Permanece el provider `authServiceProvider` para otras zonas
+  legacy (perfil avanzado, heartbeat, etc.).
 - `lib/core/network/api_client.dart` — sin tocar. El nuevo `DioHttpAdapter`
   **reusa** el singleton existente.
 - `lib/pages/login_page.dart` — sin tocar. Sigue consumiendo `AuthService` viejo.
@@ -255,6 +272,7 @@ ficheros editados se normalizaron a LF antes de comitearlos.
 - [x] Commits por fase (sección 7).
 - [x] Migrar logout a use case `Logout` en provider/UI.
 - [x] Migrar `checkLogin/login/register` de `AuthNotifier` a hexagonal.
+- [x] Migrar forgot/reset password y delete account a casos de uso hexagonales.
 - [ ] `flutter pub get && flutter analyze && flutter test` — verificar en local.
 - [ ] (Opcional) Migrar UI de login al nuevo pipeline.
 - [ ] (Opcional) Silent catches restantes (sección 5).

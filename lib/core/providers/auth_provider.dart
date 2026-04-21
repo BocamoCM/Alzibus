@@ -141,12 +141,16 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> deleteAccount(String token) async {
     state = state.copyWith(isLoading: true);
-    try {
-      await ref.read(authServiceProvider).deleteAccount(token);
-      state = state.copyWith(isLoading: false, isLoggedIn: false);
-    } catch (e) {
-      state = state.copyWith(isLoading: false);
-      rethrow;
+    final deleteAccount = ref.read(deleteAccountProvider);
+    final result = await deleteAccount();
+
+    switch (result) {
+      case Ok():
+        state = state.copyWith(isLoading: false, isLoggedIn: false);
+        return;
+      case Err(failure: final f):
+        state = state.copyWith(isLoading: false);
+        throw Exception('No se pudo eliminar la cuenta: ${f.code}');
     }
   }
 

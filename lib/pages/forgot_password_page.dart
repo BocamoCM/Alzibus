@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/providers/auth_provider.dart';
+import '../domain/exceptions/app_failure.dart';
+import '../domain/shared/result.dart';
+import '../presentation/providers/di.dart';
 import 'reset_password_page.dart';
 import '../core/router/app_router.dart';
 
@@ -34,31 +36,37 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       _errorMessage = '';
     });
 
-    try {
-      final authService = ref.read(authServiceProvider);
-      final email = _emailController.text.trim();
-      final error = await authService.requestPasswordReset(email);
+    final email = _emailController.text.trim();
+    final requestReset = ref.read(requestPasswordResetProvider);
+    final result = await requestReset(rawEmail: email);
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (error == null) {
+    switch (result) {
+      case Ok():
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.codeSent)),
         );
+        setState(() => _isLoading = false);
         ResetPasswordRoute(email: email).push(context);
-      } else {
+        return;
+      case Err(failure: final f):
         setState(() {
-          _errorMessage = error;
+          _isLoading = false;
+          _errorMessage = _mapFailureToMessage(f, l);
         });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = l.noServerConnection;
-      });
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+        return;
     }
+  }
+
+  String _mapFailureToMessage(AppFailure failure, AppLocalizations l) {
+    return switch (failure) {
+      ValidationFailure() => l.invalidEmail,
+      NetworkFailure() => l.noServerConnection,
+      RegistrationFailure(serverMessage: final msg) =>
+        msg ?? 'No se pudo solicitar el código.',
+      _ => 'Error inesperado: ${failure.code}',
+    };
   }
 
   @override

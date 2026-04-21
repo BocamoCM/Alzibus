@@ -2,16 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
-import 'package:alzitrans/pages/otp_verification_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/auth_provider.dart';
-import '../services/auth_service.dart';
-import '../main.dart'; // import for HomePage
+import '../domain/exceptions/app_failure.dart';
+import '../domain/ports/outbound/auth_repository.dart';
+import '../domain/shared/result.dart';
+import '../presentation/providers/di.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 import '../constants/app_config.dart';
 import '../core/router/app_router.dart';
 
+/// Página de login — versión migrada a la arquitectura hexagonal.
+///
+/// Consume los providers de `presentation/providers/di.dart`:
+/// - [loginWithPasswordProvider] → email + password.
+/// - [loginWithBiometricsProvider] → huella/face con credenciales cacheadas.
+/// - [biometricCredentialsStorageProvider] / [biometricAuthenticatorProvider]
+///   para decidir si mostrar el botón de biometría.
+///
+/// Los `Result<..., AppFailure>` se mapean a los mismos textos localizados que
+/// se usaban con la API legacy basada en excepciones.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -26,7 +37,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
-  bool _canCheckBiometrics = false;
+  bool _canUseBiometrics = false;
 
   @override
   void initState() {
@@ -35,53 +46,52 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _checkBiometrics() async {
-    final authService = ref.read(authServiceProvider);
-    final canCheck = await authService.canCheckBiometrics();
-    final isEnabled = await authService.isBiometricEnabled();
-    if (mounted) {
-      setState(() {
-        _canCheckBiometrics = canCheck && isEnabled;
-      });
-      
-      // Intentar login automático si está habilitado
-      if (_canCheckBiometrics) {
-        _loginWithBiometrics();
-      }
+    final credentialsStorage = ref.read(biometricCredentialsStorageProvider);
+    final authenticator = ref.read(biometricAuthenticatorProvider);
+
+    final isEnabled = await credentialsStorage.isEnabled();
+    final canCheck = await authenticator.isAvailable();
+
+    if (!mounted) return;
+    setState(() {
+      _canUseBiometrics = canCheck && isEnabled;
+    });
+
+    if (_canUseBiometrics) {
+      _loginWithBiometrics();
     }
   }
 
   Future<void> _loginWithBiometrics() async {
+    final l = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
-    try {
-      final authService = ref.read(authServiceProvider);
-      final success = await authService.loginWithBiometrics();
-      if (success) {
-        await ref.read(authProvider.notifier).checkLogin();
-        if (!mounted) return;
-        // La redirección a home se maneja automáticamente por GoRouter gracias al authProvider.
-      } else {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-            // No mostramos error aquí para no molestar si solo falló el escaneo
-          });
-        }
-      }
-    } on AuthLoginOtpRequiredException catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      VerifyRoute(email: e.email, isLoginFlow: true).push(context);
-    } catch (e) {
-      if (mounted) {
+    final loginWithBiometrics = ref.read(loginWithBiometricsProvider);
+    final result = await loginWithBiometrics(
+      reason: 'Alzitrans – verify your identity / verifica tu identidad',
+    );
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Ok(value: BiometricSucceeded()):
+        await _onLoginSucceeded();
+        return;
+      case Ok(value: BiometricNotConfigured()):
+      case Ok(value: BiometricCancelled()):
+        // No mostramos error al usuario: puede ser que haya cancelado o que
+        // simplemente no haya credenciales guardadas.
+        setState(() => _isLoading = false);
+        return;
+      case Err(failure: final f):
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Error en acceso biométrico: $e';
+          _errorMessage = _mapFailureToMessage(f, l);
         });
-      }
+        return;
     }
   }
 
@@ -101,58 +111,79 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       _errorMessage = '';
     });
 
-    try {
-      final authService = ref.read(authServiceProvider);
-      await authService.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+    final rawEmail = _emailController.text.trim();
+    final rawPassword = _passwordController.text.trim();
 
-      debugPrint('[LoginPage] Login finalizado sin excepción');
-      if (!mounted) return;
-      
-      // Finalizar contexto de autofill si no hay OTP (éxito directo)
-      TextInput.finishAutofillContext();
-      
-      // Actualizar flag de publicidad según el estado premium del usuario
-      final isPremium = await authService.isUserPremium();
-      AppConfig.showAds = !isPremium;
+    final loginWithPassword = ref.read(loginWithPasswordProvider);
+    final result = await loginWithPassword(
+      rawEmail: rawEmail,
+      rawPassword: rawPassword,
+    );
 
-      await ref.read(authProvider.notifier).checkLogin();
-      // La redirección a home se maneja automáticamente por GoRouter gracias al authProvider.
-    } on AuthLoginOtpRequiredException catch (e) {
-      debugPrint('[LoginPage] AuthLoginOtpRequiredException capturada para: ${e.email}');
-      if (!mounted) return;
-      
-      setState(() => _isLoading = false);
-      
-      // IMPORTANTE: Avisar al sistema de que "aquí" terminamos con el usuario/pass
-      // para que salte el diálogo de guardar antes de que los campos desaparezcan.
-      TextInput.finishAutofillContext();
+    if (!mounted) return;
 
-      VerifyRoute(email: e.email, isLoginFlow: true).push(context);
-    } on AuthInvalidCredentialsException {
-      debugPrint('[LoginPage] AuthInvalidCredentialsException capturada');
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = l.incorrectCredentials;
-      });
-    } on AuthNetworkException catch (e) {
-      debugPrint('[LoginPage] AuthNetworkException capturada: ${e.cause}');
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = l.noServerConnection;
-      });
-    } catch (e) {
-      debugPrint('[LoginPage] Otra excepción capturada: $e');
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error inesperado: $e';
-      });
+    switch (result) {
+      case Ok(value: LoginSucceeded()):
+        // Guardamos las credenciales pendientes por si tras OTP o directamente
+        // se ofrece activar biometría.
+        ref.read(pendingLoginCredentialsProvider.notifier).state =
+            PendingLoginCredentials(email: rawEmail, password: rawPassword);
+        TextInput.finishAutofillContext();
+        await _onLoginSucceeded();
+        return;
+
+      case Ok(value: LoginRequiresOtp(:final email)):
+        // Guardamos las credenciales: la OTP page las leerá si el usuario
+        // decide activar biometría tras verificar.
+        ref.read(pendingLoginCredentialsProvider.notifier).state =
+            PendingLoginCredentials(email: rawEmail, password: rawPassword);
+
+        setState(() => _isLoading = false);
+        TextInput.finishAutofillContext();
+
+        VerifyRoute(email: email.value, isLoginFlow: true).push(context);
+        return;
+
+      case Err(failure: final f):
+        setState(() {
+          _isLoading = false;
+          _errorMessage = _mapFailureToMessage(f, l);
+        });
+        return;
     }
+  }
+
+  Future<void> _onLoginSucceeded() async {
+    // Actualizar flag de publicidad según el estado premium leído desde
+    // SessionStorage (sin depender de AuthService legacy).
+    final sessionStorage = ref.read(sessionStorageProvider);
+    final sessionResult = await sessionStorage.read();
+    if (sessionResult case Ok(value: final session)) {
+      final isPremium = session?.user.isPremium ?? false;
+      AppConfig.showAds = !isPremium;
+    }
+
+    await ref.read(authProvider.notifier).checkLogin();
+    // La redirección a home la gestiona GoRouter reaccionando a authProvider.
+  }
+
+  /// Traduce un [AppFailure] al texto que ve el usuario. Mantiene las mismas
+  /// cadenas localizadas que ya se usaban con la API de excepciones legacy.
+  String _mapFailureToMessage(AppFailure failure, AppLocalizations l) {
+    return switch (failure) {
+      InvalidCredentialsFailure() => l.incorrectCredentials,
+      OtpRequiredFailure() => l.incorrectCredentials,
+      InvalidOtpFailure() => l.incorrectCredentials,
+      EmailNotVerifiedFailure() =>
+        'Debes verificar tu correo antes de iniciar sesión.',
+      BiometricUnavailableFailure() =>
+        'La autenticación biométrica no está disponible.',
+      SessionExpiredFailure() => l.incorrectCredentials,
+      ValidationFailure(fieldErrors: final errors) =>
+        errors.values.isNotEmpty ? errors.values.first : l.incorrectCredentials,
+      NetworkFailure() => l.noServerConnection,
+      _ => 'Error inesperado: ${failure.code}',
+    };
   }
 
   @override
@@ -242,7 +273,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               child: Text(l.loginButton),
                             ),
                           ),
-                          if (_canCheckBiometrics) ...[
+                          if (_canUseBiometrics) ...[
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: _loginWithBiometrics,

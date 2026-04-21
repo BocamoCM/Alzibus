@@ -1,20 +1,33 @@
 import 'package:alzitrans/main.dart';
 import 'package:go_router/go_router.dart';
-import 'package:alzitrans/services/auth_service.dart';
 import 'package:alzitrans/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/providers/auth_provider.dart';
-import '../services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/providers/auth_provider.dart';
 import '../core/router/app_router.dart';
+import '../domain/exceptions/app_failure.dart';
+import '../domain/shared/result.dart';
+import '../domain/value_objects/email.dart';
+import '../presentation/providers/di.dart';
 
+/// Página de verificación OTP — migrada a la arquitectura hexagonal.
+///
+/// Flujos:
+/// - `isLoginFlow=true`  → 2FA tras login con password → [verifyLoginOtpProvider].
+/// - `isLoginFlow=false` → verificación de email tras registro → usa el
+///   [authRepositoryProvider.verifyEmail] directamente (no hay use case todavía).
+///
+/// Tras un login OTP exitoso, si el dispositivo soporta biometría y aún no hay
+/// credenciales guardadas, se ofrece activarla y se persisten vía
+/// [enableBiometricsProvider] usando las credenciales cacheadas en
+/// [pendingLoginCredentialsProvider] por la pantalla de login.
 class OtpVerificationPage extends ConsumerStatefulWidget {
   final String email;
   final bool isLoginFlow;
 
   const OtpVerificationPage({
-    super.key, 
+    super.key,
     required this.email,
     this.isLoginFlow = false,
   });
@@ -64,80 +77,109 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
 
     setState(() => _isLoading = true);
 
-    try {
-      String? error;
-      final authService = ref.read(authServiceProvider);
-      if (widget.isLoginFlow) {
-        error = await authService.verifyLoginCode(widget.email, code);
-      } else {
-        error = await authService.verifyEmail(widget.email, code);
-      }
-      
-      if (!mounted) return;
+    if (widget.isLoginFlow) {
+      await _verifyLoginOtp(code);
+    } else {
+      await _verifyEmail(code);
+    }
 
-      if (error != null) {
-        _showError(error);
-      } else {
-        // Notificar al sistema que la autenticación terminó con éxito (para guardar contraseña)
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _verifyLoginOtp(String code) async {
+    final verifyLoginOtp = ref.read(verifyLoginOtpProvider);
+    final result = await verifyLoginOtp(
+      rawEmail: widget.email,
+      code: code,
+    );
+    if (!mounted) return;
+
+    switch (result) {
+      case Err(failure: final f):
+        _showError(_mapFailureToMessage(f));
+        return;
+      case Ok():
         TextInput.finishAutofillContext();
-        
-        if (widget.isLoginFlow) {
-          // COMPROBAR BIOMETRÍA TRAS LOGIN EXITOSO
-          final canCheck = await authService.canCheckBiometrics();
-          final isEnabled = await authService.isBiometricEnabled();
-          
-          if (canCheck && !isEnabled && mounted) {
-            final setupBiometrics = await showDialog<bool>(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => AlertDialog(
-                title: const Text('¿Activar Huella?'),
-                content: const Text('¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Ahora no'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text('¡Sí, activar!'),
-                  ),
-                ],
-              ),
-            );
+        await _afterLoginOtpSuccess();
+        return;
+    }
+  }
 
-            if (setupBiometrics == true) {
-              // Necesitamos la contraseña del login anterior. 
-              // Como no la tenemos aquí, una opción es pedirla o haberla guardado temporalmente.
-              // Para simplificar, asumiremos que el AuthService tiene una forma de 
-              // obtenerla o que el usuario la introducirá una última vez si es necesario.
-              // Pero lo ideal es que el login_page la pase o el servicio la cachee.
-              // SOLUCIÓN: El login_page debería pasarla o el AuthService guardarla 
-              // temporalmente hasta este punto.
-              
-              // Por ahora, mostraremos un mensaje indicando que se activará en el próximo login manual exitoso
-              // O mejor, el AuthService la guarda en el login() y aquí la persistimos.
-              await authService.persistBiometricCredentials();
-              if (mounted) _showSuccess('¡Acceso biométrico activado!');
-            }
-          }
+  Future<void> _afterLoginOtpSuccess() async {
+    // Comprobar biometría tras login exitoso.
+    final authenticator = ref.read(biometricAuthenticatorProvider);
+    final credsStorage = ref.read(biometricCredentialsStorageProvider);
+    final canCheck = await authenticator.isAvailable();
+    final isEnabled = await credsStorage.isEnabled();
 
-          if (mounted) {
-            await ref.read(authProvider.notifier).checkLogin();
-            if (!mounted) return;
-            _showSuccess('¡Sesión iniciada correctamente!');
-            // La redirección está controlada por GoRouter, pero la forzamos para navegación explícita.
-            const HomeRoute().go(context);
+    if (canCheck && !isEnabled && mounted) {
+      final setup = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('¿Activar Huella?'),
+          content: const Text(
+            '¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Ahora no'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('¡Sí, activar!'),
+            ),
+          ],
+        ),
+      );
+
+      if (setup == true) {
+        final pending = ref.read(pendingLoginCredentialsProvider);
+        if (pending != null) {
+          final enable = ref.read(enableBiometricsProvider);
+          final saved = await enable(
+            rawEmail: pending.email,
+            rawPassword: pending.password,
+          );
+          if (saved case Ok()) {
+            if (mounted) _showSuccess('¡Acceso biométrico activado!');
+          } else if (mounted) {
+            _showError('No se pudo activar la biometría.');
           }
-        } else {
-          _showSuccess('¡Correo verificado! Ya puedes iniciar sesión.');
-          const LoginRoute().go(context);
         }
       }
-    } on AuthNetworkException {
-      if (mounted) _showError('Sin conexión al servidor.');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    }
+
+    // En cualquier caso limpiamos las credenciales cacheadas.
+    ref.read(pendingLoginCredentialsProvider.notifier).state = null;
+
+    if (!mounted) return;
+    await ref.read(authProvider.notifier).checkLogin();
+    if (!mounted) return;
+    _showSuccess('¡Sesión iniciada correctamente!');
+    const HomeRoute().go(context);
+  }
+
+  Future<void> _verifyEmail(String code) async {
+    final emailVo = Email.tryParse(widget.email);
+    if (emailVo case Err()) {
+      _showError('Email inválido.');
+      return;
+    }
+    final repo = ref.read(authRepositoryProvider);
+    final result = await repo.verifyEmail(emailVo.unwrap(), code);
+    if (!mounted) return;
+
+    switch (result) {
+      case Err(failure: final f):
+        _showError(_mapFailureToMessage(f));
+        return;
+      case Ok():
+        TextInput.finishAutofillContext();
+        _showSuccess('¡Correo verificado! Ya puedes iniciar sesión.');
+        const LoginRoute().go(context);
+        return;
     }
   }
 
@@ -149,23 +191,43 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
 
     setState(() => _isResending = true);
 
-    try {
-      final authService = ref.read(authServiceProvider);
-      final error = await authService.resendOtp(widget.email);
-      if (!mounted) return;
+    final emailVo = Email.tryParse(widget.email);
+    if (emailVo case Err()) {
+      setState(() => _isResending = false);
+      _showError('Email inválido.');
+      return;
+    }
 
-      if (error != null) {
-        _showError(error);
-      } else {
+    final repo = ref.read(authRepositoryProvider);
+    final result = await repo.resendOtp(emailVo.unwrap());
+    if (!mounted) return;
+
+    switch (result) {
+      case Err(failure: final f):
+        _showError(_mapFailureToMessage(f));
+        break;
+      case Ok():
         setState(() => _resendsLeft--);
         _codeController.clear();
         _showSuccess('Nuevo código enviado. Caduca en 15 minutos.');
-      }
-    } on AuthNetworkException {
-      if (mounted) _showError('Sin conexión al servidor.');
-    } finally {
-      if (mounted) setState(() => _isResending = false);
+        break;
     }
+
+    if (mounted) setState(() => _isResending = false);
+  }
+
+  String _mapFailureToMessage(AppFailure failure) {
+    return switch (failure) {
+      InvalidOtpFailure() => 'Código incorrecto o expirado.',
+      InvalidCredentialsFailure() => 'Código incorrecto.',
+      EmailNotVerifiedFailure() => 'Debes verificar tu correo.',
+      RegistrationFailure(serverMessage: final msg) =>
+        msg ?? 'No se pudo completar la operación.',
+      ValidationFailure(fieldErrors: final errors) =>
+        errors.values.isNotEmpty ? errors.values.first : 'Código inválido.',
+      NetworkFailure() => 'Sin conexión al servidor.',
+      _ => 'Error inesperado: ${failure.code}',
+    };
   }
 
   @override
@@ -192,9 +254,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                 'Confirma tu correo',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AlzitransColors.burgundy,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: AlzitransColors.burgundy,
+                    ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -207,8 +269,8 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                 'El código caduca en 15 minutos.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                      color: Colors.grey[600],
+                    ),
               ),
               const SizedBox(height: 32),
               TextField(

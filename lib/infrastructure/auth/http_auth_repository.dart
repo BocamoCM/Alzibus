@@ -194,6 +194,18 @@ class HttpAuthRepository implements AuthRepository {
     }
   }
 
+  @override
+  Future<Result<void, AuthFailure>> deleteAccount() async {
+    final response = await _http.delete('/users/profile');
+    switch (response) {
+      case Err(failure: final f):
+        return Err(_networkToAuth(f));
+      case Ok(value: final r):
+        if (r.statusCode == 200) return const Ok(null);
+        return Err(RegistrationFailure(serverMessage: r.errorMessage));
+    }
+  }
+
   // ───────── Helpers ─────────
 
   /// Construye una `LoginSucceeded` a partir del body de respuesta del backend.

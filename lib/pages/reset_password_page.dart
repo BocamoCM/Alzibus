@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/providers/auth_provider.dart';
+import '../domain/exceptions/app_failure.dart';
+import '../domain/shared/result.dart';
+import '../presentation/providers/di.dart';
 import '../core/router/app_router.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
@@ -38,34 +40,42 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
       _errorMessage = '';
     });
 
-    try {
-      final authService = ref.read(authServiceProvider);
-      final error = await authService.resetPassword(
-        widget.email,
-        _codeController.text.trim(),
-        _passwordController.text.trim(),
-      );
+    final resetPassword = ref.read(resetPasswordProvider);
+    final result = await resetPassword(
+      rawEmail: widget.email,
+      code: _codeController.text.trim(),
+      rawNewPassword: _passwordController.text.trim(),
+    );
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (error == null) {
+    switch (result) {
+      case Ok():
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.passwordResetSuccess)),
         );
+        setState(() => _isLoading = false);
         const LoginRoute().go(context);
-      } else {
+        return;
+      case Err(failure: final f):
         setState(() {
-          _errorMessage = error;
+          _isLoading = false;
+          _errorMessage = _mapFailureToMessage(f, l);
         });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = l.noServerConnection;
-      });
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+        return;
     }
+  }
+
+  String _mapFailureToMessage(AppFailure failure, AppLocalizations l) {
+    return switch (failure) {
+      ValidationFailure(fieldErrors: final errors) =>
+        errors.values.isNotEmpty ? errors.values.first : l.enterCode,
+      NetworkFailure() => l.noServerConnection,
+      InvalidOtpFailure() => l.enterCode,
+      RegistrationFailure(serverMessage: final msg) =>
+        msg ?? 'No se pudo restablecer la contraseña.',
+      _ => 'Error inesperado: ${failure.code}',
+    };
   }
 
   @override

@@ -58,4 +58,7 @@ abstract interface class AuthRepository {
 
   /// Notifica al backend de un logout (si falla no debe romper el flujo).
   Future<Result<void, AuthFailure>> notifyLogout();
+
+  /// Elimina permanentemente la cuenta autenticada en backend.
+  Future<Result<void, AuthFailure>> deleteAccount();
 }
