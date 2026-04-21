@@ -273,10 +273,18 @@ ficheros editados se normalizaron a LF antes de comitearlos.
 - [x] Migrar logout a use case `Logout` en provider/UI.
 - [x] Migrar `checkLogin/login/register` de `AuthNotifier` a hexagonal.
 - [x] Migrar forgot/reset password y delete account a casos de uso hexagonales.
-- [ ] `flutter pub get && flutter analyze && flutter test` — verificar en local.
-- [ ] (Opcional) Migrar UI de login al nuevo pipeline.
-- [ ] (Opcional) Silent catches restantes (sección 5).
+- [x] (Opcional) Migrar UI de login al nuevo pipeline.
+- [x] `flutter pub get && flutter analyze && flutter test` — verificar en local (actualizado SDK Dart a >=3.0.0).
 
 ---
+
+### Bloque Siguiente (4)
+El objetivo es erradicar el `AuthService` por completo de la aplicación.
+Quedan clientes remanentes en:
+1. `lib/screens/profile_screen.dart`
+2. `lib/screens/home_screen.dart`
+3. `lib/screens/trip_history_screen.dart`
+4. `lib/main.dart`
+5. `lib/services/premium_service.dart`
 
 **Última actualización de este documento:** 2026-04-21.
