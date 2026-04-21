@@ -595,9 +595,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(authProvider.notifier).logout();
-              if (mounted) {
+              final didLogout = await ref.read(authProvider.notifier).logout();
+              if (!mounted) return;
+              if (didLogout) {
                 const LoginRoute().go(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No se pudo cerrar sesión. Inténtalo de nuevo.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             child: Text(l.logout, style: const TextStyle(color: Colors.white)),

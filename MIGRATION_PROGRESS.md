@@ -115,6 +115,14 @@ Todos los providers cableados:
 - `loginWithPasswordProvider`, `verifyLoginOtpProvider`, `registerUserProvider`,
   `logoutProvider`, `loginWithBiometricsProvider`.
 
+### 3.8 Migración de logout en UI/state
+- `lib/core/providers/auth_provider.dart` ya no usa `AuthService.logout()`.
+  Ahora invoca el caso de uso `logoutProvider` (hexagonal) y devuelve `bool`
+  para que la UI pueda reaccionar a éxito/error.
+- `lib/screens/profile_screen.dart` fue adaptado para:
+  - navegar a login sólo cuando `logout()` devuelve `true`;
+  - mostrar `SnackBar` de error cuando el logout falla.
+
 ### 3.7 Parches Sentry (silent catches críticos)
 Convertidos de `catch (_) {}` a `catch (e, s)` + `Sentry.captureException` con
 tag `failure_code`:
@@ -134,8 +142,9 @@ tag `failure_code`:
 - `lib/services/auth_service.dart` — sólo se parcheó el `catch (_)` de la
   línea 282. El resto del fichero sigue intacto. La nueva arquitectura
   **coexiste** con la legacy; ambas leen/escriben las mismas keys.
-- `lib/core/providers/auth_provider.dart` — sin tocar. Mantiene su propia
-  lógica de `JwtDecoder`.
+- `lib/core/providers/auth_provider.dart` — **parcialmente migrado**:
+  `logout()` ya usa el caso de uso hexagonal. El resto (build/checkLogin/login/register)
+  aún consume `AuthService` legacy y `JwtDecoder`.
 - `lib/core/network/api_client.dart` — sin tocar. El nuevo `DioHttpAdapter`
   **reusa** el singleton existente.
 - `lib/pages/login_page.dart` — sin tocar. Sigue consumiendo `AuthService` viejo.
@@ -232,6 +241,7 @@ ficheros editados se normalizaron a LF antes de comitearlos.
 
 - [x] `lib/ARCHITECTURE.md` — creado (sección 3).
 - [x] Commits por fase (sección 7).
+- [x] Migrar logout a use case `Logout` en provider/UI.
 - [ ] `flutter pub get && flutter analyze && flutter test` — verificar en local.
 - [ ] (Opcional) Migrar UI de login al nuevo pipeline.
 - [ ] (Opcional) Silent catches restantes (sección 5).

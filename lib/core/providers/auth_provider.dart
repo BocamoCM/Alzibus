@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../services/auth_service.dart';
 import '../../providers/high_visibility_provider.dart';
+import '../../domain/shared/result.dart';
+import '../../presentation/providers/di.dart';
 
 // Provider básico para el servicio de autenticación
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -79,10 +81,19 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> logout() async {
+  Future<bool> logout() async {
     state = state.copyWith(isLoading: true);
-    await ref.read(authServiceProvider).logout();
-    state = state.copyWith(isLoading: false, isLoggedIn: false);
+    final logout = ref.read(logoutProvider);
+    final result = await logout();
+
+    switch (result) {
+      case Ok():
+        state = state.copyWith(isLoading: false, isLoggedIn: false);
+        return true;
+      case Err():
+        state = state.copyWith(isLoading: false);
+        return false;
+    }
   }
 
   Future<void> deleteAccount(String token) async {
