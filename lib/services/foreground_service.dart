@@ -11,6 +11,7 @@ import 'package:vibration/vibration.dart';
 import '../core/network/api_client.dart';
 import '../core/repositories/scraping_repository.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 // Callbacks top-level para el background service
 @pragma('vm:entry-point')
@@ -101,14 +102,32 @@ Future<void> _checkLocationStatic(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 30),
       );
-    } catch (e) {
-      // Intentar obtener última ubicación conocida
+    } catch (e, s) {
+      // Intentar obtener última ubicación conocida como fallback.
       try {
         position = await Geolocator.getLastKnownPosition();
-      } catch (_) {}
-      
+      } catch (e2, s2) {
+        // Ambos fallaron: es importante saberlo porque rompe el core del servicio.
+        Sentry.captureException(
+          e2,
+          stackTrace: s2,
+          withScope: (scope) {
+            scope.setTag('failure_code', 'geolocation.last_known_failed');
+            scope.level = SentryLevel.warning;
+          },
+        );
+      }
+
       if (position == null) {
         print('No se pudo obtener ubicación: $e');
+        Sentry.captureException(
+          e,
+          stackTrace: s,
+          withScope: (scope) {
+            scope.setTag('failure_code', 'geolocation.current_position_failed');
+            scope.level = SentryLevel.warning;
+          },
+        );
         return; // No podemos verificar proximidad sin ubicación
       }
     }

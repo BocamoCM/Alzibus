@@ -308,7 +308,17 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
           debugPrint('Error notificando app-open: $e');
         });
       });
-    } catch (_) {}
+    } catch (e, s) {
+      // Métrica best-effort: no bloquear la app, pero tampoco tragar errores en silencio.
+      Sentry.captureException(
+        e,
+        stackTrace: s,
+        withScope: (scope) {
+          scope.setTag('failure_code', 'metrics.app_open_schedule_failed');
+          scope.level = SentryLevel.warning;
+        },
+      );
+    }
   }
 
   @override

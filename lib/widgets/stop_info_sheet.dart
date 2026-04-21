@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 import '../core/network/api_client.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../models/bus_stop.dart';
 import '../constants/line_colors.dart';
 import '../constants/app_config.dart';
@@ -290,7 +291,17 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           'destination': arrival.destination,
         },
       ).catchError((_) => null);
-    } catch (_) {}
+    } catch (e, s) {
+      // Métrica best-effort: no bloquea la UX pero no debe ser silencioso.
+      Sentry.captureException(
+        e,
+        stackTrace: s,
+        withScope: (scope) {
+          scope.setTag('failure_code', 'metrics.log_alert_failed');
+          scope.level = SentryLevel.info;
+        },
+      );
+    }
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -279,8 +279,13 @@ class AuthService {
     // Notificar al servidor antes de borrar el token (para Discord tracking)
     try {
       await ApiClient().post('/users/logout');
-    } catch (_) {
-      // No bloquear el logout si falla la notificación
+    } catch (e, s) {
+      // No bloquear el logout si falla la notificación, pero SÍ reportarlo
+      // para no perder visibilidad en producción (antes era catch (_) silencioso).
+      await Sentry.captureException(e, stackTrace: s, withScope: (scope) {
+        scope.setTag('failure_code', 'auth.logout_notify_failed');
+        scope.level = SentryLevel.warning;
+      });
     }
 
     final prefs = await SharedPreferences.getInstance();

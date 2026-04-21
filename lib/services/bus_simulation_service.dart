@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'bus_times_service.dart';
 import 'gps_track_service.dart';
 
@@ -266,13 +267,30 @@ class BusSimulationService {
 
           matched = true;
           break;
-        } catch (_) {
+        } catch (e, s) {
+          // Expected-ish: la API puede fallar puntualmente en un candidato.
+          // No alertamos por cada fallo (sería ruido), pero dejamos breadcrumb
+          // para diagnosticar si el siguiente `if (!matched)` aparece en logs.
+          Sentry.addBreadcrumb(Breadcrumb(
+            category: 'bus_tracking',
+            level: SentryLevel.info,
+            message: 'getArrivalTimes failed for stop $stopId (${bus.lineId})',
+            data: {'error': e.toString()},
+          ));
+          debugPrint('bus_tracking: stop $stopId failed: $e\n$s');
           continue;
         }
       }
 
       if (!matched) {
-        // Sin datos de API: avanzar a velocidad media conservadora
+        // Sin datos de API: avanzar a velocidad media conservadora.
+        // Si esto ocurre de forma persistente, el usuario ve buses estancados;
+        // logueamos a warning para poder detectarlo en Sentry.
+        Sentry.captureMessage(
+          'Bus ${bus.busId} (${bus.lineId}) sin calibración: ningún candidato respondió',
+          level: SentryLevel.warning,
+          withScope: (scope) => scope.setTag('failure_code', 'bus_tracking.no_candidate_matched'),
+        );
         bus.speed = 0.8;
       }
     }
