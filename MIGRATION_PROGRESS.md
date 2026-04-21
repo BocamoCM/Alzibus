@@ -197,30 +197,29 @@ Dependencia añadida en `pubspec.yaml` (dev):
 mocktail: ^1.0.4
 ```
 
-## 7. Git — commits pendientes
+## 7. Git — commits hechos
 
-Todo el trabajo está **sin commitear** (excepto la creación de la rama).
-La propuesta de división en commits lógicos:
+Rama `refactor/hexagonal`. Commits ya aplicados (orden reverso):
 
-1. `chore: andamiaje carpetas domain/application/infrastructure/presentation`
-2. `feat(domain): Result, AppFailure, value objects (Email, Password, JwtToken)`
-3. `feat(domain): ports outbound (Auth, Session, Biometric, Logger, Http, Prefs, Secrets)`
-4. `feat(application): use cases de Auth (login, logout, register, otp, biometrics)`
-5. `feat(infrastructure): adapters (Dio, SharedPrefs, SecureStorage, Sentry, Local auth)`
-6. `feat(infrastructure): HttpAuthRepository + SessionStorageImpl + BiometricStorageImpl`
-7. `feat(di): wiring Riverpod de nuevo dominio Auth`
-8. `test: dominio Auth + application + infrastructure (session storage)`
-9. `fix(obs): conectar Sentry en catch silenciosos críticos`
+1. `feat(domain): Result, AppFailure y value objects (Email, Password, JwtToken)` — ec32da0
+2. `feat(domain,application): ports outbound + use cases de Auth` — ab277e4
+3. `feat(infrastructure,di): adapters + wiring Riverpod` — e7f5ac2
+4. `test: dominio y aplicacion de Auth + session storage + fakes` — 1291a5a
+5. `fix(obs): conectar Sentry en catch silenciosos criticos` — e4919cc
+6. `docs: ARCHITECTURE.md y MIGRATION_PROGRESS.md` — f70ade7
 
-**Importante:** no usar `git add .` ni `git add -A` — el repo tiene ruido
-masivo de CRLF/LF (200+ ficheros "modificados" por EOL). Usar siempre
-`git add <path>` con rutas específicas.
+**Pendiente:** push a remoto cuando se confirme en local que
+`flutter analyze && flutter test` pasan.
+
+**Importante:** no usar `git add .` ni `git add -A` — el repo tiene
+ruido masivo de CRLF/LF (200+ ficheros "modificados" por EOL). Los
+ficheros editados se normalizaron a LF antes de comitearlos.
 
 ## 8. Cómo continuar en un chat nuevo
 
 1. Abre el proyecto en `refactor/hexagonal`.
 2. Lee este documento.
-3. Lee `lib/ARCHITECTURE.md` cuando exista (pendiente — ver sección 9).
+3. Lee `lib/ARCHITECTURE.md`.
 4. Ejecuta `flutter pub get && flutter analyze && flutter test` en local.
 5. Decide próximo paso:
    - **Opción A** (recomendada) — cablear `login_page.dart` para que consuma los
@@ -228,13 +227,11 @@ masivo de CRLF/LF (200+ ficheros "modificados" por EOL). Usar siempre
      Esto empieza a "retirar" el `AuthService` viejo sin romperlo.
    - **Opción B** — migrar el siguiente dominio (Routes, Trips, Notifications).
    - **Opción C** — terminar silent catches de la sección 5.
-6. Commitear por fases según sección 7.
 
 ## 9. Tareas abiertas
 
-- [ ] `lib/ARCHITECTURE.md` — documento explicando la estructura hexagonal,
-  cómo añadir un nuevo use case, cómo mapear port→adapter, cómo testear.
-- [ ] Commits por fase (sección 7).
+- [x] `lib/ARCHITECTURE.md` — creado (sección 3).
+- [x] Commits por fase (sección 7).
 - [ ] `flutter pub get && flutter analyze && flutter test` — verificar en local.
 - [ ] (Opcional) Migrar UI de login al nuevo pipeline.
 - [ ] (Opcional) Silent catches restantes (sección 5).
