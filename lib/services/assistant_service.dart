@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
-import 'favorite_stops_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../presentation/providers/di.dart';
+import '../providers/high_visibility_provider.dart' show sharedPreferencesProvider;
 import 'bus_times_service.dart';
 
 /// Servicio para integrar con Google Assistant
@@ -25,7 +28,7 @@ class AssistantService {
         final String? query = call.arguments['query'];
         return await getBusTimesForAssistant(query: query);
       case 'refreshWidget':
-        await FavoriteStopsService.updateWidget();
+        await _refreshFavoriteWidget();
         return 'Widget actualizado';
       case 'navigateTo':
         final String destination = call.arguments;
@@ -39,12 +42,41 @@ class AssistantService {
     }
   }
   
+  /// Crea un ProviderContainer temporal para acceder a los casos de uso fuera
+  /// del árbol de widgets. Replica el override de `sharedPreferencesProvider`
+  /// que usa `main.dart`, para que los providers que dependen transitivamente
+  /// de él no lancen `UnimplementedError`.
+  static Future<T> _withContainer<T>(
+      Future<T> Function(ProviderContainer c) fn) async {
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    try {
+      return await fn(container);
+    } finally {
+      container.dispose();
+    }
+  }
+
+  /// Refresca el widget del launcher a través del caso de uso hexagonal.
+  static Future<void> _refreshFavoriteWidget() async {
+    await _withContainer((c) async {
+      await c.read(syncFavoriteWidgetProvider).call();
+    });
+  }
+
   /// Obtiene un resumen de los tiempos de bus para Google Assistant / Gemini
   /// [query] opcional para filtrar por una línea específica (ej. "L1")
   static Future<String> getBusTimesForAssistant({String? query}) async {
     try {
-      final stop = await FavoriteStopsService.getWidgetFavorite();
-      
+      final stop = await _withContainer((c) async {
+        final result = await c.read(getWidgetFavoriteStopProvider).call();
+        return result.isOk ? result.unwrap() : null;
+      });
+
       if (stop == null) {
         return 'No tienes paradas favoritas. Abre Alzitrans y añade una parada a favoritos.';
       }
@@ -114,7 +146,10 @@ class AssistantService {
   /// Actualiza los datos del widget con información completa para Assistant
   static Future<void> updateWidgetDataForAssistant() async {
     try {
-      final stop = await FavoriteStopsService.getWidgetFavorite();
+      final stop = await _withContainer((c) async {
+        final result = await c.read(getWidgetFavoriteStopProvider).call();
+        return result.isOk ? result.unwrap() : null;
+      });
       if (stop == null) return;
       
       final busTimesService = BusTimesService();

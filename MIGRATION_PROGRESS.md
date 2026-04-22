@@ -55,11 +55,12 @@ lib/
   - `NfcFailure` → `NfcNotSupportedFailure`, `NfcReadFailure`, `NfcChecksumMismatchFailure`.
   - `UnknownFailure`.
   - Todas tienen `code`, `userMessage`, `cause`, `stackTrace`.
+- `TripFailure` → `TripNotFoundFailure`, `NoPendingTripFailure`, `TripSaveFailure`.
 - Value Objects con `tryParse`:
   - `Email` — normaliza a minúsculas, regex básica.
   - `Password` — `minLength=6`, método `clear()`, `toString()` = `'***'`.
   - `JwtToken` — decodifica payload base64, `isExpiredAt(now)`. **Sustituye la duplicación entre `auth_service.dart:_extractExpiry` y `auth_provider.dart:JwtDecoder`.**
-- Entidades: `User(id, email, isPremium)`, `Session(user, token)`.
+- Entidades: `User`, `Session`, `TripRecord`, `TripStats`, `MonthlyStats`.
 
 ### 3.3 Ports (interfaces outbound)
 - `PreferencesPort` (SharedPreferences).
@@ -70,8 +71,11 @@ lib/
 - `SessionStorage`.
 - `BiometricCredentialsStorage` + `BiometricCredentials(email, password)`.
 - `BiometricAuthenticator`.
+- `TripRepository` — fetchAll, addTrip, deleteTrip, clearAll.
+- `LocalTripStorage` — gestionar viaje pendiente offline.
 
 ### 3.4 Application (use cases)
+**Auth:**
 - `LoginWithPassword` — valida VOs, llama repo, guarda sesión, `logger.setUser`.
 - `VerifyLoginOtp` — valida email + code, guarda sesión.
 - `RegisterUser` — valida VOs y delega.
@@ -81,6 +85,10 @@ lib/
 - `LoginWithBiometrics` — sealed `BiometricLoginOutcome` =
   `BiometricNotConfigured` | `BiometricCancelled` | `BiometricSucceeded(Session)`.
   Reutiliza `LoginWithPassword` internamente con `biometric=true`.
+
+**Trips:**
+- `FetchTripHistory`, `AddTrip`, `SavePendingTrip`, `ConfirmPendingTrip`, `RejectPendingTrip`, `DeleteTrip`, `ClearTripHistory`. 
+  Reemplazan el anterior `TripServiceOrchestrator` y preparan el terreno para retirar `trip_history_service.dart`.
 
 ### 3.5 Infrastructure (adapters)
 - `SharedPrefsAdapter` — envuelve `SharedPreferences` inyectado.
@@ -105,15 +113,17 @@ lib/
   - `401` → `SessionExpiredFailure`.
   - `403` con `"verificar tu correo"` → `EmailNotVerifiedFailure`.
   - Resto → `InvalidCredentialsFailure` / `RegistrationFailure`.
+- `HttpTripRepository` — adapter HTTP para los viajes (devuelve 404 como `TripNotFoundFailure`).
+- `LocalTripStorageImpl` — usa SharedPreferences via `PreferencesPort` para guardar el viaje pendiente de forma local.
 
 ### 3.6 DI Riverpod (`lib/presentation/providers/di.dart`)
 Todos los providers cableados:
 - `dioProvider`, `preferencesPortProvider` (depende del `sharedPreferencesProvider` existente),
   `secretsPortProvider`, `loggerPortProvider`, `httpPortProvider`.
 - `sessionStorageProvider`, `biometricCredentialsStorageProvider`, `biometricAuthenticatorProvider`.
-- `authRepositoryProvider`.
-- `loginWithPasswordProvider`, `verifyLoginOtpProvider`, `registerUserProvider`,
-  `logoutProvider`, `loginWithBiometricsProvider`.
+- `authRepositoryProvider`, `tripRepositoryProvider`, `localTripStorageProvider`.
+- Casos de uso de Auth (`loginWithPasswordProvider`, etc).
+- Casos de uso de Trips (`fetchTripHistoryProvider`, etc).
 
 ### 3.8 Migración de logout en UI/state
 - `lib/core/providers/auth_provider.dart` ya no usa `AuthService.logout()`.
@@ -164,6 +174,68 @@ tag `failure_code`:
   `geolocation.current_position_failed`, `geolocation.last_known_failed`).
 - `lib/widgets/stop_info_sheet.dart:293` — métrica log-alert
   (`metrics.log_alert_failed`, info).
+
+### 3.12 Dominio Favoritos (completo)
+- `AppFailure` añade `FavoritesFailure` con tres subtipos
+  (`FavoriteAlreadyExistsFailure`, `FavoriteNotFoundFailure`,
+  `FavoriteWidgetSyncFailure`).
+- Entidad `FavoriteStop` (domain/entities) + value object auxiliar
+  `FavoriteWidgetSnapshot` para pintar el widget.
+- Puertos outbound:
+  - `FavoriteStopRepository` — CRUD de la lista + `getWidgetStopId` /
+    `setWidgetStopId`.
+  - `FavoriteWidgetGateway` — publica un snapshot en el widget del launcher.
+  - `StopArrivalFetcher` — devuelve la próxima llegada de una parada.
+- Casos de uso (`lib/application/favorites/`): `ListFavoriteStops`,
+  `IsFavoriteStop`, `AddFavoriteStop` (valida duplicados + auto-asigna widget
+  si es la primera), `RemoveFavoriteStop` (reasigna widget si la borrada era
+  la actual), `GetWidgetFavoriteStop` (con fallback a la primera favorita),
+  `SetWidgetFavoriteStop`, `SyncFavoriteWidget` (orquesta fetch arrivals +
+  render).
+- Infrastructure (`lib/infrastructure/favorites/`):
+  - `PrefsFavoriteStopRepository` — usa las claves legacy `favorite_stops`
+    y `widget_favorite_stop`.
+  - `HomeWidgetGatewayImpl` — adapta `HomeWidget`.
+  - `HttpStopArrivalFetcher` — scrappa `PopupPoste.aspx` y mapea
+    DioException → NetworkFailure.
+- DI wired en `di.dart` (sección "Favorites").
+- `lib/widgets/stop_info_sheet.dart` migrado: añadir/quitar favoritos pasa
+  por `addFavoriteStopProvider`/`removeFavoriteStopProvider` y dispara
+  `syncFavoriteWidgetProvider`.
+- `lib/services/assistant_service.dart` migrado: usa un
+  `ProviderContainer` temporal (mismo patrón que
+  `onBackgroundNotificationResponse` en `home_screen.dart`) para
+  invocar los casos de uso desde un servicio estático de platform channel.
+- `lib/services/foreground_service.dart` — el widget static refresher ahora
+  lee la lista de favoritos vía `PrefsFavoriteStopRepository` en vez de
+  parsear la clave cruda.
+- `lib/services/favorite_stops_service.dart` renombrado a
+  `.dart.deleted` (ya no se importa en ninguna parte). El sandbox no permite
+  el `rm` final — el usuario debe borrarlo a mano antes de commitear.
+
+### 3.11 Dominio Trips — consumidores UI y servicios
+- `lib/screens/home_screen.dart` — ya consume `confirmPendingTripProvider`,
+  `rejectPendingTripProvider` (card/cash) desde el widget + desde el callback
+  del aislante de servicio (IPC `bus_arrived`).
+- `lib/screens/trip_history_screen.dart` — consume `tripHistoryNotifierProvider`
+  (AsyncNotifier). Borra y refresca vía el notifier.
+- `lib/presentation/providers/trip_history_provider.dart` — AsyncNotifier con
+  `refresh()`, `deleteTrip(serverId)` y `clearHistory()`. Reemplaza a la
+  variable `_records` del antiguo `TripHistoryService`.
+- `lib/services/foreground_service.dart` — ya NO escribe la clave cruda
+  `pending_trip`. Encapsulado en `LocalTripStorageImpl(SharedPrefsAdapter(prefs))`
+  con instrumentación Sentry (`trip.save_pending_failed`).
+- `lib/services/bus_alert_service.dart` — mismo cambio en `_savePendingTrip`.
+- `lib/services/background_service.dart` — igual (aunque el fichero está
+  marcado como deprecated, se deja coherente).
+- `lib/services/auth_service.dart:logout` — usa
+  `LocalTripStorageImpl.clearPendingTrip()` en vez de `prefs.remove('pending_trip')`.
+- `lib/core/network/api_client.dart` interceptor 401 — idem.
+
+Resultado: la única referencia literal a `'pending_trip'` que queda fuera de
+`LocalTripStorageImpl` está en `SessionStorageImpl._allKeys` (intencional: esa
+clave se limpia en logout junto con las de Auth). Todo el resto de la app lee
+y escribe el viaje pendiente a través del puerto de dominio.
 
 ## 4. Lo que NO se ha tocado (intencionalmente)
 
@@ -253,18 +325,16 @@ Rama `refactor/hexagonal`. Commits ya aplicados (orden reverso):
 ruido masivo de CRLF/LF (200+ ficheros "modificados" por EOL). Los
 ficheros editados se normalizaron a LF antes de comitearlos.
 
-## 8. Cómo continuar en un chat nuevo
+### 8. Cómo continuar en un chat nuevo
 
 1. Abre el proyecto en `refactor/hexagonal`.
 2. Lee este documento.
 3. Lee `lib/ARCHITECTURE.md`.
 4. Ejecuta `flutter pub get && flutter analyze && flutter test` en local.
 5. Decide próximo paso:
-   - **Opción A** (recomendada) — cablear `login_page.dart` para que consuma los
-     nuevos providers (`loginWithPasswordProvider`, `verifyLoginOtpProvider`).
-     Esto empieza a "retirar" el `AuthService` viejo sin romperlo.
-   - **Opción B** — migrar el siguiente dominio (Routes, Trips, Notifications).
-   - **Opción C** — terminar silent catches de la sección 5.
+   - **Opción A** (recomendada) — migrar UI: cablear `login_page.dart` (para que use providers de Auth) o `trip_history_screen.dart` / `home_screen.dart` (para usar los nuevos providers de Trips).
+   - **Opción B** — test TDD: añadir los tests unitarios faltantes para los use cases de Trips y sus adapters.
+   - **Opción C** — migrar el siguiente dominio (Routes, Notifications).
 
 ## 9. Tareas abiertas
 
@@ -273,18 +343,69 @@ ficheros editados se normalizaron a LF antes de comitearlos.
 - [x] Migrar logout a use case `Logout` en provider/UI.
 - [x] Migrar `checkLogin/login/register` de `AuthNotifier` a hexagonal.
 - [x] Migrar forgot/reset password y delete account a casos de uso hexagonales.
-- [x] (Opcional) Migrar UI de login al nuevo pipeline.
-- [x] `flutter pub get && flutter analyze && flutter test` — verificar en local (actualizado SDK Dart a >=3.0.0).
+- [x] Migrar dominio Trips (Entities, Failures, Ports, Use Cases, Adapters, DI).
+- [x] Migrar UI de Trips (`trip_history_screen.dart` y `home_screen.dart`) al
+  pipeline hexagonal (ya usan `tripHistoryNotifierProvider`,
+  `confirmPendingTripProvider`, `rejectPendingTripProvider`).
+- [x] Centralizar la clave `pending_trip` dentro de `LocalTripStorageImpl`
+  (fuera solo sobrevive el listado de limpieza en `SessionStorageImpl._allKeys`).
+- [x] Migrar dominio Favoritos completo (entities, ports, use cases,
+  adapters, DI, consumidores `stop_info_sheet.dart` y `assistant_service.dart`
+  + `foreground_service.dart`). Legacy `favorite_stops_service.dart`
+  renombrado a `.dart.deleted`.
+- [ ] Testear dominio Trips y dominio Favoritos (TDD pospuesto a petición del
+  usuario).
+- [ ] Migrar UI de login al nuevo pipeline.
+- [ ] Migrar el resto de los consumidores legacy de `AuthService` (ver bloque).
 
 ---
 
-### Bloque Siguiente (4)
-El objetivo es erradicar el `AuthService` por completo de la aplicación.
-Quedan clientes remanentes en:
-1. `lib/screens/profile_screen.dart`
-2. `lib/screens/home_screen.dart`
-3. `lib/screens/trip_history_screen.dart`
-4. `lib/main.dart`
-5. `lib/services/premium_service.dart`
+### Bloque Siguiente — erradicar `AuthService`
 
-**Última actualización de este documento:** 2026-04-21.
+El objetivo es borrar `lib/services/auth_service.dart` cuando todos sus
+consumidores dejen de dependerlo. Clientes remanentes:
+1. `lib/screens/profile_screen.dart` — perfil avanzado / heartbeat.
+2. `lib/screens/home_screen.dart` — comprobaciones puntuales.
+3. `lib/main.dart` — posibles llamadas en arranque.
+4. `lib/services/premium_service.dart` — flujo premium (DESACTIVADO hoy, se
+   puede dejar para el final).
+
+### Bloque opcional (siguiente dominio)
+
+Candidatos para el próximo corte grande cuando Auth esté limpio:
+
+- **NFC** (`lib/services/nfc_service.dart` + `lib/core/providers/nfc_controller.dart`)
+  — ya hay fallos definidos (`NfcNotSupportedFailure`, `NfcReadFailure`,
+  `NfcChecksumMismatchFailure`). Resta puerto + use cases + adapter.
+  Interactúa con Trips al decrementar `stored_trips` tras confirmar pago
+  con tarjeta.
+- **Bus times / Stops** (`lib/services/bus_times_service.dart`,
+  `lib/services/stops_service.dart`) — dominio más grande pero core de
+  la app. Patrón claro: `Stop`, `BusArrival`, puerto
+  `BusTimesGateway`, adapter HTTP.
+- **Gamificación** (`lib/services/gamification_service.dart`) — usa
+  SharedPreferences para logros locales. Pequeño y autocontenido.
+
+### Patrón para servicios estáticos (platform channels, isolates)
+
+Cuando un servicio no puede recibir `Ref` (por ejemplo `AssistantService`,
+que responde a method channels, o `onBackgroundNotificationResponse` en
+isolate), crear un `ProviderContainer` temporal dentro de la llamada:
+
+```dart
+final container = ProviderContainer();
+try {
+  await container.read(someUseCaseProvider).call();
+} finally {
+  container.dispose();
+}
+```
+
+Asume que todos los providers de dominio son instanciables sin overrides —
+hoy lo son salvo `sharedPreferencesProvider`, que se obtiene de forma
+asíncrona vía `SharedPreferences.getInstance()` dentro del adaptador. Si
+alguna vez se añade un provider que requiera override (como ocurre con
+`sharedPreferencesProvider` en el container de `main.dart`), replicar el
+override aquí también.
+
+**Última actualización de este documento:** 2026-04-21 (iteración 3: dominio Favoritos migrado).

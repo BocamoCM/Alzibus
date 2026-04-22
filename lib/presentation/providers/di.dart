@@ -28,6 +28,30 @@ import '../../infrastructure/storage/secure_storage_adapter.dart';
 import '../../infrastructure/storage/session_storage_impl.dart';
 import '../../infrastructure/storage/shared_prefs_adapter.dart';
 import '../../providers/high_visibility_provider.dart' show sharedPreferencesProvider;
+import '../../application/trips/add_trip.dart';
+import '../../application/trips/clear_trip_history.dart';
+import '../../application/trips/confirm_pending_trip.dart';
+import '../../application/trips/delete_trip.dart';
+import '../../application/trips/fetch_trip_history.dart';
+import '../../application/trips/reject_pending_trip.dart';
+import '../../application/trips/save_pending_trip.dart';
+import '../../domain/ports/outbound/local_trip_storage.dart';
+import '../../domain/ports/outbound/trip_repository.dart';
+import '../../infrastructure/trips/http_trip_repository.dart';
+import '../../infrastructure/trips/local_trip_storage_impl.dart';
+import '../../application/favorites/add_favorite_stop.dart';
+import '../../application/favorites/get_widget_favorite_stop.dart';
+import '../../application/favorites/is_favorite_stop.dart';
+import '../../application/favorites/list_favorite_stops.dart';
+import '../../application/favorites/remove_favorite_stop.dart';
+import '../../application/favorites/set_widget_favorite_stop.dart';
+import '../../application/favorites/sync_favorite_widget.dart';
+import '../../domain/ports/outbound/favorite_stop_repository.dart';
+import '../../domain/ports/outbound/favorite_widget_gateway.dart';
+import '../../domain/ports/outbound/stop_arrival_fetcher.dart';
+import '../../infrastructure/favorites/home_widget_gateway_impl.dart';
+import '../../infrastructure/favorites/http_stop_arrival_fetcher.dart';
+import '../../infrastructure/favorites/prefs_favorite_stop_repository.dart';
 
 /// ╔════════════════════════════════════════════════════════════════════════╗
 /// ║  CABLEADO HEXAGONAL — DEPENDENCY INJECTION                             ║
@@ -180,3 +204,132 @@ class PendingLoginCredentialsNotifier extends Notifier<PendingLoginCredentials?>
 final pendingLoginCredentialsProvider =
     NotifierProvider<PendingLoginCredentialsNotifier, PendingLoginCredentials?>(
         PendingLoginCredentialsNotifier.new);
+
+// ───────── Trips: storages & repositorio ─────────
+
+final localTripStorageProvider = Provider<LocalTripStorage>(
+  (ref) => LocalTripStorageImpl(ref.watch(preferencesPortProvider)),
+);
+
+final tripRepositoryProvider = Provider<TripRepository>(
+  (ref) => HttpTripRepository(ref.watch(httpPortProvider)),
+);
+
+// ───────── Trips: casos de uso ─────────
+
+final fetchTripHistoryProvider = Provider<FetchTripHistory>(
+  (ref) => FetchTripHistory(
+    tripRepository: ref.watch(tripRepositoryProvider),
+    sessionStorage: ref.watch(sessionStorageProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final addTripProvider = Provider<AddTrip>(
+  (ref) => AddTrip(
+    tripRepository: ref.watch(tripRepositoryProvider),
+    sessionStorage: ref.watch(sessionStorageProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final savePendingTripProvider = Provider<SavePendingTrip>(
+  (ref) => SavePendingTrip(
+    localStorage: ref.watch(localTripStorageProvider),
+  ),
+);
+
+final confirmPendingTripProvider = Provider<ConfirmPendingTrip>(
+  (ref) => ConfirmPendingTrip(
+    tripRepository: ref.watch(tripRepositoryProvider),
+    localStorage: ref.watch(localTripStorageProvider),
+    sessionStorage: ref.watch(sessionStorageProvider),
+    preferences: ref.watch(preferencesPortProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final rejectPendingTripProvider = Provider<RejectPendingTrip>(
+  (ref) => RejectPendingTrip(
+    localStorage: ref.watch(localTripStorageProvider),
+  ),
+);
+
+final deleteTripProvider = Provider<DeleteTrip>(
+  (ref) => DeleteTrip(
+    tripRepository: ref.watch(tripRepositoryProvider),
+    sessionStorage: ref.watch(sessionStorageProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+final clearTripHistoryProvider = Provider<ClearTripHistory>(
+  (ref) => ClearTripHistory(
+    tripRepository: ref.watch(tripRepositoryProvider),
+    localStorage: ref.watch(localTripStorageProvider),
+    sessionStorage: ref.watch(sessionStorageProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+
+// ───────── Favorites: puertos ─────────
+
+final favoriteStopRepositoryProvider = Provider<FavoriteStopRepository>(
+  (ref) => PrefsFavoriteStopRepository(ref.watch(preferencesPortProvider)),
+);
+
+final favoriteWidgetGatewayProvider = Provider<FavoriteWidgetGateway>(
+  (_) => const HomeWidgetGatewayImpl(),
+);
+
+final stopArrivalFetcherProvider = Provider<StopArrivalFetcher>(
+  (ref) => HttpStopArrivalFetcher(ref.watch(dioProvider)),
+);
+
+// ───────── Favorites: casos de uso ─────────
+
+final listFavoriteStopsProvider = Provider<ListFavoriteStops>(
+  (ref) => ListFavoriteStops(
+    repository: ref.watch(favoriteStopRepositoryProvider),
+  ),
+);
+
+final isFavoriteStopProvider = Provider<IsFavoriteStop>(
+  (ref) => IsFavoriteStop(
+    repository: ref.watch(favoriteStopRepositoryProvider),
+  ),
+);
+
+final addFavoriteStopProvider = Provider<AddFavoriteStop>(
+  (ref) => AddFavoriteStop(
+    repository: ref.watch(favoriteStopRepositoryProvider),
+  ),
+);
+
+final removeFavoriteStopProvider = Provider<RemoveFavoriteStop>(
+  (ref) => RemoveFavoriteStop(
+    repository: ref.watch(favoriteStopRepositoryProvider),
+  ),
+);
+
+final getWidgetFavoriteStopProvider = Provider<GetWidgetFavoriteStop>(
+  (ref) => GetWidgetFavoriteStop(
+    repository: ref.watch(favoriteStopRepositoryProvider),
+  ),
+);
+
+final setWidgetFavoriteStopProvider = Provider<SetWidgetFavoriteStop>(
+  (ref) => SetWidgetFavoriteStop(
+    repository: ref.watch(favoriteStopRepositoryProvider),
+  ),
+);
+
+final syncFavoriteWidgetProvider = Provider<SyncFavoriteWidget>(
+  (ref) => SyncFavoriteWidget(
+    getWidgetFavorite: ref.watch(getWidgetFavoriteStopProvider),
+    arrivalFetcher: ref.watch(stopArrivalFetcherProvider),
+    widgetGateway: ref.watch(favoriteWidgetGatewayProvider),
+    logger: ref.watch(loggerPortProvider),
+  ),
+);
+

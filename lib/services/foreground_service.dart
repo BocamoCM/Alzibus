@@ -12,6 +12,9 @@ import '../core/network/api_client.dart';
 import '../core/repositories/scraping_repository.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import '../infrastructure/storage/shared_prefs_adapter.dart';
+import '../infrastructure/trips/local_trip_storage_impl.dart';
+import '../infrastructure/favorites/prefs_favorite_stop_repository.dart';
 
 // Callbacks top-level para el background service
 @pragma('vm:entry-point')
@@ -286,7 +289,7 @@ Future<void> _checkBusAlertsStatic(
                 alerts[i]['notifiedArriving'] = true;
                 alertsModified = true;
                 
-                // Guardar viaje pendiente para historial
+                // Guardar viaje pendiente para historial (a través del puerto de dominio)
                 final pendingTrip = {
                   'line': line.toString(),
                   'destination': destination,
@@ -294,7 +297,17 @@ Future<void> _checkBusAlertsStatic(
                   'stopId': stopId,
                   'timestamp': DateTime.now().toIso8601String(),
                 };
-                await prefs.setString('pending_trip', jsonEncode(pendingTrip));
+                final tripStorage = LocalTripStorageImpl(SharedPrefsAdapter(prefs));
+                final saveResult = await tripStorage.savePendingTrip(pendingTrip);
+                if (saveResult.isErr) {
+                  await Sentry.captureException(
+                    saveResult.unwrapErr(),
+                    withScope: (scope) {
+                      scope.setTag('failure_code', 'trip.save_pending_failed');
+                      scope.level = SentryLevel.warning;
+                    },
+                  );
+                }
                 print('[ForegroundService] Saved pending trip for history');
                 
                 // NOTIFICAR A LA APP (si está en primer plano) por IPC
@@ -428,19 +441,14 @@ Future<void> _showBusArrivingNotificationStatic(
 // Actualizar el widget de Android con la parada favorita
 Future<void> _updateWidgetStatic(SharedPreferences prefs) async {
   try {
-    // Obtener todas las paradas favoritas
-    final favoritesJson = prefs.getString('favorite_stops');
-    List<Map<String, dynamic>> favorites = [];
-    
-    if (favoritesJson != null) {
-      try {
-        final List<dynamic> parsed = jsonDecode(favoritesJson);
-        favorites = parsed.cast<Map<String, dynamic>>();
-      } catch (e) {
-        print('[ForegroundService] Error parsing favorites: $e');
-      }
-    }
-    
+    // Obtener todas las paradas favoritas desde el repositorio de dominio
+    // (mantiene la clave de SharedPreferences encapsulada).
+    final repo = PrefsFavoriteStopRepository(SharedPrefsAdapter(prefs));
+    final favoritesResult = await repo.listAll();
+    final List<Map<String, dynamic>> favorites = favoritesResult.isOk
+        ? favoritesResult.unwrap().map((f) => f.toJson()).toList()
+        : const <Map<String, dynamic>>[];
+
     if (favorites.isEmpty) {
       // No hay favoritos
       await HomeWidget.saveWidgetData<int>('widget_arrival_count', 0);

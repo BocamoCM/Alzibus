@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import '../../constants/app_config.dart';
+import '../../infrastructure/storage/shared_prefs_adapter.dart';
+import '../../infrastructure/trips/local_trip_storage_impl.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -43,7 +45,9 @@ class ApiClient {
           await prefs.remove('user_email');
           await prefs.remove('user_id');
           await prefs.remove('token_expiry');
-          await prefs.remove('pending_trip');
+          // La clave del viaje pendiente vive en LocalTripStorageImpl; borramos
+          // a través de él para no duplicar constantes.
+          await LocalTripStorageImpl(SharedPrefsAdapter(prefs)).clearPendingTrip();
         }
         return handler.next(e);
       },

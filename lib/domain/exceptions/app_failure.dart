@@ -186,6 +186,63 @@ final class NfcChecksumMismatchFailure extends NfcFailure {
   const NfcChecksumMismatchFailure() : super(code: 'nfc.checksum_mismatch');
 }
 
+// ───────────────────────── Trip ─────────────────────────
+
+/// Fallos del dominio de viajes/historial.
+sealed class TripFailure extends AppFailure {
+  const TripFailure({
+    required super.code,
+    super.userMessage,
+    super.cause,
+    super.stackTrace,
+  });
+}
+
+/// El viaje solicitado no existe en el backend (404).
+final class TripNotFoundFailure extends TripFailure {
+  const TripNotFoundFailure() : super(code: 'trip.not_found');
+}
+
+/// Se intentó confirmar/rechazar un viaje pendiente que no existe localmente.
+final class NoPendingTripFailure extends TripFailure {
+  const NoPendingTripFailure() : super(code: 'trip.no_pending');
+}
+
+/// Error genérico al guardar un viaje en el backend.
+final class TripSaveFailure extends TripFailure {
+  const TripSaveFailure({super.cause, super.stackTrace})
+      : super(code: 'trip.save_failed');
+}
+
+// ───────────────────────── Favorites ─────────────────────────
+
+/// Fallos del dominio de paradas favoritas.
+sealed class FavoritesFailure extends AppFailure {
+  const FavoritesFailure({
+    required super.code,
+    super.userMessage,
+    super.cause,
+    super.stackTrace,
+  });
+}
+
+/// La parada que se intentaba añadir ya estaba en favoritos.
+final class FavoriteAlreadyExistsFailure extends FavoritesFailure {
+  const FavoriteAlreadyExistsFailure()
+      : super(code: 'favorites.already_exists');
+}
+
+/// La parada indicada no está en favoritos.
+final class FavoriteNotFoundFailure extends FavoritesFailure {
+  const FavoriteNotFoundFailure() : super(code: 'favorites.not_found');
+}
+
+/// No se pudo sincronizar el widget de inicio.
+final class FavoriteWidgetSyncFailure extends FavoritesFailure {
+  const FavoriteWidgetSyncFailure({super.cause, super.stackTrace})
+      : super(code: 'favorites.widget_sync_failed');
+}
+
 // ───────────────────────── Genérico ─────────────────────────
 
 /// Fallo desconocido — usar SOLO como último recurso. Cualquier captura debe

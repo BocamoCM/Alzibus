@@ -6,6 +6,8 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import '../constants/app_config.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../infrastructure/storage/shared_prefs_adapter.dart';
+import '../infrastructure/trips/local_trip_storage_impl.dart';
 
 /// Excepción lanzada cuando las credenciales son incorrectas.
 class AuthInvalidCredentialsException implements Exception {
@@ -294,7 +296,9 @@ class AuthService {
     await prefs.remove('user_id');
     await prefs.remove('is_premium');
     await prefs.remove('token_expiry');
-    await prefs.remove('pending_trip'); // Eliminar viajes pendientes al cerrar sesión
+    // Eliminar viaje pendiente al cerrar sesión a través del puerto de dominio
+    // para centralizar la gestión de la clave en LocalTripStorageImpl.
+    await LocalTripStorageImpl(SharedPrefsAdapter(prefs)).clearPendingTrip();
     
     // Limpiar identidad en Sentry
     await Sentry.configureScope((scope) {

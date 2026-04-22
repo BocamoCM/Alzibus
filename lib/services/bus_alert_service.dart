@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'bus_times_service.dart';
 import 'notification_service.dart';
+import '../infrastructure/storage/shared_prefs_adapter.dart';
+import '../infrastructure/trips/local_trip_storage_impl.dart';
 
 class BusAlert {
   final int stopId;
@@ -377,7 +380,8 @@ class BusAlertService {
         .toList();
   }
   
-  // Guardar viaje pendiente para confirmar después
+  // Guardar viaje pendiente para confirmar después.
+  // Encapsulado en LocalTripStorageImpl para no acoplarnos a la clave cruda.
   Future<void> _savePendingTrip(BusAlert alert) async {
     print('[BusAlertService] Guardando pending trip: ${alert.line} -> ${alert.stopName}');
     final prefs = await SharedPreferences.getInstance();
@@ -388,7 +392,17 @@ class BusAlertService {
       'destination': alert.destination,
       'timestamp': DateTime.now().toIso8601String(),
     };
-    await prefs.setString('pending_trip', jsonEncode(tripData));
+    final storage = LocalTripStorageImpl(SharedPrefsAdapter(prefs));
+    final result = await storage.savePendingTrip(tripData);
+    if (result.isErr) {
+      await Sentry.captureException(
+        result.unwrapErr(),
+        withScope: (scope) {
+          scope.setTag('failure_code', 'trip.save_pending_failed');
+          scope.level = SentryLevel.warning;
+        },
+      );
+    }
     print('[BusAlertService] Pending trip guardado!');
   }
 

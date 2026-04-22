@@ -17,7 +17,8 @@ import '../core/router/app_router.dart';
 import '../services/foreground_service.dart';
 import '../services/stops_service.dart';
 import '../services/bus_alert_service.dart';
-import '../services/trip_history_service.dart';
+import '../presentation/providers/di.dart';
+import '../presentation/providers/trip_history_provider.dart';
 import '../services/assistant_service.dart';
 import '../services/notices_service.dart';
 import '../constants/app_config.dart';
@@ -45,22 +46,30 @@ import '../core/providers/ad_provider.dart';
 import 'dart:async';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
-// Handler para notificaciones en segundo plano (debe ser top-level)
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) async {
   final action = response.actionId;
   if (action == null) return;
+
+  // Replicamos el override de `sharedPreferencesProvider` que hace `main.dart`.
+  // Sin esto, `confirmPendingTripProvider` fallaría con `UnimplementedError`
+  // al resolver `preferencesPortProvider` en el isolate de background.
   final prefs = await SharedPreferences.getInstance();
-  await prefs.reload();
-  final historyService = TripHistoryService(prefs);
-  final authService = AuthService();
-  final token = await authService.getToken();
-  if (action == 'confirm_card' && token != null) {
-    await historyService.confirmTrip(token, paymentMethod: 'card');
-  } else if (action == 'confirm_cash' && token != null) {
-    await historyService.confirmTrip(token, paymentMethod: 'cash');
-  } else if (action == 'reject_trip') {
-    await historyService.rejectTrip();
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
+  try {
+    if (action == 'confirm_card') {
+      await container.read(confirmPendingTripProvider).call(paymentMethod: 'card');
+    } else if (action == 'confirm_cash') {
+      await container.read(confirmPendingTripProvider).call(paymentMethod: 'cash');
+    } else if (action == 'reject_trip') {
+      await container.read(rejectPendingTripProvider).call();
+    }
+  } finally {
+    container.dispose();
   }
 }
 
@@ -298,8 +307,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       });
     }
 
-    final historyService = TripHistoryService(prefs);
-    final pending = historyService.getPendingTrip();
+    final pendingResult = await ref.read(localTripStorageProvider).getPendingTrip();
+    final pending = pendingResult.isOk ? pendingResult.unwrap() : null;
     
     debugPrint('[TripDialog] Checking pending trip: ${pending != null ? "FOUND" : "none"}');
     if (pending != null) {
@@ -448,13 +457,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                           onPressed: () async {
                             Navigator.pop(ctx);
                             _isShowingTripDialog = false;
-                            final prefs = await SharedPreferences.getInstance();
-                            final historyService = TripHistoryService(prefs);
-                            final token = await _authService.getToken();
-                            if (token != null) {
-                              await historyService.confirmTrip(token, paymentMethod: 'card');
+                            final result = await ref.read(confirmPendingTripProvider).call(paymentMethod: 'card');
+                            if (result.isOk) {
+                              final prefs = await SharedPreferences.getInstance();
                               await prefs.reload();
                               if (mounted) setState(() => _storedTrips = prefs.getInt('stored_trips') ?? 0);
+                              ref.read(tripHistoryNotifierProvider.notifier).refresh(); // Actualizar historial
                             }
                             if (mounted) _showTripRegisteredSnackBar(true);
                           },
@@ -475,11 +483,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                           onPressed: () async {
                             Navigator.pop(ctx);
                             _isShowingTripDialog = false;
-                            final prefs = await SharedPreferences.getInstance();
-                            final historyService = TripHistoryService(prefs);
-                            final token = await _authService.getToken();
-                            if (token != null) {
-                              await historyService.confirmTrip(token, paymentMethod: 'cash');
+                            final result = await ref.read(confirmPendingTripProvider).call(paymentMethod: 'cash');
+                            if (result.isOk) {
+                              ref.read(tripHistoryNotifierProvider.notifier).refresh(); // Actualizar historial
                             }
                             if (mounted) _showTripRegisteredSnackBar(false);
                           },
@@ -511,9 +517,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                       onPressed: () async {
                         Navigator.pop(ctx);
                         _isShowingTripDialog = false;
-                        final prefs = await SharedPreferences.getInstance();
-                        final historyService = TripHistoryService(prefs);
-                        await historyService.rejectTrip();
+                        await ref.read(rejectPendingTripProvider).call();
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -573,10 +577,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     if (payload == 'trip_confirm') {
       if (!await _authService.isLoggedIn()) return;
       
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.reload();
-      final historyService = TripHistoryService(prefs);
-      final pending = historyService.getPendingTrip();
+      final pendingResult = await ref.read(localTripStorageProvider).getPendingTrip();
+      final pending = pendingResult.isOk ? pendingResult.unwrap() : null;
       
       if (pending != null) {
         // Esperar a que el contexto esté disponible
@@ -591,15 +593,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     final action = response.actionId;
     if (action == null) return;
     
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.reload();
-    final historyService = TripHistoryService(prefs);
-    
     if (action == 'confirm_trip') {
-      final token = await _authService.getToken();
-      if (token != null) await historyService.confirmTrip(token);
+      await ref.read(confirmPendingTripProvider).call();
+      ref.read(tripHistoryNotifierProvider.notifier).refresh();
     } else if (action == 'reject_trip') {
-      await historyService.rejectTrip();
+      await ref.read(rejectPendingTripProvider).call();
     }
   }
 

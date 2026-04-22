@@ -18,7 +18,6 @@ import 'screens/home_screen.dart';
 import 'services/foreground_service.dart';
 import 'services/stops_service.dart';
 import 'services/bus_alert_service.dart';
-import 'services/trip_history_service.dart';
 import 'services/assistant_service.dart';
 import 'services/notices_service.dart';
 import 'constants/app_config.dart';

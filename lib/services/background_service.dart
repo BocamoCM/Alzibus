@@ -9,6 +9,8 @@ import 'dart:typed_data';
 import 'package:vibration/vibration.dart';
 import '../core/network/api_client.dart';
 import 'package:html/parser.dart' as html_parser;
+import '../infrastructure/storage/shared_prefs_adapter.dart';
+import '../infrastructure/trips/local_trip_storage_impl.dart';
 
 const String portName = 'background_location_port';
 
@@ -282,10 +284,11 @@ class BackgroundService {
     await notif.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(alertsChannel);
     
-    // Si es notificación final (llegando), guardar viaje pendiente para historial
+    // Si es notificación final (llegando), guardar viaje pendiente para historial.
+    // Pasamos por LocalTripStorageImpl para que la clave y el formato vivan en
+    // un único sitio (infrastructure) y no se filtren por la capa de servicios.
     String? payload;
     if (urgency == 'llegando' && stopId != null && prefs != null) {
-      // Guardar viaje pendiente
       final pendingTrip = {
         'line': line,
         'destination': destination,
@@ -293,7 +296,8 @@ class BackgroundService {
         'stopId': stopId,
         'timestamp': DateTime.now().toIso8601String(),
       };
-      await prefs.setString('pending_trip', jsonEncode(pendingTrip));
+      final storage = LocalTripStorageImpl(SharedPrefsAdapter(prefs));
+      await storage.savePendingTrip(pendingTrip);
       payload = 'trip_confirm'; // Para identificar que debe preguntar al abrir
     }
     

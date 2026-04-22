@@ -18,7 +18,9 @@ import '../constants/app_config.dart';
 import '../services/bus_times_service.dart';
 import '../services/bus_alert_service.dart';
 import '../services/foreground_service.dart';
-import '../services/favorite_stops_service.dart';
+import '../domain/entities/favorite_stop.dart';
+import '../domain/exceptions/app_failure.dart';
+import '../presentation/providers/di.dart';
 import '../services/renfe_service.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
@@ -136,20 +138,34 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   }
 
   Future<void> _checkFavorite() async {
-    final isFav = await FavoriteStopsService.isFavorite(widget.stop.id);
-    if (mounted) {
-      setState(() => _isFavorite = isFav);
+    final result = await ref.read(isFavoriteStopProvider).call(widget.stop.id);
+    if (!mounted) return;
+    if (result.isOk) {
+      setState(() => _isFavorite = result.unwrap());
+    } else {
+      setState(() => _isFavorite = false);
     }
   }
 
   Future<void> _toggleFavorite() async {
     if (_isFavorite) {
-      await FavoriteStopsService.removeFavorite(widget.stop.id);
-      if (mounted) {
+      final result =
+          await ref.read(removeFavoriteStopProvider).call(widget.stop.id);
+      // Refrescar widget del launcher al cambiar la asignación (si aplica).
+      unawaited(ref.read(syncFavoriteWidgetProvider).call());
+      if (!mounted) return;
+      if (result.isOk) {
         setState(() => _isFavorite = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Parada eliminada de favoritos'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo eliminar de favoritos'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -162,14 +178,27 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
         lng: widget.stop.lng,
         lines: widget.stop.lines,
       );
-      await FavoriteStopsService.addFavorite(favorite);
-      if (mounted) {
+      final result = await ref.read(addFavoriteStopProvider).call(favorite);
+      unawaited(ref.read(syncFavoriteWidgetProvider).call());
+      if (!mounted) return;
+      if (result.isOk) {
         setState(() => _isFavorite = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('⭐ Parada añadida a favoritos'),
             backgroundColor: Colors.amber,
             duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        final failure = result.unwrapErr();
+        final message = failure is FavoriteAlreadyExistsFailure
+            ? 'Esta parada ya estaba en favoritos'
+            : 'No se pudo añadir a favoritos';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
