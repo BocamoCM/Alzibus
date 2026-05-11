@@ -179,7 +179,7 @@ class StatRepository {
               COUNT(*)::int                 AS visits,
               COUNT(DISTINCT ip)::int       AS uniques
             FROM web_metrics
-            WHERE event_type IN ('visit', 'app_open')
+            WHERE event_type IN ('visit', 'app_open', 'login')
               AND created_at >= NOW() - INTERVAL '${interval}'
             GROUP BY source, platform
             ORDER BY visits DESC
@@ -188,7 +188,7 @@ class StatRepository {
         const byBrowser = await pool.query(`
             SELECT COALESCE(browser, 'unknown') AS browser, COUNT(*)::int AS visits
             FROM web_metrics
-            WHERE event_type IN ('visit', 'app_open')
+            WHERE event_type IN ('visit', 'app_open', 'login')
               AND created_at >= NOW() - INTERVAL '${interval}'
               AND source IN ('landing', 'web_app')
             GROUP BY browser
@@ -201,7 +201,7 @@ class StatRepository {
               COUNT(*)::int               AS visits,
               COUNT(DISTINCT ip)::int     AS uniques
             FROM web_metrics
-            WHERE event_type IN ('visit', 'app_open')
+            WHERE event_type IN ('visit', 'app_open', 'login')
               AND created_at >= NOW() - INTERVAL '${interval}'
             GROUP BY source
             ORDER BY visits DESC

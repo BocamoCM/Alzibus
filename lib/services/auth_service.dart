@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'telemetry_service.dart';
 
 /// Excepción lanzada cuando las credenciales son incorrectas.
 class AuthInvalidCredentialsException implements Exception {
@@ -236,6 +237,12 @@ class AuthService {
     if (expiry != null) {
       await prefs.setInt('token_expiry', expiry);
     }
+
+    // Telemetría: notificar el inicio de sesión (sin cooldown). Cubre todos
+    // los caminos de login (directo, OTP, biométrico) porque todos pasan por aquí.
+    // No esperamos a la respuesta — no debe bloquear el flujo de auth.
+    // ignore: discarded_futures
+    TelemetryService.sendLogin();
   }
 
   /// Verifica el código OTP enviado al correo (Registro).

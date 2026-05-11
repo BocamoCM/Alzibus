@@ -46,16 +46,31 @@ class TelemetryService {
   /// Devuelve silenciosamente si hay error de red — telemetría no debe romper
   /// el arranque de la app.
   static Future<void> sendAppOpen() async {
+    await _post(event: 'app_open');
+  }
+
+  /// Notifica al backend que un usuario acaba de iniciar sesión.
+  /// Pensado para llamarse desde `_saveSession` en AuthService: garantiza que
+  /// cada login (directo / OTP / biométrico) deja un rastro independientemente
+  /// del initState del widget raíz (que en web solo corre una vez por carga).
+  ///
+  /// Sin cooldown: cada login es un evento legítimo.
+  static Future<void> sendLogin() async {
+    await _post(event: 'login');
+  }
+
+  static Future<void> _post({required String event}) async {
     try {
       await ApiClient().post(
         '/metrics/app-open',
         data: {
+          'event': event,         // 'app_open' | 'login'
           'source': source,
           'platform': platform,
         },
       );
     } catch (e) {
-      debugPrint('[Telemetry] sendAppOpen falló (silencioso): $e');
+      debugPrint('[Telemetry] $event falló (silencioso): $e');
     }
   }
 }

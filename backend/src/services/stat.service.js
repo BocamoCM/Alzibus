@@ -82,10 +82,13 @@ class StatService {
         const platform = sanitizePlatform(data.platform || parsed.platform);
         const browser  = parsed.browser;
 
-        // Persistir en web_metrics con event_type='app_open' para que la consulta
+        // event: 'app_open' (arranque) | 'login' (tras autenticar). Por defecto 'app_open'.
+        const event = (data.event === 'login') ? 'login' : 'app_open';
+
+        // Persistir en web_metrics con el event_type recibido para que la consulta
         // de telemetría agregue mobile_app + web_app + landing en una sola tabla.
         try {
-            await statRepository.logWebMetric(ip, userAgent, 'app_open', source, platform, browser);
+            await statRepository.logWebMetric(ip, userAgent, event, source, platform, browser);
         } catch (e) {
             console.error('[telemetry] logAppOpen DB error:', e.message);
         }
@@ -107,11 +110,15 @@ class StatService {
             landing:    '🌐 Landing',
         }[source] || source;
 
+        // Diferenciar el embed según sea arranque o login
+        const isLogin = event === 'login';
         sendDiscordNotification({
             embeds: [{
-                title: '📱 Aplicación Abierta',
-                description: `Un usuario ha entrado en la app Alzitrans.`,
-                color: 0x3498DB,
+                title: isLogin ? '🔓 Inicio de Sesión' : '📱 Aplicación Abierta',
+                description: isLogin
+                    ? 'Un usuario ha iniciado sesión en Alzitrans.'
+                    : 'Un usuario ha entrado en la app Alzitrans.',
+                color: isLogin ? 0x9b59b6 : 0x3498DB,
                 fields: [
                     { name: 'Usuario',    value: email,         inline: true },
                     { name: 'Origen',     value: sourceLabel,   inline: true },
