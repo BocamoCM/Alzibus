@@ -11,7 +11,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'core/network/api_client.dart';
 import 'core/router/app_router.dart';
 
 import 'screens/home_screen.dart';
@@ -21,6 +20,7 @@ import 'services/bus_alert_service.dart';
 import 'services/trip_history_service.dart';
 import 'services/assistant_service.dart';
 import 'services/notices_service.dart';
+import 'services/telemetry_service.dart';
 import 'constants/app_config.dart';
 import 'theme/app_theme.dart';
 import 'pages/map_page.dart';
@@ -302,9 +302,8 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
       // Pequeño retardo inicial para asegurar que el ApiClient tenga tiempo de cargar el token
       // si el usuario ya estaba logueado.
       Future.delayed(const Duration(seconds: 2), () {
-        ApiClient().post('/metrics/app-open').catchError((e) {
-          debugPrint('Error notificando app-open: $e');
-        });
+        // Telemetría enriquecida (source: web_app | mobile_app, platform: android/ios/web...)
+        TelemetryService.sendAppOpen();
       });
     } catch (_) {}
   }

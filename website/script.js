@@ -16,12 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================
     // telemetry (Visits & Clicks)
     // ========================
+    // Enviamos 'source' explícitamente para que el backend distinga este origen
+    // (la landing) frente a la web app (/app/) o la app móvil.
+    // El 'platform' (android / windows / etc.) lo deduce el backend a partir del User-Agent.
     async function sendTelemetry(eventType) {
         try {
             fetch('/api/metrics/web', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ event_type: eventType })
+                body: JSON.stringify({
+                    event_type: eventType,
+                    source: 'landing'
+                })
             });
         } catch (err) { }
     }
