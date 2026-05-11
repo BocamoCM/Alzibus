@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import 'package:alzitrans/pages/otp_verification_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
@@ -49,16 +48,27 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (!mounted) return;
 
       if (errorMessage == null) {
-        // Notificar al sistema para activar el guardado de contraseña
+        // Notificar al sistema para activar el guardado de contraseña.
         TextInput.finishAutofillContext();
-        
+
         setState(() {
           _isLoading = false;
         });
-        
-        // Redirigir a verificación
+
+        // Nuevo flujo (sin OTP en registro): la verificación se hace en el
+        // primer login. Avisamos del plazo de 7 días y redirigimos al login.
         if (mounted) {
-          VerifyRoute(email: _emailController.text.trim()).pushReplacement(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Cuenta creada. Inicia sesión en los próximos 7 días '
+                'o se eliminará automáticamente.',
+              ),
+              duration: Duration(seconds: 6),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          const LoginRoute().pushReplacement(context);
         }
       } else {
         setState(() {
@@ -140,7 +150,36 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                // Aviso del nuevo flujo: sin OTP en registro, pero la cuenta
+                // se elimina si no se completa el primer login en 7 días.
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Te enviaremos un código al iniciar sesión. '
+                          'Si no inicias sesión en 7 días, la cuenta se '
+                          'eliminará automáticamente.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 if (_message.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
