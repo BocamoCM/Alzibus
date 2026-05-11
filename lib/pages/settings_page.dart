@@ -11,11 +11,13 @@ import '../constants/app_config.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
 import '../widgets/ad_ui_factory.dart';
+import '../widgets/rewarded_offer_card.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/providers/gamification_provider.dart';
 import '../services/gamification_service.dart';
+import '../services/consent_service.dart';
 import 'support_page.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -81,6 +83,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
 
+  String _adConsentTitle(BuildContext context) {
+    final code = Localizations.localeOf(context).languageCode;
+    switch (code) {
+      case 'en': return 'Ad consent (GDPR)';
+      case 'ca': return 'Consentiment d\'anuncis (RGPD)';
+      default:   return 'Consentimiento de anuncios (RGPD)';
+    }
+  }
+
+  String _adConsentSubtitle(BuildContext context) {
+    final code = Localizations.localeOf(context).languageCode;
+    switch (code) {
+      case 'en': return 'Manage or revoke your consent';
+      case 'ca': return 'Gestiona o revoca el teu consentiment';
+      default:   return 'Gestiona o revoca tu consentimiento';
+    }
+  }
+
   Widget _languageTile({
     required String name,
     required Locale locale,
@@ -108,6 +128,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       body: ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
+        const RewardedOfferCard(),
+        const SizedBox(height: 8),
         Text(l.notifications,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
@@ -231,6 +253,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           onTap: () => launchUrl(Uri.parse(AppConfig.privacyPolicyUrl)),
           trailing: const Icon(Icons.open_in_new, size: 20),
         ),
+        if (!kIsWeb && AppConfig.showAds && ConsentService.isPrivacyOptionsRequired)
+          ListTile(
+            leading: const Icon(Icons.shield_outlined, color: AlzitransColors.burgundy),
+            title: Text(_adConsentTitle(context)),
+            subtitle: Text(_adConsentSubtitle(context)),
+            trailing: const Icon(Icons.tune, size: 20),
+            onTap: () async {
+              await ConsentService.showPrivacyOptionsForm();
+            },
+          ),
         const Divider(),
         Text(l.helpAndSupport.toUpperCase(),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),

@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../core/providers/nfc_controller.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/ad_ui_factory.dart';
 import '../services/ad_service.dart';
 import '../constants/app_config.dart';
@@ -199,12 +200,31 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      kIsWeb 
+                      kIsWeb
                         ? 'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.'
                         : 'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                     ),
+                    if (kIsWeb) ...[
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          launchUrl(
+                            Uri.parse('https://play.google.com/store/apps/details?id=com.alzitrans.app'),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        icon: const Icon(Icons.android),
+                        label: const Text('Descargar para Android'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AlzitransColors.burgundy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

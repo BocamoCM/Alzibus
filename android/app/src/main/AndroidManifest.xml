@@ -45,7 +45,27 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5215993257564469~3690891315"/>
-            
+
+        <!-- ============================================================ -->
+        <!-- AdMob Mediation - meta-data por red                           -->
+        <!-- Descomenta y rellena cuando tengas las keys de cada red.      -->
+        <!-- Unity Ads NO requiere meta-data (config vía adapter).         -->
+        <!-- ============================================================ -->
+
+        <!-- AppLovin MAX -->
+        <!--
+        <meta-data
+            android:name="applovin.sdk.key"
+            android:value="REEMPLAZAR_APPLOVIN_SDK_KEY"/>
+        -->
+
+        <!-- Meta Audience Network -->
+        <!--
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="REEMPLAZAR_META_APP_ID"/>
+        -->
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />

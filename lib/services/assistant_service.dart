@@ -51,43 +51,35 @@ class AssistantService {
       
       final busTimesService = BusTimesService();
       var arrivals = await busTimesService.getArrivalTimes(stop.stopId);
-      
-      String premiumMessage = "";
-      
-      // Lógica de filtrado por línea (Preparado para Premium en el futuro)
+
+      // Filtrado por línea si el usuario consultó una línea específica
       if (query != null && query.isNotEmpty) {
-        // Normalizar query (quitar espacios, puntos, pasar a mayúsculas)
         final cleanQuery = query.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
-        
-        // Intentar encontrar la línea en los resultados
-        final filtered = arrivals.where((a) => 
+        final filtered = arrivals.where((a) =>
           a.line.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase() == cleanQuery
         ).toList();
-        
+
         if (filtered.isNotEmpty) {
           arrivals = filtered;
-          // NOTA: Aquí podrías comprobar si es premium para decidir si mostrar esto o no.
-          // De momento, lo permitimos para todos como pidió el usuario.
-          // premiumMessage = "\n(Función disponible gracias a Alzitrans Premium)"; 
         } else {
           return 'No encontré la línea $query en tu parada actual (${stop.stopName}).';
         }
       }
-      
+
       if (arrivals.isEmpty) {
         return 'No hay buses programados para tu parada ${stop.stopName}.';
       }
-      
+
       final StringBuffer response = StringBuffer();
       response.write('En ${stop.stopName}: ');
-      
+
       for (int i = 0; i < arrivals.length && i < 3; i++) {
         final arrival = arrivals[i];
         final timeText = _formatTimeForSpeech(arrival.time);
         response.write('Línea ${arrival.line} hacia ${arrival.destination} $timeText. ');
       }
-      
-      return response.toString() + premiumMessage;
+
+      return response.toString();
     } catch (e) {
       return 'No pude obtener los tiempos de bus. Por favor, abre Alzitrans.';
     }

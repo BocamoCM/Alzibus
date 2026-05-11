@@ -34,7 +34,6 @@ dependencies:
     sdk: flutter
   intl: ^0.20.1
   sentry_flutter: ^8.0.0
-  flutter_stripe: ^10.1.1
   local_auth: ^3.0.1
   flutter_secure_storage: ^10.0.0
   dio: ^5.9.2
@@ -47,6 +46,7 @@ dependencies:
   flutter_compass: ^0.8.0
   vector_math: ^2.1.4
   sensors_plus: ^6.1.1
+  web: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

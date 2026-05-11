@@ -14,7 +14,6 @@ List<RouteBase> get $appRoutes => [
       $resetPasswordRoute,
       $verifyRoute,
       $tripHistoryRoute,
-      $premiumRoute,
       $rankingRoute,
     ];
 
@@ -233,33 +232,6 @@ mixin $TripHistoryRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
         '/trip-history',
-      );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-RouteBase get $premiumRoute => GoRouteData.$route(
-      path: '/premium',
-      factory: $PremiumRoute._fromState,
-    );
-
-mixin $PremiumRoute on GoRouteData {
-  static PremiumRoute _fromState(GoRouterState state) => const PremiumRoute();
-
-  @override
-  String get location => GoRouteData.$location(
-        '/premium',
       );
 
   @override

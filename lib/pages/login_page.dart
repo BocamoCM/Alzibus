@@ -114,9 +114,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // Finalizar contexto de autofill si no hay OTP (éxito directo)
       TextInput.finishAutofillContext();
       
-      // Actualizar flag de publicidad según el estado premium del usuario
-      final isPremium = await authService.isUserPremium();
-      AppConfig.showAds = !isPremium;
+      // Activar publicidad ahora que el usuario está autenticado.
+      AppConfig.showAds = true;
 
       await ref.read(authProvider.notifier).checkLogin();
       // La redirección a home se maneja automáticamente por GoRouter gracias al authProvider.

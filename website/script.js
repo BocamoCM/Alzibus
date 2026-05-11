@@ -99,6 +99,134 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUserCount();
 
     // ========================
+    // Live Bus Arrivals (Datos reales en landing)
+    // ========================
+    const liveTabs = document.querySelectorAll('.live-tab');
+    const livePanel = document.getElementById('live-panel');
+    let currentStopId = 1;
+    let liveRefreshTimer = null;
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        }[c]));
+    }
+
+    function lineColor(line) {
+        const l = line.toUpperCase();
+        if (l.includes('L1')) return '#e63946';
+        if (l.includes('L2')) return '#2a9d8f';
+        if (l.includes('L3')) return '#f4a261';
+        return '#800020';
+    }
+
+    async function loadArrivals(stopId, stopName) {
+        if (!livePanel) return;
+        currentStopId = stopId;
+        livePanel.innerHTML = `
+            <div class="live-loading">
+                <div class="live-spinner"></div>
+                <span>Cargando tiempos para ${escapeHtml(stopName)}…</span>
+            </div>`;
+        try {
+            const res = await fetch(`/api/proxy/bus-times?id=${stopId}`);
+            if (!res.ok) throw new Error('http ' + res.status);
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const rows = doc.querySelectorAll('table tr');
+            const arrivals = [];
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].querySelectorAll('td');
+                if (cells.length >= 3) {
+                    const line = cells[0].textContent.trim();
+                    const dest = cells[1].textContent.trim();
+                    const time = cells[2].textContent.trim();
+                    if (line && dest && time) arrivals.push({ line, dest, time });
+                }
+            }
+
+            if (arrivals.length === 0) {
+                livePanel.innerHTML = `
+                    <div class="live-empty">
+                        <span class="live-empty-icon">😴</span>
+                        <p>No hay buses programados ahora mismo en <strong>${escapeHtml(stopName)}</strong>.</p>
+                        <p class="live-empty-sub">Quizás está fuera del horario de servicio. <a href="https://play.google.com/store/apps/details?id=com.alzitrans.app" target="_blank" rel="noopener noreferrer">Descarga la app</a> para ver los horarios completos.</p>
+                    </div>`;
+                return;
+            }
+
+            const items = arrivals.slice(0, 6).map(a => {
+                const c = lineColor(a.line);
+                const isImmediate = /</.test(a.time) || /llega/i.test(a.time);
+                const timeClass = isImmediate ? 'live-time-imm' : '';
+                return `
+                <li class="live-item">
+                    <span class="live-line" style="background:${c}">${escapeHtml(a.line)}</span>
+                    <div class="live-info">
+                        <strong>${escapeHtml(a.dest)}</strong>
+                        <small>Línea ${escapeHtml(a.line)} → ${escapeHtml(a.dest)}</small>
+                    </div>
+                    <span class="live-time ${timeClass}">${escapeHtml(a.time)}</span>
+                </li>`;
+            }).join('');
+
+            livePanel.innerHTML = `
+                <div class="live-header">
+                    <h3>${escapeHtml(stopName)}</h3>
+                    <span class="live-pulse"><span class="dot"></span> En vivo</span>
+                </div>
+                <ul class="live-list">${items}</ul>
+                <p class="live-update">Actualizado a las ${new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})}</p>`;
+        } catch (err) {
+            console.warn('[Alzitrans] Live arrivals error:', err);
+            livePanel.innerHTML = `
+                <div class="live-empty">
+                    <span class="live-empty-icon">⚠️</span>
+                    <p>No se han podido cargar los tiempos ahora mismo.</p>
+                    <p class="live-empty-sub">Inténtalo de nuevo en unos segundos o <a href="https://play.google.com/store/apps/details?id=com.alzitrans.app" target="_blank" rel="noopener noreferrer">descarga la app</a>.</p>
+                </div>`;
+        }
+    }
+
+    liveTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            liveTabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            const stopId = parseInt(tab.dataset.stop, 10);
+            const stopName = tab.dataset.name;
+            loadArrivals(stopId, stopName);
+        });
+    });
+
+    // Carga inicial cuando el bloque entra en pantalla (LCP-friendly)
+    const liveSection = document.getElementById('tiempos');
+    if (liveSection && liveTabs.length > 0) {
+        const firstTab = liveTabs[0];
+        const liveObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    loadArrivals(parseInt(firstTab.dataset.stop, 10), firstTab.dataset.name);
+                    // Auto-refresh cada 30s mientras la sección esté visible
+                    if (!liveRefreshTimer) {
+                        liveRefreshTimer = setInterval(() => {
+                            const activeTab = document.querySelector('.live-tab.active');
+                            if (activeTab && document.visibilityState === 'visible') {
+                                loadArrivals(parseInt(activeTab.dataset.stop, 10), activeTab.dataset.name);
+                            }
+                        }, 30000);
+                    }
+                    liveObserver.unobserve(liveSection);
+                }
+            });
+        }, { threshold: 0.2 });
+        liveObserver.observe(liveSection);
+    }
+
+    // ========================
     // Navbar background on scroll
     // ========================
     const navbar = document.getElementById('navbar');
