@@ -17,9 +17,12 @@ class AdService {
 
   bool get canShowAds => true; // En web permitimos "mostrar" nuestros propios anuncios
 
+  // Stub targeting contextual
+  void updateContext({String? line, String? screen}) {}
+
   // Stubs para App Open
   void loadAppOpenAd() {}
-  void showAppOpenAdIfAvailable() {}
+  Future<void> showAppOpenAdIfAvailable() async {}
   bool get hasAppOpenAdReady => false;
 
   // Stubs para Nativo
@@ -39,8 +42,8 @@ class AdService {
 
   // Stubs para Intersticial
   void loadInterstitialAd() {}
-  void showInterstitialAd() {}
-  void trackStopQuery() {}
+  Future<void> showInterstitialAd() async {}
+  void trackStopQuery({String? line}) {}
   void showInterstitialOnResume(DateTime? lastPausedTime) {}
 
   // Stubs para Rewarded

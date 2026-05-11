@@ -104,4 +104,21 @@ flutter {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     implementation 'com.google.android.material:material:1.12.0'
+
+    // ============================================================
+    // AdMob Mediation adapters
+    // ------------------------------------------------------------
+    // Descomenta cada bloque cuando tengas la cuenta + IDs creados
+    // en la red correspondiente Y el grupo de mediación en AdMob.
+    // Versiones a 2026-04. Última: developers.google.com/admob/android/mediation/<red>
+    // ============================================================
+
+    // --- AppLovin MAX ---
+    // implementation 'com.google.ads.mediation:applovin:13.0.1.0'
+
+    // --- Meta Audience Network ---
+    // implementation 'com.google.ads.mediation:facebook:6.18.0.0'
+
+    // --- Unity Ads ---
+    // implementation 'com.google.ads.mediation:unity:4.12.3.0'
 }

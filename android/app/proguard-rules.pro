@@ -6,15 +6,23 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# Stripe ProGuard Rules
--dontwarn com.stripe.android.**
--keep class com.stripe.android.** { *; }
-
 # Google Play Core & GMS
 -dontwarn com.google.android.play.core.**
 -dontwarn com.google.android.gms.**
 -dontwarn com.google.firebase.**
 -keep class com.google.android.play.core.** { *; }
+
+# AdMob Mediation adapters (descomentar al activar la red)
+# AppLovin
+#-keep class com.applovin.** { *; }
+#-dontwarn com.applovin.**
+# Meta Audience Network
+#-keep class com.facebook.ads.** { *; }
+#-dontwarn com.facebook.ads.**
+# Unity Ads
+#-keep class com.unity3d.ads.** { *; }
+#-keep class com.unity3d.services.** { *; }
+#-dontwarn com.unity3d.**
 
 # General
 -dontwarn android.util.Log

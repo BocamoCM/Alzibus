@@ -1,13 +1,25 @@
 {
-    "name": "Alzitrans",
+    "name": "Alzitrans - Bus Alzira",
     "short_name": "Alzitrans",
-    "start_url": ".",
+    "start_url": "/app/",
+    "scope": "/app/",
+    "id": "/app/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Tu bus en Alzira en tiempo real. Líneas L1, L2 y L3 de Alzibus.",
+    "background_color": "#0a0a0f",
+    "theme_color": "#4A1D3D",
+    "description": "Tu bus en Alzira en tiempo real. L\u00edneas L1, L2 y L3 con paradas, recorrido y mapa interactivo.",
     "orientation": "portrait-primary",
-    "prefer_related_applications": false,
+    "prefer_related_applications": true,
+    "related_applications": [
+        {
+            "platform": "play",
+            "url": "https://play.google.com/store/apps/details?id=com.alzitrans.app",
+            "id": "com.alzitrans.app"
+        }
+    ],
+    "categories": ["travel", "navigation", "utilities"],
+    "lang": "es",
+    "dir": "ltr",
     "icons": [
         {
             "src": "icons/Icon-192.png",

@@ -9,7 +9,6 @@ import '../theme/app_theme.dart';
 import '../screens/trip_history_screen.dart';
 import '../screens/feedback_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../pages/premium_page.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -403,7 +402,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 12),
             const Text('• Tu historial de viajes y estadísticas.'),
             const Text('• Tus paradas favoritas.'),
-            const Text('• Tu suscripción Premium.'),
             const SizedBox(height: 12),
             Text('¿Estás totalmente seguro de que quieres eliminar la cuenta de ${_profile?['email']}?', style: const TextStyle(fontWeight: FontWeight.w500)),
           ],

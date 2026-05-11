@@ -41,14 +41,13 @@ import 'core/providers/gamification_provider.dart';
 import 'services/tts_service.dart';
 import 'core/providers/tts_provider.dart';
 import 'services/ad_service.dart';
+import 'services/consent_service.dart';
 import 'providers/high_visibility_provider.dart';
-import 'services/premium_service.dart';
 import 'widgets/ad_banner_widget.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/bus_simulation_provider.dart';
 import 'core/providers/ad_provider.dart';
-import 'core/providers/premium_provider.dart';
 import 'widgets/location_permission_dialog.dart';
 import 'dart:async';
 
@@ -99,13 +98,12 @@ void main() async {
       
       // Determinar si mostrar anuncios (evitar en onboarding/registro)
       final token = prefs.getString('jwt_token');
-      final isPremium = prefs.getBool('is_premium') ?? false;
-      
-      // REGLA: Solo mostrar anuncios si el usuario está logueado Y no es premium.
+
+      // REGLA: Solo mostrar anuncios si el usuario está logueado.
       // Esto elimina la fricción durante el registro para nuevos usuarios.
-      AppConfig.showAds = (token != null && !isPremium);
-      
-      debugPrint('Main: Publicidad habilitada: ${AppConfig.showAds} (Token: ${token != null}, Premium: $isPremium)');
+      AppConfig.showAds = token != null;
+
+      debugPrint('Main: Publicidad habilitada: ${AppConfig.showAds} (Token: ${token != null})');
 
       // Inicializar rastreo de instalaciones (asíncrono, no bloqueante)
       InstallTrackingService.checkAndSendReferrer(prefs).catchError((e) {
@@ -125,21 +123,21 @@ void main() async {
 
       // Inicializar servicios a través del container para cumplir con DI
       debugPrint('Main: Inicializando servicios a través de Providers...');
-      
-      // Premium
-      if (!kIsWeb) {
-        try {
-          await container.read(premiumServiceProvider).init();
-        } catch (e) {
-          debugPrint('Main: Error inicializando PremiumService: $e');
-        }
-      }
 
-      // AdMob
-      if (!kIsWeb) {
+      // AdMob — primero consentimiento UMP (GDPR), luego SDK
+      if (!kIsWeb && AppConfig.showAds) {
+        try {
+          await ConsentService.gatherConsent();
+        } catch (e) {
+          debugPrint('Main: error en UMP consent: $e');
+        }
+        final canRequestAds = await ConsentService.canRequestAds();
+        debugPrint('Main: canRequestAds=$canRequestAds');
         final adService = container.read(adServiceProvider);
         await adService.initialize();
-        adService.preloadNativeAds();
+        if (canRequestAds) {
+          adService.preloadNativeAds();
+        }
       }
 
       runApp(

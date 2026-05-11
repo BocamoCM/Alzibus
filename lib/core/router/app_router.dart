@@ -11,7 +11,6 @@ import '../../pages/register_page.dart';
 import '../../pages/forgot_password_page.dart';
 import '../../pages/reset_password_page.dart';
 import '../../pages/otp_verification_page.dart';
-import '../../pages/premium_page.dart';
 import '../../screens/trip_history_screen.dart';
 import '../../screens/ranking_screen.dart';
 
@@ -73,13 +72,6 @@ class TripHistoryRoute extends GoRouteData with $TripHistoryRoute {
   const TripHistoryRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) => const TripHistoryScreen();
-}
-
-@TypedGoRoute<PremiumRoute>(path: '/premium')
-class PremiumRoute extends GoRouteData with $PremiumRoute {
-  const PremiumRoute();
-  @override
-  Widget build(BuildContext context, GoRouterState state) => const PremiumPage();
 }
 
 @TypedGoRoute<RankingRoute>(path: '/ranking')

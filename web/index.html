@@ -1,72 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
   -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Consulta los horarios y tiempos del bus en Alzira con Alzitrans. Tiempos reales, avisos y lectura de tarjeta NFC para las líneas L1, L2 y L3 de Alzira.">
-  <meta name="keywords" content="bus alzira, horarios bus alzira, transporte alzira, alzitrans, l1 alzira, l2 alzira, l3 alzira">
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Consulta los tiempos del bus en Alzira en tiempo real desde el navegador. Líneas L1, L2 y L3 con paradas, mapa y favoritos. App web gratuita.">
+  <meta name="keywords" content="bus alzira, horarios bus alzira, transporte alzira, alzitrans, alzibus, l1 alzira, l2 alzira, l3 alzira, tiempos bus alzira en directo">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#4A1D3D">
+  <meta name="geo.region" content="ES-VC">
+  <meta name="geo.placename" content="Alzira, Valencia, España">
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://alzitrans.duckdns.org/app/">
+
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://alzitrans.duckdns.org/app/">
-  <meta property="og:title" content="Alzibus/Alzitrans - Tu Bus en Alzira">
-  <meta property="og:description" content="Tiempos reales, paradas y líneas (L1, L2, L3) de Alzira en una sola app.">
+  <meta property="og:title" content="Alzitrans - Bus Alzira en directo">
+  <meta property="og:description" content="Consulta los tiempos del bus en Alzira en tiempo real (L1, L2, L3). Versión web gratuita.">
   <meta property="og:image" content="https://alzitrans.duckdns.org/assets/logo.png">
   <meta property="og:site_name" content="Alzitrans">
+  <meta property="og:locale" content="es_ES">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Alzitrans - Bus Alzira en directo">
+  <meta name="twitter:description" content="Tiempos reales del bus de Alzira en tu navegador. Líneas L1, L2 y L3.">
+  <meta name="twitter:image" content="https://alzitrans.duckdns.org/assets/logo.png">
 
   <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Alzitrans",
+        "@type": "WebApplication",
+        "name": "Alzitrans Web",
         "alternateName": ["Alzibus", "Bus Alzira"],
-        "url": "https://alzitrans.duckdns.org/"
+        "url": "https://alzitrans.duckdns.org/app/",
+        "description": "Aplicación web para consultar los tiempos del bus de Alzira en tiempo real.",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Any (browser)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
       }
   </script>
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="alzitrans">
+  <meta name="apple-mobile-web-app-title" content="Alzitrans">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png" />
 
-  <title>Bus Alzira - Tiempos en Tiempo Real | Alzitrans</title>
+  <title>Bus Alzira en directo (L1, L2, L3) | Alzitrans Web</title>
   <link rel="manifest" href="manifest.json">
 
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8010840037570750"
     crossorigin="anonymous"></script>
+
+  <style>
+    html, body { background:#0a0a0f; margin:0; padding:0; }
+    #app-loader {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px; z-index: 9999; transition: opacity 0.4s ease;
+      background: linear-gradient(135deg, #4A1D3D 0%, #800020 100%);
+      color: #fff; font-family: system-ui, -apple-system, sans-serif;
+    }
+    #app-loader.hide { opacity: 0; pointer-events: none; }
+    #app-loader .ring {
+      width: 56px; height: 56px; border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: #fff; border-radius: 50%; animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #app-loader p { font-size: 14px; opacity: 0.85; letter-spacing: 0.05em; }
+  </style>
 </head>
 
 <body>
-  <!-- SEO COMPLIANCE PARA GOOGLE ADSENSE -->
+  <!-- Loader visual mientras Flutter arranca -->
+  <div id="app-loader">
+    <div class="ring"></div>
+    <p>Cargando Alzitrans…</p>
+  </div>
+
+  <!-- SEO crawler-visible content (oculto visualmente, pero indexable) -->
   <div aria-hidden="true"
     style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">
-    <h1>Alzitrans - Horarios de Autobús en Alzira</h1>
-    <p>Consulta los horarios en tiempo real, trayectos, retrasos y líneas L1, L2, L3 para los autobuses urbanos de
-      Alzira.
-      Dispones de estimaciones por proximidad, alertas inteligentes y lectura de tarjetas abono
-      con NFC.</p>
+    <h1>Alzitrans Web - Tiempos del bus de Alzira en directo</h1>
+    <p>Consulta los horarios y tiempos del bus urbano de Alzira en tiempo real desde el navegador.
+      Líneas L1, L2 y L3 con todas las paradas, recorridos y mapa interactivo.
+      Versión web gratuita complementaria a la app Android Alzitrans.</p>
+    <h2>Líneas de bus en Alzira</h2>
+    <ul>
+      <li>Línea L1 - Estació RENFE - Hospital de Alzira</li>
+      <li>Línea L2 - Estació d'Autobusos - Hospital</li>
+      <li>Línea L3 - Estació RENFE - Hospital (vía centro)</li>
+    </ul>
+    <p>Para experiencia completa con notificaciones, NFC, widget y modo offline,
+      <a href="https://play.google.com/store/apps/details?id=com.alzitrans.app">descarga la app Android</a>.</p>
   </div>
+
+  <script>
+    window.addEventListener('flutter-first-frame', () => {
+      const el = document.getElementById('app-loader');
+      if (el) { el.classList.add('hide'); setTimeout(() => el.remove(), 600); }
+    });
+    setTimeout(() => {
+      const el = document.getElementById('app-loader');
+      if (el) { el.classList.add('hide'); setTimeout(() => el.remove(), 600); }
+    }, 8000);
+  </script>
 
   <script src="flutter_bootstrap.js" async></script>
 </body>

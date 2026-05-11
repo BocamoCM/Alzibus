@@ -2,14 +2,48 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_config.dart';
 
 /// Servicio centralizado para gestionar la publicidad con AdMob.
 /// Respeta el flag global [AppConfig.showAds].
 class AdService {
   AdService();
-  
+
   bool _isInitialized = false;
+
+  // --- Targeting contextual ---
+  String? _currentLine;
+  String? _currentScreen;
+
+  /// Permite a las pantallas notificar al servicio el contexto actual
+  /// para enviar señales relevantes a AdMob (mejora eCPM 10-20%).
+  void updateContext({String? line, String? screen}) {
+    if (line != null) _currentLine = line;
+    if (screen != null) _currentScreen = screen;
+  }
+
+  /// Construye un AdRequest con keywords y URL de contexto.
+  AdRequest _buildAdRequest({Map<String, String>? extras}) {
+    final keywords = <String>[
+      'transport', 'public transport', 'bus', 'urban mobility',
+      'alzira', 'valencia', 'spain',
+      if (_currentLine != null) 'line $_currentLine',
+      if (_currentLine != null) 'bus $_currentLine',
+      if (_currentScreen != null) _currentScreen!,
+    ];
+    final hour = DateTime.now().hour;
+    if (hour >= 7 && hour <= 10) keywords.add('morning commute');
+    if (hour >= 17 && hour <= 20) keywords.add('evening commute');
+
+    return AdRequest(
+      keywords: keywords,
+      contentUrl: _currentLine != null
+          ? 'https://alzitrans.duckdns.org/line/$_currentLine'
+          : 'https://alzitrans.duckdns.org',
+      extras: extras,
+    );
+  }
 
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initializationFuture => _initCompleter.future;
@@ -64,7 +98,7 @@ class AdService {
     _isAppOpenAdLoading = true;
     AppOpenAd.load(
       adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/9257395921' : AppConfig.appOpenAdId,
-      request: const AdRequest(),
+      request: _buildAdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) {
           _appOpenAd = ad;
@@ -85,9 +119,14 @@ class AdService {
   static DateTime? lastAdDismissedTime; // Global para prevenir bucles de resume
 
   /// Muestra el anuncio de apertura si está disponible y no ha expirado (< 4 horas según política Google).
-  void showAppOpenAdIfAvailable() {
+  Future<void> showAppOpenAdIfAvailable() async {
     if (!canShowAds || _appOpenAd == null || _isShowingAppOpenAd) {
       if (_appOpenAd == null) loadAppOpenAd();
+      return;
+    }
+
+    if (!await _canShowAppOpenToday()) {
+      debugPrint('[AdService] Cap diario de AppOpen alcanzado. Saltando.');
       return;
     }
 
@@ -126,6 +165,7 @@ class AdService {
       onAdShowedFullScreenContent: (ad) {
         _isShowingAppOpenAd = true;
         _lastAppOpenShowTime = DateTime.now();
+        _incrementDailyCount('ads_appopen');
       },
       onAdDismissedFullScreenContent: (ad) {
         _isShowingAppOpenAd = false;
@@ -179,11 +219,11 @@ class AdService {
     String? adUnitId,
   }) {
     return BannerAd(
-      adUnitId: kDebugMode 
-          ? 'ca-app-pub-3940256099942544/6300978111' 
+      adUnitId: kDebugMode
+          ? 'ca-app-pub-3940256099942544/6300978111'
           : (adUnitId ?? AppConfig.bannerAdId),
       size: AdSize.banner,
-      request: AdRequest(
+      request: _buildAdRequest(
         extras: isCollapsible ? {'collapsible': 'bottom'} : null,
       ),
       listener: BannerAdListener(
@@ -210,11 +250,11 @@ class AdService {
     if (adSize == null) return null;
 
     return BannerAd(
-      adUnitId: kDebugMode 
-          ? 'ca-app-pub-3940256099942544/6300978111' 
+      adUnitId: kDebugMode
+          ? 'ca-app-pub-3940256099942544/6300978111'
           : (adUnitId ?? AppConfig.bannerAdId),
       size: adSize,
-      request: AdRequest(
+      request: _buildAdRequest(
         extras: isCollapsible ? {'collapsible': 'bottom'} : null,
       ),
       listener: BannerAdListener(
@@ -236,8 +276,38 @@ class AdService {
   // Contador global para intersticiales inteligentes
   int _stopQueryCount = 0;
   DateTime? _lastInterstitialShowTime;
-  static const int _interstitialCooldownMinutes = 3;
-  static const int _stopQueriesBeforeAd = 3;
+  static const int _interstitialCooldownMinutes = 1;
+  static const int _stopQueriesBeforeAd = 2;
+
+  // --- Capping diario (solo techo de seguridad anti-policy) ---
+  // Base de usuarios pequeña y recurrente: priorizamos impresiones por usuario.
+  // Mantenemos un techo alto para no violar políticas de AdMob, pero sin estrangular ingresos.
+  static const int _maxInterstitialsPerDay = 30;
+  static const int _maxAppOpensPerDay = 20;
+
+  String _todayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<int> _getDailyCount(String prefix) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('${prefix}_${_todayKey()}') ?? 0;
+  }
+
+  Future<void> _incrementDailyCount(String prefix) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${prefix}_${_todayKey()}';
+    await prefs.setInt(key, (prefs.getInt(key) ?? 0) + 1);
+  }
+
+  Future<bool> _canShowInterstitialToday() async {
+    return (await _getDailyCount('ads_inter')) < _maxInterstitialsPerDay;
+  }
+
+  Future<bool> _canShowAppOpenToday() async {
+    return (await _getDailyCount('ads_appopen')) < _maxAppOpensPerDay;
+  }
 
   void loadInterstitialAd() {
     if (!canShowAds || _isInterstitialLoading) return;
@@ -245,7 +315,7 @@ class AdService {
     _isInterstitialLoading = true;
     InterstitialAd.load(
       adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/1033173712' : AppConfig.interstitialAdId,
-      request: const AdRequest(),
+      request: _buildAdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
@@ -260,8 +330,8 @@ class AdService {
     );
   }
 
-  /// Muestra intersticial si está disponible y respeta el cooldown.
-  void showInterstitialAd() {
+  /// Muestra intersticial si está disponible y respeta cooldown + capping diario.
+  Future<void> showInterstitialAd() async {
     if (_interstitialAd != null && _interstitialLoadTime != null &&
         DateTime.now().difference(_interstitialLoadTime!) > const Duration(hours: 1)) {
       _interstitialAd!.dispose();
@@ -277,6 +347,11 @@ class AdService {
     if (_lastInterstitialShowTime != null &&
         DateTime.now().difference(_lastInterstitialShowTime!).inMinutes < _interstitialCooldownMinutes) {
       debugPrint('[AdService] Interstitial cooldown activo. Saltando.');
+      return;
+    }
+
+    if (!await _canShowInterstitialToday()) {
+      debugPrint('[AdService] Cap diario de intersticiales alcanzado. Saltando.');
       return;
     }
 
@@ -297,11 +372,14 @@ class AdService {
     );
 
     _lastInterstitialShowTime = DateTime.now();
+    await _incrementDailyCount('ads_inter');
     _interstitialAd!.show();
   }
 
   /// Registrar consulta de parada y mostrar intersticial cada N consultas.
-  void trackStopQuery() {
+  /// [line] permite enviar señal contextual a AdMob para mejorar eCPM.
+  void trackStopQuery({String? line}) {
+    if (line != null) updateContext(line: line);
     _stopQueryCount++;
     if (_stopQueryCount >= _stopQueriesBeforeAd) {
       _stopQueryCount = 0;
@@ -343,7 +421,7 @@ class AdService {
     _isRewardedAdLoading = true;
     RewardedAd.load(
       adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/5224354917' : AppConfig.rewardedAdId,
-      request: const AdRequest(),
+      request: _buildAdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           _rewardedAd = ad;
@@ -402,7 +480,7 @@ class AdService {
   }) {
     return NativeAd(
       adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/2247696110' : AppConfig.nativeAdId,
-      request: const AdRequest(),
+      request: _buildAdRequest(),
       listener: NativeAdListener(
         onAdLoaded: onAdLoaded,
         onAdFailedToLoad: (ad, error) {

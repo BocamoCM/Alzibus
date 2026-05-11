@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
 import '../widgets/ad_ui_factory.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,6 +83,12 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
       _loadTrainTimes();
     }
     if (!kIsWeb) {
+      // Señal contextual a AdMob: pantalla + línea principal de la parada
+      final mainLine = widget.stop.lines.isNotEmpty ? widget.stop.lines.first : null;
+      ref.read(adServiceProvider).updateContext(
+        line: mainLine,
+        screen: 'stop_info',
+      );
       _initNativeAd();
     }
     _setupAttendeesListener();
@@ -398,6 +405,11 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+          // Banner superior (above-the-fold) — visible sin scroll
+          if (AppConfig.showAds && !kIsWeb) ...[
+            const Center(child: AdBannerWidget()),
+            const SizedBox(height: 12),
+          ],
           // Mapa visual / Street View de la parada
           Stack(
             children: [
