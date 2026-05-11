@@ -177,6 +177,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Calcula un techo "bonito" para el eje Y del grafico de barras: toma
+  // el valor maximo real de la serie, le da un 15% de margen y redondea
+  // al siguiente multiplo de 100 (o 10/1000 segun magnitud). Asi las
+  // barras nunca se salen del area del grafico aunque haya picos altos.
+  double _computeUsageMaxY() {
+    if (_usageData.isEmpty) return 100;
+    final maxVal = _usageData
+        .map((e) => (e['queries'] as num?)?.toInt() ?? 0)
+        .fold<int>(0, (a, b) => a > b ? a : b);
+    if (maxVal <= 0) return 100;
+    final padded = maxVal * 1.15;
+    // Elige un "step" en funcion de la magnitud (10, 100 o 1000).
+    final magnitude = padded < 100
+        ? 10.0
+        : padded < 1000
+            ? 100.0
+            : 1000.0;
+    return (padded / magnitude).ceil() * magnitude;
+  }
+
   Widget _buildUsageChart(ThemeData theme) {
     return Card(
       child: Padding(
@@ -188,10 +208,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
             SizedBox(
               height: 250,
-              child: BarChart(
+              // ClipRect garantiza que las barras nunca pinten fuera del
+              // area del grafico (defensa visual adicional al maxY dinamico).
+              child: ClipRect(
+                child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: 700,
+                  maxY: _computeUsageMaxY(),
                   barTouchData: BarTouchData(
                     enabled: true,
                     touchTooltipData: BarTouchTooltipData(
@@ -234,7 +257,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval: 200,
+                    horizontalInterval: _computeUsageMaxY() / 5,
                     getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey[300]!, strokeWidth: 1),
                   ),
                   borderData: FlBorderData(show: false),
@@ -252,6 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   }).toList(),
                 ),
+              ),
               ),
             ),
           ],

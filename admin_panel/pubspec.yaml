@@ -39,6 +39,8 @@ dependencies:
   http: ^1.6.0
   shared_preferences: ^2.5.3
   intl: ^0.20.2
+  # Selector de archivos (imágenes) para los adjuntos del chat de soporte.
+  file_picker: ^8.1.4
 
 dev_dependencies:
   flutter_test:

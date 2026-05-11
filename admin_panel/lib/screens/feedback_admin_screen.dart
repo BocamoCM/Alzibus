@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
@@ -10,15 +12,49 @@ class FeedbackAdminScreen extends StatefulWidget {
   State<FeedbackAdminScreen> createState() => _FeedbackAdminScreenState();
 }
 
+// Códigos de estado canónicos del backend (inglés) y sus etiquetas en español
+// para mostrarlas en la UI. Antes el panel enviaba directamente la etiqueta
+// en español al backend, que la rechazaba con 400.
+const String _kStatusAll = 'all';
+const Map<String, String> _statusLabels = {
+  _kStatusAll:   'Todos',
+  'open':        'Abierto',
+  'in_progress': 'En progreso',
+  'resolved':    'Resuelto',
+  'dismissed':   'Desestimado',
+};
+// Aliases para tickets antiguos que en BD todavía tengan etiquetas en español.
+// La migración del backend los normaliza, pero por si acaso el panel los
+// recibe antes del primer arranque post-migración.
+String _normalizeStatusCode(String? raw) {
+  switch (raw) {
+    case 'Abierto':      return 'open';
+    case 'En progreso':  return 'in_progress';
+    case 'Resuelto':     return 'resolved';
+    case 'Desestimado':
+    case 'Cerrado':
+    case 'closed':       return 'dismissed';
+    case 'open':
+    case 'in_progress':
+    case 'resolved':
+    case 'dismissed':    return raw!;
+    default:             return 'open';
+  }
+}
+String _labelFor(String code) => _statusLabels[code] ?? code;
+
 class _FeedbackAdminScreenState extends State<FeedbackAdminScreen> {
   final ApiService _api = ApiService();
   List<Map<String, dynamic>> _tickets = [];
   List<Map<String, dynamic>> _filteredTickets = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  String _statusFilter = 'Todos';
+  String _statusFilter = _kStatusAll;
 
-  final List<String> _statuses = ['Todos', 'Abierto', 'En progreso', 'Resuelto', 'Desestimado'];
+  // Códigos válidos del filtro (incluye 'all' como "Todos").
+  final List<String> _statusCodes = const [
+    _kStatusAll, 'open', 'in_progress', 'resolved', 'dismissed',
+  ];
 
   @override
   void initState() {
@@ -45,7 +81,8 @@ class _FeedbackAdminScreenState extends State<FeedbackAdminScreen> {
     _filteredTickets = _tickets.where((ticket) {
       final matchesSearch = ticket['user_email'].toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
                             ticket['title'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesStatus = _statusFilter == 'Todos' || ticket['status'] == _statusFilter;
+      final ticketStatus = _normalizeStatusCode(ticket['status'] as String?);
+      final matchesStatus = _statusFilter == _kStatusAll || ticketStatus == _statusFilter;
       return matchesSearch && matchesStatus;
     }).toList();
   }
@@ -99,7 +136,7 @@ class _FeedbackAdminScreenState extends State<FeedbackAdminScreen> {
                     labelText: 'Estado',
                     border: OutlineInputBorder(),
                   ),
-                  items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items: _statusCodes.map((code) => DropdownMenuItem(value: code, child: Text(_labelFor(code)))).toList(),
                   onChanged: (val) {
                     setState(() {
                       _statusFilter = val!;
@@ -121,10 +158,35 @@ class _FeedbackAdminScreenState extends State<FeedbackAdminScreen> {
                       separatorBuilder: (context, index) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final ticket = _filteredTickets[index];
+                        final statusCode = _normalizeStatusCode(ticket['status'] as String?);
+                        final unread = (ticket['unread_user_count'] as num?)?.toInt() ?? 0;
                         return ListTile(
-                          leading: _buildStatusIcon(ticket['status']),
-                          title: Text(ticket['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('${ticket['user_email']} - ${ticket['tag']}'),
+                          leading: _buildStatusIcon(statusCode),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(ticket['title'],
+                                    style: TextStyle(
+                                      fontWeight: unread > 0 ? FontWeight.w900 : FontWeight.bold,
+                                    )),
+                              ),
+                              if (unread > 0) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    unread > 9 ? '9+ nuevos' : '$unread nuevo${unread > 1 ? 's' : ''}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          subtitle: Text('${ticket['user_email']} · ${ticket['tag']} · ${_labelFor(statusCode)}'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _openTicketDialog(ticket),
                         );
@@ -137,23 +199,23 @@ class _FeedbackAdminScreenState extends State<FeedbackAdminScreen> {
     );
   }
 
-  Widget _buildStatusIcon(String status) {
+  Widget _buildStatusIcon(String statusCode) {
     IconData icon;
     Color color;
-    switch (status) {
-      case 'Abierto':
+    switch (statusCode) {
+      case 'open':
         icon = Icons.mark_email_unread;
         color = Colors.blue;
         break;
-      case 'En progreso':
+      case 'in_progress':
         icon = Icons.autorenew;
         color = Colors.orange;
         break;
-      case 'Resuelto':
+      case 'resolved':
         icon = Icons.check_circle;
         color = Colors.green;
         break;
-      case 'Desestimado':
+      case 'dismissed':
         icon = Icons.cancel;
         color = Colors.red;
         break;
@@ -193,12 +255,20 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
   bool _isLoading = true;
   Timer? _pollingTimer;
   late String _currentStatus;
+  // Archivos seleccionados pendientes de subir con la próxima respuesta.
+  final List<({String filename, Uint8List bytes})> _pendingAttachments = [];
+  bool _isSending = false;
 
   @override
   void initState() {
     super.initState();
-    _currentStatus = widget.ticket['status'] as String;
+    _currentStatus = _normalizeStatusCode(widget.ticket['status'] as String?);
     _loadMessages();
+    // Marcar como leídos los mensajes del usuario al abrir el chat. El
+    // backend ya lo hace al pedir /replies pero llamamos también al endpoint
+    // explícito para refrescar el badge de la lista cuanto antes.
+    _api.markFeedbackTicketRead(widget.ticket['id'] as int)
+        .then((_) => widget.onStatusChanged());
     _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) => _loadMessages());
   }
 
@@ -238,33 +308,173 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
     }
   }
 
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp', 'pdf'],
+      withData: true,
+      allowMultiple: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    setState(() {
+      for (final f in result.files) {
+        if (_pendingAttachments.length >= 3) break;
+        if (f.bytes != null) {
+          _pendingAttachments.add((filename: f.name, bytes: f.bytes!));
+        }
+      }
+    });
+  }
+
   Future<void> _sendMessage() async {
     final text = _msgController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _pendingAttachments.isEmpty) return;
+    if (_isSending) return;
 
-    final success = await _api.replyToFeedbackTicket(widget.ticket['id'], text);
+    setState(() => _isSending = true);
+    final toSend = List<({String filename, List<int> bytes})>.from(
+      _pendingAttachments.map((a) => (filename: a.filename, bytes: a.bytes.toList())),
+    );
+
+    final success = await _api.replyToFeedbackTicket(
+      widget.ticket['id'] as int,
+      text,
+      attachments: toSend,
+    );
+
+    if (!mounted) return;
     if (success) {
       _msgController.clear();
+      _pendingAttachments.clear();
       _loadMessages();
-      // Si estaba resuelto, el backend lo pasa a En progreso. Lo refrejamos en UI.
-      if (_currentStatus == 'Resuelto' || _currentStatus == 'Cerrado') {
-        setState(() => _currentStatus = 'En progreso');
+      // Si estaba resuelto/desestimado, el backend lo pasa a in_progress
+      // automáticamente al responder. Reflejamos el cambio en la UI.
+      if (_currentStatus == 'resolved' || _currentStatus == 'dismissed') {
+        setState(() => _currentStatus = 'in_progress');
         widget.onStatusChanged();
       }
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error enviando respuesta')));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error enviando respuesta')),
+      );
     }
+    setState(() => _isSending = false);
   }
 
-  Future<void> _updateStatus(String newStatus) async {
-    final success = await _api.updateFeedbackTicketStatus(widget.ticket['id'], newStatus);
+  Widget _buildMessageBubble(Map<String, dynamic> msg) {
+    final isAdmin = msg['sender_type'] == 'admin';
+    final createdAt = DateTime.tryParse(msg['created_at']?.toString() ?? '')?.toLocal();
+    final readAt = msg['read_at'] == null ? null : DateTime.tryParse(msg['read_at'].toString());
+    final attachments = (msg['attachments'] as List?)?.cast<dynamic>() ?? const [];
+    final messageText = msg['message']?.toString() ?? '';
+
+    return Align(
+      alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        constraints: const BoxConstraints(maxWidth: 400),
+        decoration: BoxDecoration(
+          color: isAdmin ? Colors.blue[100] : Colors.grey[300],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(isAdmin ? 'Administrador' : 'Usuario',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            if (messageText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(messageText),
+              ),
+            if (attachments.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: attachments
+                      .whereType<Map>()
+                      .map((a) => _buildAttachmentPreview(Map<String, dynamic>.from(a)))
+                      .toList(),
+                ),
+              ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (createdAt != null)
+                  Text(
+                    DateFormat('HH:mm').format(createdAt),
+                    style: const TextStyle(fontSize: 10, color: Colors.black54),
+                  ),
+                // Doble check WhatsApp para mis mensajes (admin → usuario).
+                if (isAdmin)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Icon(
+                      readAt != null ? Icons.done_all : Icons.done,
+                      size: 14,
+                      color: readAt != null ? Colors.blue : Colors.black45,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachmentPreview(Map<String, dynamic> a) {
+    final id = (a['id'] as num?)?.toInt();
+    final mime = a['mime_type']?.toString() ?? '';
+    final name = a['original_name']?.toString() ?? 'archivo';
+    if (id == null) return const SizedBox.shrink();
+
+    if (mime.startsWith('image/')) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 260, maxHeight: 260),
+            child: _AdminAuthImage(attachmentId: id),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+            const SizedBox(width: 6),
+            Flexible(child: Text(name, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateStatus(String newStatusCode) async {
+    // Enviamos siempre el código en inglés al backend (lo que ahora espera).
+    final success = await _api.updateFeedbackTicketStatus(widget.ticket['id'], newStatusCode);
     if (success) {
-      setState(() => _currentStatus = newStatus);
+      setState(() => _currentStatus = newStatusCode);
       widget.onStatusChanged();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Estado actualizado a $newStatus')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Estado actualizado a ${_labelFor(newStatusCode)}')),
+        );
       }
     }
   }
@@ -293,7 +503,9 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
                 ),
                 DropdownButton<String>(
                   value: _currentStatus,
-                  items: ['Abierto', 'En progreso', 'Resuelto', 'Desestimado'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items: const ['open', 'in_progress', 'resolved', 'dismissed']
+                      .map((code) => DropdownMenuItem(value: code, child: Text(_labelFor(code))))
+                      .toList(),
                   onChanged: (val) {
                     if (val != null && val != _currentStatus) {
                       _updateStatus(val);
@@ -317,34 +529,31 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
                   : ListView.builder(
                       controller: _scrollController,
                       itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final msg = _messages[index];
-                        final isAdmin = msg['sender_type'] == 'admin';
-                        return Align(
-                          alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            constraints: const BoxConstraints(maxWidth: 400),
-                            decoration: BoxDecoration(
-                              color: isAdmin ? Colors.blue[100] : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(isAdmin ? 'Administrador' : 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                Text(msg['message']),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                      itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
                     ),
             ),
-            const SizedBox(height: 16),
+            if (_pendingAttachments.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Wrap(
+                  spacing: 8,
+                  children: List.generate(_pendingAttachments.length, (i) {
+                    return Chip(
+                      avatar: const Icon(Icons.attach_file, size: 18),
+                      label: Text(_pendingAttachments[i].filename),
+                      onDeleted: () => setState(() => _pendingAttachments.removeAt(i)),
+                    );
+                  }),
+                ),
+              ),
+            const SizedBox(height: 8),
             Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file),
+                  tooltip: 'Adjuntar (imágenes o PDF)',
+                  onPressed: _pendingAttachments.length >= 3 ? null : _pickAttachment,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _msgController,
@@ -357,8 +566,10 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
                 ),
                 const SizedBox(width: 16),
                 IconButton(
-                  icon: const Icon(Icons.send, color: Colors.blue),
-                  onPressed: _sendMessage,
+                  icon: _isSending
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.send, color: Colors.blue),
+                  onPressed: _isSending ? null : _sendMessage,
                 ),
               ],
             ),
@@ -366,5 +577,57 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
         ),
       ),
     );
+  }
+}
+
+/// Carga una imagen de adjunto con la sesión admin (X-API-Key + Bearer).
+/// Cachea los bytes en memoria mientras viva el State para no refetchear.
+class _AdminAuthImage extends StatefulWidget {
+  final int attachmentId;
+  const _AdminAuthImage({required this.attachmentId});
+
+  @override
+  State<_AdminAuthImage> createState() => _AdminAuthImageState();
+}
+
+class _AdminAuthImageState extends State<_AdminAuthImage> {
+  Uint8List? _bytes;
+  bool _loading = true;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final bytes = await ApiService().downloadFeedbackAttachment(widget.attachmentId);
+    if (!mounted) return;
+    setState(() {
+      _bytes = bytes;
+      _loading = false;
+      _error = bytes == null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        width: 80,
+        height: 80,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    if (_error || _bytes == null) {
+      return Container(
+        width: 80,
+        height: 80,
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      );
+    }
+    return Image.memory(_bytes!, fit: BoxFit.cover);
   }
 }

@@ -268,6 +268,36 @@ async function initDatabase() {
 
             -- Migración para Feedback Tickets (Añadir columna para refrescar estado)
             ALTER TABLE feedback_tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+
+            -- Normalización de estados de tickets a códigos en inglés.
+            -- Antes había mezcla: el DEFAULT de init.sql era 'Abierto' (español)
+            -- y el código escribía 'in_progress' (inglés). Eso provocaba un 400
+            -- al cambiar el estado desde el admin panel (que enviaba 'Abierto').
+            UPDATE feedback_tickets SET status = 'open'        WHERE status = 'Abierto';
+            UPDATE feedback_tickets SET status = 'in_progress' WHERE status = 'En progreso';
+            UPDATE feedback_tickets SET status = 'resolved'    WHERE status = 'Resuelto';
+            UPDATE feedback_tickets SET status = 'dismissed'   WHERE status IN ('Desestimado', 'Cerrado', 'closed');
+
+            -- Read receipts: timestamp de cuando la otra parte leyó el mensaje.
+            -- NULL = no leído todavía. Lo rellena el endpoint /read cuando el
+            -- destinatario (admin si sender_type='user', usuario si 'admin')
+            -- abre el ticket.
+            ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+
+            -- Adjuntos en mensajes de soporte. Metadatos solo; los archivos
+            -- en disco bajo UPLOADS_DIR/feedback/<ticket_id>/<stored_name>.
+            CREATE TABLE IF NOT EXISTS feedback_attachments (
+                id SERIAL PRIMARY KEY,
+                reply_id INTEGER NOT NULL REFERENCES feedback_replies(id) ON DELETE CASCADE,
+                ticket_id INTEGER NOT NULL REFERENCES feedback_tickets(id) ON DELETE CASCADE,
+                original_name VARCHAR(255) NOT NULL,
+                stored_name VARCHAR(255) NOT NULL,
+                mime_type VARCHAR(100) NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                uploaded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_feedback_attachments_reply ON feedback_attachments(reply_id);
+            CREATE INDEX IF NOT EXISTS idx_feedback_attachments_ticket ON feedback_attachments(ticket_id);
         `);
         console.log('✅ Base de datos verificada (web_metrics y migraciones ok)');
     } catch (err) {
