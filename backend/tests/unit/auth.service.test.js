@@ -30,12 +30,12 @@ describe('AuthService - TDD Suite', () => {
         expect(userRepository.findByEmail).toHaveBeenCalledWith('test@mail.com');
     });
 
-    test('Genera OTP correctamente si el email no existía previamente', async () => {
+    test('Crea cuenta sin enviar OTP en registro (verificación diferida al primer login)', async () => {
         // Arrange
         userRepository.findByEmail.mockResolvedValue(null);
         userRepository.createUnverifiedUser.mockResolvedValue({ id: 2, email: 'new@mail.com' });
-        
-        // Espiar el envío de correos (mock parcial)
+
+        // Espiar el envío de correos — no debe llamarse en el nuevo flujo.
         const sendOtpSpy = jest.spyOn(authService, 'sendOtpEmail').mockResolvedValue(true);
 
         // Act
@@ -43,9 +43,26 @@ describe('AuthService - TDD Suite', () => {
 
         // Assert
         expect(userRepository.createUnverifiedUser).toHaveBeenCalled();
-        expect(sendOtpSpy).toHaveBeenCalledWith('new@mail.com', expect.any(String));
+        // El registro YA NO envía OTP — la verificación se hace en el primer login.
+        expect(sendOtpSpy).not.toHaveBeenCalled();
         expect(response.user.id).toBe(2);
-        expect(response.requiresVerification).toBe(true);
+        expect(response.requiresVerification).toBe(false);
+    });
+
+    test('Re-registrar un email no verificado actualiza la contraseña sin crear duplicado', async () => {
+        // Arrange: usuario existente pero sin verificar
+        userRepository.findByEmail.mockResolvedValue({ id: 7, email: 'pending@mail.com', is_verified: false });
+        userRepository.updateExistingUnverifiedUser.mockResolvedValue(undefined);
+        const sendOtpSpy = jest.spyOn(authService, 'sendOtpEmail').mockResolvedValue(true);
+
+        // Act
+        const response = await authService.register('pending@mail.com', 'newpass!23');
+
+        // Assert
+        expect(userRepository.updateExistingUnverifiedUser).toHaveBeenCalledWith(7, expect.any(String));
+        expect(userRepository.createUnverifiedUser).not.toHaveBeenCalled();
+        expect(sendOtpSpy).not.toHaveBeenCalled();
+        expect(response.user.id).toBe(7);
     });
 
 });

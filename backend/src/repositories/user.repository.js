@@ -6,25 +6,43 @@ class UserRepository {
         return result.rows[0];
     }
 
-    async createUnverifiedUser(email, passwordHash, verificationCode, otpExpiresAt) {
+    // Crea un usuario sin OTP. La verificación se hará en el primer login
+    // (el OTP de login marca is_verified=true). Se mantiene el nombre
+    // "Unverified" por claridad: el estado inicial es is_verified=false.
+    async createUnverifiedUser(email, passwordHash) {
         const result = await pool.query(
-            `INSERT INTO users (email, password_hash, is_verified, verification_code, otp_expires_at, otp_attempts, otp_resend_count)
-             VALUES ($1, $2, false, $3, $4, 0, 0) RETURNING id, email`,
-            [email, passwordHash, verificationCode, otpExpiresAt]
+            `INSERT INTO users (email, password_hash, is_verified, otp_attempts, otp_resend_count)
+             VALUES ($1, $2, false, 0, 0) RETURNING id, email`,
+            [email, passwordHash]
         );
         return result.rows[0];
     }
 
-    async updateExistingUnverifiedUser(userId, passwordHash, verificationCode) {
+    // Permite "re-registrar" si la cuenta ya existe pero no está verificada
+    // (típico: el usuario olvidó la contraseña antes de loguearse por primera
+    // vez). Reseteamos password + estado OTP + created_at (para que el reloj
+    // de limpieza de 7 días empiece de nuevo).
+    async updateExistingUnverifiedUser(userId, passwordHash) {
         await pool.query(
-            'UPDATE users SET password_hash = $1, verification_code = $2, created_at = NOW() WHERE id = $3',
-            [passwordHash, verificationCode, userId]
+            `UPDATE users
+                SET password_hash = $1,
+                    verification_code = NULL,
+                    otp_expires_at = NULL,
+                    otp_attempts = 0,
+                    otp_resend_count = 0,
+                    otp_penalty_until = NULL,
+                    created_at = NOW()
+              WHERE id = $2`,
+            [passwordHash, userId]
         );
     }
 
+    // Limpia cuentas que se registraron pero nunca completaron su primer
+    // login (en el nuevo flujo, "verificación" = "completar OTP del primer
+    // login"). 7 días da margen suficiente para que el usuario vuelva.
     async deleteStaleUnverifiedAccounts() {
         await pool.query(
-            "DELETE FROM users WHERE is_verified = false AND created_at < NOW() - INTERVAL '5 minutes'"
+            "DELETE FROM users WHERE is_verified = false AND created_at < NOW() - INTERVAL '7 days'"
         );
     }
     

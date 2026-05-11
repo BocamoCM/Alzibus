@@ -38,25 +38,29 @@ class AuthService {
     async register(email, password) {
         if (!email || !password) throw new BadRequestError('Email y contraseña son obligatorios');
 
+        // Limpieza de cuentas registradas pero nunca usadas (>7 días sin verificar).
         await userRepository.deleteStaleUnverifiedAccounts();
+
         const existingUser = await userRepository.findByEmail(email);
-        
-        let verificationCode = this._generateCode(email);
-        let passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(password, 10);
         let userToReturn;
 
         if (existingUser) {
+            // Bloquear duplicados verificados, pero permitir "reintentar" si la
+            // cuenta existe pero sigue sin verificar (p.ej. se registró con
+            // contraseña distinta y quiere actualizarla).
             if (existingUser.is_verified) throw new BadRequestError('El usuario ya existe');
-            await userRepository.updateExistingUnverifiedUser(existingUser.id, passwordHash, verificationCode);
+            await userRepository.updateExistingUnverifiedUser(existingUser.id, passwordHash);
             userToReturn = { id: existingUser.id, email: existingUser.email };
         } else {
-            const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-            userToReturn = await userRepository.createUnverifiedUser(email, passwordHash, verificationCode, otpExpiresAt);
+            userToReturn = await userRepository.createUnverifiedUser(email, passwordHash);
             sendDiscordNotification(`🚀 **Nuevo usuario registrado**: \`${email}\` (ID: ${userToReturn.id})`);
         }
 
-        this.sendOtpEmail(email, verificationCode);
-        return { user: userToReturn, requiresVerification: true };
+        // Sin OTP en registro: la verificación se realiza en el primer login
+        // (el OTP de login marca también is_verified=true). Esto simplifica el
+        // onboarding y reduce 1 paso al usuario.
+        return { user: userToReturn, requiresVerification: false };
     }
 
     async verifyEmail(email, code) {
@@ -95,10 +99,12 @@ class AuthService {
 
         const user = await userRepository.findByEmail(email);
         if (!user) throw new UnauthorizedError('Credenciales inválidas');
-        
-        if (user.is_verified === false) {
-            throw new ForbiddenError('Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.');
-        }
+
+        // Nota: ya NO bloqueamos si is_verified=false. En el nuevo flujo el
+        // registro no envía OTP — la verificación se realiza al completar el
+        // OTP de este login (ver verifyLogin → markAsVerified). El usuario
+        // sigue necesitando password correcta + OTP, así que la seguridad es
+        // idéntica; sólo se elimina el doble OTP (registro + login).
 
         if (user.otp_penalty_until && new Date() < new Date(user.otp_penalty_until)) {
             const minutesLeft = Math.ceil((new Date(user.otp_penalty_until) - new Date()) / 60000);
@@ -113,6 +119,14 @@ class AuthService {
         if (!validPassword) throw new UnauthorizedError('Credenciales inválidas');
 
         if (biometric === true) {
+            // Defensa en profundidad: el biométrico SÓLO debería estar
+            // activado tras un primer login OTP exitoso (que marca verificado).
+            // Si alguien intenta saltarse el OTP mandando biometric=true en
+            // una cuenta nueva, lo rechazamos y le forzamos al flujo OTP.
+            if (user.is_verified === false) {
+                throw new ForbiddenError('Verifica tu cuenta con código por email en tu primer inicio de sesión.');
+            }
+
             await userRepository.updateLastAccess(user.id);
             const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
             
@@ -165,16 +179,23 @@ class AuthService {
             throw new BadRequestError(`Código incorrecto. Te quedan ${3 - newAttempts} intento(s).`);
         }
 
-        await userRepository.updatePassword(user.id, user.password_hash); // Resets OTP counters safely
+        // markAsVerified hace doble función:
+        //  1) Resetea el estado OTP (verification_code, otp_expires_at,
+        //     otp_attempts, otp_penalty_until). Antes lo hacíamos llamando a
+        //     updatePassword con la misma password — funcionaba pero era un hack.
+        //  2) Si el usuario aún no estaba verificado (registro sin OTP del
+        //     nuevo flujo), lo marca como verificado ahora. Idempotente.
+        const wasUnverified = user.is_verified === false;
+        await userRepository.markAsVerified(user.id);
         await userRepository.updateLastAccess(user.id);
-        
+
         const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
         sendDiscordNotification({
             embeds: [{
-                title: '🟢 Usuario Conectado',
+                title: wasUnverified ? '✅ Cuenta verificada (primer login)' : '🟢 Usuario Conectado',
                 description: `**${user.email}** ha iniciado sesión`,
-                color: 0x4CAF50,
+                color: wasUnverified ? 0x2ECC71 : 0x4CAF50,
                 fields: [
                     { name: 'Método', value: '📧 OTP', inline: true },
                     { name: 'IP', value: ipAddress || 'Desconocida', inline: true }
