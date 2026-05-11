@@ -62,9 +62,10 @@
   <title>Bus Alzira en directo (L1, L2, L3) | Alzitrans Web</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8010840037570750"
-    crossorigin="anonymous"></script>
+  <!-- AdSense intencionalmente NO se carga en /app/.
+       Flutter Web pinta sobre canvas/shadow DOM y los bots de anuncios sólo
+       ven el fondo negro mientras bootstrappea, lo que provoca rechazos por
+       "contenido insuficiente". Los anuncios viven en la landing. -->
 
   <style>
     html, body { background:#0a0a0f; margin:0; padding:0; }
