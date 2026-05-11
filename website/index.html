@@ -158,11 +158,11 @@
 
     <!-- Preload de recursos críticos -->
     <link rel="preload" href="assets/logo.png" as="image">
-    <link rel="preload" href="style.css?v=3.1" as="style">
+    <link rel="preload" href="style.css?v=3.4" as="style">
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://play.google.com">
 
-    <link rel="stylesheet" href="style.css?v=3.3">
+    <link rel="stylesheet" href="style.css?v=3.4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
@@ -181,7 +181,6 @@
                 <span>Alzitrans</span>
             </a>
             <ul class="nav-links">
-                <li><a href="#tiempos">Tiempos</a></li>
                 <li><a href="#funciones">Funciones</a></li>
                 <li><a href="#preguntas">FAQ</a></li>
                 <li><a href="#contacto">Contacto</a></li>
@@ -226,30 +225,6 @@
             </div>
         </div>
     </header>
-
-    <!-- LIVE ARRIVALS - Datos reales en la landing (engagement + SEO único) -->
-    <section class="live-arrivals" id="tiempos" aria-label="Próximos autobuses en tiempo real">
-        <div class="container">
-            <h2 class="section-title">Próximos buses <span class="gradient-text">ahora mismo</span></h2>
-            <p class="section-subtitle">Tiempos reales de las paradas más usadas en Alzira. Actualizado al instante.</p>
-
-            <div class="live-tabs" role="tablist">
-                <button class="live-tab active" data-stop="1" data-name="Estació RENFE" role="tab" aria-selected="true">🚉 Estació RENFE</button>
-                <button class="live-tab" data-stop="14" data-name="Hospital" role="tab" aria-selected="false">🏥 Hospital</button>
-                <button class="live-tab" data-stop="59" data-name="Estació d'Autobusos" role="tab" aria-selected="false">🚏 Estació d'Autobusos</button>
-                <button class="live-tab" data-stop="27" data-name="Plaça del Regne" role="tab" aria-selected="false">📍 Plaça del Regne</button>
-            </div>
-
-            <div class="live-panel" id="live-panel" aria-live="polite">
-                <div class="live-loading">
-                    <div class="live-spinner"></div>
-                    <span>Cargando tiempos…</span>
-                </div>
-            </div>
-
-            <p class="live-footnote">Datos del operador del transporte de Alzira (Autocares Lozano). Para alertas, mapa completo y todas las paradas, descarga la app.</p>
-        </div>
-    </section>
 
     <!-- FUNCIONES -->
     <section class="features" id="funciones">
@@ -602,7 +577,7 @@
         </div>
     </footer>
 
-    <script src="script.js?v=2.1"></script>
+    <script src="script.js?v=2.2"></script>
 </body>
 
 </html>
