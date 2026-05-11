@@ -46,4 +46,39 @@ function parseUserAgent(uaRaw) {
     return { platform, browser };
 }
 
-module.exports = { parseUserAgent };
+/**
+ * Adivina el 'source' (landing / web_app / mobile_app) a partir del UA cuando
+ * el cliente no lo envía en el body.
+ *
+ *  - "Alzitrans/X.Y (Android|iOS|...)" → mobile_app
+ *  - "Alzitrans/X.Y (Web)"             → web_app
+ *  - "Dart/..."                         → mobile_app (clientes legacy)
+ *  - Cualquier "Mozilla/..." / WebKit / Chrome / Safari → web_app
+ *  - Nada reconocible                  → 'unknown'
+ *
+ * Importante: este sólo es el fallback. Si el body trae `source`, prevalece.
+ */
+function guessSourceFromUA(uaRaw) {
+    const ua = (uaRaw || '').toString();
+    if (!ua) return 'unknown';
+
+    // 1) User-Agent propio de la app
+    const m = ua.match(/Alzitrans\/[\d.]+\s*\(([A-Za-z]+)\)/);
+    if (m) {
+        const p = m[1].toLowerCase();
+        if (p === 'web') return 'web_app';
+        return 'mobile_app';
+    }
+
+    // 2) Cliente Dart sin UA personalizado → APK antigua
+    if (/dart\//i.test(ua)) return 'mobile_app';
+
+    // 3) Cualquier navegador habitual → web_app
+    if (/mozilla|webkit|chrome|safari|firefox|edge|opr|opera/i.test(ua)) {
+        return 'web_app';
+    }
+
+    return 'unknown';
+}
+
+module.exports = { parseUserAgent, guessSourceFromUA };

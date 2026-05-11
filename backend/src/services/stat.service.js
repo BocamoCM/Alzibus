@@ -1,7 +1,7 @@
 const statRepository = require('../repositories/stat.repository');
 const { sendDiscordNotification } = require('../../utils/discord');
 const { sendContactNotification } = require('../../utils/email');
-const { parseUserAgent } = require('../utils/ua-parser');
+const { parseUserAgent, guessSourceFromUA } = require('../utils/ua-parser');
 
 // Whitelist de valores aceptados (evita inyección y datos chatarra)
 const VALID_SOURCES   = new Set(['landing', 'web_app', 'mobile_app']);
@@ -30,6 +30,9 @@ class StatService {
         const parsed = parseUserAgent(userAgent);
 
         // source/platform: si la app los envía explícitamente, prevalecen sobre el UA.
+        // Para /metrics/web el caso típico es la landing, pero por seguridad permitimos
+        // que también lo use la web app: si el body trae source, lo usamos; si no,
+        // asumimos 'landing' (este endpoint sólo lo llama la landing en producción).
         const source   = sanitizeSource(data.source || 'landing');
         const platform = sanitizePlatform(data.platform || parsed.platform);
         const browser  = parsed.browser;
@@ -77,8 +80,9 @@ class StatService {
 
     async logAppOpen(ip, email, userAgent, data = {}) {
         const parsed = parseUserAgent(userAgent);
-        // La app debe enviar source ('mobile_app' o 'web_app') y platform; si no, deducimos del UA
-        const source   = sanitizeSource(data.source || 'mobile_app');
+        // La app DEBE enviar source ('mobile_app' o 'web_app') y platform; si no,
+        // deducimos ambos del UA (cubre clientes antiguos antes del TelemetryService).
+        const source   = sanitizeSource(data.source || guessSourceFromUA(userAgent));
         const platform = sanitizePlatform(data.platform || parsed.platform);
         const browser  = parsed.browser;
 
@@ -108,6 +112,7 @@ class StatService {
             mobile_app: '📲 App móvil',
             web_app:    '💻 App web',
             landing:    '🌐 Landing',
+            unknown:    '❓ Desconocido',
         }[source] || source;
 
         // Diferenciar el embed según sea arranque o login
