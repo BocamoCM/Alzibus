@@ -580,6 +580,37 @@
       <div id="top-stops-table"></div>
     </div>
 
+    <!-- Telemetría: origen + dispositivo -->
+    <div class="section-title">📡 Telemetría (de dónde vienen los usuarios)</div>
+    <div class="chart-grid g-3" style="margin-bottom:16px">
+      <div class="card">
+        <h3>Origen (Landing / Web App / App Móvil)</h3>
+        <div class="chart-wrap-sm"><canvas id="chartBySource"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Plataforma del dispositivo</h3>
+        <div class="chart-wrap-sm"><canvas id="chartByPlatform"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Navegador (solo web)</h3>
+        <div class="chart-wrap-sm"><canvas id="chartByBrowser"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:32px">
+      <h3 style="margin-top:0">Desglose detallado origen × plataforma</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Origen</th>
+            <th>Plataforma</th>
+            <th>Visitas</th>
+            <th>IPs únicas</th>
+          </tr>
+        </thead>
+        <tbody id="telemetry-table"></tbody>
+      </table>
+    </div>
+
     <!-- API Performance -->
     <div class="section-title">⚙️ Rendimiento del backend (7 días)</div>
     <div class="card" style="margin-bottom:32px">
@@ -967,6 +998,9 @@
           });
         }
 
+        // ── Telemetría (origen + plataforma + navegador) ─────────
+        await loadTelemetry();
+
         document.getElementById('last-update').textContent =
           'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
 
@@ -976,6 +1010,116 @@
         banner.textContent = `⚠️ No se pudo conectar al servidor: ${err.message}. Asegúrate de que el backend está corriendo en ${SERVER}.`;
       } finally {
         document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    //   TELEMETRÍA: origen (landing/web_app/mobile_app) + dispositivo
+    // ──────────────────────────────────────────────────────────
+    const SOURCE_COLORS = {
+      landing:    '#FF4757',
+      web_app:    '#3742fa',
+      mobile_app: '#2ed573',
+      unknown:    '#7f8c8d',
+    };
+    const PLATFORM_COLORS = {
+      android: '#3DDC84',
+      ios:     '#A2AAAD',
+      windows: '#0078D6',
+      macos:   '#E5E5E5',
+      linux:   '#FCC624',
+      web:     '#6B1A3A',
+      other:   '#9A8090',
+      unknown: '#555',
+    };
+    const BROWSER_COLORS = {
+      chrome:  '#4285F4',
+      safari:  '#1B88CA',
+      firefox: '#FF7139',
+      edge:    '#0078D7',
+      opera:   '#FF1B2D',
+      samsung: '#1428A0',
+      other:   '#9A8090',
+      unknown: '#555',
+    };
+
+    function aggregate(rows, key) {
+      const map = new Map();
+      rows.forEach(r => {
+        const k = r[key] || 'unknown';
+        map.set(k, (map.get(k) || 0) + (r.visits || 0));
+      });
+      return Array.from(map.entries()).map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+    }
+
+    async function loadTelemetry() {
+      try {
+        const res = await fetch(`${SERVER}/api/stats/telemetry?period=month`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (!res.ok) {
+          console.warn('No se pudo cargar telemetría:', res.status);
+          return;
+        }
+        const d = await res.json();
+
+        // 1) Doughnut: por origen
+        const sources = d.bySource || [];
+        makeChart('chartBySource', 'doughnut', {
+          labels: sources.map(s => s.source),
+          datasets: [{
+            data: sources.map(s => s.visits),
+            backgroundColor: sources.map(s => SOURCE_COLORS[s.source] || '#7f8c8d'),
+            borderWidth: 0,
+          }]
+        }, {
+          plugins: { legend: { display: true, position: 'right', labels: { color: '#9A8090', font: { size: 11 } } } }
+        });
+
+        // 2) Doughnut: por plataforma (agregando todas las filas)
+        const platforms = aggregate(d.byPlatformSource || [], 'platform');
+        makeChart('chartByPlatform', 'doughnut', {
+          labels: platforms.map(p => p.label),
+          datasets: [{
+            data: platforms.map(p => p.value),
+            backgroundColor: platforms.map(p => PLATFORM_COLORS[p.label] || '#9A8090'),
+            borderWidth: 0,
+          }]
+        }, {
+          plugins: { legend: { display: true, position: 'right', labels: { color: '#9A8090', font: { size: 11 } } } }
+        });
+
+        // 3) Doughnut: por navegador
+        const browsers = d.byBrowser || [];
+        makeChart('chartByBrowser', 'doughnut', {
+          labels: browsers.map(b => b.browser),
+          datasets: [{
+            data: browsers.map(b => b.visits),
+            backgroundColor: browsers.map(b => BROWSER_COLORS[b.browser] || '#9A8090'),
+            borderWidth: 0,
+          }]
+        }, {
+          plugins: { legend: { display: true, position: 'right', labels: { color: '#9A8090', font: { size: 11 } } } }
+        });
+
+        // 4) Tabla: desglose source × platform
+        const tbody = document.getElementById('telemetry-table');
+        const rows = d.byPlatformSource || [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px">Sin datos aún</td></tr>';
+        } else {
+          tbody.innerHTML = rows.map(r => `
+            <tr>
+              <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${SOURCE_COLORS[r.source] || '#7f8c8d'};margin-right:6px"></span>${r.source}</td>
+              <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PLATFORM_COLORS[r.platform] || '#9A8090'};margin-right:6px"></span>${r.platform}</td>
+              <td style="font-weight:700;color:var(--accent)">${r.visits}</td>
+              <td>${r.uniques}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Telemetría fallo:', err);
       }
     }
 

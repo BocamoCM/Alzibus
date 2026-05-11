@@ -35,7 +35,12 @@ class StatController {
     async logAppOpen(req, res, next) {
         const ip = req.ip || req.headers['x-forwarded-for'];
         const email = (req.user && req.user.email) ? req.user.email : 'Visitante Anónimo';
-        try { res.json(await statService.logAppOpen(ip, email)); } catch (e) { next(e); }
+        try {
+            res.json(await statService.logAppOpen(ip, email, req.get('User-Agent'), req.body || {}));
+        } catch (e) { next(e); }
+    }
+    async getTelemetry(req, res, next) {
+        try { res.json(await statService.getTelemetry(req.query.period)); } catch (e) { next(e); }
     }
     async postContact(req, res, next) {
         try { res.json(await statService.postContact(req.ip, req.body)); } catch (e) { next(e); }

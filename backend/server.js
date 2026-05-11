@@ -256,6 +256,13 @@ async function initDatabase() {
             CREATE INDEX IF NOT EXISTS idx_web_metrics_event ON web_metrics(event_type);
             CREATE INDEX IF NOT EXISTS idx_web_metrics_date ON web_metrics(created_at);
 
+            -- Migración: distinguir origen (landing / web_app / mobile_app) + dispositivo
+            ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS source   VARCHAR(20);
+            ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS platform VARCHAR(20);
+            ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS browser  VARCHAR(20);
+            CREATE INDEX IF NOT EXISTS idx_web_metrics_source   ON web_metrics(source);
+            CREATE INDEX IF NOT EXISTS idx_web_metrics_platform ON web_metrics(platform);
+
             -- Migración para Feedback Replies (Añadir columna faltante)
             ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
 

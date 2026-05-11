@@ -154,8 +154,64 @@ class StatRepository {
         return { totalUsers: parseInt(result.rows[0].count) };
     }
 
-    async logWebMetric(ip, userAgent, type) {
-        await pool.query("INSERT INTO web_metrics (event_type, ip, user_agent) VALUES ($1, $2, $3)", [type, ip, userAgent]);
+    async logWebMetric(ip, userAgent, type, source, platform, browser) {
+        await pool.query(
+            `INSERT INTO web_metrics (event_type, ip, user_agent, source, platform, browser)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [type, ip, userAgent, source, platform, browser]
+        );
+    }
+
+    /**
+     * Devuelve la matriz `source × platform` para el dashboard.
+     * Cuenta tanto eventos totales como IPs únicas en el último periodo.
+     */
+    async getTelemetryBreakdown(period = 'week') {
+        let interval = '7 days';
+        if (period === 'day') interval = '24 hours';
+        else if (period === 'month') interval = '30 days';
+        else if (period === 'year') interval = '365 days';
+
+        const byPlatformSource = await pool.query(`
+            SELECT
+              COALESCE(source, 'unknown')   AS source,
+              COALESCE(platform, 'unknown') AS platform,
+              COUNT(*)::int                 AS visits,
+              COUNT(DISTINCT ip)::int       AS uniques
+            FROM web_metrics
+            WHERE event_type IN ('visit', 'app_open')
+              AND created_at >= NOW() - INTERVAL '${interval}'
+            GROUP BY source, platform
+            ORDER BY visits DESC
+        `);
+
+        const byBrowser = await pool.query(`
+            SELECT COALESCE(browser, 'unknown') AS browser, COUNT(*)::int AS visits
+            FROM web_metrics
+            WHERE event_type IN ('visit', 'app_open')
+              AND created_at >= NOW() - INTERVAL '${interval}'
+              AND source IN ('landing', 'web_app')
+            GROUP BY browser
+            ORDER BY visits DESC
+        `);
+
+        const totals = await pool.query(`
+            SELECT
+              COALESCE(source, 'unknown') AS source,
+              COUNT(*)::int               AS visits,
+              COUNT(DISTINCT ip)::int     AS uniques
+            FROM web_metrics
+            WHERE event_type IN ('visit', 'app_open')
+              AND created_at >= NOW() - INTERVAL '${interval}'
+            GROUP BY source
+            ORDER BY visits DESC
+        `);
+
+        return {
+            byPlatformSource: byPlatformSource.rows,
+            byBrowser: byBrowser.rows,
+            bySource: totals.rows,
+        };
     }
 }
 

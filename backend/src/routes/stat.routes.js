@@ -15,6 +15,7 @@ router.get('/stats/activity', authenticateAdmin, statController.getActivityStats
 router.get('/stats/top-stops', authenticateAdmin, statController.getTopStops);
 router.get('/stats/peak-hours', authenticateAdmin, statController.getPeakHours);
 router.get('/stats/dashboard', authenticateAdmin, statController.getDashboard);
+router.get('/stats/telemetry', authenticateAdmin, statController.getTelemetry);
 
 // Public / Mobile Stats and Metrics
 router.get('/stats/public', statController.getPublicStats);

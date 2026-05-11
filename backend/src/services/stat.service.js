@@ -1,6 +1,14 @@
 const statRepository = require('../repositories/stat.repository');
 const { sendDiscordNotification } = require('../../utils/discord');
 const { sendContactNotification } = require('../../utils/email');
+const { parseUserAgent } = require('../utils/ua-parser');
+
+// Whitelist de valores aceptados (evita inyección y datos chatarra)
+const VALID_SOURCES   = new Set(['landing', 'web_app', 'mobile_app']);
+const VALID_PLATFORMS = new Set(['android', 'ios', 'windows', 'macos', 'linux', 'web', 'unknown']);
+
+function sanitizeSource(s)   { return VALID_SOURCES.has(s)   ? s : 'unknown'; }
+function sanitizePlatform(p) { return VALID_PLATFORMS.has(p) ? p : 'unknown'; }
 
 class StatService {
     async getGeneralStats() { return await statRepository.getGeneralStats(); }
@@ -10,6 +18,7 @@ class StatService {
     async getPeakHours() { return await statRepository.getPeakHours(); }
     async getDashboard(period) { return await statRepository.getDashboard(period); }
     async getPublicStats() { return await statRepository.getPublicStats(); }
+    async getTelemetry(period) { return await statRepository.getTelemetryBreakdown(period); }
 
     async logAlert({ stopName, line, destination }) {
         sendDiscordNotification(`🔔 **Alerta Activada**: Usuario esperando \`${line} -> ${destination}\` en **${stopName}**`);
@@ -18,12 +27,22 @@ class StatService {
 
     async logWebMetric(ip, userAgent, data) {
         const { event_type } = data;
-        await statRepository.logWebMetric(ip, userAgent, event_type);
+        const parsed = parseUserAgent(userAgent);
+
+        // source/platform: si la app los envía explícitamente, prevalecen sobre el UA.
+        const source   = sanitizeSource(data.source || 'landing');
+        const platform = sanitizePlatform(data.platform || parsed.platform);
+        const browser  = parsed.browser;
+
+        await statRepository.logWebMetric(ip, userAgent, event_type, source, platform, browser);
 
         if (event_type === 'download_click') {
             let device = 'Móvil o Web';
-            if (/android/i.test(userAgent)) device = 'Android 🤖';
-            else if (/iphone|ipad|ipod/i.test(userAgent)) device = 'iOS 🍏';
+            if (platform === 'android') device = 'Android 🤖';
+            else if (platform === 'ios') device = 'iOS 🍏';
+            else if (platform === 'windows') device = 'Windows 🪟';
+            else if (platform === 'macos') device = 'macOS 🍎';
+            else if (platform === 'linux') device = 'Linux 🐧';
 
             sendDiscordNotification({
                 embeds: [{
@@ -32,6 +51,7 @@ class StatService {
                     color: 0x00FF00,
                     fields: [
                         { name: "Dispositivo", value: device, inline: true },
+                        { name: "Origen", value: source, inline: true },
                         { name: "IP", value: ip, inline: true }
                     ]
                 }]
@@ -55,15 +75,48 @@ class StatService {
         return { success: true };
     }
 
-    async logAppOpen(ip, email) {
+    async logAppOpen(ip, email, userAgent, data = {}) {
+        const parsed = parseUserAgent(userAgent);
+        // La app debe enviar source ('mobile_app' o 'web_app') y platform; si no, deducimos del UA
+        const source   = sanitizeSource(data.source || 'mobile_app');
+        const platform = sanitizePlatform(data.platform || parsed.platform);
+        const browser  = parsed.browser;
+
+        // Persistir en web_metrics con event_type='app_open' para que la consulta
+        // de telemetría agregue mobile_app + web_app + landing en una sola tabla.
+        try {
+            await statRepository.logWebMetric(ip, userAgent, 'app_open', source, platform, browser);
+        } catch (e) {
+            console.error('[telemetry] logAppOpen DB error:', e.message);
+        }
+
+        // Emojis legibles por plataforma
+        const platformEmoji = {
+            android: '🤖 Android',
+            ios:     '🍏 iOS',
+            windows: '🪟 Windows',
+            macos:   '🍎 macOS',
+            linux:   '🐧 Linux',
+            web:     '🌐 Web',
+            unknown: '❓ Desconocida',
+        }[platform] || `❓ ${platform}`;
+
+        const sourceLabel = {
+            mobile_app: '📲 App móvil',
+            web_app:    '💻 App web',
+            landing:    '🌐 Landing',
+        }[source] || source;
+
         sendDiscordNotification({
             embeds: [{
                 title: '📱 Aplicación Abierta',
                 description: `Un usuario ha entrado en la app Alzitrans.`,
                 color: 0x3498DB,
                 fields: [
-                    { name: 'Usuario', value: email, inline: true },
-                    { name: 'IP', value: ip || 'Desconocida', inline: true }
+                    { name: 'Usuario',    value: email,         inline: true },
+                    { name: 'Origen',     value: sourceLabel,   inline: true },
+                    { name: 'Plataforma', value: platformEmoji, inline: true },
+                    { name: 'IP',         value: ip || 'Desconocida', inline: true }
                 ]
             }]
         });
