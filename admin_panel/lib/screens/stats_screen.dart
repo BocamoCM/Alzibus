@@ -430,6 +430,33 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
+  // Techo dinamico del eje Y: el maximo real con 15% de margen, redondeado
+  // al siguiente "step" segun la magnitud (10/100/1000). Asi la linea
+  // nunca se sale del area del grafico aunque haya picos de trafico.
+  double _computeUsageMaxY() {
+    if (_usageData.isEmpty) return 100;
+    final maxVal = _usageData
+        .map((e) => (e['queries'] as num?)?.toInt() ?? 0)
+        .fold<int>(0, (a, b) => a > b ? a : b);
+    if (maxVal <= 0) return 100;
+    final padded = maxVal * 1.15;
+    final magnitude = padded < 100
+        ? 10.0
+        : padded < 1000
+            ? 100.0
+            : 1000.0;
+    return (padded / magnitude).ceil() * magnitude;
+  }
+
+  // Intervalo de etiquetas del eje X: queremos como mucho ~6 etiquetas
+  // visibles para que no se solapen (sucedia en filtros mes/ano con 30+
+  // dias). Si hay <=7 puntos, una por punto; si no, ceil(n/6).
+  double _computeBottomLabelInterval() {
+    final n = _usageData.length;
+    if (n <= 7) return 1;
+    return (n / 6).ceilToDouble();
+  }
+
   Widget _buildUsageChart(ThemeData theme) {
     return Card(
       child: Padding(
@@ -448,10 +475,14 @@ class _StatsScreenState extends State<StatsScreen> {
               height: 300,
               child: LineChart(
                 LineChartData(
+                  // Evita que la curva (y el area bajo curva) se salga del
+                  // contenedor cuando el maximo dinamico se queda corto por
+                  // un pico inesperado.
+                  clipData: const FlClipData.all(),
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval: 200,
+                    horizontalInterval: _computeUsageMaxY() / 5,
                     getDrawingHorizontalLine: (value) => FlLine(
                       color: Colors.grey[300]!,
                       strokeWidth: 1,
@@ -461,20 +492,29 @@ class _StatsScreenState extends State<StatsScreen> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        // Solo mostramos N etiquetas espaciadas (~6) para que
+                        // no se solapen cuando hay muchos dias (mes/ano).
+                        interval: _computeBottomLabelInterval(),
+                        reservedSize: 28,
                         getTitlesWidget: (value, meta) {
-                          if (value.toInt() < _usageData.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                _usageData[value.toInt()]['day'] as String,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            );
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= _usageData.length) {
+                            return const SizedBox.shrink();
                           }
-                          return const SizedBox.shrink();
+                          final step = _computeBottomLabelInterval().round();
+                          if (step > 1 && idx % step != 0 && idx != _usageData.length - 1) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              _usageData[idx]['day'] as String,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 11,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -521,7 +561,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     ),
                   ],
                   minY: 0,
-                  maxY: 700,
+                  maxY: _computeUsageMaxY(),
                 ),
               ),
             ),

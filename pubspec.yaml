@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 5.1.5+30
 
 environment:
-  sdk: '>=2.18.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -47,6 +47,8 @@ dependencies:
   vector_math: ^2.1.4
   sensors_plus: ^6.1.1
   web: ^1.1.0
+  # Selector de archivos (imágenes y PDFs) para los adjuntos del soporte.
+  file_picker: ^8.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

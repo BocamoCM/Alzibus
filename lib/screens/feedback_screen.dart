@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../core/network/api_client.dart';
 import '../services/feedback_service.dart';
 import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
@@ -130,7 +134,24 @@ class _FeedbackScreenState extends State<FeedbackScreen> with SingleTickerProvid
                   ],
                 ),
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (ticket.unreadAdminCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AlzitransColors.burgundy,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        ticket.unreadAdminCount > 9 ? '9+' : '${ticket.unreadAdminCount}',
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
               onTap: () {
                 Navigator.push(
                   context,
@@ -160,21 +181,39 @@ class _FeedbackScreenState extends State<FeedbackScreen> with SingleTickerProvid
   }
 
   Widget _buildStatusBadge(String status) {
+    // El backend devuelve códigos en inglés (open/in_progress/resolved/dismissed),
+    // pero por compatibilidad con tickets antiguos también aceptamos las
+    // etiquetas en español que pudieran quedar antes de la migración.
     Color color;
+    String label;
     switch (status) {
+      case 'resolved':
       case 'Resuelto':
         color = Colors.green;
+        label = 'Resuelto';
         break;
+      case 'in_progress':
       case 'En progreso':
         color = Colors.orange;
+        label = 'En progreso';
         break;
+      case 'dismissed':
       case 'Desestimado':
+      case 'Cerrado':
+      case 'closed':
         color = Colors.red;
+        label = 'Desestimado';
+        break;
+      case 'open':
+      case 'Abierto':
+        color = Colors.blue;
+        label = 'Abierto';
         break;
       default:
         color = Colors.blue;
+        label = status;
     }
-    return _buildBadge(status, color);
+    return _buildBadge(label, color);
   }
 }
 
@@ -303,12 +342,17 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
   List<FeedbackMessage> _messages = [];
   bool _isLoading = true;
   Timer? _pollingTimer;
+  // Adjuntos pendientes de enviar con el próximo mensaje.
+  final List<FeedbackAttachmentUpload> _pendingAttachments = [];
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
-    // Iniciar polling
+    // Marcar el ticket como leído nada más abrirlo. El backend lo hace
+    // automáticamente al pedir /messages, pero llamamos también al endpoint
+    // explícito por si el polling fuera más tarde y el badge tarde en bajar.
+    FeedbackService.instance.markTicketRead(widget.ticket.id);
     _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) => _loadMessages());
   }
 
@@ -346,36 +390,58 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
     }
   }
 
+  Future<void> _pickAttachment() async {
+    // Selector restringido a imágenes (PNG/JPG/WebP). El backend valida
+    // los magic bytes igualmente; esto es solo para mejor UX.
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp'],
+      withData: true, // Necesario para web (no hay path en navegador).
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    setState(() {
+      for (final f in result.files) {
+        if (_pendingAttachments.length >= 3) break;
+        if (f.bytes != null) {
+          _pendingAttachments.add(
+            FeedbackAttachmentUpload.fromBytes(f.bytes!, f.name),
+          );
+        } else if (f.path != null) {
+          _pendingAttachments.add(
+            FeedbackAttachmentUpload.fromPath(f.path!, filename: f.name),
+          );
+        }
+      }
+    });
+  }
+
   Future<void> _sendMessage() async {
     final text = _msgController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _pendingAttachments.isEmpty) return;
 
-    // Mensaje optimista
-    final optimisticMsg = FeedbackMessage(
-      id: -1,
-      ticketId: widget.ticket.id,
-      message: text,
-      senderType: 'user',
-      createdAt: DateTime.now(),
-    );
-    
+    final attachmentsToSend = List<FeedbackAttachmentUpload>.from(_pendingAttachments);
     setState(() {
-      _messages.add(optimisticMsg);
       _msgController.clear();
+      _pendingAttachments.clear();
     });
-    _scrollToBottom();
 
-    final success = await FeedbackService.instance.replyToTicket(widget.ticket.id, text);
-    if (success) {
+    final result = await FeedbackService.instance.replyToTicket(
+      widget.ticket.id,
+      text,
+      attachments: attachmentsToSend,
+    );
+    if (result.ok) {
       _loadMessages();
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al enviar el mensaje')),
+          SnackBar(content: Text(result.error ?? 'Error al enviar el mensaje')),
         );
         setState(() {
-          _messages.removeLast(); // Revertir optimista
+          // Restauramos el texto para que el usuario no lo pierda.
           _msgController.text = text;
+          _pendingAttachments.addAll(attachmentsToSend);
         });
       }
     }
@@ -424,56 +490,27 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final msg = _messages[index];
-                      final isMe = !msg.isFromAdmin;
-                      return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isMe ? AlzitransColors.burgundy : Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(16),
-                              topRight: const Radius.circular(16),
-                              bottomLeft: Radius.circular(isMe ? 16 : 0),
-                              bottomRight: Radius.circular(isMe ? 0 : 16),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (!isMe)
-                                const Padding(
-                                  padding: EdgeInsets.only(bottom: 4),
-                                  child: Text('Administrador',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
-                                ),
-                              Text(
-                                msg.message,
-                                style: TextStyle(color: isMe ? Colors.white : Colors.black87),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                DateFormat('HH:mm').format(msg.createdAt.toLocal()),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: isMe ? Colors.white70 : Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                      return _buildMessageBubble(msg);
                     },
                   ),
           ),
+          // Lista de adjuntos pendientes (si los hay)
+          if (_pendingAttachments.isNotEmpty)
+            Container(
+              color: Colors.grey[200],
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: List.generate(_pendingAttachments.length, (i) {
+                  return Chip(
+                    avatar: const Icon(Icons.image, size: 18, color: AlzitransColors.burgundy),
+                    label: Text(_pendingAttachments[i].filename, overflow: TextOverflow.ellipsis),
+                    onDeleted: () => setState(() => _pendingAttachments.removeAt(i)),
+                  );
+                }),
+              ),
+            ),
           // Input area
           Container(
             padding: const EdgeInsets.all(8),
@@ -489,6 +526,11 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file, color: AlzitransColors.burgundy),
+                  tooltip: 'Adjuntar imagen',
+                  onPressed: _pendingAttachments.length >= 3 ? null : _pickAttachment,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _msgController,
@@ -521,5 +563,199 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildMessageBubble(FeedbackMessage msg) {
+    final isMe = !msg.isFromAdmin;
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isMe ? AlzitransColors.burgundy : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMe ? 16 : 0),
+            bottomRight: Radius.circular(isMe ? 0 : 16),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMe)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Text('Administrador',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy)),
+              ),
+            if (msg.message.isNotEmpty)
+              Text(
+                msg.message,
+                style: TextStyle(color: isMe ? Colors.white : Colors.black87),
+              ),
+            // Adjuntos del mensaje (si los hay).
+            if (msg.attachments.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: msg.attachments
+                      .map((a) => _buildAttachmentPreview(a, isMe: isMe))
+                      .toList(),
+                ),
+              ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(msg.createdAt.toLocal()),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isMe ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                // Doble check estilo WhatsApp solo para mis mensajes:
+                // - Un check gris = enviado, pero el admin no lo ha abierto.
+                // - Doble check blanco = el admin abrió el ticket → leído.
+                if (isMe && msg.id > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Icon(
+                      msg.readAt != null ? Icons.done_all : Icons.done,
+                      size: 14,
+                      color: msg.readAt != null ? Colors.white : Colors.white70,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachmentPreview(FeedbackAttachment a, {required bool isMe}) {
+    if (a.isImage) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220, maxHeight: 220),
+            child: _AuthenticatedImage(attachmentId: a.id),
+          ),
+        ),
+      );
+    }
+    // PDF u otros: tile con icono y nombre.
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isMe ? Colors.white24 : Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.insert_drive_file,
+                size: 18,
+                color: isMe ? Colors.white : AlzitransColors.burgundy),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                a.originalName,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isMe ? Colors.white : Colors.black87,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Carga una imagen adjunta con el header de autorización de la sesión.
+/// Cachea los bytes en memoria mientras viva el State para no refetchear
+/// en cada rebuild del ListView.
+class _AuthenticatedImage extends StatefulWidget {
+  final int attachmentId;
+  const _AuthenticatedImage({required this.attachmentId});
+
+  @override
+  State<_AuthenticatedImage> createState() => _AuthenticatedImageState();
+}
+
+class _AuthenticatedImageState extends State<_AuthenticatedImage> {
+  Uint8List? _bytes;
+  bool _loading = true;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final response = await ApiClient().dio.get(
+        '/feedback/attachments/${widget.attachmentId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      if (!mounted) return;
+      if (response.statusCode == 200 && response.data is List<int>) {
+        setState(() {
+          _bytes = Uint8List.fromList(response.data as List<int>);
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _error = true;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = true;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        width: 80,
+        height: 80,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    if (_error || _bytes == null) {
+      return Container(
+        width: 80,
+        height: 80,
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      );
+    }
+    return Image.memory(_bytes!, fit: BoxFit.cover);
   }
 }

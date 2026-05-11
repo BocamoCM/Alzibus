@@ -163,7 +163,9 @@ CREATE TABLE IF NOT EXISTS feedback_tickets (
     tag VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    status VARCHAR(50) DEFAULT 'Abierto',
+    -- Estado canónico en inglés (snake_case). Valores válidos:
+    -- 'open', 'in_progress', 'resolved', 'dismissed'.
+    status VARCHAR(50) DEFAULT 'open',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -177,7 +179,27 @@ CREATE TABLE IF NOT EXISTS feedback_replies (
     user_email VARCHAR(255) NOT NULL,
     sender_type VARCHAR(10) DEFAULT 'user',
     message TEXT NOT NULL,
+    -- read_at: cuando la otra parte abrió el ticket y "leyó" este mensaje.
+    -- NULL hasta entonces. Sirve para los doble-checks tipo WhatsApp.
+    read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
+ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_feedback_replies_ticket ON feedback_replies(ticket_id);
+
+-- Adjuntos de mensajes de soporte. Los archivos físicos viven en disco
+-- (UPLOADS_DIR/feedback/<ticket_id>/<stored_name>); aquí solo guardamos
+-- los metadatos para asociarlos al reply y poder servirlos con permisos.
+CREATE TABLE IF NOT EXISTS feedback_attachments (
+    id SERIAL PRIMARY KEY,
+    reply_id INTEGER NOT NULL REFERENCES feedback_replies(id) ON DELETE CASCADE,
+    ticket_id INTEGER NOT NULL REFERENCES feedback_tickets(id) ON DELETE CASCADE,
+    original_name VARCHAR(255) NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    uploaded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_attachments_reply ON feedback_attachments(reply_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_attachments_ticket ON feedback_attachments(ticket_id);

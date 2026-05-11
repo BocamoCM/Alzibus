@@ -142,7 +142,9 @@ class ApiService {
     final Set<String> lines = {};
     for (final stop in stops) {
       final stopLines = stop['lines'] as List;
-      for (final line in stopLines) lines.add(line as String);
+      for (final line in stopLines) {
+        lines.add(line as String);
+      }
     }
     final lineColors = {
       'L1': 0xFF6B1B3D,
@@ -455,21 +457,82 @@ class ApiService {
     return [];
   }
 
-  Future<bool> replyToFeedbackTicket(int ticketId, String message) async {
+  // Responde a un ticket. Si attachments no está vacío usa multipart en lugar
+  // de JSON. files: lista de tuplas (filename, bytes).
+  Future<bool> replyToFeedbackTicket(
+    int ticketId,
+    String message, {
+    List<({String filename, List<int> bytes})> attachments = const [],
+  }) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('$_baseUrl/admin/feedback/$ticketId/reply'),
-            headers: _headers,
-            body: json.encode({'message': message}),
-          )
-          .timeout(_timeout);
+      if (attachments.isEmpty) {
+        final response = await http
+            .post(
+              Uri.parse('$_baseUrl/admin/feedback/$ticketId/reply'),
+              headers: _headers,
+              body: json.encode({'message': message}),
+            )
+            .timeout(_timeout);
+        _handleResponse(response);
+        return response.statusCode == 201;
+      }
+
+      // Multipart: NO incluir Content-Type: application/json (lo pone http
+      // automáticamente como multipart/form-data con el boundary correcto).
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/admin/feedback/$ticketId/reply'),
+      );
+      request.headers['X-API-Key'] = _apiKey;
+      if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
+      request.fields['message'] = message;
+      for (final att in attachments) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'attachments',
+          att.bytes,
+          filename: att.filename,
+        ));
+      }
+      final streamed = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamed);
       _handleResponse(response);
       return response.statusCode == 201;
     } catch (e) {
       debugPrint('Error enviando respuesta de ticket: $e');
       return false;
     }
+  }
+
+  // Marca como leídos los mensajes del usuario en un ticket.
+  Future<void> markFeedbackTicketRead(int ticketId) async {
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/admin/feedback/$ticketId/read'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+    } catch (e) {
+      debugPrint('Error marcando ticket como leído: $e');
+    }
+  }
+
+  // Descarga los bytes de un adjunto autenticado para mostrarlo inline en el
+  // panel del admin (Image.memory). Devuelve null si falla.
+  Future<Uint8List?> downloadFeedbackAttachment(int attachmentId) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/admin/feedback/attachments/$attachmentId'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+      if (response.statusCode == 200) return response.bodyBytes;
+      _handleResponse(response);
+    } catch (e) {
+      debugPrint('Error descargando adjunto: $e');
+    }
+    return null;
   }
 
   Future<bool> updateFeedbackTicketStatus(int ticketId, String status) async {
