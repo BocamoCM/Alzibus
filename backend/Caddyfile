@@ -2,21 +2,23 @@
     email borjacarreres@gmail.com
 }
 
-# Redirect 301 de www.alzitrans.es a la raíz alzitrans.es (canonical).
-# Las dos resuelven a la misma IP, pero el SEO funciona mejor si
-# escogemos una URL canónica y forzamos a la otra a redirigir — así
-# Google no diluye autoridad entre dos versiones.
-www.alzitrans.es {
+# Redirect 301 de www.alzitrans.es Y del antiguo alzitrans.duckdns.org
+# a la raíz alzitrans.es. Esto:
+#   - Permite el "Change of address" en Google Search Console — Google
+#     transfiere la autoridad SEO del dominio viejo al nuevo.
+#   - Mantiene la compatibilidad con APKs antiguas: la librería HTTP
+#     de Dart (Dio) sigue los redirects 301 por defecto, así que las
+#     llamadas API de las APKs viejas llegan al backend igual.
+#   - Cualquier QR físico ya impreso apuntando a duckdns sigue
+#     funcionando — el navegador del usuario sigue el redirect y
+#     acaba en alzitrans.es.
+# Coste: ~50ms extra de latencia en la primera petición de cada APK
+# vieja por iteración (después se cachea el redirect).
+www.alzitrans.es, alzitrans.duckdns.org {
     redir https://alzitrans.es{uri} permanent
 }
 
-# Servimos el dominio nuevo (alzitrans.es) Y el viejo (duckdns) en el
-# mismo bloque. Caddy pide cert Let's Encrypt automáticamente para
-# alzitrans.es la primera vez que llega una petición. El dominio
-# duckdns sigue funcionando para usuarios con APKs antiguas — lo
-# dejaremos varios meses hasta que la mayoría haya actualizado, y
-# después lo retiramos.
-alzitrans.es, alzitrans.duckdns.org {
+alzitrans.es {
     # Smart QR Tracker — redirige al backend para registrar y luego a /descargar
     handle /qr* {
         reverse_proxy alzibus_backend:3000 {
