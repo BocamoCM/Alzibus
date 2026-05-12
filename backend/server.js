@@ -320,6 +320,12 @@ async function initDatabase() {
             -- Read receipts también dentro del chat (admin → usuario)
             -- Misma idea que feedback_replies.read_at.
             ALTER TABLE notice_replies ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+
+            -- Permite al admin decidir si los usuarios pueden responder a un
+            -- aviso. Por defecto TRUE para no romper el comportamiento previo.
+            -- Útil cuando el aviso es informativo y no quieres recibir N
+            -- preguntas (ej. "Servicio normalizado tras avería").
+            ALTER TABLE notices ADD COLUMN IF NOT EXISTS allow_replies BOOLEAN DEFAULT TRUE;
         `);
         console.log('✅ Base de datos verificada (web_metrics y migraciones ok)');
     } catch (err) {

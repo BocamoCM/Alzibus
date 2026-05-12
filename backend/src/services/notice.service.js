@@ -36,6 +36,13 @@ class NoticeService {
         if (notice.target_email !== null && notice.target_email !== userEmail) {
             throw new ForbiddenError('No puedes responder a este aviso');
         }
+        // El admin puede desactivar las respuestas en un aviso concreto
+        // (ej. avisos puramente informativos en los que no quiere recibir
+        // preguntas). El frontend oculta el campo pero comprobamos también
+        // server-side por si alguien intenta saltárselo.
+        if (notice.allow_replies === false) {
+            throw new ForbiddenError('Este aviso no admite respuestas');
+        }
 
         const reply = await noticeRepository.addReply(noticeId, userEmail, message.trim(), 'user');
         console.log(`[Notices] 💬 Respuesta de ${userEmail} al aviso #${noticeId}`);
@@ -59,14 +66,25 @@ class NoticeService {
         return await noticeRepository.getNoticeReaders(noticeId);
     }
 
+    // Marca como leídos los mensajes del USUARIO (en su thread con el admin)
+    // cuando el admin abre/selecciona ese thread en el panel. Devuelve cuántas
+    // filas se han marcado. Idempotente: si ya estaban leídos, devuelve 0.
+    async markThreadReadByAdmin(noticeId, userEmail) {
+        const updated = await noticeRepository.markUserRepliesReadByAdmin(noticeId, userEmail);
+        return { marked: updated };
+    }
+
     async getAllNoticesAdmin() {
         return await noticeRepository.getAllNoticesAdmin();
     }
 
     async createNoticeAdmin(data) {
         if (!data.title || !data.body) throw new BadRequestError('Título y cuerpo requeridos');
-        // Aquí no emitimos socket directamente para no acoplar. El controller debe hacerlo.
-        return await noticeRepository.createNoticeAdmin(data);
+        // allowReplies: por defecto true (compatibilidad con clientes viejos
+        // que no manden el campo). Si el admin lo pone explícitamente a
+        // false, se persiste a false.
+        const allowReplies = data.allowReplies !== undefined ? !!data.allowReplies : true;
+        return await noticeRepository.createNoticeAdmin({ ...data, allowReplies });
     }
 
     async deleteNoticeAdmin(noticeId) {

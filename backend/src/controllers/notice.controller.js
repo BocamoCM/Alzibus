@@ -81,6 +81,20 @@ class NoticeController {
             res.json(result);
         } catch (err) { next(err); }
     }
+
+    // Marca como leídos los mensajes del usuario en su thread con el admin.
+    // Se llama desde el panel cuando el admin selecciona/abre el thread.
+    async markThreadReadByAdmin(req, res, next) {
+        try {
+            const noticeId = parseInt(req.params.id, 10);
+            const email = req.params.email;
+            if (!Number.isFinite(noticeId) || !email) {
+                return res.status(400).json({ error: 'Parámetros inválidos' });
+            }
+            const result = await noticeService.markThreadReadByAdmin(noticeId, email);
+            res.json(result);
+        } catch (err) { next(err); }
+    }
 }
 
 module.exports = new NoticeController();

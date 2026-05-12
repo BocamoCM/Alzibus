@@ -48,6 +48,7 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
     final targetEmailCtrl = TextEditingController();
     String? selectedLine;
     DateTime? expiresAt;
+    bool allowReplies = true; // por defecto permitimos preguntas
 
     showDialog(
       context: context,
@@ -171,6 +172,18 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
                       minimumSize: const Size(double.infinity, 44),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  // Switch: permitir respuestas
+                  SwitchListTile(
+                    value: allowReplies,
+                    onChanged: (v) => setStateDialog(() => allowReplies = v),
+                    title: const Text('Permitir respuestas'),
+                    subtitle: Text(allowReplies
+                        ? 'Los usuarios podrán preguntarte sobre este aviso (verás cada thread por separado).'
+                        : 'Los usuarios solo verán el aviso, NO podrán responder.'),
+                    activeColor: const Color(0xFF6B1B3D),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ],
               ),
             ),
@@ -200,6 +213,7 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
                   line: selectedLine,
                   expiresAt: expiresAt,
                   targetEmail: targetEmail,
+                  allowReplies: allowReplies,
                 );
                 if (result != null) {
                   if (mounted) {
@@ -563,17 +577,24 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
 
   Future<void> _loadMessages() async {
     final msgs = await widget.api.getNoticeReplies(widget.noticeId);
-    if (mounted) {
-      setState(() {
-        _messages = msgs;
-        _isLoading = false;
-        // Si es aviso general y no hay seleccionado, coge el primer usuario
-        // que haya escrito (si lo hay).
-        if (_selectedUserEmail == null && msgs.isNotEmpty) {
-          _selectedUserEmail = msgs.first['user_email'] as String?;
-        }
-      });
-      _scrollToBottom();
+    if (!mounted) return;
+    final previousSelected = _selectedUserEmail;
+    setState(() {
+      _messages = msgs;
+      _isLoading = false;
+      // Si es aviso general y no hay seleccionado, coge el primer usuario
+      // que haya escrito (si lo hay).
+      if (_selectedUserEmail == null && msgs.isNotEmpty) {
+        _selectedUserEmail = msgs.first['user_email'] as String?;
+      }
+    });
+    _scrollToBottom();
+    // Si acabamos de seleccionar un thread por primera vez (no había uno
+    // antes), marcamos como leído. Para selecciones manuales lo hace
+    // _selectThread, así que esto solo cubre el primer load.
+    if (previousSelected == null && _selectedUserEmail != null) {
+      // No await — fire-and-forget para no bloquear la UI.
+      widget.api.markNoticeThreadRead(widget.noticeId, _selectedUserEmail!);
     }
   }
 
@@ -657,6 +678,22 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
     return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
   }
 
+  String _formatHHmm(dynamic iso) {
+    if (iso == null) return '';
+    final dt = DateTime.tryParse(iso.toString());
+    if (dt == null) return '';
+    return DateFormat('HH:mm').format(dt.toLocal());
+  }
+
+  // Llama al endpoint de mark-thread-read y refresca la vista para que el
+  // badge de "X nuevos" del sidebar se reinicie y el usuario vea Visto.
+  Future<void> _selectThread(String email) async {
+    if (_selectedUserEmail == email) return;
+    setState(() => _selectedUserEmail = email);
+    await widget.api.markNoticeThreadRead(widget.noticeId, email);
+    if (mounted) _loadMessages();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isGeneral = widget.targetEmailLocked == null;
@@ -720,7 +757,7 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
                                         child: Text('$unread', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                       )
                                     : null,
-                                onTap: () => setState(() => _selectedUserEmail = email),
+                                onTap: () => _selectThread(email),
                               );
                             }).toList(),
                           ),
@@ -785,12 +822,34 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
                                             ),
                                           ),
                                           const SizedBox(height: 4),
-                                          Text(
-                                            _formatDate(msg['created_at']),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: isAdmin ? Colors.white70 : Colors.grey[500],
-                                            ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                _formatDate(msg['created_at']),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: isAdmin ? Colors.white70 : Colors.grey[500],
+                                                ),
+                                              ),
+                                              // Doble check + "Visto" para los mensajes propios del admin:
+                                              // se rellena cuando el usuario abre el aviso en la app móvil.
+                                              if (isAdmin) ...[
+                                                const SizedBox(width: 4),
+                                                Icon(
+                                                  msg['read_at'] != null ? Icons.done_all : Icons.done,
+                                                  size: 12,
+                                                  color: msg['read_at'] != null ? Colors.cyanAccent : Colors.white70,
+                                                ),
+                                                if (msg['read_at'] != null) ...[
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Visto ${_formatHHmm(msg['read_at'])}',
+                                                    style: const TextStyle(fontSize: 10, color: Colors.cyanAccent, fontWeight: FontWeight.w600),
+                                                  ),
+                                                ],
+                                              ],
+                                            ],
                                           ),
                                         ],
                                       ),

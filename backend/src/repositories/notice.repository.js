@@ -4,6 +4,7 @@ class NoticeRepository {
     async getActiveNotices(userEmail) {
         const result = await pool.query(`
             SELECT n.id, n.title, n.body, n.line, n.active, n.expires_at, n.created_at, n.target_email,
+                   COALESCE(n.allow_replies, TRUE) AS allow_replies,
                    (SELECT MAX(id) FROM notice_replies nr
                      WHERE nr.notice_id = n.id AND nr.sender_type = 'admin'
                        AND (nr.user_email = $1 OR n.target_email = $1)
@@ -27,7 +28,12 @@ class NoticeRepository {
     }
 
     async getNoticeTargetEmail(noticeId) {
-        const result = await pool.query('SELECT target_email FROM notices WHERE id = $1 AND active = TRUE', [noticeId]);
+        // Devolvemos también allow_replies para que el service pueda decidir
+        // si el usuario tiene permiso para responder a este aviso.
+        const result = await pool.query(
+            'SELECT target_email, COALESCE(allow_replies, TRUE) AS allow_replies FROM notices WHERE id = $1 AND active = TRUE',
+            [noticeId]
+        );
         return result.rows[0];
     }
 
@@ -110,10 +116,11 @@ class NoticeRepository {
         return result.rows;
     }
 
-    async createNoticeAdmin({ title, body, line, expiresAt, targetEmail }) {
+    async createNoticeAdmin({ title, body, line, expiresAt, targetEmail, allowReplies = true }) {
         const result = await pool.query(
-            'INSERT INTO notices (title, body, line, expires_at, target_email) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [title, body, line || null, expiresAt || null, targetEmail || null]
+            `INSERT INTO notices (title, body, line, expires_at, target_email, allow_replies)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [title, body, line || null, expiresAt || null, targetEmail || null, allowReplies]
         );
         return result.rows[0];
     }

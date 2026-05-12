@@ -226,14 +226,71 @@ class _NoticesScreenState extends State<NoticesScreen> {
                   // ── Sección de respuesta — disponible para avisos
                   // personales Y generales. En generales cada usuario tiene
                   // su propio thread privado con el admin (backend filtra
-                  // por user_email).
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  _ReplyWidget(
-                    notice: notice,
-                    service: _service,
-                  ),
+                  // por user_email). Si el admin desactivó respuestas en
+                  // este aviso (allowReplies=false), no se muestra nada.
+                  if (notice.allowReplies) ...[
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    // Plegado por defecto: ocupa mucho espacio si lo dejamos
+                    // siempre abierto, así que solo aparece el chat cuando
+                    // el usuario lo despliega expresamente.
+                    Theme(
+                      // Quitamos el divider gris del ExpansionTile para que
+                      // no se sume al Divider de arriba.
+                      data: Theme.of(context).copyWith(
+                        dividerColor: Colors.transparent,
+                      ),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(top: 8),
+                        // Si hay mensajes admin sin leer, lo abrimos por
+                        // defecto y mostramos un badge — el usuario querrá
+                        // verlos.
+                        initiallyExpanded: notice.unreadAdminCount > 0,
+                        leading: const Icon(Icons.forum, color: AlzitransColors.burgundy, size: 20),
+                        title: Row(
+                          children: [
+                            const Text('Conversación', style: TextStyle(fontWeight: FontWeight.bold)),
+                            if (notice.unreadAdminCount > 0) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${notice.unreadAdminCount} nuevo${notice.unreadAdminCount == 1 ? '' : 's'}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        children: [
+                          _ReplyWidget(
+                            notice: notice,
+                            service: _service,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    // Aviso sin respuestas — solo indicamos visualmente que
+                    // no se pueden enviar mensajes.
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.info_outline, size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Este aviso no admite respuestas',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[500], fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -330,22 +387,11 @@ class _ReplyWidgetState extends State<_ReplyWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // El header "Conversación" lo da el ExpansionTile padre; aquí solo
+    // pintamos el área de mensajes + el input.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.forum, size: 16, color: AlzitransColors.burgundy),
-            const SizedBox(width: 8),
-            Text('Conversación',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AlzitransColors.burgundy,
-                )),
-          ],
-        ),
-        const SizedBox(height: 12),
         // Área de mensajes
         Container(
           height: 250,
