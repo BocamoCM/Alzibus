@@ -2,11 +2,15 @@
 # Dockerfile — Imagen Docker del backend Alzibus
 # ==========================================
 # Construye una imagen Docker para ejecutar el servidor Node.js.
-# NOTA: Actualmente NO se usa en producción (se usa PM2 directamente).
-# Está preparado por si se quiere desplegar todo en contenedores.
 #
-# Construcción: docker build -t alzibus-backend .
-# Ejecución:    docker run -p 3000:3000 --env-file .env alzibus-backend
+# Construcción:  docker compose build backend
+# Ejecución:     docker compose up -d
+#
+# Notas:
+#   - El .env NO se incluye en la imagen (excluido por .dockerignore).
+#     Se inyecta en runtime vía env_file: en docker-compose.yml.
+#   - Los adjuntos de soporte viven en un bind mount del host
+#     (/var/lib/alzibus/uploads) para sobrevivir a recreate/rebuild.
 
 # Usar la imagen oficial de Node.js 18 en su variante 'slim' (más ligera).
 # slim excluye herramientas de compilación innecesarias (gcc, make, etc.)

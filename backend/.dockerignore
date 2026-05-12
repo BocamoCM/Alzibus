@@ -1,0 +1,48 @@
+# ==========================================
+# .dockerignore — qué NO copiar a la imagen Docker
+# ==========================================
+# Reduce el tamaño de la imagen y evita que secretos viajen dentro.
+# El .env se inyecta en runtime vía env_file: en docker-compose.yml.
+
+# Secretos / configuración local — JAMÁS dentro de la imagen.
+.env
+.env.*
+!.env.example
+
+# Dependencias y artefactos de build — se reinstalan dentro del contenedor.
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Tests, coverage y herramientas de desarrollo
+tests
+coverage
+.nyc_output
+*.test.js
+
+# Editor / SO
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Git
+.git
+.gitignore
+
+# Docs y assets que no necesita el runtime
+README.md
+docs/
+*.md
+
+# El propio dashboard.html (es servido por nginx en el website, no por la API)
+# Coméntalo si tu backend lo sirve directamente.
+# dashboard.html
+
+# Uploads locales — el bind mount los recrea
+uploads/

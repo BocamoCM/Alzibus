@@ -24,22 +24,34 @@ services:
 
   # ─── API Backend (Node.js) ───
   backend:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: alzibus_backend
     restart: always
     depends_on:
       - db
+    # env_file inyecta el .env entero al contenedor en runtime. Sustituye
+    # al patrón anterior de copiar .env dentro de la imagen vía Dockerfile,
+    # que filtraba secretos (JWT_SECRET, DB_PASSWORD…) en la imagen Docker.
+    env_file:
+      - .env
     environment:
+      # Estas claves se mantienen como override explícito por si el .env
+      # no las tuviera. DB_HOST tiene que ser 'db' (el nombre del service)
+      # para que la red interna de Compose resuelva el contenedor de Postgres.
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_USER=${DB_USER:-alzibus_user}
-      - DB_PASSWORD=${DB_PASSWORD:-alzibus_password}
-      - DB_NAME=${DB_NAME:-alzibus_db}
-      - JWT_SECRET=${JWT_SECRET}
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
       - PORT=3000
+      # Ruta de uploads dentro del contenedor. La hacemos coincidir con la
+      # ruta del host vía bind mount (ver volumes) para simplificar backups
+      # y para que los adjuntos sobrevivan a recreate/rebuild del contenedor.
+      - UPLOADS_DIR=/var/lib/alzibus/uploads
+    volumes:
+      # Bind mount: los adjuntos de soporte viven en el host, no en la
+      # capa escribible del contenedor. Si recreas/rebuilders el contenedor
+      # los archivos siguen ahí. Backup trivial con rsync sobre /var/lib/alzibus/uploads.
+      - /var/lib/alzibus/uploads:/var/lib/alzibus/uploads
     networks:
       - alzibus-net
 
