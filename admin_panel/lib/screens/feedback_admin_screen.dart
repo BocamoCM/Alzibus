@@ -1,6 +1,10 @@
+// El admin panel es una app exclusivamente web, así que dart:html es la
+// elección más simple para el file picker nativo. Silenciamos los lints
+// pensados para apps multiplataforma.
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:async';
+import 'dart:html' as html;
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
@@ -308,22 +312,39 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
     }
   }
 
+  // Selector de ficheros vía API nativa del navegador. Evitamos el plugin
+  // file_picker porque su build de Flutter Web tiene un bug de inicialización
+  // late en la versión 8.x. El admin panel es web-only, así que usar
+  // dart:html es la solución más simple y robusta.
   Future<void> _pickAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp', 'pdf'],
-      withData: true,
-      allowMultiple: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    setState(() {
-      for (final f in result.files) {
-        if (_pendingAttachments.length >= 3) break;
-        if (f.bytes != null) {
-          _pendingAttachments.add((filename: f.name, bytes: f.bytes!));
-        }
+    final input = html.FileUploadInputElement()
+      ..accept = '.png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf'
+      ..multiple = true;
+    input.click();
+
+    // Esperamos a que el usuario elija algo (evento change) o cancele
+    // (no se dispara change si cierra el diálogo — el future queda colgado,
+    // por eso usamos también onCancel cuando esté disponible).
+    await input.onChange.first;
+    final files = input.files;
+    if (files == null || files.isEmpty) return;
+
+    for (final file in files) {
+      if (_pendingAttachments.length >= 3) break;
+      final reader = html.FileReader();
+      reader.readAsArrayBuffer(file);
+      await reader.onLoad.first;
+      final bytes = reader.result;
+      if (bytes is Uint8List) {
+        setState(() {
+          _pendingAttachments.add((filename: file.name, bytes: bytes));
+        });
+      } else if (bytes is List<int>) {
+        setState(() {
+          _pendingAttachments.add((filename: file.name, bytes: Uint8List.fromList(bytes)));
+        });
       }
-    });
+    }
   }
 
   Future<void> _sendMessage() async {

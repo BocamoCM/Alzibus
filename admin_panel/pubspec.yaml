@@ -41,8 +41,9 @@ dependencies:
   http_parser: ^4.0.2
   shared_preferences: ^2.5.3
   intl: ^0.20.2
-  # Selector de archivos (imágenes) para los adjuntos del chat de soporte.
-  file_picker: ^8.1.4
+  # Nota: el selector de archivos del chat de soporte usa dart:html directamente
+  # (admin panel es web-only) — file_picker 8.x tiene un bug de inicialización
+  # late en Flutter Web que rompía la subida.
 
 dev_dependencies:
   flutter_test:
