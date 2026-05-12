@@ -19,14 +19,14 @@
   <meta name="geo.placename" content="Alzira, Valencia, España">
 
   <!-- Canonical -->
-  <link rel="canonical" href="https://alzitrans.duckdns.org/app/">
+  <link rel="canonical" href="https://alzitrans.es/app/">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://alzitrans.duckdns.org/app/">
+  <meta property="og:url" content="https://alzitrans.es/app/">
   <meta property="og:title" content="Alzitrans - Bus Alzira en directo">
   <meta property="og:description" content="Consulta los tiempos del bus en Alzira en tiempo real (L1, L2, L3). Versión web gratuita.">
-  <meta property="og:image" content="https://alzitrans.duckdns.org/assets/logo.png">
+  <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
   <meta property="og:site_name" content="Alzitrans">
   <meta property="og:locale" content="es_ES">
 
@@ -34,7 +34,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Alzitrans - Bus Alzira en directo">
   <meta name="twitter:description" content="Tiempos reales del bus de Alzira en tu navegador. Líneas L1, L2 y L3.">
-  <meta name="twitter:image" content="https://alzitrans.duckdns.org/assets/logo.png">
+  <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
 
   <script type="application/ld+json">
       {
@@ -42,7 +42,7 @@
         "@type": "WebApplication",
         "name": "Alzitrans Web",
         "alternateName": ["Alzibus", "Bus Alzira"],
-        "url": "https://alzitrans.duckdns.org/app/",
+        "url": "https://alzitrans.es/app/",
         "description": "Aplicación web para consultar los tiempos del bus de Alzira en tiempo real.",
         "applicationCategory": "TravelApplication",
         "operatingSystem": "Any (browser)",
@@ -65,7 +65,9 @@
   <!-- AdSense intencionalmente NO se carga en /app/.
        Flutter Web pinta sobre canvas/shadow DOM y los bots de anuncios sólo
        ven el fondo negro mientras bootstrappea, lo que provoca rechazos por
-       "contenido insuficiente". Los anuncios viven en la landing. -->
+       "contenido insuficiente". Los anuncios viven en la landing (HTML
+       crawleable). Para mostrar anuncios DENTRO de la app web haría falta
+       integración manual con HtmlElementView / platformViewRegistry. -->
 
   <style>
     html, body { background:#0a0a0f; margin:0; padding:0; }
