@@ -2,7 +2,21 @@
     email borjacarreres@gmail.com
 }
 
-alzitrans.duckdns.org {
+# Redirect 301 de www.alzitrans.es a la raíz alzitrans.es (canonical).
+# Las dos resuelven a la misma IP, pero el SEO funciona mejor si
+# escogemos una URL canónica y forzamos a la otra a redirigir — así
+# Google no diluye autoridad entre dos versiones.
+www.alzitrans.es {
+    redir https://alzitrans.es{uri} permanent
+}
+
+# Servimos el dominio nuevo (alzitrans.es) Y el viejo (duckdns) en el
+# mismo bloque. Caddy pide cert Let's Encrypt automáticamente para
+# alzitrans.es la primera vez que llega una petición. El dominio
+# duckdns sigue funcionando para usuarios con APKs antiguas — lo
+# dejaremos varios meses hasta que la mayoría haya actualizado, y
+# después lo retiramos.
+alzitrans.es, alzitrans.duckdns.org {
     # Smart QR Tracker — redirige al backend para registrar y luego a /descargar
     handle /qr* {
         reverse_proxy alzibus_backend:3000 {

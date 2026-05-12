@@ -23,7 +23,10 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  static final String _baseUrl = 'https://alzitrans.duckdns.org/api';
+  // alzitrans.es es el dominio canónico desde mayo 2026. Caddy sigue
+  // sirviendo también alzitrans.duckdns.org como host alias, pero todo
+  // el frontend nuevo apunta aquí.
+  static final String _baseUrl = 'https://alzitrans.es/api';
   static const String _apiKey = 'alzibus-secret-key-2024';
 
   static String? _token;

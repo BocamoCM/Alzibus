@@ -136,7 +136,7 @@
 
         <div class="input-group">
             <label for="url">URL de destino</label>
-            <input type="text" id="url" value="https://alzitrans.duckdns.org/qr" placeholder="https://...">
+            <input type="text" id="url" value="https://alzitrans.es/qr" placeholder="https://...">
         </div>
 
         <div id="qr-result"></div>
@@ -156,7 +156,7 @@
         const downloadBtn = document.getElementById('download-btn');
 
         function generateQR() {
-            const text = urlInput.value || "https://alzitrans.duckdns.org/qr";
+            const text = urlInput.value || "https://alzitrans.es/qr";
             qrResult.innerHTML = '';
             
             const qr = kjua({

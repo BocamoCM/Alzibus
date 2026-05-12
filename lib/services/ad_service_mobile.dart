@@ -39,8 +39,8 @@ class AdService {
     return AdRequest(
       keywords: keywords,
       contentUrl: _currentLine != null
-          ? 'https://alzitrans.duckdns.org/line/$_currentLine'
-          : 'https://alzitrans.duckdns.org',
+          ? 'https://alzitrans.es/line/$_currentLine'
+          : 'https://alzitrans.es',
       extras: extras,
     );
   }
