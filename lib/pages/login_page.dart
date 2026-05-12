@@ -103,8 +103,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     try {
       final authService = ref.read(authServiceProvider);
+      // Normalizamos email a minúsculas para evitar que registrar con
+      // "Pepe@gmail.com" y loguear con "pepe@gmail.com" cree dos cuentas
+      // o falle "Credenciales inválidas". El backend también normaliza
+      // (defensa en doble capa).
       await authService.login(
-        _emailController.text.trim(),
+        _emailController.text.trim().toLowerCase(),
         _passwordController.text.trim(),
       );
 
