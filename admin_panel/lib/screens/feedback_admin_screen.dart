@@ -538,7 +538,9 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
                   const Text('(editado)', style: TextStyle(fontSize: 10, color: Colors.black54, fontStyle: FontStyle.italic)),
                 ],
                 // Doble check WhatsApp para mis mensajes (admin → usuario).
-                if (isAdmin)
+                // Si está leído mostramos también "Visto HH:mm" en azul,
+                // similar a Instagram/Telegram.
+                if (isAdmin) ...[
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
                     child: Icon(
@@ -547,12 +549,104 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
                       color: readAt != null ? Colors.blue : Colors.black45,
                     ),
                   ),
+                  if (readAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        'Visto ${DateFormat('HH:mm').format(readAt.toLocal())}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  // Abre la imagen en grande dentro de un dialog con InteractiveViewer
+  // (pinch-zoom y arrastre). El bytes loader se reutiliza vía _AdminAuthImage.
+  Future<void> _openImageFullscreen(int attachmentId, String filename) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            // Tap fuera de la imagen → cierra. Tap encima → no cierra.
+            Positioned.fill(
+              child: GestureDetector(onTap: () => Navigator.pop(ctx)),
+            ),
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 5,
+                child: _AdminAuthImage(attachmentId: attachmentId, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 8, right: 8,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.download, color: Colors.white),
+                    tooltip: 'Descargar',
+                    onPressed: () => _downloadAttachmentToBrowser(attachmentId, filename, 'image/*'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Descarga el adjunto a través del navegador. Como necesitamos enviar
+  // Authorization Bearer, no podemos usar un <a href="..."> directo: el
+  // navegador no manda nuestros headers. Truco: fetch bytes con auth →
+  // Blob → AnchorElement.download → click programático.
+  Future<void> _downloadAttachmentToBrowser(int attachmentId, String filename, String mime) async {
+    try {
+      final bytes = await _api.downloadFeedbackAttachment(attachmentId);
+      if (bytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se pudo descargar el archivo')),
+          );
+        }
+        return;
+      }
+      final blob = html.Blob([bytes], mime);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..download = filename
+        ..style.display = 'none';
+      html.document.body?.append(anchor);
+      anchor.click();
+      anchor.remove();
+      // El navegador necesita un breve momento para iniciar la descarga
+      // antes de revocar el URL temporal.
+      Future.delayed(const Duration(seconds: 1), () => html.Url.revokeObjectUrl(url));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error descargando: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildAttachmentPreview(Map<String, dynamic> a) {
@@ -564,31 +658,46 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
     if (mime.startsWith('image/')) {
       return Padding(
         padding: const EdgeInsets.only(top: 4),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 260, maxHeight: 260),
-            child: _AdminAuthImage(attachmentId: id),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => _openImageFullscreen(id, name),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 260, maxHeight: 260),
+                child: _AdminAuthImage(attachmentId: id),
+              ),
+            ),
           ),
         ),
       );
     }
+    // PDF (u otro): tile clicable que descarga el archivo en el navegador.
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.black12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
-            const SizedBox(width: 6),
-            Flexible(child: Text(name, overflow: TextOverflow.ellipsis)),
-          ],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => _downloadAttachmentToBrowser(id, name, mime),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+                const SizedBox(width: 6),
+                Flexible(child: Text(name, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 6),
+                const Icon(Icons.download, size: 16, color: Colors.black54),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -713,7 +822,8 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
 /// Cachea los bytes en memoria mientras viva el State para no refetchear.
 class _AdminAuthImage extends StatefulWidget {
   final int attachmentId;
-  const _AdminAuthImage({required this.attachmentId});
+  final BoxFit fit;
+  const _AdminAuthImage({required this.attachmentId, this.fit = BoxFit.cover});
 
   @override
   State<_AdminAuthImage> createState() => _AdminAuthImageState();
@@ -757,6 +867,6 @@ class _AdminAuthImageState extends State<_AdminAuthImage> {
         child: const Icon(Icons.broken_image, color: Colors.grey),
       );
     }
-    return Image.memory(_bytes!, fit: BoxFit.cover);
+    return Image.memory(_bytes!, fit: widget.fit);
   }
 }
