@@ -199,14 +199,16 @@ class FeedbackService {
       for (final att in attachments) {
         formData.files.add(MapEntry('attachments', await att.toMultipartFile()));
       }
-      // Timeout más generoso para uploads: con el global de 10s, subir un
+      // Timeout muy generoso para uploads: con el global de 10s, subir un
       // PDF de varios MB en una red lenta acaba en TimeoutException.
+      // 120s acomoda casi cualquier escenario realista (móvil 4G débil,
+      // WiFi saturada). Si lo necesitas más, sube los valores.
       final response = await ApiClient().post(
         '/feedback/$ticketId/reply',
         data: formData,
         options: Options(
-          sendTimeout: const Duration(seconds: 60),
-          receiveTimeout: const Duration(seconds: 60),
+          sendTimeout: const Duration(seconds: 120),
+          receiveTimeout: const Duration(seconds: 120),
         ),
       );
       return (ok: response.statusCode == 201, error: null);

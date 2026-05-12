@@ -56,8 +56,29 @@ class NoticeController {
 
     async adminReplyToNotice(req, res, next) {
         try {
-            const result = await noticeService.adminReply(req.params.id, req.body.message);
+            // En avisos generales, el admin manda targetUserEmail para
+            // indicar a qué thread (usuario) responde. En personales se
+            // ignora porque el thread es fijo.
+            const result = await noticeService.adminReply(
+                req.params.id,
+                req.body.message,
+                req.body.targetUserEmail || null
+            );
             res.status(201).json(result);
+        } catch (err) { next(err); }
+    }
+
+    async markNoticeRead(req, res, next) {
+        try {
+            const result = await noticeService.markNoticeRead(req.params.id, req.user.email);
+            res.json(result);
+        } catch (err) { next(err); }
+    }
+
+    async getNoticeReadersAdmin(req, res, next) {
+        try {
+            const result = await noticeService.getNoticeReadersAdmin(req.params.id);
+            res.json(result);
         } catch (err) { next(err); }
     }
 }
