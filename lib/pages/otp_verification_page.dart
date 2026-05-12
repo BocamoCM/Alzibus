@@ -56,7 +56,10 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   }
 
   Future<void> _verifyCode() async {
-    final code = _codeController.text.trim();
+    // Defensa extra: aunque el inputFormatter ya filtra non-digits, hacemos
+    // trim + replace para cubrir casos de paste con caracteres invisibles
+    // (U+200B, U+00A0, etc.) que algunos clientes de email añaden al copiar.
+    final code = _codeController.text.replaceAll(RegExp(r'\D'), '');
     if (code.length != 6) {
       _showError('El código debe tener 6 dígitos');
       return;
@@ -216,6 +219,20 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 textAlign: TextAlign.center,
+                // Solo dígitos. Algunos teclados Android tienen ',' '.' en el
+                // teclado numérico y se podían colar al pegar. También bloquea
+                // espacios y caracteres invisibles.
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                // Permite que Android/iOS autorrellene el OTP desde la
+                // notificación de email o SMS cuando esté disponible.
+                autofillHints: const [AutofillHints.oneTimeCode],
+                // Enviar al pulsar el botón "OK" del teclado nativo.
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) {
+                  if (!_isLoading) _verifyCode();
+                },
                 style: const TextStyle(
                   fontSize: 28,
                   letterSpacing: 10,

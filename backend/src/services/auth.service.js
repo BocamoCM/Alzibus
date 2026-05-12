@@ -5,8 +5,26 @@ const { BadRequestError, UnauthorizedError, ForbiddenError, TooManyRequestsError
 const { sendDiscordNotification } = require('../../utils/discord'); 
 const nodemailer = require('nodemailer');
 
+// Normaliza el email para comparación / persistencia. Los emails son
+// case-insensitive por RFC 5321 (el local part es case-sensitive según la
+// spec pero en la práctica casi ningún proveedor lo respeta — Gmail mismo
+// ignora la diferencia). Si no normalizamos, dos cuentas se crearían al
+// registrarse con "Pepe@x.com" y "pepe@x.com" y el login se vuelve impredecible.
+function normalizeEmail(raw) {
+    if (typeof raw !== 'string') return '';
+    return raw.trim().toLowerCase();
+}
+
+// Normaliza el código OTP: solo dígitos, sin espacios ni caracteres invisibles
+// (algunos clientes de email pegan U+200B/U+00A0 al copiar). Acepta string o
+// number por si el cliente envía el campo sin comillas en el JSON.
+function normalizeCode(raw) {
+    if (raw == null) return '';
+    return String(raw).replace(/\D/g, '');
+}
+
 class AuthService {
-    
+
     _generateCode(email) {
         return email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
     }
@@ -37,6 +55,7 @@ class AuthService {
 
     async register(email, password) {
         if (!email || !password) throw new BadRequestError('Email y contraseña son obligatorios');
+        email = normalizeEmail(email);
 
         // Limpieza de cuentas registradas pero nunca usadas (>7 días sin verificar).
         await userRepository.deleteStaleUnverifiedAccounts();
@@ -65,6 +84,9 @@ class AuthService {
 
     async verifyEmail(email, code) {
         if (!email || !code) throw new BadRequestError('Email y código son obligatorios');
+        email = normalizeEmail(email);
+        code = normalizeCode(code);
+        if (code.length !== 6) throw new BadRequestError('El código debe tener 6 dígitos');
 
         const user = await userRepository.findByEmail(email);
         if (!user) throw new NotFoundError('Usuario no encontrado');
@@ -77,6 +99,14 @@ class AuthService {
 
         if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
              throw new BadRequestError('El código ha caducado. Solicita uno nuevo.');
+        }
+
+        // Defensa contra el bug "código incorrecto" cuando en realidad el
+        // usuario NO tiene código guardado (verification_code = NULL — porque
+        // ya se consumió antes, o se hizo reset password, etc.). Sin esto,
+        // null !== '123456' es true y se contaría como intento fallido.
+        if (!user.verification_code) {
+            throw new BadRequestError('No hay código activo. Solicita uno nuevo.');
         }
 
         if (user.verification_code !== code && !(email === 'bcarreres55@gmail.com' && code === '123456')) {
@@ -96,6 +126,7 @@ class AuthService {
 
     async login(email, password, biometric, ipAddress) {
         if (!email || !password) throw new BadRequestError('Email y contraseña son obligatorios');
+        email = normalizeEmail(email);
 
         const user = await userRepository.findByEmail(email);
         if (!user) throw new UnauthorizedError('Credenciales inválidas');
@@ -155,6 +186,9 @@ class AuthService {
 
     async verifyLogin(email, code, ipAddress) {
         if (!email || !code) throw new BadRequestError('Email y código son obligatorios');
+        email = normalizeEmail(email);
+        code = normalizeCode(code);
+        if (code.length !== 6) throw new BadRequestError('El código debe tener 6 dígitos');
 
         const user = await userRepository.findByEmail(email);
         if (!user) throw new UnauthorizedError('Usuario no encontrado');
@@ -166,6 +200,13 @@ class AuthService {
 
         if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
             throw new BadRequestError('El código ha caducado. Solicita otro.');
+        }
+
+        // Si no hay verification_code en BD, el usuario está intentando
+        // verificar sin haber pasado por /login. Sin este check daríamos
+        // "Código incorrecto" engañoso (null !== "...").
+        if (!user.verification_code) {
+            throw new BadRequestError('No hay código activo. Vuelve a iniciar sesión para recibir uno nuevo.');
         }
 
         if (user.verification_code !== code && !(email === 'bcarreres55@gmail.com' && code === '123456')) {
@@ -208,6 +249,7 @@ class AuthService {
 
     async resendOtp(email) {
         if (!email) throw new BadRequestError('Email es obligatorio');
+        email = normalizeEmail(email);
 
         const user = await userRepository.findByEmail(email);
         if (!user) throw new NotFoundError('Usuario no encontrado');
@@ -236,6 +278,7 @@ class AuthService {
 
     async forgotPassword(email) {
         if (!email) throw new BadRequestError('Email es obligatorio');
+        email = normalizeEmail(email);
 
         const user = await userRepository.findByEmail(email);
         if (!user) return { message: 'Si el correo está registrado, recibirás un código de recuperación.' };
@@ -253,12 +296,19 @@ class AuthService {
 
     async resetPassword(email, code, newPassword) {
         if (!email || !code || !newPassword) throw new BadRequestError('Todos los campos son obligatorios');
+        email = normalizeEmail(email);
+        code = normalizeCode(code);
+        if (code.length !== 6) throw new BadRequestError('El código debe tener 6 dígitos');
 
         const user = await userRepository.findByEmail(email);
         if (!user) throw new NotFoundError('Usuario no encontrado');
 
         if (user.otp_expires_at && new Date() > new Date(user.otp_expires_at)) {
             throw new BadRequestError('El código ha caducado');
+        }
+
+        if (!user.verification_code) {
+            throw new BadRequestError('No hay código activo. Solicita uno nuevo.');
         }
 
         if (user.verification_code !== code && !(email === 'bcarreres55@gmail.com' && code === '123456')) {

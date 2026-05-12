@@ -40,8 +40,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     try {
       final authService = ref.read(authServiceProvider);
+      // Email a minúsculas: registrar con "Pepe@x.com" y loguear con
+      // "pepe@x.com" crearía dos cuentas distintas si no normalizamos.
       final errorMessage = await authService.register(
-        _emailController.text.trim(),
+        _emailController.text.trim().toLowerCase(),
         _passwordController.text.trim(),
       );
 

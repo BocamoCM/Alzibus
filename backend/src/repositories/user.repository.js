@@ -2,7 +2,13 @@ const pool = require('../../db');
 
 class UserRepository {
     async findByEmail(email) {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        // LOWER en ambos lados para cubrir cuentas heredadas de cuando no
+        // se normalizaba el email al registrar (existían filas con
+        // 'Pepe@x.com' que ahora bucan con 'pepe@x.com' y no matcheaban).
+        const result = await pool.query(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+            [email]
+        );
         return result.rows[0];
     }
 
