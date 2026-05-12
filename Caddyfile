@@ -2,12 +2,39 @@
     email borjacarreres@gmail.com
 }
 
-# Redirect 301 de www.alzitrans.es y del antiguo alzitrans.duckdns.org
-# a la raíz alzitrans.es. Permite el "Change of address" en Google
-# Search Console (transfiere autoridad SEO al nuevo dominio) y mantiene
-# las APKs viejas funcionando (Dio sigue redirects 301 por defecto).
-www.alzitrans.es, alzitrans.duckdns.org {
+# www → raíz canonical.
+www.alzitrans.es {
     redir https://alzitrans.es{uri} permanent
+}
+
+# alzitrans.duckdns.org: API directa al backend (sin redirect, para no
+# romper POST/PUT de las APKs antiguas) + redirect 301 al dominio
+# nuevo para todas las URLs HTML (mantiene SEO y Change of address).
+alzitrans.duckdns.org {
+    handle /api/* {
+        reverse_proxy alzibus_backend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+    handle /qr* {
+        reverse_proxy alzibus_backend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+    handle /delete-account {
+        reverse_proxy alzibus_backend:3000
+    }
+    handle /privacy-policy {
+        reverse_proxy alzibus_backend:3000
+    }
+    handle /app-ads.txt {
+        reverse_proxy alzibus_backend:3000
+    }
+    handle {
+        redir https://alzitrans.es{uri} permanent
+    }
 }
 
 alzitrans.es {
