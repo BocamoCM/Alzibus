@@ -119,6 +119,30 @@ class UserService {
         const emails = await userRepository.getAllUserEmails();
         return { text: emails.join(', ') };
     }
+
+    // Banea/desbanea un usuario. El check active === false en auth.service.js
+    // ya impide login cuando está inhabilitado. Notifica a Discord para que
+    // el cambio quede auditado.
+    async toggleUserActive(userId) {
+        const updated = await userRepository.toggleActive(userId);
+        if (!updated) throw new NotFoundError('Usuario no encontrado');
+        const action = updated.active ? 'reactivada' : 'inhabilitada';
+        const emoji = updated.active ? '✅' : '🔒';
+        sendDiscordNotification(`${emoji} **Cuenta ${action} por admin**: \`${updated.email}\``);
+        return updated;
+    }
+
+    // Borrado total por parte del admin (cuenta + viajes). Distinto de
+    // deleteAccount, que es el self-delete del propio usuario.
+    async deleteUserAdmin(userId) {
+        const user = await userRepository.findById(userId);
+        if (!user) throw new NotFoundError('Usuario no encontrado');
+        await userRepository.deleteUserTrips(userId);
+        await userRepository.deleteUser(userId);
+        console.log(`[Admin] Usuario eliminado: ${user.email} (ID: ${userId})`);
+        sendDiscordNotification(`🗑️ **Cuenta eliminada por admin**: \`${user.email}\` (ID ${userId}).`);
+        return { message: 'Usuario eliminado correctamente', email: user.email };
+    }
 }
 
 module.exports = new UserService();

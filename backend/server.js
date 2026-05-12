@@ -284,6 +284,10 @@ async function initDatabase() {
             -- abre el ticket.
             ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
 
+            -- Marca de edición. NULL = mensaje original; con timestamp =
+            -- ha sido editado por el admin (se muestra "editado" en UI).
+            ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ;
+
             -- Adjuntos en mensajes de soporte. Metadatos solo; los archivos
             -- en disco bajo UPLOADS_DIR/feedback/<ticket_id>/<stored_name>.
             CREATE TABLE IF NOT EXISTS feedback_attachments (

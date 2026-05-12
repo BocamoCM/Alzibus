@@ -73,6 +73,24 @@ class UserController {
             res.send(result.text);
         } catch (err) { next(err); }
     }
+
+    async toggleUserActive(req, res, next) {
+        try {
+            const id = parseInt(req.params.id, 10);
+            if (!Number.isFinite(id)) return res.status(400).json({ error: 'ID inválido' });
+            const result = await userService.toggleUserActive(id);
+            res.json(result);
+        } catch (err) { next(err); }
+    }
+
+    async deleteUserAdmin(req, res, next) {
+        try {
+            const id = parseInt(req.params.id, 10);
+            if (!Number.isFinite(id)) return res.status(400).json({ error: 'ID inválido' });
+            const result = await userService.deleteUserAdmin(id);
+            res.json(result);
+        } catch (err) { next(err); }
+    }
 }
 
 module.exports = new UserController();

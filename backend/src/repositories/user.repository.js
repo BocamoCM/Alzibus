@@ -116,6 +116,17 @@ class UserRepository {
          await pool.query('DELETE FROM trips WHERE user_id = $1', [userId]);
     }
 
+    // Invierte el flag active (true → false → true). Devuelve el usuario
+    // resultante para que el cliente refresque la UI sin tener que recargar
+    // toda la lista. Usado por el panel admin como "banear/desbanear".
+    async toggleActive(userId) {
+        const result = await pool.query(
+            'UPDATE users SET active = NOT COALESCE(active, TRUE) WHERE id = $1 RETURNING id, email, active',
+            [userId]
+        );
+        return result.rows[0];
+    }
+
     async getTotalTrips(userId) {
         const result = await pool.query('SELECT COUNT(*) FROM trips WHERE user_id = $1', [userId]);
         return result.rows[0].count;

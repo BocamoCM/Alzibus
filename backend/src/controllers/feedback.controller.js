@@ -82,6 +82,24 @@ class FeedbackController {
         } catch (err) { next(err); }
     }
 
+    async editAdminReply(req, res, next) {
+        try {
+            const replyId = parseInt(req.params.replyId, 10);
+            if (!Number.isFinite(replyId)) return res.status(400).json({ error: 'replyId inválido' });
+            const result = await feedbackService.editAdminReply(replyId, req.body.message);
+            res.json(result);
+        } catch (err) { next(err); }
+    }
+
+    async deleteAdminReply(req, res, next) {
+        try {
+            const replyId = parseInt(req.params.replyId, 10);
+            if (!Number.isFinite(replyId)) return res.status(400).json({ error: 'replyId inválido' });
+            const result = await feedbackService.deleteAdminReply(replyId);
+            res.json(result);
+        } catch (err) { next(err); }
+    }
+
     // Descarga un adjunto. Usuario o admin pueden pedirlo: si es usuario,
     // verificamos que sea dueño del ticket. Las cabeceras evitan que el
     // navegador interprete el archivo como HTML/JS aunque el atacante haya
