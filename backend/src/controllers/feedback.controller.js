@@ -113,6 +113,12 @@ class FeedbackController {
 
             const filePath = resolveAttachmentPath(att);
             if (!fs.existsSync(filePath)) {
+                // 410 = metadato en BD pero blob ausente en disco. Logueamos
+                // la ruta exacta y el UPLOADS_DIR efectivo para diagnosticar:
+                //  - typical fix: mover los archivos antiguos al nuevo UPLOADS_DIR
+                //  - o limpiar la BD si nos da igual perder el adjunto.
+                console.warn('[Feedback] 410 Gone — adjunto ausente en disco:',
+                    `id=${att.id} expected=${filePath} UPLOADS_DIR=${process.env.UPLOADS_DIR || '(default backend/uploads)'}`);
                 return res.status(410).json({ error: 'Archivo no disponible' });
             }
 
