@@ -5,8 +5,15 @@ const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
-const contactLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 2, message: { error: 'Límite alcanzado' } });
-const metricsLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 2, message: { error: 'Límite alcanzado' } });
+// Whitelist (compartida vía .env con auth.routes.js).
+const WHITELIST = new Set(
+    (process.env.RATE_LIMIT_WHITELIST || '')
+        .split(',').map(s => s.trim()).filter(Boolean)
+);
+const isWhitelisted = (req) => WHITELIST.has(req.ip);
+
+const contactLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 2, skip: isWhitelisted, message: { error: 'Límite alcanzado' } });
+const metricsLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 2, skip: isWhitelisted, message: { error: 'Límite alcanzado' } });
 
 // Admin Stats
 router.get('/stats', authenticateAdmin, statController.getGeneralStats);
