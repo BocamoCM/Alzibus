@@ -35,5 +35,5 @@ Write-Host "BUILD WEB OK." -ForegroundColor Green
 Write-Host "Desplegado en: website/app/" -ForegroundColor White
 Write-Host "Para publicar en produccion:" -ForegroundColor White
 Write-Host "  docker compose restart website proxy" -ForegroundColor Yellow
-Write-Host "URL final: https://alzitrans.duckdns.org/app/" -ForegroundColor Green
+Write-Host "URL final: https://alzitrans.es/app/" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan

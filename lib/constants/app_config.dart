@@ -4,7 +4,11 @@ class AppConfig {
   AppConfig._();
 
   /// URL base de la API de producción.
-  static const String _productionBaseUrl = 'https://alzitrans.duckdns.org/api';
+  /// alzitrans.es es el dominio canónico desde la v5.3+. El antiguo
+  /// alzitrans.duckdns.org sigue respondiendo (Caddy sirve ambos hosts)
+  /// para que las APKs viejas no dejen de funcionar — lo retiraremos
+  /// dentro de unos meses cuando la mayoría haya actualizado.
+  static const String _productionBaseUrl = 'https://alzitrans.es/api';
 
   /// URL base de la API.
   static const String baseUrl = String.fromEnvironment(

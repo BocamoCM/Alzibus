@@ -13,4 +13,4 @@ Disallow: /app/
 User-agent: AdsBot-Google-Mobile
 Disallow: /app/
 
-Sitemap: https://alzitrans.duckdns.org/sitemap.xml
+Sitemap: https://alzitrans.es/sitemap.xml

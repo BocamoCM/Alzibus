@@ -2,7 +2,12 @@
     email borjacarreres@gmail.com
 }
 
-alzitrans.duckdns.org {
+# Redirect 301: www → raíz, para mantener una sola URL canónica (SEO).
+www.alzitrans.es {
+    redir https://alzitrans.es{uri} permanent
+}
+
+alzitrans.es, alzitrans.duckdns.org {
     # Smart QR Tracker — redirige al backend para registrar y luego a /descargar
     handle /qr* {
         reverse_proxy alzibus_backend:3000 {
