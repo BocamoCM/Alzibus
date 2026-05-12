@@ -37,6 +37,8 @@ dependencies:
   fl_chart: ^1.1.1
   data_table_2: ^2.7.2
   http: ^1.6.0
+  # Necesario para fijar MediaType en MultipartFile (uploads de soporte).
+  http_parser: ^4.0.2
   shared_preferences: ^2.5.3
   intl: ^0.20.2
   # Selector de archivos (imágenes) para los adjuntos del chat de soporte.

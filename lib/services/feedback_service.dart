@@ -1,6 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http_parser/http_parser.dart' show MediaType;
 import '../core/network/api_client.dart';
+
+// Mapea extensión → MediaType. Sin esto Dio envía application/octet-stream
+// y el backend rechaza el adjunto.
+MediaType _mediaTypeForFilename(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.png'))                              return MediaType('image', 'png');
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg'))   return MediaType('image', 'jpeg');
+  if (lower.endsWith('.webp'))                             return MediaType('image', 'webp');
+  if (lower.endsWith('.pdf'))                              return MediaType('application', 'pdf');
+  return MediaType('application', 'octet-stream');
+}
 
 class FeedbackTicket {
   final int id;
@@ -244,9 +256,10 @@ class FeedbackAttachmentUpload {
       FeedbackAttachmentUpload._(filename: filename, bytes: bytes);
 
   Future<MultipartFile> toMultipartFile() async {
+    final contentType = _mediaTypeForFilename(filename);
     if (bytes != null) {
-      return MultipartFile.fromBytes(bytes!, filename: filename);
+      return MultipartFile.fromBytes(bytes!, filename: filename, contentType: contentType);
     }
-    return MultipartFile.fromFile(filePath!, filename: filename);
+    return MultipartFile.fromFile(filePath!, filename: filename, contentType: contentType);
   }
 }
