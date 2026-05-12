@@ -382,12 +382,83 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
     setState(() => _isSending = false);
   }
 
+  Future<void> _editMessage(int replyId, String currentText) async {
+    final ctrl = TextEditingController(text: currentText);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Editar mensaje'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          maxLines: 5,
+          minLines: 2,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (result == null || result.isEmpty || result == currentText) return;
+
+    final ok = await _api.editAdminReply(replyId, result);
+    if (!mounted) return;
+    if (ok) {
+      _loadMessages();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mensaje editado')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo editar el mensaje')),
+      );
+    }
+  }
+
+  Future<void> _deleteMessage(int replyId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Borrar mensaje'),
+        content: const Text('¿Borrar este mensaje y sus adjuntos? No se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Borrar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final ok = await _api.deleteAdminReply(replyId);
+    if (!mounted) return;
+    if (ok) {
+      _loadMessages();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo borrar el mensaje')),
+      );
+    }
+  }
+
   Widget _buildMessageBubble(Map<String, dynamic> msg) {
     final isAdmin = msg['sender_type'] == 'admin';
     final createdAt = DateTime.tryParse(msg['created_at']?.toString() ?? '')?.toLocal();
     final readAt = msg['read_at'] == null ? null : DateTime.tryParse(msg['read_at'].toString());
+    final editedAt = msg['edited_at'] == null ? null : DateTime.tryParse(msg['edited_at'].toString());
     final attachments = (msg['attachments'] as List?)?.cast<dynamic>() ?? const [];
     final messageText = msg['message']?.toString() ?? '';
+    final replyId = (msg['id'] as num?)?.toInt();
 
     return Align(
       alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
@@ -402,8 +473,41 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(isAdmin ? 'Administrador' : 'Usuario',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  child: Text(isAdmin ? 'Administrador' : 'Usuario',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+                // Menú de acciones solo en MIS mensajes (admin) y solo si
+                // tenemos id (no en optimistic updates sin persistir).
+                if (isAdmin && replyId != null)
+                  SizedBox(
+                    height: 20,
+                    width: 24,
+                    child: PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      iconSize: 16,
+                      tooltip: 'Acciones',
+                      onSelected: (a) {
+                        if (a == 'edit') _editMessage(replyId, messageText);
+                        if (a == 'delete') _deleteMessage(replyId);
+                      },
+                      itemBuilder: (ctx) => const [
+                        PopupMenuItem(value: 'edit', child: Row(children: [
+                          Icon(Icons.edit, size: 16), SizedBox(width: 8), Text('Editar'),
+                        ])),
+                        PopupMenuItem(value: 'delete', child: Row(children: [
+                          Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Borrar', style: TextStyle(color: Colors.red)),
+                        ])),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
             if (messageText.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -429,6 +533,10 @@ class _FeedbackChatDialogState extends State<_FeedbackChatDialog> {
                     DateFormat('HH:mm').format(createdAt),
                     style: const TextStyle(fontSize: 10, color: Colors.black54),
                   ),
+                if (editedAt != null) ...[
+                  const SizedBox(width: 4),
+                  const Text('(editado)', style: TextStyle(fontSize: 10, color: Colors.black54, fontStyle: FontStyle.italic)),
+                ],
                 // Doble check WhatsApp para mis mensajes (admin → usuario).
                 if (isAdmin)
                   Padding(

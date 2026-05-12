@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 
@@ -52,6 +50,8 @@ class _UsersScreenState extends State<UsersScreen> {
     return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
   }
 
+  // Inhabilitar / rehabilitar (banear). Es un castigo reversible: la cuenta
+  // sigue existiendo y al rehabilitarla recupera todo el historial.
   Future<void> _toggleUser(Map<String, dynamic> user) async {
     final isActive = user['active'] as bool? ?? true;
     final email = user['email'] as String;
@@ -61,20 +61,20 @@ class _UsersScreenState extends State<UsersScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(isActive ? 'Desactivar usuario' : 'Activar usuario'),
+        title: Text(isActive ? 'Inhabilitar usuario' : 'Rehabilitar usuario'),
         content: Text(
           isActive
-              ? '¿Desactivar la cuenta de $email? No podrá iniciar sesión.'
-              : '¿Activar la cuenta de $email?',
+              ? '¿Inhabilitar la cuenta de $email?\n\nNo podrá iniciar sesión hasta que la rehabilites. El historial se conserva.'
+              : '¿Rehabilitar la cuenta de $email? Volverá a poder iniciar sesión.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isActive ? Colors.red : Colors.green,
+              backgroundColor: isActive ? Colors.orange[800] : Colors.green,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isActive ? 'Desactivar' : 'Activar',
+            child: Text(isActive ? 'Inhabilitar' : 'Rehabilitar',
                 style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -95,12 +95,83 @@ class _UsersScreenState extends State<UsersScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(updated['active'] == true
-                ? '✅ Cuenta de $email activada'
-                : '🔒 Cuenta de $email desactivada'),
+                ? '✅ Cuenta de $email rehabilitada'
+                : '🔒 Cuenta de $email inhabilitada'),
             backgroundColor: updated['active'] == true ? Colors.green : Colors.orange,
           ),
         );
       }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cambiar el estado del usuario')),
+      );
+    }
+  }
+
+  // Borrado permanente: elimina viajes + cuenta. Doble confirmación para
+  // evitar accidentes (escribir el email).
+  Future<void> _deleteUser(Map<String, dynamic> user) async {
+    final email = user['email'] as String;
+    final id = user['id'] as int;
+    final ctrl = TextEditingController();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) {
+          final typedOk = ctrl.text.trim().toLowerCase() == email.toLowerCase();
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Eliminar usuario'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Esta acción es IRREVERSIBLE.\n\nSe eliminará la cuenta de $email y todos sus viajes.\n\nEscribe el email para confirmar:',
+                  style: const TextStyle(color: Colors.red),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: email,
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => setLocalState(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: typedOk ? () => Navigator.pop(ctx, true) : null,
+                child: const Text('Eliminar para siempre', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (confirm != true) return;
+    final ok = await _api.deleteUserAdmin(id);
+    if (!mounted) return;
+    if (ok) {
+      setState(() {
+        _users.removeWhere((u) => u['id'] == id);
+        _filter();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('🗑️ Cuenta de $email eliminada')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo eliminar el usuario')),
+      );
     }
   }
 
@@ -323,13 +394,39 @@ class _UsersScreenState extends State<UsersScreen> {
               ),
             ],
           ),
-          trailing: IconButton(
-            icon: Icon(
-              isActive ? Icons.block : Icons.check_circle_outline,
-              color: isActive ? Colors.red : Colors.green,
-            ),
-            tooltip: isActive ? 'Desactivar' : 'Activar',
-            onPressed: () => _toggleUser(user),
+          trailing: PopupMenuButton<String>(
+            tooltip: 'Acciones',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (action) {
+              switch (action) {
+                case 'toggle': _toggleUser(user); break;
+                case 'delete': _deleteUser(user); break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'toggle',
+                child: Row(
+                  children: [
+                    Icon(isActive ? Icons.gavel : Icons.check_circle_outline,
+                        color: isActive ? Colors.orange[800] : Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Text(isActive ? 'Inhabilitar' : 'Rehabilitar'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    Text('Eliminar', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
           isThreeLine: true,
         ),

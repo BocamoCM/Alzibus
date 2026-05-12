@@ -44,6 +44,7 @@ class FeedbackRepository {
                    r.sender_type,
                    r.created_at,
                    r.read_at,
+                   r.edited_at,
                    COALESCE(
                        json_agg(
                            json_build_object(
@@ -131,6 +132,45 @@ class FeedbackRepository {
                JOIN feedback_tickets t ON t.id = a.ticket_id
               WHERE a.id = $1`,
             [attachmentId]
+        );
+        return result.rows[0];
+    }
+
+    // ── Edit / delete de respuestas (admin) ──
+    async getReplyById(replyId) {
+        const result = await pool.query(
+            'SELECT id, ticket_id, user_email, sender_type, message FROM feedback_replies WHERE id = $1',
+            [replyId]
+        );
+        return result.rows[0];
+    }
+
+    async updateReplyMessage(replyId, newMessage) {
+        const result = await pool.query(
+            `UPDATE feedback_replies
+                SET message = $1, edited_at = NOW()
+              WHERE id = $2
+              RETURNING *`,
+            [newMessage, replyId]
+        );
+        return result.rows[0];
+    }
+
+    async getAttachmentsByReplyId(replyId) {
+        const result = await pool.query(
+            'SELECT id, ticket_id, stored_name FROM feedback_attachments WHERE reply_id = $1',
+            [replyId]
+        );
+        return result.rows;
+    }
+
+    async deleteReply(replyId) {
+        // ON DELETE CASCADE en feedback_attachments se encarga del cleanup
+        // de metadatos. Los blobs en disco los borra el service llamando
+        // antes a getAttachmentsByReplyId.
+        const result = await pool.query(
+            'DELETE FROM feedback_replies WHERE id = $1 RETURNING id, ticket_id',
+            [replyId]
         );
         return result.rows[0];
     }

@@ -1,7 +1,8 @@
+const fs = require('fs');
 const feedbackRepository = require('../repositories/feedback.repository');
 const { sendDiscordNotification } = require('../../utils/discord');
 const { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/errors');
-const { persistAttachment } = require('../utils/feedbackUploads');
+const { persistAttachment, resolveAttachmentPath } = require('../utils/feedbackUploads');
 
 // Canonicalización de estados. Hasta ahora la BD tenía mezcla: algunos
 // tickets con valores en español ('Abierto', 'En progreso'...) que vienen
@@ -191,6 +192,53 @@ class FeedbackService {
         const ticket = await feedbackRepository.updateTicketStatus(ticketId, normalized);
         if (!ticket) throw new NotFoundError('Ticket no encontrado');
         return ticket;
+    }
+
+    // Edita un mensaje del admin. Solo el propio admin (cualquier admin)
+    // puede editar mensajes sender_type='admin' — los mensajes del usuario
+    // son inmutables por integridad de la conversación.
+    async editAdminReply(replyId, newMessage) {
+        const safe = (newMessage || '').trim();
+        if (safe.length === 0) throw new BadRequestError('El mensaje no puede estar vacío');
+
+        const reply = await feedbackRepository.getReplyById(replyId);
+        if (!reply) throw new NotFoundError('Mensaje no encontrado');
+        if (reply.sender_type !== 'admin') {
+            throw new ForbiddenError('Solo se pueden editar mensajes del admin');
+        }
+
+        const updated = await feedbackRepository.updateReplyMessage(replyId, safe);
+        console.log(`[Feedback] ✏️ Mensaje #${replyId} editado por admin en ticket #${reply.ticket_id}`);
+        return updated;
+    }
+
+    // Elimina un mensaje admin junto con sus adjuntos (BD + ficheros en
+    // disco). Solo sender_type='admin' — los del usuario quedan protegidos.
+    async deleteAdminReply(replyId) {
+        const reply = await feedbackRepository.getReplyById(replyId);
+        if (!reply) throw new NotFoundError('Mensaje no encontrado');
+        if (reply.sender_type !== 'admin') {
+            throw new ForbiddenError('Solo se pueden borrar mensajes del admin');
+        }
+
+        // Borramos primero los blobs de disco. Si fallan, lo logueamos pero
+        // seguimos: la fila se irá igual y el cleanup queda como huérfano
+        // (preferible a dejar la BD inconsistente).
+        const attachments = await feedbackRepository.getAttachmentsByReplyId(replyId);
+        for (const att of attachments) {
+            try {
+                const filePath = resolveAttachmentPath(att);
+                await fs.promises.unlink(filePath);
+            } catch (err) {
+                if (err.code !== 'ENOENT') {
+                    console.error('[Feedback] No se pudo borrar adjunto en disco:', err.message);
+                }
+            }
+        }
+
+        const deleted = await feedbackRepository.deleteReply(replyId);
+        console.log(`[Feedback] 🗑️ Mensaje #${replyId} borrado por admin en ticket #${reply.ticket_id} (${attachments.length} adjuntos)`);
+        return { deleted: true, replyId: deleted.id, ticketId: deleted.ticket_id };
     }
 
     async getTicketRepliesAdmin(ticketId) {

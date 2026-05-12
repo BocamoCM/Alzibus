@@ -346,6 +346,58 @@ class ApiService {
     return null;
   }
 
+  // Borrado permanente de un usuario por parte del admin. No reversible.
+  Future<bool> deleteUserAdmin(int userId) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('$_baseUrl/admin/users/$userId'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+      _handleResponse(response);
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleting user: $e');
+      return false;
+    }
+  }
+
+  // Edita el texto de un mensaje propio del admin en un ticket.
+  Future<bool> editAdminReply(int replyId, String newMessage) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse('$_baseUrl/admin/feedback/replies/$replyId'),
+            headers: _headers,
+            body: json.encode({'message': newMessage}),
+          )
+          .timeout(_timeout);
+      _handleResponse(response);
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error editando mensaje admin: $e');
+      return false;
+    }
+  }
+
+  // Borra un mensaje propio del admin (con sus adjuntos).
+  Future<bool> deleteAdminReply(int replyId) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('$_baseUrl/admin/feedback/replies/$replyId'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+      _handleResponse(response);
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error borrando mensaje admin: $e');
+      return false;
+    }
+  }
+
   // ==========================================
   // AVISOS E INCIDENCIAS (ADMIN)
   // ==========================================

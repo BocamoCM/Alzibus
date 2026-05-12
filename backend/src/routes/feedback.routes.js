@@ -32,6 +32,10 @@ router.post('/admin/feedback/:id/reply', authenticateAdmin, attachmentsMiddlewar
 router.post('/admin/feedback/:id/read', authenticateAdmin, feedbackController.markTicketReadAdmin);
 router.put('/admin/feedback/:id/status', authenticateAdmin, feedbackController.updateStatusAdmin);
 router.get('/admin/feedback/:id/replies', authenticateAdmin, feedbackController.getTicketRepliesAdmin);
+// Edit / delete de mensajes del propio admin. Los mensajes del usuario son
+// inmutables (protegido en el service).
+router.patch('/admin/feedback/replies/:replyId', authenticateAdmin, feedbackController.editAdminReply);
+router.delete('/admin/feedback/replies/:replyId', authenticateAdmin, feedbackController.deleteAdminReply);
 
 // Descarga de adjuntos. El handler decide permisos en función del rol
 // (admin = acceso a todo; user = solo a sus tickets). Usamos optionalToken
