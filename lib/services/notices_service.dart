@@ -13,6 +13,10 @@ class NoticeRecord {
   /// Si no es null, este aviso es personal (solo visible para ese email).
   final String? targetEmail;
   final int? lastAdminReplyId;
+  /// Cuántos mensajes del admin tiene el usuario sin leer en su thread.
+  /// Vale tanto para avisos personales como para generales (el backend
+  /// filtra por user_email en avisos generales).
+  final int unreadAdminCount;
 
   const NoticeRecord({
     required this.id,
@@ -24,6 +28,7 @@ class NoticeRecord {
     required this.createdAt,
     this.targetEmail,
     this.lastAdminReplyId,
+    this.unreadAdminCount = 0,
   });
 
   bool get isPersonal => targetEmail != null;
@@ -40,6 +45,7 @@ class NoticeRecord {
         createdAt: DateTime.parse(json['created_at'] as String),
         targetEmail: json['target_email'] as String?,
         lastAdminReplyId: json['last_admin_reply_id'] as int?,
+        unreadAdminCount: (json['unread_admin_count'] as num?)?.toInt() ?? 0,
       );
 }
 
@@ -50,12 +56,15 @@ class NoticeMessage {
   /// 'user' = mensaje enviado por el usuario, 'admin' = respuesta del admin.
   final String senderType;
   final DateTime createdAt;
+  /// Si no es null, el destinatario ya leyó este mensaje (para read receipts).
+  final DateTime? readAt;
 
   const NoticeMessage({
     required this.id,
     required this.message,
     required this.senderType,
     required this.createdAt,
+    this.readAt,
   });
 
   bool get isFromAdmin => senderType == 'admin';
@@ -65,6 +74,7 @@ class NoticeMessage {
         message: json['message'] as String,
         senderType: json['sender_type'] as String? ?? 'user',
         createdAt: DateTime.parse(json['created_at'] as String),
+        readAt: json['read_at'] == null ? null : DateTime.tryParse(json['read_at'] as String),
       );
 }
 
@@ -103,7 +113,7 @@ class NoticesService {
     return [];
   }
 
-  /// Envía un mensaje del usuario al aviso personal.
+  /// Envía un mensaje del usuario al aviso (personal o general).
   Future<bool> replyToNotice(int noticeId, String message) async {
     try {
       final response = await ApiClient().post(
@@ -114,6 +124,16 @@ class NoticesService {
     } catch (e) {
       debugPrint('[NoticesService] Error enviando mensaje: $e');
       return false;
+    }
+  }
+
+  /// Marca el aviso como leído (idempotente — la primera vez registra;
+  /// las siguientes no hacen nada). El admin verá quién lo ha visto.
+  Future<void> markNoticeRead(int noticeId) async {
+    try {
+      await ApiClient().post('/notices/$noticeId/read');
+    } catch (e) {
+      debugPrint('[NoticesService] markNoticeRead: $e');
     }
   }
 }

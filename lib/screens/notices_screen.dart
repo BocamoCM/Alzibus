@@ -31,6 +31,13 @@ class _NoticesScreenState extends State<NoticesScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('last_seen_notices_at', DateTime.now().toIso8601String());
     if (mounted) setState(() => _isLoading = false);
+
+    // Marcar TODOS los avisos como leídos en el backend (idempotente).
+    // De este modo el admin sabe quién ha visto cada aviso. Fire-and-forget
+    // — si falla la red no rompe nada, el usuario ya tiene la lista cargada.
+    for (final n in _notices) {
+      _service.markNoticeRead(n.id);
+    }
   }
 
   Color _lineColor(String? lineId) {
@@ -216,16 +223,17 @@ class _NoticesScreenState extends State<NoticesScreen> {
                       ],
                     ),
                   ],
-                  // ── Sección de respuesta (solo avisos personales) ──
-                  if (isPersonal) ...[
-                    const SizedBox(height: 16),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
-                    _ReplyWidget(
-                      notice: notice,
-                      service: _service,
-                    ),
-                  ],
+                  // ── Sección de respuesta — disponible para avisos
+                  // personales Y generales. En generales cada usuario tiene
+                  // su propio thread privado con el admin (backend filtra
+                  // por user_email).
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  _ReplyWidget(
+                    notice: notice,
+                    service: _service,
+                  ),
                 ],
               ),
             ),
@@ -387,9 +395,30 @@ class _ReplyWidgetState extends State<_ReplyWidget> {
                                         style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 14),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        _formatDate(msg.createdAt),
-                                        style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey[500]),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _formatDate(msg.createdAt),
+                                            style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey[500]),
+                                          ),
+                                          // Doble check + Visto solo para mis mensajes.
+                                          if (isMe) ...[
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              msg.readAt != null ? Icons.done_all : Icons.done,
+                                              size: 14,
+                                              color: msg.readAt != null ? Colors.white : Colors.white70,
+                                            ),
+                                            if (msg.readAt != null) ...[
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Visto ${DateFormat('HH:mm').format(msg.readAt!.toLocal())}',
+                                                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
+                                              ),
+                                            ],
+                                          ],
+                                        ],
                                       ),
                                     ],
                                   ),

@@ -302,6 +302,24 @@ async function initDatabase() {
             );
             CREATE INDEX IF NOT EXISTS idx_feedback_attachments_reply ON feedback_attachments(reply_id);
             CREATE INDEX IF NOT EXISTS idx_feedback_attachments_ticket ON feedback_attachments(ticket_id);
+
+            -- ─── Lecturas de avisos ───
+            -- Una fila por (aviso, usuario) la primera vez que el usuario
+            -- ve el aviso. Usamos ON CONFLICT DO NOTHING para que llamar al
+            -- endpoint /read varias veces no genere duplicados ni mueva el
+            -- timestamp. Sirve para que el admin vea CUÁNTOS y QUIÉNES han
+            -- leído cada aviso.
+            CREATE TABLE IF NOT EXISTS notice_reads (
+                notice_id INTEGER NOT NULL REFERENCES notices(id) ON DELETE CASCADE,
+                user_email VARCHAR(255) NOT NULL,
+                read_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (notice_id, user_email)
+            );
+            CREATE INDEX IF NOT EXISTS idx_notice_reads_notice ON notice_reads(notice_id);
+
+            -- Read receipts también dentro del chat (admin → usuario)
+            -- Misma idea que feedback_replies.read_at.
+            ALTER TABLE notice_replies ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
         `);
         console.log('✅ Base de datos verificada (web_metrics y migraciones ok)');
     } catch (err) {

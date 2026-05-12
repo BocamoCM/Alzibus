@@ -43,10 +43,12 @@ class ApiService {
   };
 
   static const Duration _timeout = Duration(seconds: 10);
-  // Timeout más generoso para subidas: un PDF de varios MB en conexiones
-  // lentas (4G, WiFi pobre) puede tardar más de 10s aunque el servidor
-  // responda al instante. 60s es suficiente para el límite de 5 MB × 3.
-  static const Duration _uploadTimeout = Duration(seconds: 60);
+  // Timeout muy generoso para subidas: en conexiones malas (4G débil,
+  // WiFi a saturar el plan de la Pi) un PDF de 4 MB puede tardar más de
+  // un minuto. 120 s acomoda hasta ~30 kbps reales — peor que casi
+  // cualquier red real. Si en algún momento es insuficiente lo subimos
+  // o lo eliminamos del todo (sin timeout).
+  static const Duration _uploadTimeout = Duration(seconds: 120);
 
   // Cache de datos
   List<Map<String, dynamic>>? _stopsCache;
@@ -491,13 +493,19 @@ class ApiService {
   }
 
   /// Admin responde en la conversación de un aviso personal.
-  Future<bool> replyToNoticeAsAdmin(int noticeId, String message) async {
+  // Responde a un aviso. En avisos GENERALES hay que indicar a qué usuario
+  // se responde (targetUserEmail) — en personales se ignora porque el
+  // thread es fijo.
+  Future<bool> replyToNoticeAsAdmin(int noticeId, String message, {String? targetUserEmail}) async {
     try {
       final response = await http
           .post(
             Uri.parse('$_baseUrl/admin/notices/$noticeId/reply'),
             headers: _headers,
-            body: json.encode({'message': message}),
+            body: json.encode({
+              'message': message,
+              if (targetUserEmail != null) 'targetUserEmail': targetUserEmail,
+            }),
           )
           .timeout(_timeout);
       _handleResponse(response);
@@ -506,6 +514,15 @@ class ApiService {
       debugPrint('Error enviando respuesta del admin: $e');
       return false;
     }
+  }
+
+  // Lista de usuarios que han visto el aviso, con timestamp.
+  Future<List<Map<String, dynamic>>> getNoticeReaders(int noticeId) async {
+    final response = await _get('/admin/notices/$noticeId/readers');
+    if (response != null && response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    }
+    return [];
   }
   // ==========================================
   // FEEDBACK & TICKETS

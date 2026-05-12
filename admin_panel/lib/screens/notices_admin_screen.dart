@@ -222,12 +222,29 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
     );
   }
 
-  /// Muestra el hilo de chat de un aviso personal.
+  /// Muestra el hilo de chat. En avisos personales abre directo el thread
+  /// con el target_email. En avisos generales muestra primero la lista de
+  /// usuarios que han escrito y al tap se abre su thread.
   void _showReplies(Map<String, dynamic> notice) {
+    final noticeId = notice['id'] as int;
+    final targetEmail = notice['target_email'] as String?;
+    showDialog(
+      context: context,
+      builder: (ctx) => _AdminChatDialog(
+        noticeId: noticeId,
+        title: notice['title'],
+        api: _api,
+        targetEmailLocked: targetEmail, // si es personal, el thread está fijado
+      ),
+    );
+  }
+
+  /// Diálogo con la lista de usuarios que han marcado el aviso como leído.
+  void _showReaders(Map<String, dynamic> notice) {
     final noticeId = notice['id'] as int;
     showDialog(
       context: context,
-      builder: (ctx) => _AdminChatDialog(noticeId: noticeId, title: notice['title'], api: _api),
+      builder: (ctx) => _ReadersDialog(noticeId: noticeId, title: notice['title'], api: _api),
     );
   }
 
@@ -448,20 +465,32 @@ class _NoticesAdminScreenState extends State<NoticesAdminScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Botón de respuestas (solo avisos personales)
-                if (isPersonal) ...[
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.forum_outlined, size: 18),
-                    label: const Text('Ver respuestas'),
-                    onPressed: () => _showReplies(notice),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF6B1B3D),
-                      side: const BorderSide(color: Color(0xFF6B1B3D)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
+                // Botón "Lectores" — quién ha visto el aviso.
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: const Text('Lectores'),
+                  onPressed: () => _showReaders(notice),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue[800],
+                    side: BorderSide(color: Colors.blue[800]!),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  const SizedBox(width: 8),
-                ],
+                ),
+                const SizedBox(width: 8),
+                // Respuestas — disponible para PERSONALES y GENERALES desde
+                // ahora. En generales se ven todos los threads agrupados
+                // por usuario.
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.forum_outlined, size: 18),
+                  label: const Text('Respuestas'),
+                  onPressed: () => _showReplies(notice),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF6B1B3D),
+                    side: const BorderSide(color: Color(0xFF6B1B3D)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 // Toggle activo
                 OutlinedButton.icon(
                   icon: Icon(isActive ? Icons.pause_circle_outline : Icons.play_circle_outline, size: 18),
@@ -492,8 +521,16 @@ class _AdminChatDialog extends StatefulWidget {
   final int noticeId;
   final String title;
   final ApiService api;
+  /// Si el aviso es personal, su target_email fija el único thread posible.
+  /// Para avisos generales este valor es null y permitimos al admin elegir.
+  final String? targetEmailLocked;
 
-  const _AdminChatDialog({required this.noticeId, required this.title, required this.api});
+  const _AdminChatDialog({
+    required this.noticeId,
+    required this.title,
+    required this.api,
+    this.targetEmailLocked,
+  });
 
   @override
   State<_AdminChatDialog> createState() => _AdminChatDialogState();
@@ -505,10 +542,15 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
+  /// Email del usuario cuyo thread está actualmente seleccionado. En avisos
+  /// personales se fija al target_email; en generales lo elige el admin
+  /// haciendo clic en uno de los usuarios que han escrito.
+  String? _selectedUserEmail;
 
   @override
   void initState() {
     super.initState();
+    _selectedUserEmail = widget.targetEmailLocked;
     _loadMessages();
   }
 
@@ -525,9 +567,40 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
       setState(() {
         _messages = msgs;
         _isLoading = false;
+        // Si es aviso general y no hay seleccionado, coge el primer usuario
+        // que haya escrito (si lo hay).
+        if (_selectedUserEmail == null && msgs.isNotEmpty) {
+          _selectedUserEmail = msgs.first['user_email'] as String?;
+        }
       });
       _scrollToBottom();
     }
+  }
+
+  /// Lista de emails únicos que han participado, en orden de primera aparición.
+  List<String> get _participantEmails {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final m in _messages) {
+      final e = m['user_email'] as String?;
+      if (e != null && seen.add(e)) out.add(e);
+    }
+    return out;
+  }
+
+  /// Mensajes filtrados al thread del usuario actualmente seleccionado.
+  List<Map<String, dynamic>> get _visibleMessages {
+    if (_selectedUserEmail == null) return _messages;
+    return _messages.where((m) => m['user_email'] == _selectedUserEmail).toList();
+  }
+
+  int _unreadCountForUser(String email) {
+    return _messages
+        .where((m) =>
+            m['user_email'] == email &&
+            m['sender_type'] == 'user' &&
+            m['read_at'] == null)
+        .length;
   }
 
   void _scrollToBottom() {
@@ -548,13 +621,26 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
+    // En avisos generales necesitamos saber a qué usuario responder.
+    // El backend lo exige y devolvería 400 si no se manda.
+    if (widget.targetEmailLocked == null && _selectedUserEmail == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un usuario al que responder')),
+      );
+      return;
+    }
+
     setState(() => _isSending = true);
-    final ok = await widget.api.replyToNoticeAsAdmin(widget.noticeId, text);
-    
+    final ok = await widget.api.replyToNoticeAsAdmin(
+      widget.noticeId,
+      text,
+      targetUserEmail: widget.targetEmailLocked ?? _selectedUserEmail,
+    );
+
     if (mounted) {
       if (ok) {
         _controller.clear();
-        await _loadMessages(); // Recargar para ver el nuevo mensaje
+        await _loadMessages();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error al enviar el mensaje'), backgroundColor: Colors.red),
@@ -573,6 +659,9 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isGeneral = widget.targetEmailLocked == null;
+    final participants = _participantEmails;
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
@@ -580,24 +669,79 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
           const Icon(Icons.forum_outlined, color: Color(0xFF6B1B3D)),
           const SizedBox(width: 10),
           Expanded(child: Text('Chat: ${widget.title}', overflow: TextOverflow.ellipsis)),
+          if (_selectedUserEmail != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(_selectedUserEmail!,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            ),
         ],
       ),
       content: SizedBox(
-        width: 500,
-        height: 400,
-        child: Column(
+        width: isGeneral ? 760 : 500,
+        height: 460,
+        child: Row(
           children: [
+            // ── Sidebar de usuarios (solo en avisos generales) ──
+            if (isGeneral) ...[
+              SizedBox(
+                width: 220,
+                child: _isLoading
+                    ? const SizedBox.shrink()
+                    : participants.isEmpty
+                        ? const Center(child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Text('Sin respuestas todavía',
+                                style: TextStyle(color: Colors.grey, fontSize: 12),
+                                textAlign: TextAlign.center),
+                          ))
+                        : ListView(
+                            children: participants.map((email) {
+                              final selected = email == _selectedUserEmail;
+                              final unread = _unreadCountForUser(email);
+                              return ListTile(
+                                dense: true,
+                                selected: selected,
+                                selectedTileColor: const Color(0xFFF1E6EC),
+                                leading: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.grey[300],
+                                  child: const Icon(Icons.person, size: 18, color: Colors.grey),
+                                ),
+                                title: Text(email, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
+                                trailing: unread > 0
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                                        child: Text('$unread', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      )
+                                    : null,
+                                onTap: () => setState(() => _selectedUserEmail = email),
+                              );
+                            }).toList(),
+                          ),
+              ),
+              const VerticalDivider(width: 1),
+            ],
+            // ── Thread del usuario seleccionado ──
             Expanded(
-              child: _isLoading
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _messages.isEmpty
+                  : _visibleMessages.isEmpty
                       ? const Center(child: Text('Sin mensajes.', style: TextStyle(color: Colors.grey)))
                       : ListView.builder(
                           controller: _scrollController,
-                          itemCount: _messages.length,
+                          itemCount: _visibleMessages.length,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           itemBuilder: (ctx, i) {
-                            final msg = _messages[i];
+                            final msg = _visibleMessages[i];
                             final isAdmin = msg['sender_type'] == 'admin';
                             
                             return Padding(
@@ -701,8 +845,116 @@ class _AdminChatDialogState extends State<_AdminChatDialog> {
                 ],
               ),
             ),
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cerrar', style: TextStyle(color: Colors.grey)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Diálogo que lista los usuarios que han marcado el aviso como leído.
+/// Útil para que el admin sepa cuánta gente ha visto el aviso y cuándo.
+class _ReadersDialog extends StatefulWidget {
+  final int noticeId;
+  final String title;
+  final ApiService api;
+  const _ReadersDialog({required this.noticeId, required this.title, required this.api});
+
+  @override
+  State<_ReadersDialog> createState() => _ReadersDialogState();
+}
+
+class _ReadersDialogState extends State<_ReadersDialog> {
+  List<Map<String, dynamic>> _readers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final readers = await widget.api.getNoticeReaders(widget.noticeId);
+    if (mounted) {
+      setState(() {
+        _readers = readers;
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _fmt(String? iso) {
+    if (iso == null) return '—';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return '—';
+    return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.visibility_outlined, color: Colors.blue),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('Lectores — ${widget.title}', overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 480,
+        height: 420,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _readers.isEmpty
+                ? const Center(
+                    child: Text('Nadie ha visto este aviso todavía',
+                        style: TextStyle(color: Colors.grey)),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          '${_readers.length} usuario${_readers.length == 1 ? '' : 's'} lo ha${_readers.length == 1 ? '' : 'n'} visto',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: _readers.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (ctx, i) {
+                            final r = _readers[i];
+                            return ListTile(
+                              dense: true,
+                              leading: const CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Color(0xFFE3F2FD),
+                                child: Icon(Icons.check, size: 16, color: Colors.blue),
+                              ),
+                              title: Text(r['user_email']?.toString() ?? '—'),
+                              subtitle: Text('Visto: ${_fmt(r['read_at']?.toString())}'),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
       ),
       actions: [
         TextButton(
