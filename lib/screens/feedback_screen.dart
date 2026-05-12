@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import '../core/network/api_client.dart';
 import '../services/feedback_service.dart';
 import '../theme/app_theme.dart';
@@ -624,10 +628,10 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
                     color: isMe ? Colors.white70 : Colors.black54,
                   ),
                 ),
-                // Doble check estilo WhatsApp solo para mis mensajes:
-                // - Un check gris = enviado, pero el admin no lo ha abierto.
-                // - Doble check blanco = el admin abrió el ticket → leído.
-                if (isMe && msg.id > 0)
+                // Doble check estilo WhatsApp solo para mis mensajes.
+                // Si el admin ya lo abrió mostramos "Visto HH:mm" además
+                // del doble check, similar a Instagram/Telegram.
+                if (isMe && msg.id > 0) ...[
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
                     child: Icon(
@@ -636,6 +640,19 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
                       color: msg.readAt != null ? Colors.white : Colors.white70,
                     ),
                   ),
+                  if (msg.readAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        'Visto ${DateFormat('HH:mm').format(msg.readAt!.toLocal())}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
           ],
@@ -648,45 +665,130 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
     if (a.isImage) {
       return Padding(
         padding: const EdgeInsets.only(top: 4),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 220, maxHeight: 220),
-            child: _AuthenticatedImage(attachmentId: a.id),
+        child: GestureDetector(
+          onTap: () => _openImageFullscreen(a),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220, maxHeight: 220),
+              child: _AuthenticatedImage(attachmentId: a.id),
+            ),
           ),
         ),
       );
     }
-    // PDF u otros: tile con icono y nombre.
+    // PDF u otros: tile clicable que descarga + abre con el visor del sistema.
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isMe ? Colors.white24 : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.insert_drive_file,
-                size: 18,
-                color: isMe ? Colors.white : AlzitransColors.burgundy),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                a.originalName,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isMe ? Colors.white : Colors.black87,
+      child: GestureDetector(
+        onTap: () => _downloadAndOpen(a),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isMe ? Colors.white24 : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.insert_drive_file,
+                  size: 18,
+                  color: isMe ? Colors.white : AlzitransColors.burgundy),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  a.originalName,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isMe ? Colors.white : Colors.black87,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.open_in_new,
+                  size: 14,
+                  color: isMe ? Colors.white70 : Colors.black54),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Visor fullscreen para imágenes. Usa InteractiveViewer (pinch-zoom +
+  // pan) y un fondo negro tipo lightbox. Cierra con tap fuera o con la X.
+  Future<void> _openImageFullscreen(FeedbackAttachment a) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(8),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(onTap: () => Navigator.pop(ctx)),
+            ),
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 5,
+                child: _AuthenticatedImage(attachmentId: a.id, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 8, right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                onPressed: () => Navigator.pop(ctx),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // Descarga el adjunto al directorio temporal y lo abre con el visor del
+  // sistema (intent en Android, app por defecto en iOS). Si la apertura
+  // falla muestra un snackbar con el motivo.
+  Future<void> _downloadAndOpen(FeedbackAttachment a) async {
+    // En web no tenemos sistema de ficheros — el navegador descarga sin
+    // intervención nuestra. Aquí asumimos móvil.
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Descarga no soportada en web desde la app móvil')),
+      );
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(SnackBar(content: Text('Descargando ${a.originalName}…')));
+    try {
+      final response = await ApiClient().dio.get(
+        '/feedback/attachments/${a.id}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      if (response.statusCode != 200) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('No se pudo descargar el archivo')),
+        );
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      // Nombre seguro: sin saltos ni caracteres raros que rompan paths.
+      final safeName = a.originalName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final file = File('${dir.path}${Platform.pathSeparator}$safeName');
+      await file.writeAsBytes(response.data as List<int>, flush: true);
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('No se pudo abrir: ${result.message}')),
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 }
 
@@ -695,7 +797,8 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
 /// en cada rebuild del ListView.
 class _AuthenticatedImage extends StatefulWidget {
   final int attachmentId;
-  const _AuthenticatedImage({required this.attachmentId});
+  final BoxFit fit;
+  const _AuthenticatedImage({required this.attachmentId, this.fit = BoxFit.cover});
 
   @override
   State<_AuthenticatedImage> createState() => _AuthenticatedImageState();
@@ -756,6 +859,6 @@ class _AuthenticatedImageState extends State<_AuthenticatedImage> {
         child: const Icon(Icons.broken_image, color: Colors.grey),
       );
     }
-    return Image.memory(_bytes!, fit: BoxFit.cover);
+    return Image.memory(_bytes!, fit: widget.fit);
   }
 }
