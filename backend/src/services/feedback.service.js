@@ -117,9 +117,11 @@ class FeedbackService {
                     size_bytes:    row.size_bytes,
                 });
             } catch (err) {
-                console.error('[Feedback] Adjunto rechazado:', err.message);
-                // Convertimos en BadRequest visible para el cliente — mejor
-                // que un mensaje sin pista de por qué fallaron los adjuntos.
+                // Log con stack — los errores de FS (EACCES/ENOENT) o BD
+                // (tabla no existe) son los más frecuentes en despliegue.
+                console.error('[Feedback] Adjunto rechazado:',
+                    `mime=${file?.mimetype} name=${file?.originalname} size=${file?.size}`,
+                    err.stack || err.message);
                 throw new BadRequestError(err.message);
             }
         }

@@ -79,14 +79,19 @@ function detectMimeFromBuffer(buf) {
     return null;
 }
 
-// Filtro de multer — corre ANTES de guardar a disco. Bloquea por MIME
-// declarado; la validación final por magic bytes se hace después de
-// recibir el archivo (memoryStorage permite leer el buffer entero).
+// Filtro de multer — corre ANTES de guardar a disco. Aceptamos:
+//   - Cualquier MIME de la whitelist (cliente lo declara correctamente).
+//   - "application/octet-stream" (cliente no especifica Content-Type; algunos
+//     clientes HTTP — Dart/dio sin contentType, navegadores antiguos — lo
+//     envían por defecto). En ese caso confiamos en la validación posterior
+//     por magic bytes, que es la fuente real de verdad.
+// Defense in depth: aunque pasemos octet-stream aquí, persistAttachment lee
+// los primeros bytes del archivo y rechaza si no es PNG/JPEG/WebP/PDF.
 function fileFilter(req, file, cb) {
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-        return cb(new Error(`Tipo no permitido: ${file.mimetype}`));
+    if (ALLOWED_MIME_TYPES.has(file.mimetype) || file.mimetype === 'application/octet-stream') {
+        return cb(null, true);
     }
-    cb(null, true);
+    cb(new Error(`Tipo no permitido: ${file.mimetype}`));
 }
 
 // Usamos memoryStorage para poder validar magic bytes ANTES de tocar el
@@ -110,9 +115,12 @@ async function persistAttachment(ticketId, multerFile) {
         e.statusCode = 400;
         throw e;
     }
-    // Si el Content-Type declarado y el detectado discrepan, rechazamos
-    // (un PDF haciéndose pasar por imagen sería sospechoso).
-    if (detectedMime !== multerFile.mimetype) {
+    // Si el cliente declaró un tipo concreto (no octet-stream) tiene que
+    // coincidir con el detectado por magic bytes — un PDF haciéndose pasar
+    // por imagen sería sospechoso. Si el cliente envió octet-stream
+    // (cliente HTTP que no rellena Content-Type), confiamos en magic bytes.
+    if (multerFile.mimetype !== 'application/octet-stream' &&
+        detectedMime !== multerFile.mimetype) {
         const e = new Error('El tipo declarado no coincide con el contenido del archivo');
         e.statusCode = 400;
         throw e;

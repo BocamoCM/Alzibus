@@ -2,7 +2,20 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart' show MediaType;
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Devuelve el MediaType correcto en función de la extensión del fichero.
+// Sin esto, `MultipartFile.fromBytes` envía application/octet-stream y el
+// backend lo rechaza (whitelist + comprobación de magic bytes).
+MediaType _mediaTypeForFilename(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.png'))                   return MediaType('image', 'png');
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return MediaType('image', 'jpeg');
+  if (lower.endsWith('.webp'))                  return MediaType('image', 'webp');
+  if (lower.endsWith('.pdf'))                   return MediaType('application', 'pdf');
+  return MediaType('application', 'octet-stream');
+}
 
 class ApiService {
   // Singleton
@@ -491,6 +504,7 @@ class ApiService {
           'attachments',
           att.bytes,
           filename: att.filename,
+          contentType: _mediaTypeForFilename(att.filename),
         ));
       }
       final streamed = await request.send().timeout(_timeout);
