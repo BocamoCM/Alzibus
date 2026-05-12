@@ -43,6 +43,10 @@ class ApiService {
   };
 
   static const Duration _timeout = Duration(seconds: 10);
+  // Timeout más generoso para subidas: un PDF de varios MB en conexiones
+  // lentas (4G, WiFi pobre) puede tardar más de 10s aunque el servidor
+  // responda al instante. 60s es suficiente para el límite de 5 MB × 3.
+  static const Duration _uploadTimeout = Duration(seconds: 60);
 
   // Cache de datos
   List<Map<String, dynamic>>? _stopsCache;
@@ -507,7 +511,7 @@ class ApiService {
           contentType: _mediaTypeForFilename(att.filename),
         ));
       }
-      final streamed = await request.send().timeout(_timeout);
+      final streamed = await request.send().timeout(_uploadTimeout);
       final response = await http.Response.fromStream(streamed);
       _handleResponse(response);
       return response.statusCode == 201;

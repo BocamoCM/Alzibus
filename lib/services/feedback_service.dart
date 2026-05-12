@@ -199,9 +199,15 @@ class FeedbackService {
       for (final att in attachments) {
         formData.files.add(MapEntry('attachments', await att.toMultipartFile()));
       }
+      // Timeout más generoso para uploads: con el global de 10s, subir un
+      // PDF de varios MB en una red lenta acaba en TimeoutException.
       final response = await ApiClient().post(
         '/feedback/$ticketId/reply',
         data: formData,
+        options: Options(
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
       );
       return (ok: response.statusCode == 201, error: null);
     } on DioException catch (e) {
