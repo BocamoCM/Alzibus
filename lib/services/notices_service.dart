@@ -17,6 +17,9 @@ class NoticeRecord {
   /// Vale tanto para avisos personales como para generales (el backend
   /// filtra por user_email en avisos generales).
   final int unreadAdminCount;
+  /// Si el admin marcó "Permitir respuestas" al crear el aviso. Por defecto
+  /// true para no romper compatibilidad con avisos antiguos sin el campo.
+  final bool allowReplies;
 
   const NoticeRecord({
     required this.id,
@@ -29,6 +32,7 @@ class NoticeRecord {
     this.targetEmail,
     this.lastAdminReplyId,
     this.unreadAdminCount = 0,
+    this.allowReplies = true,
   });
 
   bool get isPersonal => targetEmail != null;
@@ -46,6 +50,7 @@ class NoticeRecord {
         targetEmail: json['target_email'] as String?,
         lastAdminReplyId: json['last_admin_reply_id'] as int?,
         unreadAdminCount: (json['unread_admin_count'] as num?)?.toInt() ?? 0,
+        allowReplies: json['allow_replies'] as bool? ?? true,
       );
 }
 

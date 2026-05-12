@@ -21,5 +21,8 @@ router.get('/admin/notices/:id/replies', authenticateAdmin, noticeController.get
 router.post('/admin/notices/:id/reply', authenticateAdmin, noticeController.adminReplyToNotice);
 // Lista de usuarios que han marcado el aviso como leído.
 router.get('/admin/notices/:id/readers', authenticateAdmin, noticeController.getNoticeReadersAdmin);
+// Marca como leídos los mensajes del usuario al abrir su thread.
+// :email es el user_email del thread (codificar URI en cliente).
+router.post('/admin/notices/:id/threads/:email/read', authenticateAdmin, noticeController.markThreadReadByAdmin);
 
 module.exports = router;

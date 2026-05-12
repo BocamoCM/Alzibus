@@ -419,6 +419,7 @@ class ApiService {
     String? line,
     DateTime? expiresAt,
     String? targetEmail, // null = aviso general, email = aviso personal
+    bool allowReplies = true, // si false, los usuarios no pueden responder
   }) async {
     try {
       final response = await http
@@ -431,6 +432,7 @@ class ApiService {
               if (line != null) 'line': line,
               if (expiresAt != null) 'expiresAt': expiresAt.toIso8601String(),
               if (targetEmail != null && targetEmail.isNotEmpty) 'targetEmail': targetEmail,
+              'allowReplies': allowReplies,
             }),
           )
           .timeout(_timeout);
@@ -513,6 +515,22 @@ class ApiService {
     } catch (e) {
       debugPrint('Error enviando respuesta del admin: $e');
       return false;
+    }
+  }
+
+  // Marca como leídos los mensajes del usuario en su thread con el admin.
+  // Llamar cuando el admin selecciona/abre un thread en el sidebar — así
+  // el badge rojo de "X nuevos" desaparece y el usuario ve "Visto".
+  Future<void> markNoticeThreadRead(int noticeId, String userEmail) async {
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/admin/notices/$noticeId/threads/${Uri.encodeComponent(userEmail)}/read'),
+            headers: _headers,
+          )
+          .timeout(_timeout);
+    } catch (e) {
+      debugPrint('Error markNoticeThreadRead: $e');
     }
   }
 
