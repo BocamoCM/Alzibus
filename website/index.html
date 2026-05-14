@@ -188,7 +188,13 @@
                 <img src="assets/logo.png" alt="Alzitrans">
                 <span>Alzitrans</span>
             </a>
-            <ul class="nav-links">
+            <!-- Botón hamburger (solo visible en móvil vía CSS) -->
+            <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links" id="navLinks">
                 <li><a href="#tiempos">Tiempos</a></li>
                 <li><a href="#funciones">Funciones</a></li>
                 <li><a href="#preguntas">FAQ</a></li>
@@ -197,6 +203,28 @@
             </ul>
         </div>
     </nav>
+
+    <script>
+        // Hamburger menu — toggle del menú en móvil.
+        (function() {
+            const btn = document.getElementById('navToggle');
+            const links = document.getElementById('navLinks');
+            if (!btn || !links) return;
+            btn.addEventListener('click', () => {
+                const open = links.classList.toggle('is-open');
+                btn.classList.toggle('is-open', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            // Cierra al pulsar un enlace (ancla → scroll)
+            links.querySelectorAll('a').forEach(a => {
+                a.addEventListener('click', () => {
+                    links.classList.remove('is-open');
+                    btn.classList.remove('is-open');
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+            });
+        })();
+    </script>
 
     <!-- HERO -->
     <header class="hero" id="inicio">
