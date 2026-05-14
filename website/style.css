@@ -124,7 +124,9 @@ a {
     box-shadow: 0 8px 24px rgba(107, 27, 61, 0.4);
 }
 
-/* Hamburger button (oculto en desktop, visible en móvil vía media query). */
+/* Hamburger button (oculto en desktop, visible en móvil vía media query).
+   z-index alto para asegurarnos de que está por encima de la navbar y de
+   cualquier .nav-links cuando está abierta. */
 .nav-toggle {
     display: none;
     background: transparent;
@@ -137,14 +139,17 @@ a {
     justify-content: center;
     align-items: center;
     gap: 5px;
+    position: relative;
+    z-index: 1100;
 }
 .nav-toggle span {
     display: block;
     width: 26px;
     height: 2px;
-    background: var(--text);
+    background: #f0eff4; /* hardcoded para evitar problemas con --text en algunos contextos */
     border-radius: 2px;
     transition: transform 0.25s, opacity 0.25s;
+    pointer-events: none;
 }
 .nav-toggle.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-toggle.is-open span:nth-child(2) { opacity: 0; }
