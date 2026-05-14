@@ -823,12 +823,16 @@ a {
    RESPONSIVE
    ============================================ */
 @media (max-width: 900px) {
-    /* ── Menú hamburger en móvil ── */
+    /* ── Menú hamburger en móvil ──
+       Lógica simple: el menú está display:none cerrado y display:flex
+       abierto. Sin transforms ni position:fixed para evitar bugs raros
+       de capas / cache / orden de cascada. */
     .nav-toggle {
         display: flex;
     }
     .nav-links {
-        position: fixed;
+        display: none;
+        position: absolute;
         top: 72px;
         left: 0;
         right: 0;
@@ -839,13 +843,12 @@ a {
         gap: 0;
         padding: 12px 20px 24px;
         border-bottom: 1px solid var(--glass-border);
-        transform: translateY(-110%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         max-height: calc(100vh - 72px);
         overflow-y: auto;
+        z-index: 999;
     }
     .nav-links.is-open {
-        transform: translateY(0);
+        display: flex;
     }
     .nav-links li {
         width: 100%;
