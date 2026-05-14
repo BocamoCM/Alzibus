@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Líneas del bus urbano de Alzira (L1, L2, L3) | Alzitrans</title>
+    <meta name="description" content="Información completa de las 3 líneas del bus urbano de Alzira: L1, L2 y L3. Recorrido, paradas y mapa de cada línea.">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Alzitrans">
+    <meta name="geo.region" content="ES-VC">
+    <meta name="geo.placename" content="Alzira, Valencia, España">
+
+    <link rel="canonical" href="https://alzitrans.es/lineas/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Líneas del bus urbano de Alzira (L1, L2, L3) | Alzitrans">
+    <meta property="og:description" content="Información completa de las 3 líneas del bus urbano de Alzira: L1, L2 y L3. Recorrido, paradas y mapa de cada línea.">
+    <meta property="og:url" content="https://alzitrans.es/lineas/">
+    <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Alzitrans">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Líneas del bus urbano de Alzira (L1, L2, L3) | Alzitrans">
+    <meta name="twitter:description" content="Información completa de las 3 líneas del bus urbano de Alzira: L1, L2 y L3. Recorrido, paradas y mapa de cada línea.">
+    <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Inicio",
+      "item": "https://alzitrans.es/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Líneas",
+      "item": "https://alzitrans.es/lineas/"
+    }
+  ]
+}
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8010840037570750"
+         crossorigin="anonymous"></script>
+
+    <!-- Leaflet (mapa interactivo OSS, sin API key) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <style>
+        :root {
+            --burgundy: #6B1B3D;
+            --coral: #E85A4F;
+            --text: #1d1d1f;
+            --text-muted: #6e6e73;
+            --bg: #ffffff;
+            --bg-soft: #f5f5f7;
+            --border: #d2d2d7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", "Outfit", sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+        a { color: var(--burgundy); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+        header.topbar { background: var(--burgundy); color: white; padding: 12px 24px; }
+        header.topbar a { color: white; font-weight: 600; }
+        header.topbar .container { max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .line-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; color: white; font-weight: 700; font-size: 13px; }
+        h1 { font-size: 32px; margin-bottom: 12px; line-height: 1.2; }
+        h2 { font-size: 22px; margin: 32px 0 16px; }
+        h3 { font-size: 18px; margin: 24px 0 8px; }
+        p { margin-bottom: 12px; color: var(--text); }
+        .lead { font-size: 17px; color: var(--text-muted); margin-bottom: 24px; }
+        .card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .stops-list { list-style: none; }
+        .stops-list li { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .stops-list li:last-child { border-bottom: none; }
+        .stops-list .stop-num { background: var(--burgundy); color: white; font-weight: 700; min-width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .map { width: 100%; height: 380px; border-radius: 12px; border: 1px solid var(--border); margin: 16px 0; }
+        .cta { background: linear-gradient(135deg, var(--burgundy), var(--coral)); color: white; padding: 24px; border-radius: 16px; text-align: center; margin: 32px 0; }
+        .cta h2 { color: white; margin-top: 0; }
+        .cta p { color: rgba(255,255,255,0.92); margin-bottom: 16px; }
+        .cta a.btn { display: inline-block; background: white; color: var(--burgundy); padding: 12px 24px; border-radius: 999px; font-weight: 700; margin: 4px; }
+        .cta a.btn:hover { text-decoration: none; transform: translateY(-1px); }
+        .line-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+        .line-links a { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); font-weight: 600; font-size: 13px; }
+        footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 24px; margin-top: 48px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        footer a { color: var(--text-muted); margin: 0 8px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a href="/">Alzitrans</a>
+            <a href="/#descarga">Descargar app</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <nav class="breadcrumb"><a href="/">Inicio</a> › Líneas</nav>
+        <h1>Líneas del bus urbano de Alzira</h1>
+        <p class="lead">El autobús urbano de Alzira tiene 3 líneas: L1, L2 y L3. Elige una para ver el recorrido, las paradas y el mapa.</p>
+        <div class="card" style="padding:0">
+            <ul class="stops-list">
+                
+                <li>
+                    <span class="line-badge" style="background:#1565C0">L1</span>
+                    <a href="/lineas/l1/" style="flex:1">Línea L1</a>
+                    <span style="color:var(--text-muted); font-size:13px">26 paradas</span>
+                </li>
+                <li>
+                    <span class="line-badge" style="background:#2E7D32">L2</span>
+                    <a href="/lineas/l2/" style="flex:1">Línea L2</a>
+                    <span style="color:var(--text-muted); font-size:13px">30 paradas</span>
+                </li>
+                <li>
+                    <span class="line-badge" style="background:#E65100">L3</span>
+                    <a href="/lineas/l3/" style="flex:1">Línea L3</a>
+                    <span style="color:var(--text-muted); font-size:13px">18 paradas</span>
+                </li>
+            </ul>
+        </div>
+        <div class="cta">
+            <h2>Tiempos de paso en tiempo real</h2>
+            <p>Los horarios no son fijos. Descarga la app Alzitrans o usa la versión web para saber cuándo pasa el siguiente bus.</p>
+            <a href="/#descarga" class="btn">Descargar app</a>
+            <a href="/app/" class="btn">Abrir versión web</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>Alzitrans es una aplicación independiente para consultar información del bus urbano de Alzira. No es un servicio oficial de la empresa concesionaria.</p>
+        <p style="margin-top:8px">
+            <a href="/">Inicio</a> ·
+            <a href="/lineas/l1/">L1</a> ·
+            <a href="/lineas/l2/">L2</a> ·
+            <a href="/lineas/l3/">L3</a> ·
+            <a href="/legal/privacidad.html">Privacidad</a> ·
+            <a href="/legal/terminos.html">Términos</a>
+        </p>
+    </footer>
+</body>
+</html>
