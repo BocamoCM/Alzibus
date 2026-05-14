@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todas las paradas del bus urbano de Alzira | Alzitrans</title>
+    <meta name="description" content="Listado completo de las 52 paradas del autobús urbano de Alzira con sus líneas y ubicación.">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Alzitrans">
+    <meta name="geo.region" content="ES-VC">
+    <meta name="geo.placename" content="Alzira, Valencia, España">
+
+    <link rel="canonical" href="https://alzitrans.es/paradas/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Todas las paradas del bus urbano de Alzira | Alzitrans">
+    <meta property="og:description" content="Listado completo de las 52 paradas del autobús urbano de Alzira con sus líneas y ubicación.">
+    <meta property="og:url" content="https://alzitrans.es/paradas/">
+    <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Alzitrans">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Todas las paradas del bus urbano de Alzira | Alzitrans">
+    <meta name="twitter:description" content="Listado completo de las 52 paradas del autobús urbano de Alzira con sus líneas y ubicación.">
+    <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Inicio",
+      "item": "https://alzitrans.es/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Paradas",
+      "item": "https://alzitrans.es/paradas/"
+    }
+  ]
+}
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8010840037570750"
+         crossorigin="anonymous"></script>
+
+    <!-- Leaflet (mapa interactivo OSS, sin API key) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <style>
+        :root {
+            --burgundy: #6B1B3D;
+            --coral: #E85A4F;
+            --text: #1d1d1f;
+            --text-muted: #6e6e73;
+            --bg: #ffffff;
+            --bg-soft: #f5f5f7;
+            --border: #d2d2d7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", "Outfit", sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+        a { color: var(--burgundy); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+        header.topbar { background: var(--burgundy); color: white; padding: 12px 24px; }
+        header.topbar a { color: white; font-weight: 600; }
+        header.topbar .container { max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .line-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; color: white; font-weight: 700; font-size: 13px; }
+        h1 { font-size: 32px; margin-bottom: 12px; line-height: 1.2; }
+        h2 { font-size: 22px; margin: 32px 0 16px; }
+        h3 { font-size: 18px; margin: 24px 0 8px; }
+        p { margin-bottom: 12px; color: var(--text); }
+        .lead { font-size: 17px; color: var(--text-muted); margin-bottom: 24px; }
+        .card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .stops-list { list-style: none; }
+        .stops-list li { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .stops-list li:last-child { border-bottom: none; }
+        .stops-list .stop-num { background: var(--burgundy); color: white; font-weight: 700; min-width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .map { width: 100%; height: 380px; border-radius: 12px; border: 1px solid var(--border); margin: 16px 0; }
+        .cta { background: linear-gradient(135deg, var(--burgundy), var(--coral)); color: white; padding: 24px; border-radius: 16px; text-align: center; margin: 32px 0; }
+        .cta h2 { color: white; margin-top: 0; }
+        .cta p { color: rgba(255,255,255,0.92); margin-bottom: 16px; }
+        .cta a.btn { display: inline-block; background: white; color: var(--burgundy); padding: 12px 24px; border-radius: 999px; font-weight: 700; margin: 4px; }
+        .cta a.btn:hover { text-decoration: none; transform: translateY(-1px); }
+        .line-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+        .line-links a { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); font-weight: 600; font-size: 13px; }
+        footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 24px; margin-top: 48px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        footer a { color: var(--text-muted); margin: 0 8px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a href="/">Alzitrans</a>
+            <a href="/#descarga">Descargar app</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <nav class="breadcrumb"><a href="/">Inicio</a> › Paradas</nav>
+        <h1>Todas las paradas del bus urbano de Alzira</h1>
+        <p class="lead">52 paradas en total. Pulsa una para ver su ubicación, las líneas que paran y los tiempos de paso.</p>
+        <ul class="stops-list card">
+            
+            <li>
+                <a href="/paradas/7-alquenencia-av-del-parc/" style="flex:1">Alquenencia-av. Del Parc</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/38-av-del-parc-fernando-rojas/" style="flex:1">Av. Del Parc-fernando Rojas</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/17-av-dels-esports-av-llibertat/" style="flex:1">Av. Dels Esports-av. Llibertat</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/18-av-dels-esports-cipfp-lluis-suner/" style="flex:1">Av. Dels Esports-cipfp Lluis Suñer</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/19-av-dignitat-humana-c-c-carrefour/" style="flex:1">Av. Dignitat Humana-c. c. Carrefour</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/16-av-mediterrania-diputacio/" style="flex:1">Av. Mediterrania-diputacio</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/13-av-mediterrania-residencia/" style="flex:1">Av. Mediterrania-residencia</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/37-av-pare-pompili-muntanyeta-a-hospital/" style="flex:1">Av. Pare Pompili- Muntanyeta (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/35-av-pare-pompili-alquerieta/" style="flex:1">Av. Pare Pompili-alquerieta</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/21-av-pare-pompili-hort-de-gorreta-a-estacio/" style="flex:1">Av. Pare Pompili-hort de Gorreta (a Estacio)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <a href="/paradas/36-av-pare-pompili-hort-de-gorreta-a-hospital/" style="flex:1">Av. Pare Pompili-hort de Gorreta (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/20-av-pare-pompili-ies-josep-m-parra/" style="flex:1">Av. Pare Pompili-ies Josep mª Parra</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <a href="/paradas/34-av-pare-pompili-la-muntanyeta-a-estacio/" style="flex:1">Av. Pare Pompili-la Muntanyeta (a Estacio)</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/40-av-sants-patrons-hotel/" style="flex:1">Av. Sants Patrons-hotel</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <a href="/paradas/46-av-sants-patrons-placa-generalitat/" style="flex:1">Av. Sants Patrons-plaça Generalitat</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <a href="/paradas/23-camil-dolz-j-pau/" style="flex:1">Camil Dolz- j. Pau</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/39-carrer-sabaters/" style="flex:1">Carrer Sabaters</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/43-casal-fester/" style="flex:1">Casal Fester</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/84-cristobal-monterde-matoses-falco/" style="flex:1">Cristobal Monterde-matoses Falco</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/82-dr-ferran-benimuslem/" style="flex:1">Dr. Ferran-benimuslem</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/59-estacio-d-autobusos/" style="flex:1">Estació D'autobusos</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/1-estacio-renfe/" style="flex:1">Estacio Renfe</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/6-gandia-dr-fleming/" style="flex:1">Gandia-dr. Fleming</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <a href="/paradas/31-gandia-servef/" style="flex:1">Gandia-servef</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/88-gandia-servef-a-estacio/" style="flex:1">Gandia-servef a Estació</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/12-general-espartero/" style="flex:1">General Espartero</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/83-gv-comunitat-valenciana-i-s-tulell/" style="flex:1">Gv. Comunitat Valenciana-i. s. Tulell</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/25-hort-dels-frares-centre-de-salut-ii/" style="flex:1">Hort Dels Frares-centre de Salut ii</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/24-hort-dels-frares-pl-primer-de-maig/" style="flex:1">Hort Dels Frares-pl. Primer de Maig</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/14-hospital/" style="flex:1">Hospital</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/22-jaume-d-olid/" style="flex:1">Jaume D'olid</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/45-joanot-martorell/" style="flex:1">Joanot Martorell</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <a href="/paradas/41-joanot-martorell-santocildes/" style="flex:1">Joanot Martorell-santocildes</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <a href="/paradas/33-josefina-fernandez-av-del-parc/" style="flex:1">Josefina Fernández- Av. Del Parc</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/32-josefina-fernandez-col-ausias-march/" style="flex:1">Josefina Fernández-col. Ausias March</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/11-pere-esplugues-esperanca/" style="flex:1">Pere Esplugues-esperança</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/9-pere-esplugues-favareta/" style="flex:1">Pere Esplugues-favareta</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/10-pere-esplugues-jaume-d-olid/" style="flex:1">Pere Esplugues-jaume D'olid</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/8-pere-esplugues-mare-de-deu-del-lluch/" style="flex:1">Pere Esplugues-mare de Deu Del Lluch</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/5-perez-galdos/" style="flex:1">Perez Galdós</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/87-pl-regne-2-a-hospital/" style="flex:1">pl Regne 2 a Hospital</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/27-placa-del-regne/" style="flex:1">Plaça Del Regne</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/3-placa-del-regne-a-hospital/" style="flex:1">Plaça Del Regne (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L3</span>
+            </li>
+            <li>
+                <a href="/paradas/4-placa-major-a-hospital/" style="flex:1">Plaça Major (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/2-ronda-sequia-reial-d-alzira-centre-de-salut/" style="flex:1">Ronda Sequia Reial D'alzira-centre de Salut</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <a href="/paradas/26-sants-patrons-correus/" style="flex:1">Sants. Patrons - Correus</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <a href="/paradas/73-sueca/" style="flex:1">Sueca</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <a href="/paradas/42-sueca-hotel/" style="flex:1">Sueca-hotel</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <a href="/paradas/85-trinidad-redal-salvador-perles/" style="flex:1">Trinidad Redal-salvador Perles</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/86-trinidad-redal-velazquez/" style="flex:1">Trinidad Redal-velazquez</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/30-unio-sagunt/" style="flex:1">Unio-sagunt</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+            <li>
+                <a href="/paradas/29-unio-taronger/" style="flex:1">Unio-taronger</a>
+                <span style="color:var(--text-muted); font-size:13px">L2</span>
+            </li>
+        </ul>
+    </main>
+
+    <footer>
+        <p>Alzitrans es una aplicación independiente para consultar información del bus urbano de Alzira. No es un servicio oficial de la empresa concesionaria.</p>
+        <p style="margin-top:8px">
+            <a href="/">Inicio</a> ·
+            <a href="/lineas/l1/">L1</a> ·
+            <a href="/lineas/l2/">L2</a> ·
+            <a href="/lineas/l3/">L3</a> ·
+            <a href="/legal/privacidad.html">Privacidad</a> ·
+            <a href="/legal/terminos.html">Términos</a>
+        </p>
+    </footer>
+</body>
+</html>

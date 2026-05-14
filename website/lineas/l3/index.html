@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Línea L3 bus Alzira - Paradas y recorrido | Alzitrans</title>
+    <meta name="description" content="Recorrido completo y todas las paradas de la línea L3 del bus urbano de Alzira. 18 paradas. Consulta tiempos en tiempo real en la app Alzitrans.">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Alzitrans">
+    <meta name="geo.region" content="ES-VC">
+    <meta name="geo.placename" content="Alzira, Valencia, España">
+
+    <link rel="canonical" href="https://alzitrans.es/lineas/l3/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Línea L3 bus Alzira - Paradas y recorrido | Alzitrans">
+    <meta property="og:description" content="Recorrido completo y todas las paradas de la línea L3 del bus urbano de Alzira. 18 paradas. Consulta tiempos en tiempo real en la app Alzitrans.">
+    <meta property="og:url" content="https://alzitrans.es/lineas/l3/">
+    <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Alzitrans">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Línea L3 bus Alzira - Paradas y recorrido | Alzitrans">
+    <meta name="twitter:description" content="Recorrido completo y todas las paradas de la línea L3 del bus urbano de Alzira. 18 paradas. Consulta tiempos en tiempo real en la app Alzitrans.">
+    <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BusTrip",
+      "name": "Línea L3 - Bus urbano de Alzira",
+      "description": "Recorrido de la línea L3 del autobús urbano de Alzira con 18 paradas.",
+      "provider": {
+        "@type": "Organization",
+        "name": "Alzitrans",
+        "url": "https://alzitrans.es"
+      },
+      "arrivalBusStop": {
+        "@type": "BusStop",
+        "name": "Sueca",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 39.15833,
+          "longitude": -0.430651
+        }
+      },
+      "departureBusStop": {
+        "@type": "BusStop",
+        "name": "Estacio Renfe",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 39.153858,
+          "longitude": -0.450553
+        }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://alzitrans.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Líneas",
+          "item": "https://alzitrans.es/lineas/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Línea L3",
+          "item": "https://alzitrans.es/lineas/l3/"
+        }
+      ]
+    }
+  ]
+}
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8010840037570750"
+         crossorigin="anonymous"></script>
+
+    <!-- Leaflet (mapa interactivo OSS, sin API key) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <style>
+        :root {
+            --burgundy: #6B1B3D;
+            --coral: #E85A4F;
+            --text: #1d1d1f;
+            --text-muted: #6e6e73;
+            --bg: #ffffff;
+            --bg-soft: #f5f5f7;
+            --border: #d2d2d7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", "Outfit", sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+        a { color: var(--burgundy); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+        header.topbar { background: var(--burgundy); color: white; padding: 12px 24px; }
+        header.topbar a { color: white; font-weight: 600; }
+        header.topbar .container { max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .line-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; color: white; font-weight: 700; font-size: 13px; }
+        h1 { font-size: 32px; margin-bottom: 12px; line-height: 1.2; }
+        h2 { font-size: 22px; margin: 32px 0 16px; }
+        h3 { font-size: 18px; margin: 24px 0 8px; }
+        p { margin-bottom: 12px; color: var(--text); }
+        .lead { font-size: 17px; color: var(--text-muted); margin-bottom: 24px; }
+        .card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .stops-list { list-style: none; }
+        .stops-list li { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .stops-list li:last-child { border-bottom: none; }
+        .stops-list .stop-num { background: var(--burgundy); color: white; font-weight: 700; min-width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .map { width: 100%; height: 380px; border-radius: 12px; border: 1px solid var(--border); margin: 16px 0; }
+        .cta { background: linear-gradient(135deg, var(--burgundy), var(--coral)); color: white; padding: 24px; border-radius: 16px; text-align: center; margin: 32px 0; }
+        .cta h2 { color: white; margin-top: 0; }
+        .cta p { color: rgba(255,255,255,0.92); margin-bottom: 16px; }
+        .cta a.btn { display: inline-block; background: white; color: var(--burgundy); padding: 12px 24px; border-radius: 999px; font-weight: 700; margin: 4px; }
+        .cta a.btn:hover { text-decoration: none; transform: translateY(-1px); }
+        .line-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+        .line-links a { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); font-weight: 600; font-size: 13px; }
+        footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 24px; margin-top: 48px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        footer a { color: var(--text-muted); margin: 0 8px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a href="/">Alzitrans</a>
+            <a href="/#descarga">Descargar app</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <nav class="breadcrumb">
+            <a href="/">Inicio</a> › <a href="/lineas/">Líneas</a> › Línea L3
+        </nav>
+
+        <span class="line-badge" style="background:#E65100">L3</span>
+        <h1>Línea L3: bus urbano de Alzira</h1>
+        <p class="lead">Recorrido de 18 paradas de la línea L3 del autobús urbano de Alzira. Mira el mapa, identifica tu parada y consulta los tiempos en tiempo real desde la app.</p>
+
+        <div class="line-links">
+            <strong style="align-self:center">Otras líneas:</strong>
+            <a href="/lineas/l1/">Línea L1</a>
+<a href="/lineas/l2/">Línea L2</a>
+        </div>
+
+        <h2>Mapa con el recorrido de la línea L3</h2>
+        <div id="map" class="map"></div>
+
+        <h2>Todas las paradas de la línea L3</h2>
+        <ol class="stops-list card">
+            
+            <li>
+                <span class="stop-num">1</span>
+                <a href="/paradas/1-estacio-renfe/" style="flex:1">Estacio Renfe</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">2</span>
+                <a href="/paradas/3-placa-del-regne-a-hospital/" style="flex:1">Plaça Del Regne (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">3</span>
+                <a href="/paradas/12-general-espartero/" style="flex:1">General Espartero</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">4</span>
+                <a href="/paradas/13-av-mediterrania-residencia/" style="flex:1">Av. Mediterrania-residencia</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">5</span>
+                <a href="/paradas/14-hospital/" style="flex:1">Hospital</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">6</span>
+                <a href="/paradas/18-av-dels-esports-cipfp-lluis-suner/" style="flex:1">Av. Dels Esports-cipfp Lluis Suñer</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">7</span>
+                <a href="/paradas/27-placa-del-regne/" style="flex:1">Plaça Del Regne</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">8</span>
+                <a href="/paradas/17-av-dels-esports-av-llibertat/" style="flex:1">Av. Dels Esports-av. Llibertat</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">9</span>
+                <a href="/paradas/19-av-dignitat-humana-c-c-carrefour/" style="flex:1">Av. Dignitat Humana-c. c. Carrefour</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">10</span>
+                <a href="/paradas/39-carrer-sabaters/" style="flex:1">Carrer Sabaters</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">11</span>
+                <a href="/paradas/43-casal-fester/" style="flex:1">Casal Fester</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">12</span>
+                <a href="/paradas/59-estacio-d-autobusos/" style="flex:1">Estació D'autobusos</a>
+                <span style="color:var(--text-muted); font-size:13px">L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">13</span>
+                <a href="/paradas/40-av-sants-patrons-hotel/" style="flex:1">Av. Sants Patrons-hotel</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <span class="stop-num">14</span>
+                <a href="/paradas/41-joanot-martorell-santocildes/" style="flex:1">Joanot Martorell-santocildes</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <span class="stop-num">15</span>
+                <a href="/paradas/42-sueca-hotel/" style="flex:1">Sueca-hotel</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <span class="stop-num">16</span>
+                <a href="/paradas/45-joanot-martorell/" style="flex:1">Joanot Martorell</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <span class="stop-num">17</span>
+                <a href="/paradas/46-av-sants-patrons-placa-generalitat/" style="flex:1">Av. Sants Patrons-plaça Generalitat</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+            <li>
+                <span class="stop-num">18</span>
+                <a href="/paradas/73-sueca/" style="flex:1">Sueca</a>
+                <span style="color:var(--text-muted); font-size:13px">L3</span>
+            </li>
+        </ol>
+
+        <div class="cta">
+            <h2>¿Cuándo pasa el siguiente bus?</h2>
+            <p>Los horarios del autobús urbano de Alzira no son fijos. Consulta los tiempos de paso en tiempo real desde la app Alzitrans o desde la versión web.</p>
+            <a href="/#descarga" class="btn">Descargar app</a>
+            <a href="/app/" class="btn">Abrir versión web</a>
+        </div>
+
+        <h2>Sobre la línea L3</h2>
+        <p>La línea L3 es una de las tres líneas que componen la red del autobús urbano de Alzira (Valencia), junto con la <a href="/lineas/l1/">L1</a> y la <a href="/lineas/l2/">L2</a>. Cubre 18 paradas en total.</p>
+        <p>Para conocer el tiempo de llegada del siguiente autobús a una parada concreta, abre la app Alzitrans (gratis en Google Play) o accede a la versión web en <a href="/app/">alzitrans.es/app</a>. Los datos se actualizan en tiempo real.</p>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        (function() {
+            const stops = [{"id":1,"n":"Estacio Renfe","lat":39.153858,"lng":-0.450553,"u":"/paradas/1-estacio-renfe/"},{"id":3,"n":"Plaça Del Regne (a Hospital)","lat":39.149363,"lng":-0.438956,"u":"/paradas/3-placa-del-regne-a-hospital/"},{"id":12,"n":"General Espartero","lat":39.160385,"lng":-0.429076,"u":"/paradas/12-general-espartero/"},{"id":13,"n":"Av. Mediterrania-residencia","lat":39.160643,"lng":-0.421791,"u":"/paradas/13-av-mediterrania-residencia/"},{"id":14,"n":"Hospital","lat":39.159686,"lng":-0.414966,"u":"/paradas/14-hospital/"},{"id":18,"n":"Av. Dels Esports-cipfp Lluis Suñer","lat":39.166203,"lng":-0.430935,"u":"/paradas/18-av-dels-esports-cipfp-lluis-suner/"},{"id":27,"n":"Plaça Del Regne","lat":39.149855,"lng":-0.438875,"u":"/paradas/27-placa-del-regne/"},{"id":17,"n":"Av. Dels Esports-av. Llibertat","lat":39.164625,"lng":-0.425656,"u":"/paradas/17-av-dels-esports-av-llibertat/"},{"id":19,"n":"Av. Dignitat Humana-c. c. Carrefour","lat":39.163495,"lng":-0.430995,"u":"/paradas/19-av-dignitat-humana-c-c-carrefour/"},{"id":39,"n":"Carrer Sabaters","lat":39.156341,"lng":-0.446425,"u":"/paradas/39-carrer-sabaters/"},{"id":43,"n":"Casal Fester","lat":39.164029,"lng":-0.420725,"u":"/paradas/43-casal-fester/"},{"id":59,"n":"Estació D'autobusos","lat":39.148338,"lng":-0.441128,"u":"/paradas/59-estacio-d-autobusos/"},{"id":40,"n":"Av. Sants Patrons-hotel","lat":39.15335,"lng":-0.437596,"u":"/paradas/40-av-sants-patrons-hotel/"},{"id":41,"n":"Joanot Martorell-santocildes","lat":39.155563,"lng":-0.435308,"u":"/paradas/41-joanot-martorell-santocildes/"},{"id":42,"n":"Sueca-hotel","lat":39.157889,"lng":-0.430961,"u":"/paradas/42-sueca-hotel/"},{"id":45,"n":"Joanot Martorell","lat":39.155695,"lng":-0.434966,"u":"/paradas/45-joanot-martorell/"},{"id":46,"n":"Av. Sants Patrons-plaça Generalitat","lat":39.152968,"lng":-0.437626,"u":"/paradas/46-av-sants-patrons-placa-generalitat/"},{"id":73,"n":"Sueca","lat":39.15833,"lng":-0.430651,"u":"/paradas/73-sueca/"}];
+            if (stops.length === 0) return;
+            const bounds = L.latLngBounds(stops.map(s => [s.lat, s.lng]));
+            const map = L.map('map').fitBounds(bounds, { padding: [24, 24] });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap',
+            }).addTo(map);
+            const lineColor = '#E65100';
+            // Línea uniendo las paradas
+            L.polyline(stops.map(s => [s.lat, s.lng]), { color: lineColor, weight: 4, opacity: 0.7 }).addTo(map);
+            // Marcadores
+            stops.forEach((s, i) => {
+                const marker = L.circleMarker([s.lat, s.lng], { radius: 7, color: lineColor, fillColor: lineColor, fillOpacity: 0.9, weight: 2 }).addTo(map);
+                marker.bindPopup('<strong>' + (i+1) + '. ' + s.n + '</strong><br><a href="' + s.u + '">Ver parada</a>');
+            });
+        })();
+    </script>
+
+    <footer>
+        <p>Alzitrans es una aplicación independiente para consultar información del bus urbano de Alzira. No es un servicio oficial de la empresa concesionaria.</p>
+        <p style="margin-top:8px">
+            <a href="/">Inicio</a> ·
+            <a href="/lineas/l1/">L1</a> ·
+            <a href="/lineas/l2/">L2</a> ·
+            <a href="/lineas/l3/">L3</a> ·
+            <a href="/legal/privacidad.html">Privacidad</a> ·
+            <a href="/legal/terminos.html">Términos</a>
+        </p>
+    </footer>
+</body>
+</html>
