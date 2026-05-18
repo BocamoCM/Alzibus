@@ -9,16 +9,21 @@ class ConsentService {
 
   /// Solicita actualización de info de consentimiento y muestra el formulario
   /// si es necesario. Debe llamarse ANTES de inicializar MobileAds.
+  ///
+  /// IMPORTANTE: NO forzamos debugGeography aquí. Antes había
+  ///   consentDebugSettings: kDebugMode ? ConsentDebugSettings(
+  ///       debugGeography: DebugGeography.debugGeographyEea) : null
+  /// que en debug obligaba a UMP a tratarte como si estuvieras en la EEA.
+  /// Eso forzaba al SDK a CARGAR EL WEBVIEW del consent screen en cada
+  /// arranque debug (porque debugGeography no respeta cache). Y si el
+  /// usuario minimizaba antes de aceptar, el WebView del consent se
+  /// llevaba la app entera por delante (OOM kill).
+  /// Sin el debugGeography, UMP detecta la geografía real del dispositivo
+  /// y solo abre el WebView cuando es necesario y solo una vez.
   static Future<void> gatherConsent() async {
     final completer = Completer<void>();
 
-    final params = ConsentRequestParameters(
-      consentDebugSettings: kDebugMode
-          ? ConsentDebugSettings(
-              debugGeography: DebugGeography.debugGeographyEea,
-            )
-          : null,
-    );
+    final params = ConsentRequestParameters();
 
     ConsentInformation.instance.requestConsentInfoUpdate(
       params,
