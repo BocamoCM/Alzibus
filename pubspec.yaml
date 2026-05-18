@@ -2,7 +2,7 @@
 name: alzitrans
 description: Aplicación para ver paradas de bus en Alzira y leer tarjetas NFC MIFARE Classic 1K
 publish_to: 'none'
-version: 5.2.2+33
+version: 5.2.3+34
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -16,7 +16,8 @@ dependencies:
   geolocator: ^13.0.2
   permission_handler: ^11.4.0
   flutter_local_notifications: ^18.0.1
-  flutter_nfc_kit: ^3.5.0
+  # flutter_nfc_kit eliminado: el código solo usa nfc_manager (lib/core/providers/nfc_controller.dart).
+  # Tener dos plugins NFC inflaba el AAB y aumentaba la superficie de fallos.
   google_mobile_ads: ^5.1.0
   shared_preferences: ^2.3.3
   vibration: ^2.0.0
@@ -31,7 +32,10 @@ dependencies:
   flutter_background_service_android: ^6.2.7
   home_widget: ^0.8.1
   package_info_plus: ^8.0.0
-  nfc_manager: ^4.0.0
+  # 4.2.1 incluye explícitamente "Fixes crash when re-opening the app from
+  # background" — la NullPointerException de IntentFilter.actionsIterator()
+  # en onAttachedToActivity que dejaba la app en negro al reanudar.
+  nfc_manager: ^4.2.1
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.1

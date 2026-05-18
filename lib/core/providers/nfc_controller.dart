@@ -96,7 +96,9 @@ class NfcController extends Notifier<NfcState> {
   }
 
   Future<void> _checkNfcAvailability() async {
-    final isAvailable = await NfcManager.instance.isAvailable();
+    // checkAvailability sustituyó a isAvailable en nfc_manager 4.1.0
+    // (devuelve el mismo bool; misma semántica). isAvailable está deprecated.
+    final isAvailable = await NfcManager.instance.checkAvailability();
     state = state.copyWith(
       nfcAvailable: isAvailable,
       status: isAvailable ? state.status : 'NFC no disponible en este dispositivo',
