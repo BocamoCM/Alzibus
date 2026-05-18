@@ -124,26 +124,28 @@ void main() async {
       // Inicializar servicios a través del container para cumplir con DI
       debugPrint('Main: Inicializando servicios a través de Providers...');
 
-      // AdMob — primero consentimiento UMP (GDPR), luego SDK.
-      // ANTES de runApp: en producción real, el consent se cachea tras la
-      // primera aceptación y UMP no abre WebView en arranques posteriores.
-      // El bug que parecía "abrir WebView cada arranque" era por un
-      // debugGeography mal puesto en consent_service.dart que forzaba EEA
-      // en modo debug. Eliminado, esto vuelve a ser estable.
-      if (!kIsWeb && AppConfig.showAds) {
-        try {
-          await ConsentService.gatherConsent();
-        } catch (e) {
-          debugPrint('Main: error en UMP consent: $e');
-        }
-        final canRequestAds = await ConsentService.canRequestAds();
-        debugPrint('Main: canRequestAds=$canRequestAds');
-        final adService = container.read(adServiceProvider);
-        await adService.initialize();
-        if (canRequestAds) {
-          adService.preloadNativeAds();
-        }
-      }
+      // ────────────────────────────────────────────────────────────────────
+      // DIAGNÓSTICO PASO 2: AdMob/UMP también deshabilitados.
+      // Anterior paso (ForegroundService deshabilitado) no resolvió el
+      // crash "app en negro al minimizar". Aislamos también AdMob/UMP.
+      // Si con AMBOS deshabilitados deja de pasar → el culpable está en
+      // uno de los dos (probablemente AdMob por crashes de WebView).
+      // Si SIGUE quedándose en negro → ir más atrás (otro plugin nativo).
+      // ────────────────────────────────────────────────────────────────────
+      // if (!kIsWeb && AppConfig.showAds) {
+      //   try {
+      //     await ConsentService.gatherConsent();
+      //   } catch (e) {
+      //     debugPrint('Main: error en UMP consent: $e');
+      //   }
+      //   final canRequestAds = await ConsentService.canRequestAds();
+      //   debugPrint('Main: canRequestAds=$canRequestAds');
+      //   final adService = container.read(adServiceProvider);
+      //   await adService.initialize();
+      //   if (canRequestAds) {
+      //     adService.preloadNativeAds();
+      //   }
+      // }
 
       runApp(
         UncontrolledProviderScope(
