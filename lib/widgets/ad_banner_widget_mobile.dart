@@ -29,14 +29,27 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
 
   void _loadAd() async {
     final adService = ref.read(adServiceProvider);
+
+    // Esperar a que AdMob esté inicializado.
+    // Desde que diferimos la inicialización de AdMob ~3s tras runApp (fix
+    // del bug "app en negro al minimizar"), si el banner se monta antes
+    // de ese tiempo, canShowAds es false porque _isInitialized aún es
+    // false. Antes había un delay fijo de 1s que NO era suficiente y
+    // por eso el banner del AppBar no aparecía. Reemplazamos por una
+    // espera real al Completer de inicialización (con timeout 20s por
+    // seguridad — si tarda más, mejor no bloquear el widget).
+    if (!adService.canShowAds) {
+      try {
+        await adService.initializationFuture.timeout(const Duration(seconds: 20));
+      } catch (_) {
+        return; // timeout o error de init: salimos sin banner
+      }
+    }
+    if (!mounted) return;
     if (!adService.canShowAds) return;
 
     // Si el usuario vio un rewarded y está en modo "sin banners", no cargar
     if (adService.isBannerFree) return;
-
-    // Pequeño delay de cortesía para evitar colisiones con App Open Ads en el arranque
-    await Future.delayed(const Duration(milliseconds: 1000));
-    if (!mounted) return;
 
     // Intentar banner adaptativo primero (mayor eCPM)
     BannerAd? adaptiveBanner = await adService.createAdaptiveBannerAd(
