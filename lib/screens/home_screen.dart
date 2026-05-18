@@ -116,11 +116,19 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     // Verificar viaje pendiente inmediatamente al entrar
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _checkPendingTrip();
-      
-      // Arrancar el servicio de segundo plano
-      if (!kIsWeb && _notificationsEnabled) {
-        await ForegroundService.start();
-      }
+
+      // ────────────────────────────────────────────────────────────────
+      // DIAGNÓSTICO: ForegroundService desactivado temporalmente.
+      // Los logs muestran que su isolate Dart secundario tira excepción
+      // "This class should only be used in the main isolate" y deja
+      // FlutterJNI detached. Cuando el usuario minimiza, Android intenta
+      // restaurar el proceso pero queda con engines en conflicto → app
+      // en negro. Si con esto deja de pasar, confirmado el culpable y
+      // lo arreglamos bien (o lo eliminamos si no se usa).
+      // ────────────────────────────────────────────────────────────────
+      // if (!kIsWeb && _notificationsEnabled) {
+      //   await ForegroundService.start();
+      // }
       
       // Precargar anuncios tras iniciar (esperando a que AdMob se inicialice)
       if (!kIsWeb) {
@@ -622,7 +630,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               setState(() => _notificationsEnabled = value);
               await _savePreferences();
               if (value) {
-                if (!kIsWeb) await ForegroundService.start();
+                // Desactivado temporalmente — ver comentario en initState.
+                // if (!kIsWeb) await ForegroundService.start();
               } else {
                 if (!kIsWeb) await ForegroundService.stop();
               }
