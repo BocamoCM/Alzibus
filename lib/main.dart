@@ -124,35 +124,62 @@ void main() async {
       // Inicializar servicios a través del container para cumplir con DI
       debugPrint('Main: Inicializando servicios a través de Providers...');
 
-      // ────────────────────────────────────────────────────────────────────
-      // DIAGNÓSTICO PASO 2: AdMob/UMP también deshabilitados.
-      // Anterior paso (ForegroundService deshabilitado) no resolvió el
-      // crash "app en negro al minimizar". Aislamos también AdMob/UMP.
-      // Si con AMBOS deshabilitados deja de pasar → el culpable está en
-      // uno de los dos (probablemente AdMob por crashes de WebView).
-      // Si SIGUE quedándose en negro → ir más atrás (otro plugin nativo).
-      // ────────────────────────────────────────────────────────────────────
-      // if (!kIsWeb && AppConfig.showAds) {
-      //   try {
-      //     await ConsentService.gatherConsent();
-      //   } catch (e) {
-      //     debugPrint('Main: error en UMP consent: $e');
-      //   }
-      //   final canRequestAds = await ConsentService.canRequestAds();
-      //   debugPrint('Main: canRequestAds=$canRequestAds');
-      //   final adService = container.read(adServiceProvider);
-      //   await adService.initialize();
-      //   if (canRequestAds) {
-      //     adService.preloadNativeAds();
-      //   }
-      // }
-
       runApp(
         UncontrolledProviderScope(
           container: container,
           child: const AlzitransApp(),
         ),
       );
+
+      // ────────────────────────────────────────────────────────────────────
+      // AdMob / UMP — DIFERIDO 3 segundos después de runApp().
+      //
+      // Confirmado mediante bisect que inicializarlo ANTES de runApp() era
+      // la causa del bug "app en negro al minimizar/reabrir":
+      //   1. main() llama a ConsentService.gatherConsent() → UMP abre un
+      //      WebView de Chromium con el formulario GDPR.
+      //   2. adService.initialize() carga el SDK de Google Mobile Ads
+      //      (varios MB de código nativo + conexiones).
+      //   3. preloadNativeAds() crea anuncios en background que también
+      //      usan WebViews.
+      // Todo eso son varios segundos de trabajo pesado al arranque. Si el
+      // usuario minimizaba durante ese tiempo, Android marcaba el proceso
+      // como candidato OOM (mucho consumo, no foreground real) y lo mataba.
+      // Al volver, el reinicio en frío fallaba porque algún estado nativo
+      // de Mobile Ads quedaba corrupto → pantalla en negro permanente
+      // hasta clear data.
+      //
+      // Diferirlo 3s:
+      //   - La UI aparece al instante, sin esperar a AdMob.
+      //   - Si el usuario minimiza en los primeros 3s, NADA de AdMob/UMP
+      //     se ha cargado → no hay WebView que pueda crashear.
+      //   - A los 3s, la app está estable, en foreground, y Android no la
+      //     mata aunque carguemos WebViews pesados.
+      //   - Los anuncios aparecen ~3s más tarde la primera vez (luego ya
+      //     están en caché y son instantáneos).
+      //
+      // try/catch en cada bloque: si algo falla, no se propaga a la UI.
+      // ────────────────────────────────────────────────────────────────────
+      if (!kIsWeb && AppConfig.showAds) {
+        Future.delayed(const Duration(seconds: 3), () async {
+          try {
+            await ConsentService.gatherConsent();
+          } catch (e) {
+            debugPrint('Main: error en UMP consent: $e');
+          }
+          try {
+            final canRequestAds = await ConsentService.canRequestAds();
+            debugPrint('Main: canRequestAds=$canRequestAds');
+            final adService = container.read(adServiceProvider);
+            await adService.initialize();
+            if (canRequestAds) {
+              adService.preloadNativeAds();
+            }
+          } catch (e) {
+            debugPrint('Main: error inicializando AdMob: $e');
+          }
+        });
+      }
 
   // Establecer identidad en Sentry si ya ha iniciado sesión
   if (isLoggedIn) {

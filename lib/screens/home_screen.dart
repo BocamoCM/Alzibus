@@ -117,18 +117,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _checkPendingTrip();
 
-      // ────────────────────────────────────────────────────────────────
-      // DIAGNÓSTICO: ForegroundService desactivado temporalmente.
-      // Los logs muestran que su isolate Dart secundario tira excepción
-      // "This class should only be used in the main isolate" y deja
-      // FlutterJNI detached. Cuando el usuario minimiza, Android intenta
-      // restaurar el proceso pero queda con engines en conflicto → app
-      // en negro. Si con esto deja de pasar, confirmado el culpable y
-      // lo arreglamos bien (o lo eliminamos si no se usa).
-      // ────────────────────────────────────────────────────────────────
-      // if (!kIsWeb && _notificationsEnabled) {
-      //   await ForegroundService.start();
-      // }
+      // Arrancar el servicio de segundo plano para alertas de bus en
+      // background. El bug del "app en negro al minimizar" NO era de
+      // aquí (era de AdMob/UMP arrancando antes de runApp); con esto
+      // reactivado y AdMob diferido la app sigue estable.
+      if (!kIsWeb && _notificationsEnabled) {
+        await ForegroundService.start();
+      }
       
       // Precargar anuncios tras iniciar (esperando a que AdMob se inicialice)
       if (!kIsWeb) {
@@ -630,8 +625,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               setState(() => _notificationsEnabled = value);
               await _savePreferences();
               if (value) {
-                // Desactivado temporalmente — ver comentario en initState.
-                // if (!kIsWeb) await ForegroundService.start();
+                if (!kIsWeb) await ForegroundService.start();
               } else {
                 if (!kIsWeb) await ForegroundService.stop();
               }
