@@ -2,11 +2,15 @@ package com.alzitrans.app
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -99,10 +103,37 @@ class MainActivity: FlutterFragmentActivity(), TextToSpeech.OnInitListener {
         Log.d(TAG, "onCreate - Inicializando TTS")
         // Inicializar TTS
         tts = TextToSpeech(this, this)
-        
+
         // CRÍTICO: No acceder a 'flutterEngine' aquí, ya que el delegate de la superclase
         // puede no estar inicializado y provocar un NPE. Guardamos el intent para configureFlutterEngine.
         pendingIntent = intent
+
+        // ── Defensa contra el crash "Render process kill (OOM)" ──
+        // El SDK de AdMob/UMP carga WebViews internos para el consent screen y los
+        // banners. Cuando el sistema mata el renderer del WebView por presión de
+        // memoria (típicamente al minimizar la app), si NADIE maneja el evento
+        // onRenderProcessGone, Android termina toda la app por defecto, dejándola
+        // en negro hasta limpiar datos. Registramos un WebView "fantasma" con un
+        // client que se queda con ese callback y devuelve true → la app sobrevive
+        // al crash del renderer y solo el WebView concreto se pierde (lo cual no
+        // afecta al usuario porque ese WebView ni siquiera era visible).
+        try {
+            val ghostWebView = WebView(this)
+            ghostWebView.webViewClient = object : WebViewClient() {
+                override fun onRenderProcessGone(
+                    view: WebView,
+                    detail: RenderProcessGoneDetail
+                ): Boolean {
+                    val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        detail.didCrash()
+                    } else false
+                    Log.w(TAG, "WebView renderer murió. didCrash=$didCrash — la app sigue viva.")
+                    return true
+                }
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "No se pudo crear el WebView fantasma: ${e.message}")
+        }
     }
     
     override fun onNewIntent(intent: Intent) {

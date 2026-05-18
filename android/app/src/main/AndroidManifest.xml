@@ -54,7 +54,8 @@
         android:label="Alzitrans"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        android:largeHeap="true">
         
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
