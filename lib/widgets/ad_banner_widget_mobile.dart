@@ -117,7 +117,7 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
   Widget build(BuildContext context) {
     final adService = ref.watch(adServiceProvider);
 
-    // Si está en modo banner-free, mostrar indicador
+    // Si está en modo banner-free, no ocupa espacio.
     if (adService.isBannerFree) {
       return const SizedBox.shrink();
     }
@@ -133,11 +133,23 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
         ),
       );
     }
-    
-    // Si no ha cargado, devolver un hueco o título genérico
-    return const Text(
-      'Alzitrans -- Alzira',
-      style: TextStyle(fontWeight: FontWeight.bold),
+
+    // Placeholder mientras carga: reservamos altura ESTÁNDAR de banner
+    // (50dp) para que el layout no salte cuando aparezca el anuncio.
+    // Mostramos un texto sutil para que el usuario vea que es una zona
+    // de la app y no un hueco vacío.
+    return SizedBox(
+      height: 50,
+      child: Center(
+        child: Text(
+          'Alzitrans · Alzira',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: Colors.grey[600],
+          ),
+        ),
+      ),
     );
   }
 }
