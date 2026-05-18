@@ -124,45 +124,33 @@ void main() async {
       // Inicializar servicios a través del container para cumplir con DI
       debugPrint('Main: Inicializando servicios a través de Providers...');
 
+      // AdMob — primero consentimiento UMP (GDPR), luego SDK.
+      // ANTES de runApp: en producción real, el consent se cachea tras la
+      // primera aceptación y UMP no abre WebView en arranques posteriores.
+      // El bug que parecía "abrir WebView cada arranque" era por un
+      // debugGeography mal puesto en consent_service.dart que forzaba EEA
+      // en modo debug. Eliminado, esto vuelve a ser estable.
+      if (!kIsWeb && AppConfig.showAds) {
+        try {
+          await ConsentService.gatherConsent();
+        } catch (e) {
+          debugPrint('Main: error en UMP consent: $e');
+        }
+        final canRequestAds = await ConsentService.canRequestAds();
+        debugPrint('Main: canRequestAds=$canRequestAds');
+        final adService = container.read(adServiceProvider);
+        await adService.initialize();
+        if (canRequestAds) {
+          adService.preloadNativeAds();
+        }
+      }
+
       runApp(
         UncontrolledProviderScope(
           container: container,
           child: const AlzitransApp(),
         ),
       );
-
-      // AdMob / UMP — DIFERIDO ~2 segundos tras el primer frame.
-      // Antes lo hacíamos ANTES de runApp y eso disparaba un WebView del
-      // consent screen mientras el sistema todavía estaba cargando todo,
-      // dejando la app vulnerable: si Android decidía destruir la activity
-      // por presión de memoria (caso minimizar justo después de abrir),
-      // UMP intentaba responder a una activity destruida y la app moría
-      // ("Render process kill wasn't handed by all associated webviews").
-      // Defiriéndolo tras el primer frame:
-      //   - El usuario ve la UI al instante (mejor UX).
-      //   - El WebView de UMP solo se crea cuando la app está estable.
-      //   - Si el usuario minimiza en los primeros segundos, NO hay
-      //     WebView abierto que pueda crashear.
-      if (!kIsWeb && AppConfig.showAds) {
-        Future.delayed(const Duration(seconds: 2), () async {
-          try {
-            await ConsentService.gatherConsent();
-          } catch (e) {
-            debugPrint('Main: error en UMP consent: $e');
-          }
-          try {
-            final canRequestAds = await ConsentService.canRequestAds();
-            debugPrint('Main: canRequestAds=$canRequestAds');
-            final adService = container.read(adServiceProvider);
-            await adService.initialize();
-            if (canRequestAds) {
-              adService.preloadNativeAds();
-            }
-          } catch (e) {
-            debugPrint('Main: error inicializando AdMob: $e');
-          }
-        });
-      }
 
   // Establecer identidad en Sentry si ya ha iniciado sesión
   if (isLoggedIn) {
