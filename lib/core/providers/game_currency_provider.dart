@@ -69,3 +69,68 @@ final catchTheBusHighScoreProvider =
     NotifierProvider<CatchTheBusHighScoreNotifier, int>(
   CatchTheBusHighScoreNotifier.new,
 );
+
+/// Mejor puntuación en "Trivia de Alzira" (suma de puntos en una partida
+/// de 10 preguntas).
+class TriviaHighScoreNotifier extends Notifier<int> {
+  static const String _key = 'trivia_alzira_highscore_v1';
+
+  @override
+  int build() {
+    _load();
+    return 0;
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      state = prefs.getInt(_key) ?? 0;
+    } catch (_) {}
+  }
+
+  Future<bool> reportScore(int score) async {
+    if (score <= state) return false;
+    state = score;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_key, score);
+    } catch (_) {}
+    return true;
+  }
+}
+
+final triviaHighScoreProvider =
+    NotifierProvider<TriviaHighScoreNotifier, int>(TriviaHighScoreNotifier.new);
+
+/// Mejor puntuación en "Memoria de paradas" (ronda más alta alcanzada).
+class MemoryStopsHighScoreNotifier extends Notifier<int> {
+  static const String _key = 'memory_stops_highscore_v1';
+
+  @override
+  int build() {
+    _load();
+    return 0;
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      state = prefs.getInt(_key) ?? 0;
+    } catch (_) {}
+  }
+
+  Future<bool> reportScore(int score) async {
+    if (score <= state) return false;
+    state = score;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_key, score);
+    } catch (_) {}
+    return true;
+  }
+}
+
+final memoryStopsHighScoreProvider =
+    NotifierProvider<MemoryStopsHighScoreNotifier, int>(
+  MemoryStopsHighScoreNotifier.new,
+);
