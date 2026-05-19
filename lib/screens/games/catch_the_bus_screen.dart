@@ -95,11 +95,20 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
   void _start() {
     _spawnTimer?.cancel();
     _elapsedTimer?.cancel();
+
+    // Antes de limpiar la lista, dispose los controllers que sigan vivos —
+    // si no, la partida anterior dejaba leaks y los whenComplete podían
+    // disparar setState fantasma en la nueva partida.
+    for (final b in _buses) {
+      try { b.controller.dispose(); } catch (_) {/* ya dispuesto */}
+    }
+
     setState(() {
       _score = 0;
       _lives = 3;
       _isGameOver = false;
       _isPaused = false;
+      _adRewardedUsed = false;
       _elapsed = Duration.zero;
       _buses.clear();
     });
@@ -142,10 +151,13 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
     setState(() => _buses.add(bus));
 
     controller.forward().whenComplete(() {
+      // `whenComplete` se dispara tanto al COMPLETAR como al DISPONER el
+      // controller (ej: cuando empezamos partida nueva). Si ya está marcado
+      // como removido, salimos para no contar vidas fantasma.
+      if (!mounted || bus.removed) return;
       // Si llegó al final sin que lo tocaran:
       // - Verde escapado → -1 vida
       // - Rojo escapado → +0 (era trampa, está bien evitarlo)
-      if (!mounted) return;
       if (!bus.tapped && !bus.isBad) {
         _loseLife('Se te escapó un bus verde');
       }
@@ -154,12 +166,21 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
   }
 
   void _removeBus(_BusEntity bus) {
-    bus.controller.dispose();
+    if (bus.removed) return;
+    bus.removed = true;
+    // 1. Quitar del Stack ya, para que en el siguiente frame el
+    //    AnimatedBuilder ya no esté en el árbol.
     if (mounted) setState(() => _buses.remove(bus));
+    // 2. Disponer el controller TRAS el frame committed — así
+    //    AnimatedBuilder no recibe un tick de un controller disposed
+    //    (era una causa probable del "parpadeo" antes de desaparecer).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try { bus.controller.dispose(); } catch (_) {/* ya disposed */}
+    });
   }
 
   Future<void> _onBusTap(_BusEntity bus) async {
-    if (bus.tapped || _isGameOver) return;
+    if (bus.tapped || bus.removed || _isGameOver) return;
     bus.tapped = true;
 
     if (bus.isBad) {
@@ -175,6 +196,13 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
         }
       } catch (_) {}
     }
+
+    // Tras 250ms (lo que tarda el fade-out), retiramos el bus del Stack en
+    // lugar de esperar a que cruce media pantalla más. Así no se queda
+    // "fantasma" recibiendo taps invisibles ni gastando frames.
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (mounted) _removeBus(bus);
+    });
   }
 
   void _flashRed() {
@@ -331,9 +359,13 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
             ),
           ),
 
-        // Buses activos.
+        // Buses activos. Cada uno con su `ValueKey(bus.id)` para que Flutter
+        // los identifique unívocamente entre rebuilds y NO los confunda entre
+        // sí (era la causa de que parecieran "aparecer/desaparecer" cuando
+        // el Stack se reconstruía).
         for (final bus in _buses)
           AnimatedBuilder(
+            key: ValueKey('bus-${bus.id}'),
             animation: bus.controller,
             builder: (_, __) {
               // De x=width (fuera derecha) a x=-80 (fuera izquierda).
@@ -343,6 +375,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
               final y = laneHeight * bus.lane + (laneHeight - 60) / 2;
 
               return Positioned(
+                key: ValueKey('pos-${bus.id}'),
                 left: x,
                 top: y,
                 child: GestureDetector(
@@ -468,6 +501,9 @@ class _BusEntity {
   final bool isBad;
   final AnimationController controller;
   bool tapped = false;
+  /// True una vez que llamamos a `_removeBus`. Previene doble-dispose del
+  /// controller y vidas fantasma desde `whenComplete` tras la limpieza.
+  bool removed = false;
 
   _BusEntity({
     required this.id,
