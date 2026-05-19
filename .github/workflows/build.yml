@@ -12,6 +12,11 @@ on:
 
 permissions:
   contents: write
+  # `actions: read` es necesario desde principios de 2024 para que
+  # actions/download-artifact@v4 pueda listar artifacts del propio workflow.
+  # Sin esto el job tag-and-release fallaba con:
+  #   "Failed to ListArtifacts: ... 403 Forbidden"
+  actions: read
 
 jobs:
   build-android:
