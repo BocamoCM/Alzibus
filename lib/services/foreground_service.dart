@@ -11,6 +11,7 @@ import 'package:vibration/vibration.dart';
 import '../core/network/api_client.dart';
 import '../core/repositories/scraping_repository.dart';
 import 'package:home_widget/home_widget.dart';
+import 'live_trip_ping_worker.dart';
 
 // Callbacks top-level para el background service
 @pragma('vm:entry-point')
@@ -71,6 +72,16 @@ Future<void> _checkLocationStatic(
     
     // SIEMPRE verificar alertas de bus
     await _checkBusAlertsStatic(prefs, notif, service: service);
+
+    // Ping del viaje compartido en vivo (si hay uno activo). Es no-op si
+    // SharedPreferences no tiene `active_share_trip_id`. Esto permite que
+    // los pings sigan funcionando aunque el usuario tenga la app minimizada.
+    // No bloqueante: si falla, el resto de la lógica del service continúa.
+    try {
+      await liveTripPingTick(prefs);
+    } catch (e) {
+      print('[ForegroundService] liveTripPingTick error (no bloqueante): $e');
+    }
     
     // Verificar si el usuario ha desactivado la localización en segundo plano explícitamente
     final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
