@@ -7,6 +7,12 @@
     <meta name="theme-color" content="#4A1D3D">
     <title>Viaje en vivo · Alzitrans</title>
 
+    <!-- Favicon inline (data-URI con emoji bus). Evita un GET /favicon.ico
+         que devolvía 404 ensuciando los logs y la consola. SVG con emoji
+         funciona en Chrome/Firefox modernos. -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%8C%3C/text%3E%3C/svg%3E">
+
+
     <!-- Leaflet CSS desde CDN. Si en algún momento queremos hacer la app más
          self-hosted, lo guardamos en backend/public/ y servimos local. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
