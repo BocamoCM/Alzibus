@@ -16,6 +16,8 @@ import '../../screens/ranking_screen.dart';
 import '../../screens/trip_planner_screen.dart';
 import '../../screens/share_trip_screen.dart';
 import '../../screens/live_trip_history_screen.dart';
+import '../../screens/onboarding_screen.dart';
+import '../providers/onboarding_provider.dart';
 
 part 'app_router.g.dart';
 
@@ -105,8 +107,16 @@ class LiveTripHistoryRoute extends GoRouteData with $LiveTripHistoryRoute {
   Widget build(BuildContext context, GoRouterState state) => const LiveTripHistoryScreen();
 }
 
+@TypedGoRoute<OnboardingRoute>(path: '/onboarding')
+class OnboardingRoute extends GoRouteData with $OnboardingRoute {
+  const OnboardingRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const OnboardingScreen();
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
+  final onboardingDone = ref.watch(onboardingCompletedProvider);
 
   return GoRouter(
     navigatorKey: navigatorKey,
@@ -116,11 +126,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
     redirect: (context, state) {
       final path = state.uri.path;
+      final isOnboarding = path == '/onboarding';
       final isLoggingIn = path == '/login' ||
           path == '/register' ||
           path == '/forgot-password' ||
           path == '/reset-password' ||
           path == '/verify';
+
+      // El onboarding tiene prioridad sobre login — queremos que los
+      // usuarios nuevos vean la mascota antes de pedirles cuenta.
+      if (!onboardingDone && !isOnboarding) {
+        return '/onboarding';
+      }
+      if (onboardingDone && isOnboarding) {
+        return authState.isLoggedIn ? '/' : '/login';
+      }
 
       if (!authState.isLoggedIn && !isLoggingIn) {
         return '/login';

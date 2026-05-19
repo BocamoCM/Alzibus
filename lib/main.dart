@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/router/app_router.dart';
+import 'core/providers/onboarding_provider.dart';
 
 import 'screens/home_screen.dart';
 import 'services/foreground_service.dart';
@@ -114,10 +115,19 @@ void main() async {
       final isLoggedIn = await authService.isLoggedIn();
       
       // Inicializar Stripe
+      // Onboarding: si el usuario es nuevo (sin token JWT) Y no ha completado
+      // el onboarding antes, lo enviamos primero a la pantalla con Albus.
+      // Si ya tenía sesión (usuario existente actualizando la app), asumimos
+      // que conoce la app y saltamos el onboarding.
+      final onboardingDone =
+          prefs.getBool('onboarding_completed_v1') ?? false;
+      final shouldShowOnboarding = !onboardingDone && token == null;
+
       // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          onboardingCompletedProvider.overrideWith((_) => !shouldShowOnboarding),
         ],
       );
 
