@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/providers/live_trip_provider.dart';
 import '../models/bus_stop.dart';
@@ -299,6 +300,24 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     }
   }
 
+  /// Abre el shareUrl en el navegador externo del sistema. La pantalla que
+  /// se muestra ahí es EXACTAMENTE la que verán los destinatarios — usar
+  /// como preview antes de compartir, o por curiosidad.
+  Future<void> _openViewerPreview(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[ShareTrip] No se pudo abrir el preview: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No pude abrir el navegador.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -488,7 +507,19 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
               onTap: _share,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          // Botón secundario: abre el shareUrl en el navegador del sistema,
+          // que es exactamente lo que ve la gente con la que compartes.
+          // Útil para asegurarte que se ve bien antes de mandar el link.
+          TextButton.icon(
+            onPressed: () => _openViewerPreview(trip.shareUrl!),
+            icon: const Icon(Icons.preview, size: 18),
+            label: const Text('Ver como lo ven los demás'),
+            style: TextButton.styleFrom(
+              foregroundColor: AlzitransColors.burgundy,
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
         ElevatedButton.icon(
           onPressed: _ending ? null : _endTrip,
