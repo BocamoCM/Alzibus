@@ -100,6 +100,22 @@ class LiveTripRepository {
     }
 
     /**
+     * Histórico de viajes compartidos del usuario. Solo devuelve los que ya
+     * NO están activos (ended o expired) — los activos están en la pantalla
+     * actual de compartir. Paginado.
+     */
+    async getHistoryByUser(userId, { limit = 50, offset = 0 } = {}) {
+        const result = await pool.query(
+            `SELECT * FROM live_trips
+             WHERE user_id = $1 AND status IN ('ended', 'expired')
+             ORDER BY started_at DESC
+             LIMIT $2 OFFSET $3`,
+            [userId, limit, offset]
+        );
+        return result.rows;
+    }
+
+    /**
      * Marca como expired todos los viajes activos cuyo expires_at ya pasó.
      * Llamar periódicamente (cron). Devuelve cuántos se marcaron.
      */

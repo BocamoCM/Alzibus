@@ -74,6 +74,46 @@ class LiveTrip {
   }
 }
 
+/// Entrada del histórico de viajes compartidos. Versión reducida del modelo
+/// — solo lo que la lista necesita.
+class LiveTripHistoryEntry {
+  final String id;
+  final String shareToken;
+  final String? line;
+  final String? destinationStopName;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+  final int? durationMin;
+  final LiveTripStatus status;
+
+  const LiveTripHistoryEntry({
+    required this.id,
+    required this.shareToken,
+    required this.startedAt,
+    required this.status,
+    this.line,
+    this.destinationStopName,
+    this.endedAt,
+    this.durationMin,
+  });
+
+  factory LiveTripHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return LiveTripHistoryEntry(
+      id: json['id'] as String,
+      shareToken: json['shareToken'] as String,
+      line: json['line'] as String?,
+      destinationStopName: json['destinationStopName'] as String?,
+      startedAt:
+          DateTime.tryParse(json['startedAt'] as String? ?? '') ?? DateTime.now(),
+      endedAt: json['endedAt'] != null
+          ? DateTime.tryParse(json['endedAt'] as String)
+          : null,
+      durationMin: json['durationMin'] as int?,
+      status: LiveTripStatusX.fromString(json['status'] as String? ?? 'ended'),
+    );
+  }
+}
+
 enum LiveTripStatus { active, ended, expired }
 
 extension LiveTripStatusX on LiveTripStatus {

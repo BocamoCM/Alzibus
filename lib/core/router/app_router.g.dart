@@ -17,6 +17,9 @@ List<RouteBase> get $appRoutes => [
       $rankingRoute,
       $tripPlannerRoute,
       $shareTripRoute,
+      $liveTripHistoryRoute,
+      $onboardingRoute,
+      $gamesHubRoute,
     ];
 
 RouteBase get $homeRoute => GoRouteData.$route(
@@ -317,6 +320,90 @@ mixin $ShareTripRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
         '/share-trip',
+      );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $liveTripHistoryRoute => GoRouteData.$route(
+      path: '/live-trip-history',
+      factory: $LiveTripHistoryRoute._fromState,
+    );
+
+mixin $LiveTripHistoryRoute on GoRouteData {
+  static LiveTripHistoryRoute _fromState(GoRouterState state) =>
+      const LiveTripHistoryRoute();
+
+  @override
+  String get location => GoRouteData.$location(
+        '/live-trip-history',
+      );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $onboardingRoute => GoRouteData.$route(
+      path: '/onboarding',
+      factory: $OnboardingRoute._fromState,
+    );
+
+mixin $OnboardingRoute on GoRouteData {
+  static OnboardingRoute _fromState(GoRouterState state) =>
+      const OnboardingRoute();
+
+  @override
+  String get location => GoRouteData.$location(
+        '/onboarding',
+      );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $gamesHubRoute => GoRouteData.$route(
+      path: '/games',
+      factory: $GamesHubRoute._fromState,
+    );
+
+mixin $GamesHubRoute on GoRouteData {
+  static GamesHubRoute _fromState(GoRouterState state) =>
+      const GamesHubRoute();
+
+  @override
+  String get location => GoRouteData.$location(
+        '/games',
       );
 
   @override

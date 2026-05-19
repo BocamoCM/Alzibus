@@ -5,10 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/providers/live_trip_provider.dart';
+import '../core/router/app_router.dart';
 import '../models/bus_stop.dart';
 import '../models/live_trip.dart';
+import '../services/live_trip_ping_worker.dart';
 import '../services/live_trip_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
@@ -65,7 +69,48 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopPinging();
+    // IMPORTANTE: al disponer la pantalla, devolvemos el control al background
+    // worker quitando el flag de "suspended by UI". El trip ID se mantiene en
+    // prefs si el viaje sigue activo — solo se borra en _endTrip o cuando
+    // el worker recibe un 404/410.
+    _setUiSuspended(false);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Cuando la app va a background, suspendemos los pings de la UI para que
+    // el worker tome el relevo. Al volver, la UI pinguea otra vez.
+    if (state == AppLifecycleState.resumed) {
+      _setUiSuspended(true);
+    } else if (state == AppLifecycleState.paused ||
+               state == AppLifecycleState.inactive ||
+               state == AppLifecycleState.hidden) {
+      _setUiSuspended(false);
+    }
+  }
+
+  /// Marca en SharedPreferences si el worker en background debe saltar el
+  /// ping (porque la UI ya está pingueando ella misma). El worker lee este
+  /// flag en cada tick.
+  Future<void> _setUiSuspended(bool suspended) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(LiveTripPingKeys.suspendedByUi, suspended);
+    } catch (_) {/* silencioso */}
+  }
+
+  /// Guarda en SharedPreferences el ID del viaje activo para que el worker
+  /// pueda pinguearlo cuando la app esté en background.
+  Future<void> _setActiveTripIdInPrefs(String? tripId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (tripId == null) {
+        await prefs.remove(LiveTripPingKeys.activeTripId);
+      } else {
+        await prefs.setString(LiveTripPingKeys.activeTripId, tripId);
+      }
+    } catch (_) {/* silencioso */}
   }
 
   Future<void> _checkForExistingTrip() async {
@@ -79,6 +124,10 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
           _albusMessage =
               'Ya tienes un viaje activo. Sigues compartiendo con la gente que tiene el enlace.';
         });
+        // Asegurar que el worker en background conoce este viaje, por si la
+        // pantalla anterior no lo guardó (ej: la app se reinstaló).
+        await _setActiveTripIdInPrefs(existing.id);
+        await _setUiSuspended(true); // UI activa: el worker no debe duplicar
         _startPinging();
       }
     } catch (_) {
@@ -125,6 +174,11 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
             '¡Listo! Comparte el enlace y la gente verá dónde vas en tiempo real.';
       });
 
+      // Persistimos el ID para que el worker en background sepa qué pinguear
+      // cuando la app esté minimizada.
+      await _setActiveTripIdInPrefs(trip.id);
+      await _setUiSuspended(true); // UI viva → worker en pausa
+
       _startPinging();
       // Abrimos el share sheet inmediatamente para no perder el momentum.
       await _share();
@@ -157,6 +211,10 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     }
 
     _stopPinging();
+    // Limpiamos el ID del worker — ya no hay nada activo que pinguear.
+    await _setActiveTripIdInPrefs(null);
+    await _setUiSuspended(false);
+
     if (!mounted) return;
     setState(() {
       _trip = null;
@@ -229,9 +287,12 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
           );
       if (mounted) setState(() => _trip = updated);
     } on LiveTripException catch (e) {
-      // Si el viaje ya no está activo, paramos.
+      // Si el viaje ya no está activo, paramos y limpiamos las prefs para
+      // que el worker en background tampoco siga intentando.
       debugPrint('[ShareTrip] ping fallido: $e');
       _stopPinging();
+      await _setActiveTripIdInPrefs(null);
+      await _setUiSuspended(false);
       if (mounted) {
         setState(() {
           _trip = null;
@@ -299,6 +360,24 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     }
   }
 
+  /// Abre el shareUrl en el navegador externo del sistema. La pantalla que
+  /// se muestra ahí es EXACTAMENTE la que verán los destinatarios — usar
+  /// como preview antes de compartir, o por curiosidad.
+  Future<void> _openViewerPreview(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[ShareTrip] No se pudo abrir el preview: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No pude abrir el navegador.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -307,6 +386,13 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
         title: const Text('Compartir mi viaje'),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Ver mis viajes compartidos pasados',
+            onPressed: () => const LiveTripHistoryRoute().push(context),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -488,7 +574,19 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
               onTap: _share,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          // Botón secundario: abre el shareUrl en el navegador del sistema,
+          // que es exactamente lo que ve la gente con la que compartes.
+          // Útil para asegurarte que se ve bien antes de mandar el link.
+          TextButton.icon(
+            onPressed: () => _openViewerPreview(trip.shareUrl!),
+            icon: const Icon(Icons.preview, size: 18),
+            label: const Text('Ver como lo ven los demás'),
+            style: TextButton.styleFrom(
+              foregroundColor: AlzitransColors.burgundy,
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
         ElevatedButton.icon(
           onPressed: _ending ? null : _endTrip,
@@ -524,8 +622,8 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Mantén esta pantalla abierta. Si la cierras la posición '
-                  'deja de actualizarse, pero el enlace sigue siendo válido.',
+                  'Puedes minimizar la app sin problema: los pings de '
+                  'ubicación siguen mandándose en segundo plano cada 30 s.',
                   style: TextStyle(fontSize: 13, height: 1.3),
                 ),
               ),

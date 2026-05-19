@@ -132,6 +132,18 @@ class LiveTripService {
     }
 
     /**
+     * Histórico paginado de viajes compartidos del usuario (los terminados,
+     * no el activo). Devuelve datos públicos + duración total.
+     */
+    async getHistory(userId, { limit, offset } = {}) {
+        const rows = await liveTripRepository.getHistoryByUser(userId, {
+            limit: Math.min(limit ?? 50, 100), // cap dur por sanidad
+            offset: offset ?? 0,
+        });
+        return rows.map(this._historyShape);
+    }
+
+    /**
      * Si el usuario tiene un viaje activo, devolverlo. Sirve para que la app
      * recupere su estado al reabrirse.
      */
@@ -185,6 +197,29 @@ class LiveTripService {
             startedAt: trip.started_at,
             endedAt: trip.ended_at,
             expiresAt: trip.expires_at,
+            status: trip.status,
+        };
+    }
+
+    /**
+     * Versión simplificada del shape para el listado de histórico — no
+     * incluye campos que solo importan en tiempo real (last_lat/lng).
+     */
+    _historyShape(trip) {
+        const startedAt = trip.started_at ? new Date(trip.started_at) : null;
+        const endedAt = trip.ended_at ? new Date(trip.ended_at) : null;
+        let durationMin = null;
+        if (startedAt && endedAt) {
+            durationMin = Math.max(0, Math.round((endedAt - startedAt) / 60000));
+        }
+        return {
+            id: trip.id,
+            shareToken: trip.share_token,
+            line: trip.line,
+            destinationStopName: trip.destination_stop_name,
+            startedAt: trip.started_at,
+            endedAt: trip.ended_at,
+            durationMin,
             status: trip.status,
         };
     }

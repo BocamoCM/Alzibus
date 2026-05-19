@@ -43,6 +43,15 @@ class LiveTripController {
         } catch (err) { next(err); }
     }
 
+    async getHistory(req, res, next) {
+        try {
+            const limit = parseInt(req.query.limit, 10) || 50;
+            const offset = parseInt(req.query.offset, 10) || 0;
+            const trips = await liveTripService.getHistory(req.user.id, { limit, offset });
+            res.json({ trips, limit, offset });
+        } catch (err) { next(err); }
+    }
+
     async getPublic(req, res, next) {
         try {
             const trip = await liveTripService.getPublic(req.params.shareToken);

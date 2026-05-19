@@ -39,6 +39,7 @@ import '../core/providers/tts_provider.dart';
 import '../services/ad_service.dart';
 import '../providers/high_visibility_provider.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../widgets/active_live_trip_banner.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/ad_provider.dart';
 import 'dart:async';
@@ -692,6 +693,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         title: const AdBannerWidget(isCollapsible: true),
         titleSpacing: 0, // Para aprovechar todo el espacio para el banner
         actions: [
+          // Acceso a mini-juegos (mata el tiempo mientras esperas el bus).
+          IconButton(
+            icon: const Icon(Icons.videogame_asset),
+            tooltip: '¡Echa una partida mientras esperas!',
+            iconSize: 26,
+            onPressed: () => const GamesHubRoute().push(context),
+          ),
           // Botón de alertas activas (operacional, tiempo real).
           // El planificador con Albus se ha movido al FloatingActionButton
           // para que el banner colapsible del title no lo tape al expandirse.
@@ -718,7 +726,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
           ),
         ],
       ),
-      body: pages[_index],
+      body: Column(
+        children: [
+          // Banner persistente cuando hay un viaje compartido en vivo.
+          // Self-managed: el propio widget se oculta si no hay viaje activo.
+          const ActiveLiveTripBanner(),
+          Expanded(child: pages[_index]),
+        ],
+      ),
       // Entrada al planificador con Albus. FAB extendido para que sea
       // descubrible. Solo aparece en pestañas relacionadas con rutas
       // (mapa e índice de líneas) — en NFC / Avisos / Perfil sería ruido.

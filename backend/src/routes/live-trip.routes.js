@@ -45,6 +45,7 @@ router.post('/live-trips', authenticateToken, controller.start);
 router.post('/live-trips/:id/ping', authenticateToken, pingLimiter, controller.ping);
 router.post('/live-trips/:id/end', authenticateToken, controller.end);
 router.get('/live-trips/active', authenticateToken, controller.getMyActive);
+router.get('/live-trips/history', authenticateToken, controller.getHistory);
 
 // ─── Pública ─────────────────────────────────────────────────────────────
 router.get('/live-trips/public/:shareToken', publicLimiter, controller.getPublic);
