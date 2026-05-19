@@ -2,15 +2,25 @@
     email borjacarreres@gmail.com
 }
 
-# www → raíz canonical.
+# www → raíz canonical (HTML únicamente, sin tráfico de API por aquí).
 www.alzitrans.es {
     redir https://alzitrans.es{uri} permanent
 }
 
-# alzitrans.duckdns.org: API directa al backend (sin redirect, para no
-# romper POST/PUT de las APKs antiguas) + redirect 301 al dominio
-# nuevo para todas las URLs HTML (mantiene SEO y Change of address).
+# alzitrans.duckdns.org sigue sirviendo la API y endpoints especiales
+# DIRECTAMENTE (proxy al backend) — sin redirect — porque las APKs
+# antiguas hacen POST/PUT/PATCH/DELETE y los clientes HTTP (Dio en
+# Android, BrowserClient en web) NO conservan el body al seguir un
+# 301/302 con POST, lo cual rompía el login y todas las mutaciones.
+# Solo redirigimos las RUTAS HTML (web/landing/app/) al dominio nuevo:
+#   - El navegador sigue 301 sin problema en GET.
+#   - Google Search Console valida el "Change of address" comprobando
+#     la raíz (que sí redirige), no los endpoints de API.
+# Cuando la mayoría haya actualizado a la versión 5.3+ (3-6 meses),
+# retiraremos este bloque entero — solo quedará alzitrans.es.
 alzitrans.duckdns.org {
+    # API + endpoints especiales: pasamos directo al backend, mismo
+    # comportamiento que antes de la migración.
     handle /api/* {
         reverse_proxy alzibus_backend:3000 {
             header_up Host {host}
@@ -32,6 +42,9 @@ alzitrans.duckdns.org {
     handle /app-ads.txt {
         reverse_proxy alzibus_backend:3000
     }
+
+    # El resto (HTML, /app/, raíz) sí redirige al dominio canónico.
+    # Esto mantiene el SEO y permite el Change of address de Google.
     handle {
         redir https://alzitrans.es{uri} permanent
     }
