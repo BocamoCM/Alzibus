@@ -17,6 +17,7 @@ import '../../screens/trip_planner_screen.dart';
 import '../../screens/share_trip_screen.dart';
 import '../../screens/live_trip_history_screen.dart';
 import '../../screens/onboarding_screen.dart';
+import '../../screens/games_hub_screen.dart';
 import '../providers/onboarding_provider.dart';
 
 part 'app_router.g.dart';
@@ -112,6 +113,13 @@ class OnboardingRoute extends GoRouteData with $OnboardingRoute {
   const OnboardingRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) => const OnboardingScreen();
+}
+
+@TypedGoRoute<GamesHubRoute>(path: '/games')
+class GamesHubRoute extends GoRouteData with $GamesHubRoute {
+  const GamesHubRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const GamesHubScreen();
 }
 
 final routerProvider = Provider<GoRouter>((ref) {

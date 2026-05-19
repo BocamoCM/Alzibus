@@ -693,6 +693,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         title: const AdBannerWidget(isCollapsible: true),
         titleSpacing: 0, // Para aprovechar todo el espacio para el banner
         actions: [
+          // Acceso a mini-juegos (mata el tiempo mientras esperas el bus).
+          IconButton(
+            icon: const Icon(Icons.videogame_asset),
+            tooltip: '¡Echa una partida mientras esperas!',
+            iconSize: 26,
+            onPressed: () => const GamesHubRoute().push(context),
+          ),
           // Botón de alertas activas (operacional, tiempo real).
           // El planificador con Albus se ha movido al FloatingActionButton
           // para que el banner colapsible del title no lo tape al expandirse.
