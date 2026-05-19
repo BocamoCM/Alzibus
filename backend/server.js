@@ -445,7 +445,28 @@ app.use('/api', require('./src/routes/live-trip.routes'));
 // /v/:shareToken → sirve el HTML estático del viewer. El HTML hace polling
 // a /api/live-trips/public/:shareToken para actualizar posición. NO requiere
 // auth; el token corto es la única protección (cargo en el repo).
+//
+// CSP permisiva específica para ESTA ruta: el HTML tiene <script> inline +
+// carga Leaflet desde unpkg + tiles de OpenStreetMap. La CSP por defecto
+// de Helmet (`script-src 'self'`) bloqueaba todo y la página se quedaba
+// en "Cargando..." indefinidamente porque el JS jamás se ejecutaba.
 app.get('/v/:shareToken', (req, res) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        [
+            "default-src 'self'",
+            // Inline script + Leaflet desde unpkg.
+            "script-src 'self' 'unsafe-inline' https://unpkg.com",
+            // CSS inline (estilos en <style>) + leaflet.css desde unpkg.
+            "style-src 'self' 'unsafe-inline' https://unpkg.com",
+            // Imágenes de tiles de OSM + iconos data: que usa Leaflet
+            // internamente para markers.
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com",
+            // fetch() al propio backend (mismo origen).
+            "connect-src 'self'",
+            "font-src 'self' data:",
+        ].join('; '),
+    );
     res.sendFile(path.join(__dirname, 'views', 'trip-viewer.html'));
 });
 
