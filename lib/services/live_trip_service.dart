@@ -20,7 +20,7 @@ class LiveTripService {
     double? destinationLng,
   }) async {
     final res = await ApiClient().dio.post(
-      '/api/live-trips',
+      '/live-trips',
       data: {
         if (line != null) 'line': line,
         if (originStopId != null) 'originStopId': originStopId,
@@ -50,7 +50,7 @@ class LiveTripService {
     double? accuracyM,
   }) async {
     final res = await ApiClient().dio.post(
-      '/api/live-trips/$tripId/ping',
+      '/live-trips/$tripId/ping',
       data: {
         'lat': lat,
         'lng': lng,
@@ -70,7 +70,7 @@ class LiveTripService {
   /// servidor responde 404, asumimos que ya estaba cerrado y devolvemos null.
   Future<LiveTrip?> end(String tripId) async {
     try {
-      final res = await ApiClient().dio.post('/api/live-trips/$tripId/end');
+      final res = await ApiClient().dio.post('/live-trips/$tripId/end');
       if (res.statusCode == 404) return null;
       if (res.statusCode == null || res.statusCode! >= 400) {
         throw LiveTripException(
@@ -91,7 +91,7 @@ class LiveTripService {
     int offset = 0,
   }) async {
     final res = await ApiClient().dio.get(
-      '/api/live-trips/history',
+      '/live-trips/history',
       queryParameters: {'limit': limit, 'offset': offset},
     );
     if (res.statusCode != 200) {
@@ -107,7 +107,7 @@ class LiveTripService {
   /// Devuelve el viaje activo del usuario actual, o null si no tiene
   /// ninguno. Útil al abrir la pantalla de compartir para recuperar estado.
   Future<LiveTrip?> getActive() async {
-    final res = await ApiClient().dio.get('/api/live-trips/active');
+    final res = await ApiClient().dio.get('/live-trips/active');
     if (res.statusCode != 200) return null;
     final body = _asMap(res.data);
     final trip = body['trip'];

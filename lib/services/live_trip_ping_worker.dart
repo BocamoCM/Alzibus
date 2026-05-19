@@ -66,7 +66,7 @@ Future<void> liveTripPingTick(SharedPreferences prefs) async {
 
   try {
     final res = await ApiClient().dio.post(
-      '/api/live-trips/$tripId/ping',
+      '/live-trips/$tripId/ping',
       data: {
         'lat': pos.latitude,
         'lng': pos.longitude,
