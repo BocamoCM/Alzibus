@@ -692,7 +692,15 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         title: const AdBannerWidget(isCollapsible: true),
         titleSpacing: 0, // Para aprovechar todo el espacio para el banner
         actions: [
-          // Único botón en AppBar: alertas activas (operacional, tiempo real)
+          // Planificador con Albus — entrada principal al asistente.
+          // Lo dejamos antes del botón de alertas para que sea descubrible.
+          IconButton(
+            icon: const Icon(Icons.alt_route),
+            tooltip: 'Planifica tu ruta con Albus',
+            iconSize: 28,
+            onPressed: () => const TripPlannerRoute().push(context),
+          ),
+          // Botón de alertas activas (operacional, tiempo real)
           IconButton(
             icon: const Icon(Icons.notifications_active),
             tooltip: l.activeAlerts,
