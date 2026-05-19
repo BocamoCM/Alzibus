@@ -7,218 +7,344 @@
     <meta name="theme-color" content="#4A1D3D">
     <title>Viaje en vivo · Alzitrans</title>
 
-    <!-- Favicon inline (data-URI con emoji bus). Evita un GET /favicon.ico
-         que devolvía 404 ensuciando los logs y la consola. SVG con emoji
-         funciona en Chrome/Firefox modernos. -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%8C%3C/text%3E%3C/svg%3E">
+    <!-- Favicon SVG con el mismo bus del logo de la app -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Ccircle cx='54' cy='54' r='54' fill='%234A1D3D'/%3E%3Crect x='26' y='42' width='56' height='24' rx='4' fill='white'/%3E%3Ccircle cx='36' cy='66' r='5' fill='%234A1D3D'/%3E%3Ccircle cx='68' cy='66' r='5' fill='%234A1D3D'/%3E%3C/svg%3E">
 
-
-    <!-- Leaflet CSS desde CDN. Si en algún momento queremos hacer la app más
-         self-hosted, lo guardamos en backend/public/ y servimos local. -->
+    <!-- Leaflet CSS desde CDN -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
         crossorigin="" />
 
+    <!-- Tipografía sistema (más similar a la app móvil) -->
     <style>
+        /* Paleta extraída del lib/theme/app_theme.dart de la app.
+           Mantener sincronizada si cambian los colores. */
         :root {
-            --brand: #4A1D3D;
-            --brand-light: #7B4B6E;
-            --accent: #FFC857;
-            --bg: #FDF6E3;
-            --text: #2A1530;
-            --muted: #6B5B63;
+            --burgundy:   #6B1B3D;  /* AlzitransColors.burgundy */
+            --wine:       #8B2252;  /* AlzitransColors.wine */
+            --crimson:    #B22234;
+            --coral:      #E85A4F;  /* accent */
+            --purple:     #4A1942;
+            --brand-dark: #4A1D3D;  /* icon background */
+            --bg:         #F8F5F6;  /* background */
+            --surface:    #FFFFFF;
+            --text:       #2D1B25;
+            --muted:      #6B5B63;
+            --success:    #4CAF50;
+            --warning:    #FF9800;
+            --error:      #E53935;
+            --line-l1:    #1565C0;
+            --line-l2:    #2E7D32;
+            --line-l3:    #E65100;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-        body { display: flex; flex-direction: column; }
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                         "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
 
+        /* ─── HEADER con gradiente del theme ───────────────────────── */
         header {
-            background: var(--brand);
+            background: linear-gradient(135deg, #E85A4F 0%, #B22234 35%, #8B2252 70%, #6B1B3D 100%);
             color: white;
             padding: 14px 16px;
+            padding-top: max(14px, env(safe-area-inset-top));
             display: flex;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.15);
+            box-shadow: 0 2px 12px rgba(74, 29, 61, 0.25);
             z-index: 1000;
         }
-        header .mascot { font-size: 32px; }
-        header h1 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 2px;
+        .logo {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
         }
-        header .subtitle {
+        .header-text { flex: 1; min-width: 0; }
+        .header-text h1 {
+            font-size: 17px;
+            font-weight: 800;
+            margin-bottom: 1px;
+            letter-spacing: 0.2px;
+        }
+        .header-text .subtitle {
             font-size: 12px;
-            opacity: 0.85;
+            opacity: 0.92;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        header .badge {
-            margin-left: auto;
+        .badge {
             padding: 4px 10px;
             border-radius: 12px;
             font-size: 11px;
-            font-weight: 600;
-            background: rgba(255,255,255,.2);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            flex-shrink: 0;
         }
-        header .badge.active { background: #4CAF50; }
-        header .badge.ended  { background: #757575; }
-        header .badge.expired { background: #FF9800; }
-        header .badge.error  { background: #E53935; }
-
-        #map { flex: 1; min-height: 200px; }
-
-        .info-panel {
+        .badge.active   { background: var(--success); border-color: transparent; }
+        .badge.ended    { background: rgba(255, 255, 255, 0.18); }
+        .badge.expired  { background: var(--warning); border-color: transparent; }
+        .badge.error    { background: var(--error); border-color: transparent; }
+        .badge .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
             background: white;
-            padding: 14px 16px;
-            border-top: 1px solid #e0e0e0;
-            box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+            border-radius: 50%;
+            margin-right: 4px;
+            animation: pulse 1.3s ease-in-out infinite;
         }
-        .info-panel .row {
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.9); }
+            50%      { opacity: 1.0; transform: scale(1.15); }
+        }
+
+        /* ─── MAP ────────────────────────────────────────────────────── */
+        #map { flex: 1; min-height: 200px; z-index: 1; }
+
+        /* ─── INFO CARD flotante estilo "stop info sheet" de la app ──── */
+        .info-card {
+            background: var(--surface);
+            margin: -28px 12px 12px 12px;
+            padding: 18px 16px 14px 16px;
+            border-radius: 20px 20px 16px 16px;
+            box-shadow: 0 -8px 24px rgba(74, 29, 61, 0.15),
+                        0 4px 12px rgba(0,0,0,0.06);
+            position: relative;
+            z-index: 5;
+        }
+        /* Mini "handle" decorativo arriba de la card */
+        .info-card::before {
+            content: '';
+            display: block;
+            width: 38px;
+            height: 4px;
+            background: var(--muted);
+            opacity: 0.25;
+            border-radius: 2px;
+            margin: -10px auto 12px auto;
+        }
+
+        .info-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
+            align-items: flex-end;
+            margin-bottom: 14px;
         }
-        .info-panel .row:last-child { margin-bottom: 0; }
-        .info-panel .label {
-            font-size: 12px;
+        .info-row:last-child { margin-bottom: 0; }
+        .info-block { flex: 1; }
+        .info-block.right { text-align: right; }
+        .label {
+            font-size: 11px;
             color: var(--muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            margin-bottom: 4px;
         }
-        .info-panel .value {
+        .value {
             font-size: 15px;
             font-weight: 600;
             color: var(--text);
         }
-        .info-panel .eta {
-            font-size: 36px;
+        .eta {
+            font-size: 38px;
             font-weight: 800;
-            color: var(--brand);
+            color: var(--burgundy);
             line-height: 1;
+            letter-spacing: -1px;
         }
-        .info-panel .eta-unit {
+        .eta-unit {
             font-size: 14px;
             color: var(--muted);
             margin-left: 4px;
+            font-weight: 500;
         }
 
         .line-chip {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
             color: white;
-            background: var(--brand);
+            background: var(--burgundy);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
-        .line-chip.L1 { background: #1565C0; }
-        .line-chip.L2 { background: #2E7D32; }
-        .line-chip.L3 { background: #E65100; }
+        .line-chip.L1 { background: var(--line-l1); }
+        .line-chip.L2 { background: var(--line-l2); }
+        .line-chip.L3 { background: var(--line-l3); }
 
-        .empty-state, .error-state {
+        /* ─── ESTADOS VACÍO / ERROR ──────────────────────────────────── */
+        .state-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 40px 20px;
+            padding: 40px 24px;
             flex: 1;
         }
-        .empty-state .icon, .error-state .icon { font-size: 64px; margin-bottom: 12px; }
-        .empty-state h2, .error-state h2 { font-size: 22px; margin-bottom: 8px; }
-        .empty-state p, .error-state p { color: var(--muted); font-size: 15px; }
-
-        footer {
-            background: var(--brand);
-            color: white;
-            padding: 10px 16px;
-            text-align: center;
-            font-size: 12px;
-            opacity: 0.9;
+        .state-screen .icon { font-size: 72px; margin-bottom: 16px; }
+        .state-screen h2 {
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: var(--burgundy);
         }
-        footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+        .state-screen p { color: var(--muted); font-size: 15px; line-height: 1.4; max-width: 320px; }
 
-        /* Animación del marker */
+        /* ─── FOOTER con CTA a la app ────────────────────────────────── */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid #eee;
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--muted);
+        }
+        footer .brand { display: flex; align-items: center; gap: 8px; }
+        footer .brand-name { font-weight: 700; color: var(--burgundy); }
+        footer a.cta {
+            color: var(--burgundy);
+            text-decoration: none;
+            font-weight: 700;
+            padding: 6px 12px;
+            border: 1.5px solid var(--burgundy);
+            border-radius: 20px;
+            transition: all 0.15s ease;
+            font-size: 12px;
+        }
+        footer a.cta:hover { background: var(--burgundy); color: white; }
+        footer .mini-logo { width: 24px; height: 24px; }
+
+        /* ─── BUS MARKER en el mapa ──────────────────────────────────── */
         .bus-marker {
-            background: white;
+            background: var(--surface);
             border-radius: 50%;
-            border: 3px solid var(--brand);
-            width: 40px;
-            height: 40px;
+            border: 3px solid var(--burgundy);
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 4px 12px rgba(0,0,0,.3);
-            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 4px 14px rgba(74, 29, 61, 0.4);
+            animation: bus-pulse 2s ease-in-out infinite;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50%      { transform: scale(1.08); }
+        .bus-marker svg { width: 28px; height: 28px; }
+        @keyframes bus-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(74, 29, 61, 0.4); }
+            50%      { transform: scale(1.08); box-shadow: 0 6px 22px rgba(74, 29, 61, 0.55); }
+        }
+        .dest-marker {
+            font-size: 32px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
     </style>
 </head>
 <body>
     <header>
-        <span class="mascot">🚌</span>
-        <div>
-            <h1 id="title">Viaje en vivo</h1>
-            <div class="subtitle" id="subtitle">Cargando...</div>
+        <!-- Logo del bus (SVG inline, idéntico al app_icon.svg de la app) -->
+        <svg class="logo" viewBox="0 0 108 108" aria-hidden="true">
+            <circle cx="54" cy="54" r="54" fill="#4A1D3D"/>
+            <circle cx="54" cy="54" r="40" fill="#6B2D5B"/>
+            <circle cx="54" cy="54" r="32" fill="#8B3A6E"/>
+            <path fill="#FFFFFF" d="M30,42 L78,42 Q82,42 82,46 L82,62 Q82,66 78,66 L30,66 Q26,66 26,62 L26,46 Q26,42 30,42 Z"/>
+            <rect x="32" y="46" width="10" height="8" fill="#6B2D5B"/>
+            <rect x="46" y="46" width="10" height="8" fill="#6B2D5B"/>
+            <rect x="60" y="46" width="10" height="8" fill="#6B2D5B"/>
+            <rect x="74" y="46" width="4" height="12" fill="#9B4D7D"/>
+            <circle cx="36" cy="66" r="5" fill="#4A1D3D"/>
+            <circle cx="36" cy="66" r="2" fill="#FFFFFF"/>
+            <circle cx="68" cy="66" r="5" fill="#4A1D3D"/>
+            <circle cx="68" cy="66" r="2" fill="#FFFFFF"/>
+            <rect x="28" y="58" width="52" height="2" fill="#6B2D5B"/>
+            <circle cx="80" cy="52" r="2" fill="#FFD700"/>
+            <circle cx="54" cy="28" r="2" fill="#FFFFFF"/>
+            <path fill="none" stroke="#FFFFFF" stroke-width="1.5" d="M54,32 Q60,36 54,40 Q48,36 54,32"/>
+        </svg>
+        <div class="header-text">
+            <h1>Alzitrans · Viaje en vivo</h1>
+            <div class="subtitle" id="subtitle">Cargando viaje compartido...</div>
         </div>
-        <span class="badge" id="statusBadge">···</span>
+        <span class="badge" id="statusBadge"><span class="dot"></span>VIVO</span>
     </header>
 
     <div id="map" style="display: none;"></div>
-    <div class="info-panel" id="infoPanel" style="display: none;">
-        <div class="row">
-            <div>
+
+    <div class="info-card" id="infoCard" style="display: none;">
+        <div class="info-row">
+            <div class="info-block">
                 <div class="label">Llegada estimada</div>
                 <div>
                     <span class="eta" id="etaValue">--</span>
                     <span class="eta-unit">min</span>
                 </div>
             </div>
-            <div style="text-align: right;">
+            <div class="info-block right">
                 <div class="label">Línea</div>
-                <div class="value"><span id="lineValue" class="line-chip">--</span></div>
+                <div><span id="lineValue" class="line-chip">--</span></div>
             </div>
         </div>
-        <div class="row">
-            <div>
+        <div class="info-row">
+            <div class="info-block">
                 <div class="label">Destino</div>
                 <div class="value" id="destValue">--</div>
             </div>
         </div>
-        <div class="row">
-            <div>
+        <div class="info-row">
+            <div class="info-block">
                 <div class="label">Última actualización</div>
                 <div class="value" id="lastPingValue">--</div>
             </div>
         </div>
     </div>
 
-    <div class="empty-state" id="emptyState" style="display: none;">
+    <div class="state-screen" id="emptyState" style="display: none;">
         <div class="icon">🚌💨</div>
         <h2>Viaje finalizado</h2>
         <p>El compartido ha terminado. Si necesitas otro enlace, pídele a la persona que lo comparta de nuevo.</p>
     </div>
 
-    <div class="error-state" id="errorState" style="display: none;">
+    <div class="state-screen" id="errorState" style="display: none;">
         <div class="icon">😢</div>
-        <h2 id="errorTitle">Enlace inválido</h2>
+        <h2 id="errorTitle">Enlace no encontrado</h2>
         <p id="errorMsg">No encontramos ningún viaje con este enlace. Comprueba que la URL esté completa.</p>
     </div>
 
     <footer>
-        Compartido con <a href="https://alzitrans.es" target="_blank">Alzitrans</a> · Tu app del bus de Alzira
+        <div class="brand">
+            <svg class="mini-logo" viewBox="0 0 108 108" aria-hidden="true">
+                <circle cx="54" cy="54" r="54" fill="#4A1D3D"/>
+                <path fill="#FFFFFF" d="M30,42 L78,42 Q82,42 82,46 L82,62 Q82,66 78,66 L30,66 Q26,66 26,62 L26,46 Q26,42 30,42 Z"/>
+                <circle cx="36" cy="66" r="5" fill="#4A1D3D"/>
+                <circle cx="68" cy="66" r="5" fill="#4A1D3D"/>
+            </svg>
+            <span>Compartido con <span class="brand-name">Alzitrans</span></span>
+        </div>
+        <a class="cta" href="https://alzitrans.es" target="_blank" rel="noopener">
+            Abrir app
+        </a>
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
     <script>
-        // Token desde la URL: el path es /v/<token>, lo extraemos del final.
+        // ─── Token desde URL ──────────────────────────────────────────
         const path = window.location.pathname;
         const token = path.split('/').filter(Boolean).pop();
 
@@ -228,7 +354,7 @@
         let destMarker = null;
         let lastTrip = null;
 
-        // ─── Polling ────────────────────────────────────────────────────────
+        // ─── Polling ────────────────────────────────────────────────────
         const POLL_INTERVAL_MS = 15000;
         let pollTimer = null;
 
@@ -250,7 +376,7 @@
                 if (trip.status !== 'active') stopPolling();
             } catch (err) {
                 console.error('fetchTrip error', err);
-                showError('Sin conexión', 'No pudimos contactar con el servidor. Reintentando...');
+                showError('Sin conexión', 'No pudimos contactar con el servidor. Reintentando…');
             }
         }
 
@@ -262,59 +388,75 @@
             if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         }
 
-        // ─── Render ─────────────────────────────────────────────────────────
+        // ─── Render ─────────────────────────────────────────────────────
         function render(trip) {
             const badge = document.getElementById('statusBadge');
             badge.className = 'badge ' + trip.status;
-            badge.textContent = {
-                active: 'EN MARCHA',
+            badge.innerHTML = {
+                active: '<span class="dot"></span>VIVO',
                 ended: 'FINALIZADO',
                 expired: 'CADUCADO',
             }[trip.status] || trip.status.toUpperCase();
 
             if (trip.status !== 'active') {
                 document.getElementById('map').style.display = 'none';
-                document.getElementById('infoPanel').style.display = 'none';
+                document.getElementById('infoCard').style.display = 'none';
+                document.getElementById('errorState').style.display = 'none';
                 document.getElementById('emptyState').style.display = 'flex';
-                document.getElementById('subtitle').textContent = 'Este compartido ya no está activo.';
+                document.getElementById('subtitle').textContent = 'Compartido finalizado';
                 return;
             }
 
-            document.getElementById('subtitle').textContent = 'Siguiendo posición en tiempo real';
+            document.getElementById('subtitle').textContent = 'Posición en tiempo real';
 
-            // Llenar panel de info
+            // Datos del panel
             document.getElementById('etaValue').textContent = trip.etaMin ?? '--';
             const lineEl = document.getElementById('lineValue');
             lineEl.textContent = trip.line || '--';
             lineEl.className = 'line-chip ' + (trip.line || '');
-            document.getElementById('destValue').textContent = trip.destinationStopName || 'No especificado';
-            document.getElementById('lastPingValue').textContent = formatRelative(trip.lastPingAt);
+            document.getElementById('destValue').textContent =
+                trip.destinationStopName || 'No especificado';
+            document.getElementById('lastPingValue').textContent =
+                formatRelative(trip.lastPingAt);
 
-            // Inicializar mapa si hace falta
+            // Mapa: solo si hay posición conocida
             if (trip.lastLat != null && trip.lastLng != null) {
                 document.getElementById('map').style.display = 'block';
-                document.getElementById('infoPanel').style.display = 'block';
+                document.getElementById('infoCard').style.display = 'block';
                 document.getElementById('emptyState').style.display = 'none';
                 document.getElementById('errorState').style.display = 'none';
                 ensureMap(trip);
+            } else {
+                // Esperando primer ping del móvil — info card sin mapa.
+                document.getElementById('infoCard').style.display = 'block';
+                document.getElementById('subtitle').textContent = 'Esperando posición del bus…';
             }
         }
 
         function ensureMap(trip) {
             if (!map) {
-                map = L.map('map').setView([trip.lastLat, trip.lastLng], 15);
+                map = L.map('map', { zoomControl: true }).setView([trip.lastLat, trip.lastLng], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap',
                     maxZoom: 19,
                 }).addTo(map);
             }
 
-            // Bus marker (animado)
+            // Bus marker con el SVG del logo (versión simplificada).
             const busIcon = L.divIcon({
                 className: '',
-                html: '<div class="bus-marker">🚌</div>',
-                iconSize: [40, 40],
-                iconAnchor: [20, 20],
+                html: `<div class="bus-marker">
+                    <svg viewBox="0 0 108 108">
+                        <path fill="#4A1D3D" d="M30,42 L78,42 Q82,42 82,46 L82,62 Q82,66 78,66 L30,66 Q26,66 26,62 L26,46 Q26,42 30,42 Z"/>
+                        <rect x="32" y="46" width="10" height="8" fill="white"/>
+                        <rect x="46" y="46" width="10" height="8" fill="white"/>
+                        <rect x="60" y="46" width="10" height="8" fill="white"/>
+                        <circle cx="36" cy="66" r="5" fill="#2D1B25"/>
+                        <circle cx="68" cy="66" r="5" fill="#2D1B25"/>
+                    </svg>
+                </div>`,
+                iconSize: [44, 44],
+                iconAnchor: [22, 22],
             });
             if (!busMarker) {
                 busMarker = L.marker([trip.lastLat, trip.lastLng], { icon: busIcon }).addTo(map);
@@ -322,24 +464,23 @@
                 busMarker.setLatLng([trip.lastLat, trip.lastLng]);
             }
 
-            // Destino (si tenemos coords)
+            // Marker destino
             if (trip.destinationLat != null && trip.destinationLng != null) {
                 if (!destMarker) {
                     destMarker = L.marker([trip.destinationLat, trip.destinationLng], {
                         icon: L.divIcon({
                             className: '',
-                            html: '<div style="font-size: 32px;">📍</div>',
+                            html: '<div class="dest-marker">📍</div>',
                             iconSize: [32, 32],
                             iconAnchor: [16, 32],
                         }),
                     }).addTo(map);
                 }
-                // Ajustar bounds para que ambos quepan
                 const bounds = L.latLngBounds(
                     [trip.lastLat, trip.lastLng],
                     [trip.destinationLat, trip.destinationLng]
                 );
-                map.fitBounds(bounds.pad(0.3));
+                map.fitBounds(bounds.pad(0.35));
             } else {
                 map.setView([trip.lastLat, trip.lastLng], 15);
             }
@@ -347,14 +488,14 @@
 
         function showError(title, msg) {
             document.getElementById('map').style.display = 'none';
-            document.getElementById('infoPanel').style.display = 'none';
+            document.getElementById('infoCard').style.display = 'none';
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('errorState').style.display = 'flex';
             document.getElementById('errorTitle').textContent = title;
             document.getElementById('errorMsg').textContent = msg;
             document.getElementById('statusBadge').className = 'badge error';
             document.getElementById('statusBadge').textContent = 'ERROR';
-            document.getElementById('subtitle').textContent = 'Error';
+            document.getElementById('subtitle').textContent = title;
         }
 
         function formatRelative(iso) {
@@ -370,7 +511,7 @@
             return `hace ${h}h`;
         }
 
-        // ─── Arranque ──────────────────────────────────────────────────────
+        // ─── Arranque ──────────────────────────────────────────────────
         if (!token) {
             showError('Enlace inválido', 'No se ha proporcionado un identificador de viaje.');
         } else {
