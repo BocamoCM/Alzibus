@@ -629,9 +629,12 @@ class MapPageState extends ConsumerState<MapPage> {
             onLineToggle: _toggleLine,
           ),
         ),
-        // Botón para centrar en mi ubicación
+        // Botón para centrar en mi ubicación.
+        // bottom: 90 (en vez de 24) para no chocar con el FAB extendido
+        // "Planifica con Albus" del HomeScreen, que ocupa la esquina
+        // inferior derecha por defecto.
         Positioned(
-          bottom: 24,
+          bottom: 90,
           right: 16,
           child: FloatingActionButton(
             heroTag: 'location',
