@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../core/providers/stops_provider.dart';
 import '../core/providers/trip_planner_provider.dart';
@@ -31,7 +34,14 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
   BusStop? _destination;
   List<TripPlan>? _plans;
   bool _isSearching = false;
+  bool _isLocating = false;
   String? _errorMsg;
+
+  /// Coordenadas del usuario cuando el origen es "Mi ubicación". Se pasa al
+  /// motor para que añada un WalkStep inicial desde la posición del usuario
+  /// hasta la parada más cercana (que es la que se setea como _origin).
+  /// Null cuando el usuario elige una parada concreta del picker.
+  ({double lat, double lng})? _originUserCoord;
 
   AlbusState _albusState = AlbusState.idle;
   String _albusMessage = '¡Hola! Soy Albus 🚌. Dime de dónde sales y a dónde vas, y te digo qué bus coger.';
@@ -67,6 +77,9 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       final results = await service.plan(
         originStopId: _origin!.id,
         destinationStopId: _destination!.id,
+        // Si el usuario eligió "Mi ubicación", el motor añadirá un WalkStep
+        // inicial desde la coordenada GPS hasta la parada origen.
+        originCoord: _originUserCoord,
       );
 
       if (!mounted) return;
@@ -108,9 +121,105 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       _destination = tmp;
       _plans = null;
       _errorMsg = null;
+      // Al intercambiar perdemos el "Mi ubicación" — el nuevo origen es una
+      // parada concreta del usuario, no su GPS.
+      _originUserCoord = null;
       _albusState = AlbusState.talking;
       _albusMessage = '¡Cambiado! ¿Buscamos esta nueva ruta?';
     });
+  }
+
+  /// Pide GPS, encuentra la parada más cercana, la pone como origen y guarda
+  /// las coordenadas exactas del usuario para que el motor añada un WalkStep
+  /// inicial. Si algo falla, muestra mensaje con Albus triste.
+  Future<void> _useMyLocation(List<BusStop> stops) async {
+    setState(() {
+      _isLocating = true;
+      _errorMsg = null;
+      _albusState = AlbusState.thinking;
+      _albusMessage = 'A ver dónde estás...';
+    });
+
+    try {
+      // Verificar servicio + permiso.
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw 'Activa la ubicación del móvil y vuelve a intentarlo.';
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw 'Sin permiso de ubicación no puedo saber dónde estás.';
+      }
+
+      // Obtener posición actual (con timeout para que no se quede colgado).
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
+
+      // Buscar la parada más cercana.
+      final nearest = _findNearestStop(stops, pos.latitude, pos.longitude);
+      if (nearest == null) {
+        throw 'No hay paradas cerca de ti — ¿estás en Alzira?';
+      }
+      final distM = _haversineM(
+        pos.latitude, pos.longitude, nearest.lat, nearest.lng);
+
+      if (!mounted) return;
+      setState(() {
+        _origin = nearest;
+        _originUserCoord = (lat: pos.latitude, lng: pos.longitude);
+        _isLocating = false;
+        _plans = null;
+        _albusState = AlbusState.happy;
+        _albusMessage = distM < 80
+            ? 'Estás muy cerca de ${nearest.name}. ¿A dónde vamos?'
+            : 'La parada más cercana es ${nearest.name} (a ${distM.round()} m). '
+              '¿A dónde vamos?';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLocating = false;
+        _errorMsg = e.toString();
+        _albusState = AlbusState.sad;
+        _albusMessage = 'No pude saber dónde estás 😢';
+      });
+    }
+  }
+
+  BusStop? _findNearestStop(List<BusStop> stops, double lat, double lng) {
+    BusStop? best;
+    double bestDist = double.infinity;
+    for (final s in stops) {
+      final d = _haversineM(lat, lng, s.lat, s.lng);
+      if (d < bestDist) {
+        bestDist = d;
+        best = s;
+      }
+    }
+    // Si la parada más cercana está a >2 km, probablemente no estamos en
+    // Alzira → devolvemos null para que el caller muestre un error útil.
+    if (bestDist > 2000) return null;
+    return best;
+  }
+
+  double _haversineM(double lat1, double lng1, double lat2, double lng2) {
+    const r = 6371000.0;
+    double toRad(double d) => d * math.pi / 180;
+    final dLat = toRad(lat2 - lat1);
+    final dLng = toRad(lng2 - lng1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(toRad(lat1)) * math.cos(toRad(lat2)) *
+            math.sin(dLng / 2) * math.sin(dLng / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return r * c;
   }
 
   @override
@@ -179,13 +288,50 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
+            // Botón "Usar mi ubicación" — atajo que rellena el origen con la
+            // parada más cercana usando GPS.
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isLocating ? null : () => _useMyLocation(stops),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AlzitransColors.burgundy,
+                  side: const BorderSide(
+                    color: AlzitransColors.burgundy, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: _isLocating
+                    ? const SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                          color: AlzitransColors.burgundy, strokeWidth: 2),
+                      )
+                    : const Icon(Icons.gps_fixed, size: 18),
+                label: Text(
+                  _isLocating
+                      ? 'Buscando tu ubicación...'
+                      : (_originUserCoord != null
+                          ? 'Usando tu ubicación actual'
+                          : 'Usar mi ubicación como origen'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             _StopPicker(
-              label: 'Desde',
-              icon: Icons.my_location,
+              label: _originUserCoord != null
+                  ? 'Desde (parada más cercana)'
+                  : 'Desde',
+              icon: _originUserCoord != null ? Icons.gps_fixed : Icons.my_location,
               stops: stops,
               selected: _origin,
               onPicked: (s) => setState(() {
                 _origin = s;
+                // Si el usuario elige una parada manualmente, dejamos de
+                // tratarlo como "Mi ubicación" — ya no añadimos walk inicial.
+                _originUserCoord = null;
                 _albusState = AlbusState.talking;
                 _albusMessage = _destination == null
                     ? 'Vale, sales de ${s.name}. ¿A dónde vas?'
