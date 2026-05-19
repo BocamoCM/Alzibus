@@ -27,7 +27,10 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.2'
+          # 3.44.0 incluye Dart 3.11.4+ — necesario porque nfc_manager 4.2.1
+          # requiere SDK ^3.11.4. Con 3.41.2 (Dart 3.11.0) `pub get` fallaba
+          # con "nfc_manager 4.2.1 requires SDK version ^3.11.4".
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
 
