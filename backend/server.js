@@ -462,8 +462,9 @@ app.get('/v/:shareToken', (req, res) => {
             // Imágenes de tiles de OSM + iconos data: que usa Leaflet
             // internamente para markers.
             "img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com",
-            // fetch() al propio backend (mismo origen).
-            "connect-src 'self'",
+            // fetch() al propio backend (mismo origen) + sourcemaps de
+            // Leaflet desde unpkg (Chrome los pide en DevTools).
+            "connect-src 'self' https://unpkg.com",
             "font-src 'self' data:",
         ].join('; '),
     );
