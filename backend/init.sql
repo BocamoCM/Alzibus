@@ -99,6 +99,45 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20);
 CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
 CREATE INDEX IF NOT EXISTS idx_trips_timestamp ON trips(timestamp DESC);
 
+-- ─── TABLA: live_trips ───
+-- Viajes ACTIVOS compartidos en vivo (feature "Comparte mi viaje").
+-- A diferencia de `trips` (historial inmutable), `live_trips` son viajes
+-- con posición GPS actualizándose en tiempo real y un token URL-safe que
+-- alguien puede abrir en el navegador para ver dónde vas.
+-- TTL: 6 horas por defecto. Pasado ese tiempo, un cron del backend los
+-- marca como `expired` para que el endpoint público responda apropiadamente.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- gen_random_uuid()
+CREATE TABLE IF NOT EXISTS live_trips (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    share_token VARCHAR(16) UNIQUE NOT NULL,  -- 12 chars URL-safe sin ambigüedad (no 0/O ni l/I)
+    line VARCHAR(20),                          -- línea de bus (opcional)
+    origin_stop_id INTEGER,
+    origin_stop_name VARCHAR(255),
+    destination_stop_id INTEGER,
+    destination_stop_name VARCHAR(255),
+    destination_lat DECIMAL(10, 7),
+    destination_lng DECIMAL(10, 7),
+    last_lat DECIMAL(10, 7),                  -- última posición GPS recibida del dueño
+    last_lng DECIMAL(10, 7),
+    last_speed_mps DECIMAL(6, 2),             -- velocidad GPS en m/s (para ETA precisa)
+    last_accuracy_m DECIMAL(8, 2),
+    last_ping_at TIMESTAMPTZ,
+    eta_min INTEGER,                          -- ETA al destino, recalculada en cada ping
+    status VARCHAR(20) NOT NULL DEFAULT 'active', -- active | ended | expired
+    started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL
+);
+
+-- Índices:
+-- - share_token: lookup público (cada polling del viewer)
+-- - user_id: "¿tiene el usuario un viaje activo?"
+-- - (status, expires_at): scan del cron de expiración
+CREATE INDEX IF NOT EXISTS idx_live_trips_share_token ON live_trips(share_token);
+CREATE INDEX IF NOT EXISTS idx_live_trips_user_id ON live_trips(user_id);
+CREATE INDEX IF NOT EXISTS idx_live_trips_status_expires ON live_trips(status, expires_at);
+
 -- ─── TABLA: notices ───
 -- Avisos e incidencias del servicio de autobuses.
 -- Los administradores crean avisos desde el panel web y la app los muestra.

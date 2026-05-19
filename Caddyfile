@@ -64,6 +64,12 @@ alzitrans.es {
     handle /app-ads.txt {
         reverse_proxy alzibus_backend:3000
     }
+    # Viewer público de "Compartir mi viaje en vivo".
+    # URL corta tipo alzitrans.es/v/abc123xyz → backend devuelve HTML viewer
+    # que hace polling a /api/live-trips/public/<token>.
+    handle /v/* {
+        reverse_proxy alzibus_backend:3000
+    }
 
     # Redirigir /app a /app/ (Evita errores de rutas relativas)
     redir /app /app/
