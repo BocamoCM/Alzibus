@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/providers/live_trip_provider.dart';
 import '../models/bus_stop.dart';
@@ -248,23 +249,54 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     _positionSub = null;
   }
 
+  /// Abre el share sheet nativo del sistema para que el usuario elija
+  /// destino (WhatsApp, Telegram, mail, etc.). El texto del mensaje incluye
+  /// la URL y un copy enganchador.
+  ///
+  /// Si el share sheet falla por cualquier razón (raro pero ha pasado en
+  /// algunos OEMs), caemos a portapapeles + SnackBar como fallback.
   Future<void> _share() async {
     final trip = _trip;
     if (trip == null || trip.shareUrl == null) return;
-    // Sin importar share_plus, copiamos al portapapeles y abrimos system share
-    // como mínimo via Share intent. Pero como share_plus no está en pubspec,
-    // de momento copiamos al portapapeles y mostramos un SnackBar.
-    await Clipboard.setData(ClipboardData(text: trip.shareUrl!));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Enlace copiado: ${trip.shareUrl}'),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
-    );
+
+    // Construir mensaje del share: enganchador en castellano + URL.
+    // El destino (si lo tenemos) lo metemos en el subject para apps tipo
+    // mail que separan asunto y cuerpo.
+    final destination = trip.destinationStopName;
+    final messageBody = destination != null
+        ? '¡Voy en el bus! Mira por dónde voy en vivo: ${trip.shareUrl}'
+        : '¡Sigue mi viaje en bus en vivo! ${trip.shareUrl}';
+    final messageSubject = destination != null
+        ? 'Voy hacia $destination · Alzitrans'
+        : 'Mi viaje en vivo · Alzitrans';
+
+    try {
+      // Share.share() en share_plus 10.x devuelve ShareResult — sabemos si
+      // el usuario llegó a compartir de verdad (success) o canceló. Si fue
+      // success, mostramos confirmación; si canceló, no hacemos nada
+      // (UX no intrusiva).
+      final result = await Share.share(
+        messageBody,
+        subject: messageSubject,
+      );
+      if (result.status == ShareResultStatus.success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Enlace compartido! 🚌'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Fallback: si share_plus falla (raro pero pasa en algunos OEMs),
+      // copiamos al portapapeles para que al menos el usuario tenga la URL.
+      debugPrint('[ShareTrip] share_plus falló, fallback a clipboard: $e');
+      await Clipboard.setData(ClipboardData(text: trip.shareUrl!));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Enlace copiado: ${trip.shareUrl}')),
+      );
+    }
   }
 
   @override

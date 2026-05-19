@@ -59,6 +59,10 @@ dependencies:
   open_filex: ^4.5.0
   # Directorio temporal donde guardar el adjunto antes de abrirlo.
   path_provider: ^2.1.5
+  # Share sheet nativo del sistema — usado para "Compartir mi viaje en vivo".
+  # Permite que el usuario elija destino (WhatsApp, Telegram, mail, copiar
+  # enlace, etc.) en lugar de meterlo directo al portapapeles.
+  share_plus: ^10.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
