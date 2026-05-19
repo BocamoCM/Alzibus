@@ -189,7 +189,13 @@ const validateApiKey = (req, res, next) => {
     const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
     const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact'];
 
-    if (publicRoutes.includes(originalPath)) {
+    // Endpoints públicos por prefijo (no son rutas exactas):
+    // - /api/live-trips/public/<token> → polling del viewer de "Compartir
+    //   mi viaje". Lo abre cualquier navegador, sin API key.
+    const publicPrefixes = ['/api/live-trips/public/'];
+
+    if (publicRoutes.includes(originalPath) ||
+        publicPrefixes.some(p => originalPath.startsWith(p))) {
         return next();
     }
 
@@ -433,6 +439,15 @@ app.use('/api', require('./src/routes/stop.routes'));
 app.use('/api', require('./src/routes/trip.routes'));
 app.use('/api', require('./src/routes/feedback.routes'));
 app.use('/api', require('./src/routes/stat.routes'));
+app.use('/api', require('./src/routes/live-trip.routes'));
+
+// ── Página pública de viewer de viajes compartidos en vivo ──
+// /v/:shareToken → sirve el HTML estático del viewer. El HTML hace polling
+// a /api/live-trips/public/:shareToken para actualizar posición. NO requiere
+// auth; el token corto es la única protección (cargo en el repo).
+app.get('/v/:shareToken', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'trip-viewer.html'));
+});
 
 
 // ── Endpoint de diagnóstico para WebSockets ──
@@ -502,6 +517,22 @@ setInterval(async () => {
         }
     }
 }, 300000); 
+
+// ── Job de expiración de viajes en vivo ──
+// Cada 5 min marca como `expired` los live_trips que ya pasaron su
+// expires_at (típicamente 6h tras start). Esto evita que el endpoint
+// público siga devolviendo "active" para viajes muertos.
+const liveTripRepository = require('./src/repositories/live-trip.repository');
+setInterval(async () => {
+    try {
+        const expired = await liveTripRepository.expireOldTrips();
+        if (expired > 0) {
+            console.log(`[live-trips] Expirados ${expired} viajes inactivos.`);
+        }
+    } catch (err) {
+        console.error('[live-trips] Error expirando viajes:', err);
+    }
+}, 5 * 60 * 1000);
 
 // ── MANEJADOR GLOBAL DE ERRORES (Arquitectura Hexagonal) ──
 const errorHandler = require('./src/middlewares/errorHandler');

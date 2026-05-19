@@ -14,6 +14,7 @@ import '../../pages/otp_verification_page.dart';
 import '../../screens/trip_history_screen.dart';
 import '../../screens/ranking_screen.dart';
 import '../../screens/trip_planner_screen.dart';
+import '../../screens/share_trip_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -87,6 +88,13 @@ class TripPlannerRoute extends GoRouteData with $TripPlannerRoute {
   const TripPlannerRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) => const TripPlannerScreen();
+}
+
+@TypedGoRoute<ShareTripRoute>(path: '/share-trip')
+class ShareTripRoute extends GoRouteData with $ShareTripRoute {
+  const ShareTripRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const ShareTripScreen();
 }
 
 final routerProvider = Provider<GoRouter>((ref) {

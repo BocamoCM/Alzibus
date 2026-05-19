@@ -7,6 +7,7 @@ import '../models/bus_stop.dart';
 import '../models/trip_plan.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
+import 'share_trip_screen.dart';
 
 /// Pantalla del planificador A → B con Albus de guía.
 ///
@@ -399,7 +400,46 @@ class _PlanCard extends StatelessWidget {
             _planHeader(),
             const SizedBox(height: 12),
             ...plan.steps.asMap().entries.map((e) => _stepTile(e.key, e.value)),
+            const SizedBox(height: 8),
+            _shareButton(),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Botón "Compartir este viaje" — toma el destino del ÚLTIMO BusStep del
+  /// plan (la última parada en la que el usuario se baja) y la línea del
+  /// PRIMER BusStep, y abre la pantalla de compartir prerellenada.
+  Widget _shareButton() {
+    final busSteps = plan.steps.whereType<BusStep>().toList();
+    if (busSteps.isEmpty) return const SizedBox.shrink();
+    final destination = busSteps.last.toStop;
+    final line = busSteps.first.line;
+
+    return Builder(
+      builder: (context) => SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ShareTripScreen(
+                  destinationStop: destination,
+                  line: line,
+                ),
+              ),
+            );
+          },
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AlzitransColors.burgundy,
+            side: const BorderSide(color: AlzitransColors.burgundy, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          icon: const Icon(Icons.share_location, size: 18),
+          label: const Text('Compartir este viaje en vivo',
+              style: TextStyle(fontWeight: FontWeight.w600)),
         ),
       ),
     );
