@@ -15,6 +15,7 @@ import '../../screens/trip_history_screen.dart';
 import '../../screens/ranking_screen.dart';
 import '../../screens/trip_planner_screen.dart';
 import '../../screens/share_trip_screen.dart';
+import '../../screens/live_trip_history_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -95,6 +96,13 @@ class ShareTripRoute extends GoRouteData with $ShareTripRoute {
   const ShareTripRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) => const ShareTripScreen();
+}
+
+@TypedGoRoute<LiveTripHistoryRoute>(path: '/live-trip-history')
+class LiveTripHistoryRoute extends GoRouteData with $LiveTripHistoryRoute {
+  const LiveTripHistoryRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const LiveTripHistoryScreen();
 }
 
 final routerProvider = Provider<GoRouter>((ref) {

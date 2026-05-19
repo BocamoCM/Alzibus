@@ -84,6 +84,26 @@ class LiveTripService {
     }
   }
 
+  /// Histórico paginado de viajes compartidos (los ended/expired, no el
+  /// activo). El backend cappa a 100 por página.
+  Future<List<LiveTripHistoryEntry>> getHistory({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final res = await ApiClient().dio.get(
+      '/api/live-trips/history',
+      queryParameters: {'limit': limit, 'offset': offset},
+    );
+    if (res.statusCode != 200) {
+      throw LiveTripException('Error histórico (${res.statusCode}): ${res.data}');
+    }
+    final body = _asMap(res.data);
+    final trips = body['trips'] as List? ?? const [];
+    return trips
+        .map((t) => LiveTripHistoryEntry.fromJson(_asMap(t)))
+        .toList();
+  }
+
   /// Devuelve el viaje activo del usuario actual, o null si no tiene
   /// ninguno. Útil al abrir la pantalla de compartir para recuperar estado.
   Future<LiveTrip?> getActive() async {

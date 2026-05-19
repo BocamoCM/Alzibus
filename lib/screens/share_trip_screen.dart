@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/providers/live_trip_provider.dart';
+import '../core/router/app_router.dart';
 import '../models/bus_stop.dart';
 import '../models/live_trip.dart';
 import '../services/live_trip_service.dart';
@@ -326,6 +327,13 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
         title: const Text('Compartir mi viaje'),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Ver mis viajes compartidos pasados',
+            onPressed: () => const LiveTripHistoryRoute().push(context),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
