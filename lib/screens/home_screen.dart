@@ -692,15 +692,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         title: const AdBannerWidget(isCollapsible: true),
         titleSpacing: 0, // Para aprovechar todo el espacio para el banner
         actions: [
-          // Planificador con Albus — entrada principal al asistente.
-          // Lo dejamos antes del botón de alertas para que sea descubrible.
-          IconButton(
-            icon: const Icon(Icons.alt_route),
-            tooltip: 'Planifica tu ruta con Albus',
-            iconSize: 28,
-            onPressed: () => const TripPlannerRoute().push(context),
-          ),
-          // Botón de alertas activas (operacional, tiempo real)
+          // Botón de alertas activas (operacional, tiempo real).
+          // El planificador con Albus se ha movido al FloatingActionButton
+          // para que el banner colapsible del title no lo tape al expandirse.
           IconButton(
             icon: const Icon(Icons.notifications_active),
             tooltip: l.activeAlerts,
@@ -725,6 +719,20 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         ],
       ),
       body: pages[_index],
+      // Entrada al planificador con Albus. FAB extendido para que sea
+      // descubrible. Solo aparece en pestañas relacionadas con rutas
+      // (mapa e índice de líneas) — en NFC / Avisos / Perfil sería ruido.
+      floatingActionButton: (_index == 0 || _index == 1)
+          ? FloatingActionButton.extended(
+              onPressed: () => const TripPlannerRoute().push(context),
+              backgroundColor: AlzitransColors.burgundy,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.alt_route),
+              label: const Text('Planifica con Albus',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              tooltip: 'Planificador de ruta A → B con Albus',
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) {
