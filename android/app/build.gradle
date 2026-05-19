@@ -73,7 +73,17 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // Si existe `android/key.properties` (build local con tu keystore
+            // real), firmamos con la upload key de Play Store. Si no existe
+            // (CI de GitHub Actions, donde no subimos el keystore), caemos a
+            // firma debug: el APK queda sideloadeable pero NO subible a Play
+            // Store. Sin este fallback el build de CI peta con
+            // "SigningConfig 'release' is missing required property 'storeFile'".
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
 
             minifyEnabled true
             shrinkResources true
