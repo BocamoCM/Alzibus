@@ -15,6 +15,7 @@ List<RouteBase> get $appRoutes => [
       $verifyRoute,
       $tripHistoryRoute,
       $rankingRoute,
+      $tripPlannerRoute,
     ];
 
 RouteBase get $homeRoute => GoRouteData.$route(
@@ -259,6 +260,34 @@ mixin $RankingRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
         '/ranking',
+      );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $tripPlannerRoute => GoRouteData.$route(
+      path: '/trip-planner',
+      factory: $TripPlannerRoute._fromState,
+    );
+
+mixin $TripPlannerRoute on GoRouteData {
+  static TripPlannerRoute _fromState(GoRouterState state) =>
+      const TripPlannerRoute();
+
+  @override
+  String get location => GoRouteData.$location(
+        '/trip-planner',
       );
 
   @override
