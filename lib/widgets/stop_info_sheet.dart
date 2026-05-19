@@ -405,10 +405,20 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Banner superior (above-the-fold) — visible sin scroll
-          if (AppConfig.showAds && !kIsWeb) ...[
-            const Center(child: AdBannerWidget()),
-            const SizedBox(height: 12),
+          // Banner superior (above-the-fold) — visible sin scroll.
+          // Lo envolvemos en un Container con altura mínima 60dp para
+          // garantizar que SIEMPRE se reserva el espacio aunque el banner
+          // tarde en cargar. El propio AdBannerWidget muestra un
+          // placeholder "Alzitrans · Alzira" mientras AdMob carga, y
+          // luego se reemplaza por el anuncio real.
+          if (!kIsWeb) ...[
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 60),
+              alignment: Alignment.center,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: const AdBannerWidget(),
+            ),
           ],
           // Mapa visual / Street View de la parada
           Stack(
