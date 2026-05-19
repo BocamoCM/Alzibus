@@ -79,7 +79,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } catch (_) {/* silencioso */}
     // Avisamos al provider para que el router se rebuild y deje pasar a
     // la siguiente ruta (login o home).
-    ref.read(onboardingCompletedProvider.notifier).state = true;
+    ref.read(onboardingCompletedProvider.notifier).markCompleted();
     if (!mounted) return;
     // Vamos a home — si el usuario no está logueado el redirect del router
     // lo enviará a /login automáticamente.

@@ -127,7 +127,11 @@ void main() async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
-          onboardingCompletedProvider.overrideWith((_) => !shouldShowOnboarding),
+          // Riverpod 3 usa NotifierProvider; el override pasa una factoría
+          // que devuelve un Notifier con el `initial` apropiado.
+          onboardingCompletedProvider.overrideWith(
+            () => OnboardingCompletedNotifier(initial: !shouldShowOnboarding),
+          ),
         ],
       );
 
