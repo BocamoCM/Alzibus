@@ -5,6 +5,8 @@ import '../core/providers/game_currency_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
 import 'games/catch_the_bus_screen.dart';
+import 'games/memory_stops_screen.dart';
+import 'games/trivia_alzira_screen.dart';
 
 /// Hub de mini-juegos. Albus presenta el catálogo y abres uno tocando.
 ///
@@ -17,6 +19,8 @@ class GamesHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final coins = ref.watch(gameCurrencyProvider);
     final highScore = ref.watch(catchTheBusHighScoreProvider);
+    final triviaScore = ref.watch(triviaHighScoreProvider);
+    final memoryRound = ref.watch(memoryStopsHighScoreProvider);
 
     return Scaffold(
       backgroundColor: AlzitransColors.background,
@@ -81,22 +85,39 @@ class GamesHubScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Próximamente',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            _ComingSoonCard(
+            const SizedBox(height: 10),
+            _GameCard(
               title: 'Trivia de Alzira',
-              description: 'Preguntas sobre el bus, la ciudad y la comarca.',
-              emoji: '🧠',
+              description:
+                  'Preguntas sobre el bus, la ciudad y la comarca. '
+                  '10 preguntas, 15s cada una.',
+              icon: Icons.psychology,
+              colors: const [Color(0xFF7B1FA2), Color(0xFF4A148C)],
+              footer: triviaScore > 0
+                  ? '🏆 Récord actual: $triviaScore pts'
+                  : '¿Cuánto sabes de Alzira?',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TriviaAlziraScreen(),
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            _ComingSoonCard(
+            const SizedBox(height: 10),
+            _GameCard(
               title: 'Memoria de paradas',
-              description: 'Albus dice paradas en orden y tú las repites.',
-              emoji: '🎯',
+              description:
+                  'Albus muestra paradas en orden. Tú las repites. '
+                  'Cada ronda añade una más.',
+              icon: Icons.grid_view,
+              colors: const [Color(0xFFE65100), Color(0xFFBF360C)],
+              footer: memoryRound > 0
+                  ? '🏆 Mejor: ronda $memoryRound'
+                  : 'Simon Says estilo Alzira',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MemoryStopsScreen(),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             // Footer con avisos legales suaves.
@@ -218,6 +239,8 @@ class _GameCard extends StatelessWidget {
   }
 }
 
+// Mantenida para futuras tarjetas "PRONTO" cuando añadamos más mini-juegos.
+// ignore: unused_element
 class _ComingSoonCard extends StatelessWidget {
   final String title;
   final String description;
