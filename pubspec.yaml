@@ -79,3 +79,4 @@ flutter:
   assets:
     - assets/stops.json
     - assets/routes/
+    - assets/mascot/
