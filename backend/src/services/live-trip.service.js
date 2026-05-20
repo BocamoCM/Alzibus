@@ -66,8 +66,13 @@ class LiveTripService {
     /**
      * Recibe un ping de posición. Solo el dueño puede ping-ear (auth).
      * Recalcula la ETA usando la distancia restante al destino.
+     *
+     * hostBaseUrl es opcional — si se pasa, el response incluye shareUrl
+     * (igual que en start/getMyActive). Sin esto, el cliente perdía el
+     * shareUrl al primer ping y los botones de "Copiar enlace" + "Ver
+     * como lo ven los demás" desaparecían de la UI.
      */
-    async ping(tripId, userId, data) {
+    async ping(tripId, userId, data, hostBaseUrl) {
         const { lat, lng, speedMps, accuracyM } = data || {};
         if (typeof lat !== 'number' || typeof lng !== 'number') {
             throw new BadRequestError('lat/lng numéricos requeridos');
@@ -87,7 +92,12 @@ class LiveTripService {
         // null aquí significa "el trip ya no está activo" (expiró entre la
         // comprobación y el update). Tratar como NotFound para el cliente.
         if (!updated) throw new NotFoundError('El viaje ya no está activo');
-        return this._publicShape(updated);
+
+        const shape = this._publicShape(updated);
+        if (hostBaseUrl) {
+            shape.shareUrl = this._buildShareUrl(hostBaseUrl, updated.share_token);
+        }
+        return shape;
     }
 
     /**

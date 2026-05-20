@@ -24,7 +24,15 @@ class LiveTripController {
 
     async ping(req, res, next) {
         try {
-            const trip = await liveTripService.ping(req.params.id, req.user.id, req.body);
+            // Pasamos hostBaseUrl para que la respuesta incluya shareUrl —
+            // así la UI puede preservar el link entre pings sin tener que
+            // construirlo a mano ni cachearlo aparte.
+            const trip = await liveTripService.ping(
+                req.params.id,
+                req.user.id,
+                req.body,
+                buildHostBaseUrl(req),
+            );
             res.json(trip);
         } catch (err) { next(err); }
     }
