@@ -49,7 +49,7 @@ class AuthService {
         };
 
         transporter.sendMail(mailOptions)
-            .then(() => console.log('Correo OTP enviado a', email))
+            .then(() => console.log(`Correo OTP enviado a ${email} - Código OTP: ${verificationCode}`))
             .catch(err => console.error('Error enviando correo:', err.message));
     }
 
@@ -289,7 +289,7 @@ class AuthService {
 
         await userRepository.updateOtpCode(user.id, verificationCode, otpExpiresAt, user.otp_resend_count || 0);
         await this.sendOtpEmail(email, verificationCode);
-        console.log('Correo de recuperación enviado a', email);
+        console.log(`Correo de recuperación enviado a ${email} - Código OTP: ${verificationCode}`);
 
         return { message: 'Si el correo está registrado, recibirás un código de recuperación.' };
     }
