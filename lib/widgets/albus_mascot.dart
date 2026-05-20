@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Widget de la mascota Albus.
 ///
-/// Estado actual: renderiza el SVG placeholder de `assets/mascot/albus_placeholder.svg`.
-/// Cuando esté el diseño final como `.riv` (Rive), sustituir [AlbusMascot.build] por
-/// un `RiveAnimation.asset()` con state machine.
-///
-/// Mientras tanto, este widget ya soporta:
-/// - Idle con micro-animaciones (flotar arriba/abajo + parpadeo)
-/// - Estados via [AlbusState] (placeholder de momento — no cambia visualmente
-///   porque el SVG es estático, pero la API ya está lista para Rive).
-/// - Onboarding / planificador / juegos pueden empezar a usarlo YA.
+/// Renderiza el SVG correspondiente al estado en `assets/mascot/states/`.
+/// Cuando esté el diseño final en `.riv` (Rive con state machine), bastará
+/// con sustituir [_SvgMascot] por un `RiveAnimation` — el resto de la API
+/// pública del widget se queda igual y los callers no se enteran.
 enum AlbusState {
   idle,
   talking,
@@ -22,17 +17,29 @@ enum AlbusState {
   sad,
 }
 
+extension _AlbusStateAsset on AlbusState {
+  String get assetPath => switch (this) {
+        AlbusState.idle => 'assets/mascot/states/albus_idle.svg',
+        AlbusState.talking => 'assets/mascot/states/albus_talking.svg',
+        AlbusState.thinking => 'assets/mascot/states/albus_thinking.svg',
+        AlbusState.happy => 'assets/mascot/states/albus_happy.svg',
+        AlbusState.sleeping => 'assets/mascot/states/albus_sleeping.svg',
+        AlbusState.sad => 'assets/mascot/states/albus_sad.svg',
+      };
+}
+
 class AlbusMascot extends StatelessWidget {
-  /// Estado emocional de Albus. Cuando integremos Rive, esto cambiará la
-  /// animación reproducida. Por ahora todos los estados muestran el mismo SVG.
+  /// Estado emocional de Albus. Determina qué SVG se renderiza.
   final AlbusState state;
 
-  /// Tamaño en píxeles. Por defecto 200 (ideal para diálogos/cards).
-  /// Usar 80-120 para badges, 280+ para pantallas completas (onboarding).
+  /// Tamaño en píxeles (alto y ancho, ya que los SVG son cuadrados 400×400).
+  /// Usar 80-120 para badges, 180-220 para diálogos en card, 280+ para
+  /// pantalla completa (onboarding).
   final double size;
 
-  /// Si true, Albus flota suavemente arriba y abajo (idle animation).
-  /// Desactivar en listas o cuando la mascota es decorativa estática.
+  /// Si true, Albus flota suavemente arriba y abajo (idle animation a nivel
+  /// widget — adicional a las animaciones internas del SVG como la luz
+  /// parpadeante, los Zzz, etc.).
   final bool animated;
 
   const AlbusMascot({
@@ -44,10 +51,26 @@ class AlbusMascot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // AnimatedSwitcher hace fade entre estados cuando cambia el SVG. Sin
+    // esto, el cambio de estado se ve como un "salto" brusco.
     Widget mascot = SizedBox(
       width: size,
       height: size,
-      child: _SvgMascot(state: state),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: SvgPicture.asset(
+          state.assetPath,
+          key: ValueKey(state),
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          // Si el SVG falla por algún motivo (asset no incluido en pubspec,
+          // formato inválido…), un placeholder discreto. Mejor que un crash.
+          placeholderBuilder: (_) => _FallbackPlaceholder(size: size),
+        ),
+      ),
     );
 
     if (animated) {
@@ -57,124 +80,6 @@ class AlbusMascot extends StatelessWidget {
     }
 
     return mascot;
-  }
-}
-
-/// Renderizador del SVG. Usa un widget Image.asset con SvgPicture si añadimos
-/// flutter_svg, pero para no añadir dependencia nueva ahora, lo metemos como
-/// rasterizado on-the-fly via una solución intermedia.
-///
-/// SOLUCIÓN ACTUAL: leemos el SVG como string y lo embedimos en un WebView mínimo.
-/// Es feo pero NO requiere añadir flutter_svg al pubspec.
-///
-/// CUANDO SE QUIERA HACER BIEN: añadir `flutter_svg: ^2.0.10+1` a deps y
-/// reemplazar este builder por `SvgPicture.asset('assets/mascot/albus_placeholder.svg')`.
-///
-/// CUANDO ESTÉ EL RIVE FINAL: añadir `rive: ^0.13.x` y reemplazar todo este
-/// fichero por una RiveAnimation con state machine.
-class _SvgMascot extends StatefulWidget {
-  final AlbusState state;
-  const _SvgMascot({required this.state});
-
-  @override
-  State<_SvgMascot> createState() => _SvgMascotState();
-}
-
-class _SvgMascotState extends State<_SvgMascot> {
-  String? _svgContent;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSvg();
-  }
-
-  Future<void> _loadSvg() async {
-    try {
-      final content = await rootBundle.loadString('assets/mascot/albus_placeholder.svg');
-      if (mounted) setState(() => _svgContent = content);
-    } catch (_) {
-      // Asset no encontrado — fallback a placeholder Material.
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Mientras carga el SVG, mostramos un círculo placeholder con emoji bus.
-    // Esto evita "salto" visual al cargar.
-    if (_svgContent == null) {
-      return Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF4A1D3D),
-          shape: BoxShape.circle,
-        ),
-        child: const Center(
-          child: Text('🚌', style: TextStyle(fontSize: 64)),
-        ),
-      );
-    }
-
-    // TODO: cuando añadamos flutter_svg, sustituir esto por SvgPicture.string(_svgContent!)
-    // Por ahora, mostramos el emoji estilizado con el fondo de la app — es un
-    // placeholder VÁLIDO porque ningún flujo crítico depende de la mascota aún.
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6B2C5C), Color(0xFF4A1D3D)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(40),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A1D3D).withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Cara del bus
-          const Text('🚌', style: TextStyle(fontSize: 80)),
-          // Indicador del estado (esquina superior derecha)
-          Positioned(
-            top: 12,
-            right: 12,
-            child: _StateIndicator(state: widget.state),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Burbuja en esquina que indica el estado actual de Albus.
-/// Útil mientras desarrollamos para ver que el estado se propaga bien.
-class _StateIndicator extends StatelessWidget {
-  final AlbusState state;
-  const _StateIndicator({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final emoji = switch (state) {
-      AlbusState.idle => '',
-      AlbusState.talking => '💬',
-      AlbusState.thinking => '🤔',
-      AlbusState.happy => '🎉',
-      AlbusState.sleeping => '💤',
-      AlbusState.sad => '😢',
-    };
-    if (emoji.isEmpty) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: Text(emoji, style: const TextStyle(fontSize: 18)),
-    );
   }
 }
 
@@ -226,6 +131,33 @@ class AlbusBubble extends StatelessWidget {
           .animate()
           .fadeIn(duration: 400.ms)
           .slideY(begin: 0.3, end: 0, duration: 400.ms, curve: Curves.easeOut),
+    );
+  }
+}
+
+/// Fallback si flutter_svg no puede renderizar el asset (raro, pero pasa con
+/// SVGs muy complejos o sin SMIL en algunas plataformas). Mantiene el layout
+/// estable.
+class _FallbackPlaceholder extends StatelessWidget {
+  final double size;
+  const _FallbackPlaceholder({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7A3268), Color(0xFF4A1D3D)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(size * 0.2),
+      ),
+      child: Center(
+        child: Text('🚌', style: TextStyle(fontSize: size * 0.4)),
+      ),
     );
   }
 }
