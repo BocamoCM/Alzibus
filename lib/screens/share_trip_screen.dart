@@ -285,7 +285,16 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
             speedMps: pos.speed >= 0 ? pos.speed : null,
             accuracyM: pos.accuracy,
           );
-      if (mounted) setState(() => _trip = updated);
+      if (mounted) {
+        // Safety net: si el ping no devolvió shareUrl (backend antiguo o
+        // un endpoint distinto del esperado), preservamos el que ya
+        // teníamos en _trip — si no, los botones "Copiar enlace" y
+        // "Ver como lo ven los demás" desaparecían tras el primer ping.
+        final preserved = (updated.shareUrl == null && trip.shareUrl != null)
+            ? updated.copyWith(shareUrl: trip.shareUrl)
+            : updated;
+        setState(() => _trip = preserved);
+      }
     } on LiveTripException catch (e) {
       // Si el viaje ya no está activo, paramos y limpiamos las prefs para
       // que el worker en background tampoco siga intentando.

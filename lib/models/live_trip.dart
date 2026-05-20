@@ -43,6 +43,37 @@ class LiveTrip {
 
   bool get isActive => status == LiveTripStatus.active;
 
+  /// Devuelve una copia con los campos sobrescritos. Útil para preservar
+  /// `shareUrl` cuando un ping update no lo trae (backends antiguos).
+  LiveTrip copyWith({
+    String? shareUrl,
+    double? lastLat,
+    double? lastLng,
+    DateTime? lastPingAt,
+    int? etaMin,
+  }) {
+    return LiveTrip(
+      id: id,
+      shareToken: shareToken,
+      shareUrl: shareUrl ?? this.shareUrl,
+      line: line,
+      originStopId: originStopId,
+      originStopName: originStopName,
+      destinationStopId: destinationStopId,
+      destinationStopName: destinationStopName,
+      destinationLat: destinationLat,
+      destinationLng: destinationLng,
+      lastLat: lastLat ?? this.lastLat,
+      lastLng: lastLng ?? this.lastLng,
+      lastPingAt: lastPingAt ?? this.lastPingAt,
+      etaMin: etaMin ?? this.etaMin,
+      startedAt: startedAt,
+      endedAt: endedAt,
+      expiresAt: expiresAt,
+      status: status,
+    );
+  }
+
   factory LiveTrip.fromJson(Map<String, dynamic> json) {
     return LiveTrip(
       id: json['id'] as String,
