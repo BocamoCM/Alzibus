@@ -441,6 +441,16 @@ app.use('/api', require('./src/routes/feedback.routes'));
 app.use('/api', require('./src/routes/stat.routes'));
 app.use('/api', require('./src/routes/live-trip.routes'));
 
+// ── Logo de Alzitrans para el viewer ──
+// Servido en /v/logo.png ANTES de la ruta /v/:shareToken para que Express
+// matchee la ruta exacta primero. Esto evita que el comodín se trague la
+// petición. shareTokens son 12 chars alfanuméricos del alfabeto seguro,
+// nunca terminan en ".png", así que no hay colisión.
+app.get('/v/logo.png', (req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 24h
+    res.sendFile(path.join(__dirname, 'views', 'alzitrans-logo.png'));
+});
+
 // ── Página pública de viewer de viajes compartidos en vivo ──
 // /v/:shareToken → sirve el HTML estático del viewer. El HTML hace polling
 // a /api/live-trips/public/:shareToken para actualizar posición. NO requiere
