@@ -13,14 +13,59 @@
         .legal-content { padding: 120px 0 80px; max-width: 800px; margin: 0 auto; }
         .legal-content h1 { margin-bottom: 30px; font-size: 38px; }
         .legal-content h2 { margin: 36px 0 16px; color: var(--coral); font-size: 22px; }
-        .legal-content h3 { margin: 24px 0 10px; font-size: 17px; }
+        .legal-content h3 { margin: 24px 0 10px; font-size: 17px; color: var(--text); }
         .legal-content p, .legal-content li { color: var(--text-muted); margin-bottom: 12px; font-size: 16px; line-height: 1.55; }
         .legal-content ul { margin: 0 0 16px 22px; }
+        .legal-content a { color: var(--coral); }
         .legal-back { display: inline-block; margin-bottom: 30px; color: var(--coral); font-weight: 500; }
-        .cookie-table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 14px; }
-        .cookie-table th, .cookie-table td { border: 1px solid #e5e0e2; padding: 10px 12px; text-align: left; vertical-align: top; }
-        .cookie-table th { background: #f8f5f6; color: #2D1B25; font-weight: 600; }
-        .cookie-table code { background: #f0e8eb; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
+
+        /* Tabla de cookies — diseñada para DARK theme */
+        .cookie-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 28px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .cookie-table th,
+        .cookie-table td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px 14px;
+            text-align: left;
+            vertical-align: top;
+            color: var(--text);
+        }
+        .cookie-table tr:last-child td { border-bottom: none; }
+        .cookie-table th {
+            background: rgba(232, 90, 79, 0.12);
+            color: var(--coral, #E85A4F);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.6px;
+        }
+        .cookie-table td {
+            color: var(--text-muted);
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+        /* Nombres de cookies (<code>): destacados con fondo sutil
+           y color amarillo brand, monospace para distinguirlos. */
+        .cookie-table code {
+            display: inline-block;
+            background: rgba(255, 200, 87, 0.12);
+            color: #FFC857;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12.5px;
+            font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace;
+            word-break: break-all;
+            margin: 1px 0;
+        }
+
         .reopen-btn {
             display: inline-block; margin: 14px 0;
             background: var(--coral, #E85A4F); color: white;
