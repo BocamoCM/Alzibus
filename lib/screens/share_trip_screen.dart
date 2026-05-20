@@ -33,10 +33,17 @@ class ShareTripScreen extends ConsumerStatefulWidget {
   final BusStop? destinationStop;
   final String? line;
 
+  /// ETA total que el planificador local calculó para este viaje
+  /// (walk + bus + walk). Lo pasamos al backend para que el viewer
+  /// muestre exactamente el mismo número (countdown), no su propia
+  /// estimación straight-line (que daba números muy distintos).
+  final int? initialEtaMin;
+
   const ShareTripScreen({
     super.key,
     this.destinationStop,
     this.line,
+    this.initialEtaMin,
   });
 
   @override
@@ -163,6 +170,7 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
         destinationStopName: widget.destinationStop?.name,
         destinationLat: widget.destinationStop?.lat,
         destinationLng: widget.destinationStop?.lng,
+        initialEtaMin: widget.initialEtaMin,
       );
 
       if (!mounted) return;

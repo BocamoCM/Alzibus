@@ -38,6 +38,7 @@ class LiveTripService {
             originStopId, originStopName,
             destinationStopId, destinationStopName,
             destinationLat, destinationLng,
+            initialEtaMin,
         } = data || {};
 
         // Cerramos el anterior si existe (solo permitimos 1 activo a la vez).
@@ -55,6 +56,7 @@ class LiveTripService {
             destinationStopId, destinationStopName,
             destinationLat, destinationLng,
             expiresAt,
+            initialEtaMin,
         });
 
         return {
@@ -235,17 +237,41 @@ class LiveTripService {
     }
 
     /**
-     * Estima minutos hasta destino con haversine + velocidad. Si no tenemos
-     * destino con coords, devolvemos null (UI lo oculta).
+     * Estima minutos hasta destino.
+     *
+     * **Estrategia preferida**: si la app pasó `initial_eta_min` al iniciar
+     * (el total calculado por el planificador local, que conoce la ruta
+     * real del bus), usamos COUNTDOWN: `initial - minutos_desde_start`.
+     * Esto matchea exactamente lo que el usuario vio en el planner.
+     *
+     * **Fallback (legacy/sin initialEta)**: haversine straight-line desde
+     * GPS actual a destino × velocidad de bus. Menos preciso porque
+     * straight-line ≠ ruta real, pero suficiente para casos sin planner.
+     *
+     * Si el countdown se queda en 0 o negativo (viaje tardó más de lo
+     * esperado), también cae al haversine para no decir "0 min" indefinida-
+     * mente cuando el usuario no ha llegado.
      */
     _estimateEtaMin(trip, lat, lng, speedMps) {
+        // Estrategia preferida — countdown desde el planner
+        const initial = trip.initial_eta_min;
+        if (initial != null && initial > 0) {
+            const startedAt = new Date(trip.started_at);
+            const elapsedMin = Math.floor((Date.now() - startedAt.getTime()) / 60000);
+            const remaining = initial - elapsedMin;
+            if (remaining >= 1) return remaining;
+            // Si remaining < 1, caemos al haversine — el viaje se está
+            // alargando, mejor mostrar una estimación basada en posición real.
+        }
+
+        // Fallback haversine
         if (!trip.destination_lat || !trip.destination_lng) return null;
         const distM = this._haversineM(
             lat, lng,
             Number(trip.destination_lat), Number(trip.destination_lng)
         );
-        // Si el usuario apenas se mueve (speed < 1 m/s, parado/andando),
-        // mejor usamos fallback de bus para no decir "ETA 3 horas".
+        // Si el usuario apenas se mueve (speed < 1.5 m/s), bus speed para
+        // no decir "ETA 3 horas" cuando va andando.
         const effectiveSpeed = (speedMps && speedMps > 1.5) ? speedMps : FALLBACK_BUS_SPEED_MPS;
         const minutes = Math.ceil(distM / effectiveSpeed / 60);
         return Math.max(1, Math.min(minutes, 240)); // cap a 4h por sanidad

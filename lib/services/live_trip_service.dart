@@ -18,6 +18,7 @@ class LiveTripService {
     String? destinationStopName,
     double? destinationLat,
     double? destinationLng,
+    int? initialEtaMin,
   }) async {
     final res = await ApiClient().dio.post(
       '/live-trips',
@@ -29,6 +30,11 @@ class LiveTripService {
         if (destinationStopName != null) 'destinationStopName': destinationStopName,
         if (destinationLat != null) 'destinationLat': destinationLat,
         if (destinationLng != null) 'destinationLng': destinationLng,
+        // ETA total calculado por el planificador local (incluye walk
+        // + bus + walk final si los hubiera). El backend lo usa como
+        // base de countdown en lugar de la haversine straight-line,
+        // que daba estimaciones muy distintas a las del planner.
+        if (initialEtaMin != null) 'initialEtaMin': initialEtaMin,
       },
     );
     if (res.statusCode == null || res.statusCode! >= 400) {
