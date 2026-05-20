@@ -23,8 +23,28 @@ import 'stops_service.dart';
 ///
 /// **No depende del backend** — funciona 100% offline con los assets locales.
 class TripPlannerService {
-  static const _avgMinPerStop = 2; // tiempo medio bus entre paradas
-  static const _walkSpeedMps = 1.1; // 1.1 m/s = 4 km/h (caminata media)
+  // ─── Velocidades para el cálculo de duración ────────────────────────────
+  //
+  // Antes usábamos un fijo `2 min por parada`, lo que daba estimaciones
+  // sistemáticamente demasiado altas para tramos cortos y demasiado bajas
+  // para tramos largos. Ahora calculamos por DISTANCIA real entre cada par
+  // de paradas (haversine) usando una velocidad efectiva de bus urbano
+  // que ya incluye paradas pequeñas, semáforos y aceleraciones/frenadas.
+
+  /// Velocidad media efectiva de un bus urbano en zona ciudad de Alzira,
+  /// promediada con paradas/semáforos: ~18 km/h = 5 m/s.
+  static const _busSpeedMps = 5.0;
+
+  /// Segundos extra por cada parada intermedia (puerta abre, gente baja/sube,
+  /// arranca de nuevo). 15s es conservador pero realista.
+  static const _busStopDwellSec = 15;
+
+  /// Velocidad media andando: 1.3 m/s ≈ 4.7 km/h (paso normal urbano).
+  /// Antes usábamos 1.1 m/s (4 km/h) que es paso de paseo y daba tiempos
+  /// hinchados a pie. Si más adelante quieres modo "accesibilidad", lo
+  /// haces parametrizable.
+  static const _walkSpeedMps = 1.3;
+
   // Nota: cuando implementemos transbordos que requieren andar entre paradas
   // distintas (no en la misma esquina), añadir _walkConnectionMaxM y
   // _transferPenaltyMin. De momento usamos TransferStep.durationMin=5 fijo.
@@ -177,7 +197,7 @@ class TripPlannerService {
       fromStop: origin,
       toStop: destination,
       intermediateStops: intermediate,
-      durationMin: _estimateBusMin(stops.length - 1),
+      durationMin: _estimateBusMin(stops),
     );
 
     return _wrapWithWalks(
@@ -219,7 +239,7 @@ class TripPlannerService {
       fromStop: origin,
       toStop: transferStop,
       intermediateStops: pathA.sublist(1, pathA.length - 1),
-      durationMin: _estimateBusMin(pathA.length - 1),
+      durationMin: _estimateBusMin(pathA),
     );
     final transfer = TransferStep(
       fromLine: lineA,
@@ -231,7 +251,7 @@ class TripPlannerService {
       fromStop: transferStop,
       toStop: destination,
       intermediateStops: pathB.sublist(1, pathB.length - 1),
-      durationMin: _estimateBusMin(pathB.length - 1),
+      durationMin: _estimateBusMin(pathB),
     );
 
     return _wrapWithWalks(
@@ -354,8 +374,30 @@ class TripPlannerService {
     return routeA.where((s) => idsInB.contains(s.id)).toList();
   }
 
-  int _estimateBusMin(int hops) =>
-      math.max(1, hops * _avgMinPerStop);
+  /// Tiempo en minutos de un tramo de bus, calculado por DISTANCIA real
+  /// entre paradas consecutivas + tiempo de parada en cada intermedia.
+  ///
+  /// [pathStops] son las paradas que el bus recorre EN ORDEN, incluyendo
+  /// origen y destino. Mínimo 2 (origen + destino sin intermedias).
+  ///
+  /// Fórmula:
+  ///   tiempo = (suma de distancias entre paradas consecutivas) / v_bus
+  ///         + (nº de paradas intermedias) × tiempo_de_parada
+  ///   (Las paradas de subida y bajada no cuentan dwell — el usuario las
+  ///    "vive" pero no son tiempo perdido del viaje en sí.)
+  int _estimateBusMin(List<BusStop> pathStops) {
+    if (pathStops.length < 2) return 1;
+    double totalM = 0;
+    for (var i = 0; i < pathStops.length - 1; i++) {
+      totalM += _haversineM(
+        pathStops[i].lat, pathStops[i].lng,
+        pathStops[i + 1].lat, pathStops[i + 1].lng,
+      );
+    }
+    final intermediateStops = math.max(0, pathStops.length - 2);
+    final secs = (totalM / _busSpeedMps) + (intermediateStops * _busStopDwellSec);
+    return math.max(1, (secs / 60).round());
+  }
 
   int _estimateWalkMin(double distanceM) =>
       math.max(1, (distanceM / _walkSpeedMps / 60).round());
