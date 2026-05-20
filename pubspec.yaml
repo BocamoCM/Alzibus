@@ -63,6 +63,10 @@ dependencies:
   # Permite que el usuario elija destino (WhatsApp, Telegram, mail, copiar
   # enlace, etc.) en lugar de meterlo directo al portapapeles.
   share_plus: ^10.1.4
+  # Renderizado de SVGs (mascota Albus en assets/mascot/states/*.svg).
+  # Necesario para que las animaciones SMIL y los detalles vectoriales se
+  # vean nítidos sin tirar de un PNG por estado.
+  flutter_svg: ^2.0.10+1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -84,3 +88,8 @@ flutter:
     - assets/stops.json
     - assets/routes/
     - assets/mascot/
+    # Flutter no recurre dentro de subdirectorios — hay que declarar
+    # explícitamente assets/mascot/states/ para que los SVGs de cada
+    # estado (idle, talking, thinking, happy, sleeping, sad) se
+    # empaqueten en el bundle.
+    - assets/mascot/states/
