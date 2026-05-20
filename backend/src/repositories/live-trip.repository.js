@@ -14,6 +14,7 @@ class LiveTripRepository {
         destinationStopId, destinationStopName,
         destinationLat, destinationLng,
         expiresAt,
+        initialEtaMin,
     }) {
         const result = await pool.query(
             `INSERT INTO live_trips
@@ -21,15 +22,22 @@ class LiveTripRepository {
                  origin_stop_id, origin_stop_name,
                  destination_stop_id, destination_stop_name,
                  destination_lat, destination_lng,
-                 expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                 expires_at,
+                 initial_eta_min,
+                 eta_min)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
              RETURNING *`,
+            // $11 se usa dos veces: como initial_eta_min Y como eta_min
+            // (estado inicial). Así el viewer ya muestra el ETA del
+            // planner desde el primer instante, sin esperar a que llegue
+            // un ping para "estrenar" el campo.
             [
                 userId, shareToken, line,
                 originStopId ?? null, originStopName ?? null,
                 destinationStopId ?? null, destinationStopName ?? null,
                 destinationLat ?? null, destinationLng ?? null,
                 expiresAt,
+                initialEtaMin ?? null,
             ]
         );
         return result.rows[0];

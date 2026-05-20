@@ -573,6 +573,10 @@ class _PlanCard extends StatelessWidget {
                 builder: (_) => ShareTripScreen(
                   destinationStop: destination,
                   line: line,
+                  // Pasamos el ETA total del plan (incluye walk + bus +
+                  // walk final). El backend lo usa como base de countdown
+                  // en lugar de calcular straight-line del GPS al destino.
+                  initialEtaMin: plan.totalDurationMin,
                 ),
               ),
             );

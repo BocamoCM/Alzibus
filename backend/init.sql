@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS live_trips (
     last_accuracy_m DECIMAL(8, 2),
     last_ping_at TIMESTAMPTZ,
     eta_min INTEGER,                          -- ETA al destino, recalculada en cada ping
+    initial_eta_min INTEGER,                  -- ETA total calculado por el planificador al iniciar (baseline)
     status VARCHAR(20) NOT NULL DEFAULT 'active', -- active | ended | expired
     started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ended_at TIMESTAMPTZ,
