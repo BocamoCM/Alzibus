@@ -31,8 +31,10 @@ class GamesHubScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
         actions: [
           // Acceso a la tienda de skins de Albus.
+          // Forzamos color blanco + el icono FILL (no outlined) para que
+          // se vea bien sobre el fondo burgundy del AppBar.
           IconButton(
-            icon: const Icon(Icons.checkroom),
+            icon: const Icon(Icons.checkroom, color: Colors.white, size: 26),
             tooltip: 'Vestidor de Albus',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AlbusShopScreen()),
