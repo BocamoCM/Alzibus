@@ -121,7 +121,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
     setState(() => _gameOver = true);
 
     // Monedas: 1 por cada 50 puntos.
-    ref.read(gameCurrencyProvider.notifier).add(_score ~/ 50);
+    ref.read(gameCurrencyProvider.notifier).add(_score ~/ 75);
     await ref.read(triviaHighScoreProvider.notifier).reportScore(_score);
   }
 
@@ -340,7 +340,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
               ),
             ),
             Text(
-              '+${_score ~/ 50} 🪙 al monedero',
+              '+${_score ~/ 75} 🪙 al monedero',
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),

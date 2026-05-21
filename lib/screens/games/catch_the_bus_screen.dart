@@ -226,7 +226,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
     _elapsedTimer?.cancel();
 
     // Guardar puntuación y monedas.
-    ref.read(gameCurrencyProvider.notifier).add(_score ~/ 10);
+    ref.read(gameCurrencyProvider.notifier).add(_score ~/ 15);
     final newRecord =
         await ref.read(catchTheBusHighScoreProvider.notifier).reportScore(_score);
     if (newRecord && mounted) {
@@ -441,7 +441,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              '+${_score ~/ 10} 🪙 al monedero',
+              '+${_score ~/ 15} 🪙 al monedero',
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),

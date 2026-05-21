@@ -132,7 +132,7 @@ class AlbusShopScreen extends ConsumerWidget {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    'y consigue +50 🪙 al instante',
+                    'y consigue +30 🪙 al instante',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
@@ -192,10 +192,10 @@ class AlbusShopScreen extends ConsumerWidget {
     }
     if (!context.mounted) return;
     if (rewarded) {
-      await ref.read(gameCurrencyProvider.notifier).add(50);
+      await ref.read(gameCurrencyProvider.notifier).add(30);
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('+50 monedas 🪙 ¡Gracias!'),
+          content: Text('+30 monedas 🪙 ¡Gracias!'),
           backgroundColor: Color(0xFF2E7D32),
           duration: Duration(seconds: 2),
         ),
@@ -238,7 +238,8 @@ class AlbusShopScreen extends ConsumerWidget {
           const Expanded(
             child: Text(
               'Gana monedas jugando a Caza el Bus, Trivia y Memoria. '
-              'Cada partida te da entre 1 y 30 monedas según la puntuación.',
+              'Cada partida te da entre 1 y 20 monedas según la puntuación. '
+              'Los skins más caros valen el esfuerzo — son únicos.',
               style: TextStyle(fontSize: 13, color: Color(0xFF6B5500), height: 1.35),
             ),
           ),
