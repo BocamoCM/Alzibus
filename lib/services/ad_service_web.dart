@@ -51,7 +51,7 @@ class AdService {
   int get bannerFreeMinutesLeft => 0;
   void loadRewardedAd() {}
   bool get isRewardedAdReady => false;
-  void showRewardedAd({VoidCallback? onRewarded}) {}
+  void showRewardedAd({VoidCallback? onRewarded, bool grantBannerFree = true}) {}
 
   // Native ad stubs
   dynamic createNativeAd({
@@ -60,6 +60,9 @@ class AdService {
   }) {
     return null;
   }
+
+  // Pool stub para que la API móvil/web sea simétrica.
+  dynamic takeStopNativeAd() => null;
 
   // Métodos específicos para Web Ads (Opcional)
   Widget buildWebBanner() {

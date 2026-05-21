@@ -91,6 +91,15 @@ class AdService {
   NativeAd? _alertsNativeAd;
   bool _isAlertsNativeAdLoaded = false;
 
+  // Pool de nativos para las paradas. Antes cada tap de parada creaba un
+  // ad nuevo y la mayoría (90% según AdMob) no llegaba a mostrarse porque
+  // el usuario cerraba el sheet antes de que el ad terminara de cargar
+  // (~1.3s de latencia). Con un pool de 2 ads precargados al abrir el
+  // mapa, el primer tap muestra uno YA listo, y mientras se ve se carga
+  // el siguiente para el próximo tap. Show rate esperado: 30-50%.
+  final List<NativeAd> _stopNativeAdPool = [];
+  static const int _stopNativeAdPoolSize = 2;
+
   /// Carga un anuncio de apertura (App Open Ad).
   void loadAppOpenAd() {
     if (!canShowAds || _isAppOpenAdLoading) return;
@@ -135,10 +144,14 @@ class AdService {
       return;
     }
     
-    // Si cerramos CUALQUIER anuncio hace menos de 15 segundos, no disparamos App Open (evita bucles por resume)
+    // Si cerramos CUALQUIER anuncio hace menos de 8 segundos, saltamos
+    // este App Open (evita bucle: ad → pause → resume → ad). Antes eran
+    // 15s pero eso bloqueaba ads válidos en flujos rápidos (cerrar
+    // intersticial → cambiar de pantalla → resume) y nos costaba ~5%
+    // del show rate según AdMob report.
     if (lastAdDismissedTime != null) {
       final diff = DateTime.now().difference(lastAdDismissedTime!);
-      if (diff.inSeconds < 15) {
+      if (diff.inSeconds < 8) {
         debugPrint('AppOpenAd: Global dismiss cooldown activo. Evitando bucle.');
         return;
       }
@@ -204,11 +217,60 @@ class AdService {
       onAdLoaded: (ad) => _isAlertsNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isAlertsNativeAdLoaded = false,
     )..load();
+
+    // Pool inicial de nativos para paradas. Lanzamos N cargas en paralelo.
+    _refillStopNativeAdPool();
   }
-  
+
   NativeAd? get profileNativeAd => _isProfileNativeAdLoaded ? _profileNativeAd : null;
   NativeAd? get settingsNativeAd => _isSettingsNativeAdLoaded ? _settingsNativeAd : null;
   NativeAd? get alertsNativeAd => _isAlertsNativeAdLoaded ? _alertsNativeAd : null;
+
+  /// Devuelve un native ad LISTO para mostrar en el sheet de una parada,
+  /// y rellena el pool en background. Null si no hay ninguno listo o si
+  /// ads desactivados.
+  ///
+  /// Esto es lo que sustituye al `createNativeAd().load()` síncrono que
+  /// hacía el stop_info_sheet. Con esto, cuando el usuario toca una parada,
+  /// el ad YA está cargado y se muestra al instante (sin esperar 1.3s).
+  NativeAd? takeStopNativeAd() {
+    if (!canShowAds) return null;
+    if (_stopNativeAdPool.isEmpty) {
+      // Pool vacío — rellenar para próximas paradas y devolver null.
+      _refillStopNativeAdPool();
+      return null;
+    }
+    final ad = _stopNativeAdPool.removeAt(0);
+    // Asíncrono: cargar otro para reemplazar el que acabamos de entregar.
+    _refillStopNativeAdPool();
+    return ad;
+  }
+
+  void _refillStopNativeAdPool() {
+    if (!canShowAds) return;
+    while (_stopNativeAdPool.length < _stopNativeAdPoolSize) {
+      // Apuntador para saber si fue cargado o falló — para no añadir
+      // al pool si nunca se cargó.
+      final adWrapper = <NativeAd?>[null];
+      final ad = createNativeAd(
+        onAdLoaded: (loaded) {
+          if (adWrapper[0] != null) {
+            _stopNativeAdPool.add(adWrapper[0]!);
+          }
+        },
+        onAdFailedToLoad: (failed, error) {
+          // Tras un pequeño backoff, reintentar el slot.
+          Future.delayed(const Duration(seconds: 8), () {
+            if (_stopNativeAdPool.length < _stopNativeAdPoolSize) {
+              _refillStopNativeAdPool();
+            }
+          });
+        },
+      );
+      adWrapper[0] = ad;
+      ad.load();
+    }
+  }
 
   /// --- BANNER ADS (ADAPTIVE) ---
 
@@ -440,8 +502,15 @@ class AdService {
   /// ¿Hay un rewarded listo para mostrar?
   bool get isRewardedAdReady => _rewardedAd != null;
 
-  /// Muestra el rewarded ad. Al completar, activa 30 min sin banners.
-  void showRewardedAd({VoidCallback? onRewarded}) {
+  /// Muestra el rewarded ad. Por defecto activa 30 min sin banners.
+  ///
+  /// Si `grantBannerFree = false`, NO toca el flag de banner-free — útil
+  /// cuando el reward es otra cosa (monedas para skins, vidas extra,
+  /// saltar pregunta de trivia, etc.) y no queremos premiar dos veces.
+  void showRewardedAd({
+    VoidCallback? onRewarded,
+    bool grantBannerFree = true,
+  }) {
     if (_rewardedAd == null) {
       loadRewardedAd();
       return;
@@ -464,9 +533,11 @@ class AdService {
 
     _rewardedAd!.show(
       onUserEarnedReward: (ad, reward) {
-        // Activar 30 minutos sin banners
-        _bannerFreeUntil = DateTime.now().add(const Duration(minutes: 30));
-        if (kDebugMode) print('🎁 Banner-free hasta: $_bannerFreeUntil');
+        if (grantBannerFree) {
+          // Reward "clásico": 30 minutos sin banners
+          _bannerFreeUntil = DateTime.now().add(const Duration(minutes: 30));
+          if (kDebugMode) print('🎁 Banner-free hasta: $_bannerFreeUntil');
+        }
         onRewarded?.call();
       },
     );

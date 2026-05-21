@@ -238,6 +238,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       if (!kIsWeb) _heartbeatTimer?.cancel();
       _lastPausedTime ??= DateTime.now();
+      // Precargar el próximo App Open al irse al background para que esté
+      // 100% listo cuando el usuario vuelva (mejora show rate ~10%
+      // según AdMob — antes el ad cargaba después del resume y a veces
+      // llegaba tarde).
+      if (!kIsWeb && !adService.hasAppOpenAdReady) {
+        adService.loadAppOpenAd();
+      }
     }
   }
 
