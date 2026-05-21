@@ -65,6 +65,50 @@ class AlbusSkin {
       accentColor: Color(0xFF5D1A6B),
       previewEmoji: '✝️',
     ),
+    AlbusSkin(
+      id: 'lluvia',
+      name: 'Albus en la pluja',
+      description:
+          'Por si pilla un chaparrón de la Ribera: paraguas amarillo '
+          'y chubasquero a juego. ¡Que no te pille mojado!',
+      cost: 100,
+      overlayAsset: 'assets/mascot/skins/lluvia/overlay.svg',
+      accentColor: Color(0xFFFFC857),
+      previewEmoji: '☔',
+    ),
+    AlbusSkin(
+      id: 'graduado',
+      name: 'Albus graduat',
+      description:
+          'Birrete con borla dorada + diploma con sello. Homenaje '
+          'al TFC que dio origen a Alzitrans.',
+      cost: 150,
+      overlayAsset: 'assets/mascot/skins/graduado/overlay.svg',
+      accentColor: Color(0xFF1A1A1A),
+      previewEmoji: '🎓',
+    ),
+    AlbusSkin(
+      id: 'navidad',
+      name: 'Albus de Nadal',
+      description:
+          'Gorro de Santa con pompón blanco, bufanda navideña a rayas '
+          'y copos de nieve. Bon Nadal!',
+      cost: 150,
+      overlayAsset: 'assets/mascot/skins/navidad/overlay.svg',
+      accentColor: Color(0xFFE63946),
+      previewEmoji: '🎅',
+    ),
+    AlbusSkin(
+      id: 'alzira_fc',
+      name: 'Albus UD Alzira',
+      description:
+          'Bufanda azulgrana del UD Alzira con flecos, escudo del '
+          'club y banderín. ¡Visca el club!',
+      cost: 200,
+      overlayAsset: 'assets/mascot/skins/alzira_fc/overlay.svg',
+      accentColor: Color(0xFF0D47A1),
+      previewEmoji: '⚽',
+    ),
   ];
 
   /// Busca skin por ID. Si no existe, devuelve el default.

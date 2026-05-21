@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay LLUVIA — paraguas amarillo + gotas + capa impermeable -->
+
+  <defs>
+    <linearGradient id="umbrellaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFE066"/>
+      <stop offset="100%" stop-color="#FFC857"/>
+    </linearGradient>
+    <linearGradient id="raincoatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD54F"/>
+      <stop offset="100%" stop-color="#E6A800"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ═══ PARAGUAS amarillo flotando sobre el techo del bus ═══ -->
+  <g>
+    <!-- Mástil del paraguas -->
+    <line x1="200" y1="38" x2="200" y2="125" stroke="#5D4037" stroke-width="3"
+          stroke-linecap="round"/>
+
+    <!-- Sombra del paraguas (en el techo del bus) -->
+    <ellipse cx="200" cy="125" rx="92" ry="6" fill="#000" opacity="0.2"/>
+
+    <!-- Cúpula del paraguas (8 gajos) -->
+    <path d="M 105 50
+             Q 110 25 145 18
+             Q 175 12 200 12
+             Q 225 12 255 18
+             Q 290 25 295 50
+             Q 200 90 105 50 Z"
+          fill="url(#umbrellaGrad)"
+          stroke="#A67400" stroke-width="2.5"/>
+
+    <!-- Líneas separadoras de gajos -->
+    <g stroke="#A67400" stroke-width="1.5" fill="none" opacity="0.7">
+      <path d="M 135 30 Q 145 55 145 75"/>
+      <path d="M 170 22 Q 175 55 175 78"/>
+      <path d="M 200 18 L 200 80"/>
+      <path d="M 230 22 Q 225 55 225 78"/>
+      <path d="M 265 30 Q 255 55 255 75"/>
+    </g>
+
+    <!-- Punta del paraguas arriba -->
+    <circle cx="200" cy="12" r="4" fill="#A67400"/>
+
+    <!-- Borde inferior festoneado (terminación natural del paraguas) -->
+    <g fill="url(#umbrellaGrad)" stroke="#A67400" stroke-width="1.5">
+      <path d="M 105 50 Q 125 70 140 60"/>
+      <path d="M 140 60 Q 155 75 170 64"/>
+      <path d="M 170 64 Q 185 80 200 65"/>
+      <path d="M 200 65 Q 215 80 230 64"/>
+      <path d="M 230 64 Q 245 75 260 60"/>
+      <path d="M 260 60 Q 275 70 295 50"/>
+    </g>
+
+    <!-- Mango curvado del paraguas (J en la parte inferior) -->
+    <path d="M 200 125 Q 200 135 215 140 Q 225 140 222 130"
+          stroke="#5D4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- ═══ CAPA IMPERMEABLE amarilla al cuerpo ═══ -->
+  <g>
+    <!-- Cuerpo principal de la capa -->
+    <path d="M 60 285
+             L 56 322
+             L 344 322
+             L 340 285
+             Q 200 305 60 285 Z"
+          fill="url(#raincoatGrad)"
+          stroke="#A67400" stroke-width="2"/>
+
+    <!-- Cuello/solapas del impermeable -->
+    <path d="M 130 285 L 145 305 L 160 285 Z" fill="#E6A800" stroke="#A67400" stroke-width="1"/>
+    <path d="M 240 285 L 255 305 L 270 285 Z" fill="#E6A800" stroke="#A67400" stroke-width="1"/>
+
+    <!-- Botones del impermeable -->
+    <circle cx="200" cy="296" r="3.5" fill="#8D6E00" stroke="#5D4500" stroke-width="0.8"/>
+    <circle cx="200" cy="310" r="3.5" fill="#8D6E00" stroke="#5D4500" stroke-width="0.8"/>
+
+    <!-- Brillo / textura impermeable (líneas curvas sutiles) -->
+    <g stroke="#FFFFFF" stroke-width="1" fill="none" opacity="0.4">
+      <path d="M 80 295 Q 90 300 100 295"/>
+      <path d="M 280 295 Q 290 300 300 295"/>
+    </g>
+  </g>
+
+  <!-- ═══ GOTAS DE LLUVIA cayendo ═══ -->
+  <g fill="#5BA3D5" stroke="#3A7BA8" stroke-width="0.8">
+    <!-- Gotas (forma de lágrima, varias) -->
+    <path d="M 50 180 Q 47 188 50 192 Q 53 188 50 180 Z"/>
+    <path d="M 75 230 Q 72 238 75 242 Q 78 238 75 230 Z"/>
+    <path d="M 350 195 Q 347 203 350 207 Q 353 203 350 195 Z"/>
+    <path d="M 325 245 Q 322 253 325 257 Q 328 253 325 245 Z"/>
+    <path d="M 40 270 Q 37 277 40 281 Q 43 277 40 270 Z"/>
+    <path d="M 370 270 Q 367 277 370 281 Q 373 277 370 270 Z"/>
+
+    <!-- Highlight blanco en cada gota -->
+    <g fill="#FFFFFF" opacity="0.6" stroke="none">
+      <circle cx="49" cy="184" r="1"/>
+      <circle cx="74" cy="234" r="1"/>
+      <circle cx="349" cy="199" r="1"/>
+      <circle cx="324" cy="249" r="1"/>
+      <circle cx="39" cy="274" r="1"/>
+      <circle cx="369" cy="274" r="1"/>
+    </g>
+  </g>
+
+  <!-- Charcos pequeños en el suelo (alrededor de la sombra del bus) -->
+  <g fill="#5BA3D5" opacity="0.6" stroke="#3A7BA8" stroke-width="0.5">
+    <ellipse cx="80" cy="378" rx="14" ry="3"/>
+    <ellipse cx="320" cy="378" rx="12" ry="2.5"/>
+  </g>
+</svg>
