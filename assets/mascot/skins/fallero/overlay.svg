@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay FALLERO/A — se renderiza ENCIMA del Albus base.
+       Mantiene el viewBox idéntico (400x400) para que las posiciones
+       coincidan exactamente con la base. -->
+
+  <!-- Mocador (pañuelo) rojo cubriendo techo + antena del bus -->
+  <!-- La antena base va en y=78-98 con la luz en y=72.
+       El mocador va de y=60 a y=130 cubriendo esa zona. -->
+  <g>
+    <!-- Cuerpo principal del mocador -->
+    <path d="M 110 95 Q 200 60 290 95 Q 300 115 290 135 L 110 135 Q 100 115 110 95 Z"
+          fill="#D62828" stroke="#8B0820" stroke-width="2.5"/>
+
+    <!-- Punta del nudo cayendo al lado derecho -->
+    <path d="M 280 110 L 315 145 L 310 158 L 295 152 L 268 128 Z"
+          fill="#D62828" stroke="#8B0820" stroke-width="2"/>
+
+    <!-- Punta del nudo cayendo al lado izquierdo -->
+    <path d="M 120 110 L 92 138 L 95 150 L 108 148 L 130 128 Z"
+          fill="#D62828" stroke="#8B0820" stroke-width="2"/>
+
+    <!-- Nudo central -->
+    <ellipse cx="200" cy="62" rx="14" ry="9" fill="#A0091E" stroke="#5C0512" stroke-width="1.5"/>
+    <ellipse cx="200" cy="63" rx="9" ry="5" fill="#D62828"/>
+
+    <!-- Lunares blancos típicos del mocador fallero -->
+    <circle cx="145" cy="105" r="4" fill="white" opacity="0.85"/>
+    <circle cx="175" cy="115" r="4" fill="white" opacity="0.85"/>
+    <circle cx="225" cy="115" r="4" fill="white" opacity="0.85"/>
+    <circle cx="255" cy="105" r="4" fill="white" opacity="0.85"/>
+    <circle cx="195" cy="105" r="3.5" fill="white" opacity="0.85"/>
+  </g>
+
+  <!-- Faja roja anudada alrededor del bus (sobre la línea decorativa amarilla) -->
+  <g>
+    <rect x="60" y="293" width="280" height="24" fill="#D62828"
+          stroke="#8B0820" stroke-width="2"/>
+
+    <!-- Pliegues de la faja (líneas verticales sutiles) -->
+    <line x1="85" y1="293" x2="85" y2="317" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+    <line x1="115" y1="293" x2="115" y2="317" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+    <line x1="145" y1="293" x2="145" y2="317" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+    <line x1="255" y1="293" x2="255" y2="317" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+    <line x1="285" y1="293" x2="285" y2="317" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+    <line x1="315" y1="293" x2="315" y2="317" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+
+    <!-- Nudo de la faja al lado izquierdo (caída) -->
+    <path d="M 60 305 L 30 320 L 32 340 L 50 335 L 65 318 Z"
+          fill="#D62828" stroke="#8B0820" stroke-width="2"/>
+    <line x1="38" y1="325" x2="48" y2="335" stroke="#8B0820" stroke-width="0.8" opacity="0.5"/>
+  </g>
+
+  <!-- Clavell (clavel rojo) en el lateral del cuerpo -->
+  <g transform="translate(335, 175)">
+    <!-- Hojas verdes -->
+    <ellipse cx="-2" cy="6" rx="7" ry="2.5" fill="#2E7D32" transform="rotate(45)"/>
+    <ellipse cx="2" cy="6" rx="7" ry="2.5" fill="#388E3C" transform="rotate(-45)"/>
+    <!-- Flor en capas -->
+    <circle r="11" fill="#E63946"/>
+    <circle r="8" fill="#D62828"/>
+    <circle r="5" fill="#A0091E"/>
+    <circle r="2" fill="#FFE066"/>
+  </g>
+</svg>
