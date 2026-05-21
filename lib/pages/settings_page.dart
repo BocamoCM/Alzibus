@@ -298,10 +298,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget _buildNativeAdOrBanner() {
     if (kIsWeb) {
       return AdBannerWidget(
-        adUnitId: AppConfig.settingsBannerAdId,
+        // Web: usamos el banner principal (que tiene 88% match vs 56%
+        // de settingsBannerAdId en el AdMob report — config sospechosa
+        // en la consola del ad unit "Banner_Inferior_Ajustes").
+        adUnitId: AppConfig.bannerAdId,
       );
     }
-    
+
     final adService = ref.read(adServiceProvider);
     final preloadedAd = adService.settingsNativeAd;
 
@@ -309,11 +312,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return buildNativeAdStub(ad: preloadedAd);
     }
 
-    // Si no hay precargado, mostrar banner estándar como respaldo (pero con menor altura)
+    // Fallback banner — TEMPORALMENTE usamos `bannerAdId` (el Main Banner)
+    // en lugar de `settingsBannerAdId` porque el report de AdMob mostró
+    // match rate 56% en el segundo vs 88% en el primero. Hasta revisar
+    // y alinear la configuración del ad unit en la consola, mejor usar
+    // el que tenemos comprobado que funciona.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 60, maxHeight: 70),
       child: AdBannerWidget(
-        adUnitId: AppConfig.settingsBannerAdId,
+        adUnitId: AppConfig.bannerAdId,
       ),
     );
   }

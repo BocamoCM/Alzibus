@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers/ad_provider.dart';
 import '../core/providers/game_currency_provider.dart';
 import '../models/albus_skin.dart';
 import '../theme/app_theme.dart';
@@ -85,11 +86,121 @@ class AlbusShopScreen extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 16),
+            _earnCoinsWithAdCard(context, ref),
+            const SizedBox(height: 10),
             _howToEarn(),
           ],
         ),
       ),
     );
+  }
+
+  /// Card prominente: "Ver un anuncio → +50 monedas".
+  ///
+  /// Aprovecha el eCPM altísimo del rewarded (6.41€) — el usuario que
+  /// llega aquí buscando comprar skins es target perfecto para anuncios.
+  /// Limit: 1 cada 60s para no spamear ni dar coins infinitas.
+  Widget _earnCoinsWithAdCard(BuildContext context, WidgetRef ref) {
+    return Material(
+      elevation: 2,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            const Text('🎬', style: TextStyle(fontSize: 40)),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ver un anuncio',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'y consigue +50 🪙 al instante',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => _watchAdForCoins(context, ref),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF2E7D32),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              ),
+              child: const Text(
+                'Ganar',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _watchAdForCoins(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final adService = ref.read(adServiceProvider);
+
+    if (!adService.isRewardedAdReady) {
+      // No hay ad listo — pedirle a AdMob que cargue uno y avisar.
+      adService.loadRewardedAd();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Anuncio cargando, intenta de nuevo en unos segundos…'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    bool rewarded = false;
+    adService.showRewardedAd(
+      grantBannerFree: false, // no damos doble premio (sin banners + coins)
+      onRewarded: () => rewarded = true,
+    );
+
+    // Esperar a que termine el ad (o lo cierren). El callback de
+    // onRewarded marca el flag. Polling corto.
+    for (var i = 0; i < 60; i++) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (rewarded) break;
+    }
+    if (!context.mounted) return;
+    if (rewarded) {
+      await ref.read(gameCurrencyProvider.notifier).add(50);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('+50 monedas 🪙 ¡Gracias!'),
+          backgroundColor: Color(0xFF2E7D32),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Widget _buildHeader(String equippedId) {

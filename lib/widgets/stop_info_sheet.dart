@@ -112,14 +112,20 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
   void _initNativeAd() {
     if (!AppConfig.showAds || kIsWeb) return;
 
-    _nativeAd = ref.read(adServiceProvider).createNativeAd(
-      onAdLoaded: (ad) {
-        if (mounted) setState(() => _isNativeAdLoaded = true);
-      },
-      onAdFailedToLoad: (ad, error) {
-        if (mounted) setState(() => _isNativeAdLoaded = false);
-      },
-    )..load();
+    // En lugar de crear un ad nuevo y esperar ~1.3s (latencia que hacía
+    // que el 90% de impressions se perdieran al cerrarse el sheet antes
+    // de cargar), pedimos uno YA listo al pool del AdService.
+    // Si el pool está vacío, mostramos sin ad (sin bloquear el render).
+    final preloaded = ref.read(adServiceProvider).takeStopNativeAd();
+    if (preloaded != null) {
+      _nativeAd = preloaded;
+      _isNativeAdLoaded = true;
+      // Llamamos a setState porque ya estamos en initState — usar
+      // post-frame callback evita "setState during build".
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
   
   Future<void> _loadTrainTimes() async {
