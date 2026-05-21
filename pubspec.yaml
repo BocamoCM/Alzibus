@@ -97,3 +97,7 @@ flutter:
     # con un overlay.svg que se renderiza ENCIMA del Albus base.
     - assets/mascot/skins/fallero/
     - assets/mascot/skins/capurullo/
+    - assets/mascot/skins/lluvia/
+    - assets/mascot/skins/graduado/
+    - assets/mascot/skins/navidad/
+    - assets/mascot/skins/alzira_fc/

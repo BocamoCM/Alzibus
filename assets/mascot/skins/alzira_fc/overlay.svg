@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay UD ALZIRA — bufanda azulgrana + escudo del equipo
+       Colores del club: azul y blanco (clásicos del UD Alzira). -->
+
+  <defs>
+    <linearGradient id="scarfBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1976D2"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ═══ BUFANDA FUTBOLERA arriba de la cabeza ═══ -->
+  <!-- Forma de bufanda colgando del techo del bus, con dos lados largos -->
+  <g>
+    <!-- Lado izquierdo colgando -->
+    <path d="M 85 80
+             L 75 145
+             L 95 150
+             L 105 95
+             Z" fill="url(#scarfBlue)"
+                stroke="#082E66" stroke-width="2"/>
+    <!-- Flecos lado izquierdo -->
+    <g stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round">
+      <line x1="78" y1="148" x2="76" y2="160"/>
+      <line x1="84" y1="148" x2="83" y2="162"/>
+      <line x1="90" y1="150" x2="90" y2="163"/>
+    </g>
+
+    <!-- Lado derecho colgando -->
+    <path d="M 295 95
+             L 305 150
+             L 325 145
+             L 315 80
+             Z" fill="url(#scarfBlue)"
+                stroke="#082E66" stroke-width="2"/>
+    <!-- Flecos lado derecho -->
+    <g stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round">
+      <line x1="310" y1="148" x2="312" y2="160"/>
+      <line x1="316" y1="148" x2="317" y2="162"/>
+      <line x1="322" y1="150" x2="324" y2="163"/>
+    </g>
+
+    <!-- Banda central de la bufanda cubriendo el techo -->
+    <path d="M 90 90
+             Q 200 70 310 90
+             Q 305 110 200 105
+             Q 95 110 90 90 Z"
+          fill="url(#scarfBlue)"
+          stroke="#082E66" stroke-width="2"/>
+
+    <!-- Franjas blancas horizontales (estilo bufanda fútbol) -->
+    <g fill="#FFFFFF">
+      <path d="M 92 87 Q 200 75 308 87 L 308 90 Q 200 78 92 90 Z"/>
+      <path d="M 88 105 Q 200 100 312 105 L 312 108 Q 200 103 88 108 Z"/>
+    </g>
+
+    <!-- Texto "ALZIRA" central -->
+    <text x="200" y="103" font-family="Arial Black, Impact, sans-serif"
+          font-weight="900" font-size="14" fill="#FFFFFF"
+          text-anchor="middle" letter-spacing="1.5">UD ALZIRA</text>
+  </g>
+
+  <!-- ═══ ESCUDO del equipo en el lateral del cuerpo ═══ -->
+  <g transform="translate(335, 200)">
+    <!-- Sombra del escudo -->
+    <path d="M -22 -25 L 22 -25 L 22 8 Q 22 22 0 30 Q -22 22 -22 8 Z"
+          fill="#000" opacity="0.25" transform="translate(2,3)"/>
+
+    <!-- Cuerpo del escudo -->
+    <path d="M -20 -23 L 20 -23 L 20 8 Q 20 22 0 30 Q -20 22 -20 8 Z"
+          fill="url(#scarfBlue)"
+          stroke="#FFC857" stroke-width="2"/>
+
+    <!-- Franjas verticales blancas (clásicas) -->
+    <rect x="-13" y="-23" width="6" height="40" fill="#FFFFFF"/>
+    <rect x="7" y="-23" width="6" height="40" fill="#FFFFFF"/>
+
+    <!-- Borde dorado decorativo arriba -->
+    <path d="M -20 -23 L 20 -23" stroke="#FFC857" stroke-width="3"/>
+
+    <!-- Letras "UDA" centradas -->
+    <text x="0" y="3" font-family="Arial Black, sans-serif"
+          font-weight="900" font-size="10" fill="#FFFFFF"
+          text-anchor="middle">UDA</text>
+    <text x="0" y="15" font-family="Arial, sans-serif"
+          font-weight="bold" font-size="6" fill="#FFC857"
+          text-anchor="middle">ALZIRA</text>
+  </g>
+
+  <!-- ═══ BANDERÍN / pañuelo del equipo asomando ═══ -->
+  <g transform="translate(60, 175)">
+    <!-- Palo -->
+    <line x1="0" y1="0" x2="0" y2="50" stroke="#8B6F1A" stroke-width="2.5"/>
+    <!-- Bandera triangular -->
+    <path d="M 0 0 L 25 8 L 0 18 Z" fill="url(#scarfBlue)"
+          stroke="#082E66" stroke-width="1.5"/>
+    <!-- Franja blanca de la bandera -->
+    <path d="M 2 4 L 18 8 L 2 12 Z" fill="#FFFFFF"/>
+  </g>
+</svg>

@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay NAVIDAD — gorro de Santa + bufanda + copos -->
+
+  <defs>
+    <linearGradient id="santaHatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E63946"/>
+      <stop offset="100%" stop-color="#A02530"/>
+    </linearGradient>
+    <radialGradient id="pompon" cx="35%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="60%" stop-color="#E8E8E8"/>
+      <stop offset="100%" stop-color="#B8B8B8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ═══ GORRO DE SANTA ═══ -->
+  <g>
+    <!-- Cono principal rojo (cae hacia un lateral) -->
+    <path d="M 130 125
+             Q 145 100 200 90
+             Q 270 84 295 90
+             Q 290 50 280 25
+             Q 270 8 250 18
+             Q 220 40 180 75
+             Q 150 100 130 125 Z"
+          fill="url(#santaHatGrad)"
+          stroke="#5C0E18" stroke-width="2.5"/>
+
+    <!-- Pliegue del gorro (línea de sombra) -->
+    <path d="M 250 25 Q 240 50 220 70" stroke="#5C0E18" stroke-width="1" opacity="0.6" fill="none"/>
+
+    <!-- Borde blanco peludo (ribete inferior del gorro) -->
+    <ellipse cx="200" cy="123" rx="80" ry="14" fill="#FFFFFF"
+             stroke="#5C0E18" stroke-width="2"/>
+    <!-- Textura "pelusa" del ribete (pequeños círculos) -->
+    <g fill="#FFFFFF" stroke="#D0D0D0" stroke-width="0.5">
+      <circle cx="135" cy="120" r="4"/>
+      <circle cx="150" cy="125" r="3.5"/>
+      <circle cx="165" cy="121" r="4"/>
+      <circle cx="180" cy="126" r="3.8"/>
+      <circle cx="200" cy="123" r="4"/>
+      <circle cx="220" cy="126" r="3.8"/>
+      <circle cx="240" cy="121" r="4"/>
+      <circle cx="255" cy="125" r="3.5"/>
+      <circle cx="270" cy="120" r="4"/>
+    </g>
+
+    <!-- Pompón blanco en la punta del gorro -->
+    <circle cx="250" cy="18" r="14" fill="url(#pompon)" stroke="#888" stroke-width="1.2"/>
+    <circle cx="247" cy="15" r="4" fill="#FFFFFF" opacity="0.7"/>
+  </g>
+
+  <!-- ═══ BUFANDA roja con flecos ═══ -->
+  <g>
+    <!-- Cuerpo de la bufanda alrededor del cuello/cintura del bus -->
+    <rect x="60" y="290" width="280" height="28" fill="url(#santaHatGrad)"
+          stroke="#5C0E18" stroke-width="2"/>
+
+    <!-- Rayas blancas tipo bufanda navideña -->
+    <g fill="#FFFFFF">
+      <rect x="60" y="293" width="280" height="3"/>
+      <rect x="60" y="312" width="280" height="3"/>
+    </g>
+
+    <!-- Pliegues de tela -->
+    <g stroke="#5C0E18" stroke-width="0.8" opacity="0.5" fill="none">
+      <line x1="100" y1="290" x2="100" y2="318"/>
+      <line x1="160" y1="290" x2="160" y2="318"/>
+      <line x1="240" y1="290" x2="240" y2="318"/>
+      <line x1="300" y1="290" x2="300" y2="318"/>
+    </g>
+
+    <!-- Extremo izquierdo de la bufanda colgando con FLECOS -->
+    <path d="M 60 305 L 28 325 L 26 345 L 56 340 L 60 320 Z"
+          fill="url(#santaHatGrad)" stroke="#5C0E18" stroke-width="2"/>
+    <!-- Flecos del extremo -->
+    <g stroke="#FFFFFF" stroke-width="2" stroke-linecap="round">
+      <line x1="28" y1="345" x2="26" y2="358"/>
+      <line x1="34" y1="345" x2="33" y2="360"/>
+      <line x1="40" y1="345" x2="40" y2="362"/>
+      <line x1="46" y1="345" x2="47" y2="360"/>
+      <line x1="52" y1="345" x2="53" y2="358"/>
+    </g>
+  </g>
+
+  <!-- ═══ COPOS DE NIEVE decorativos ═══ -->
+  <g fill="#FFFFFF" stroke="#B0D8FF" stroke-width="0.8">
+    <!-- Copo izquierdo -->
+    <g transform="translate(40, 80)">
+      <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFFFF" stroke-width="1.5"/>
+      <line x1="-7" y1="0" x2="7" y2="0" stroke="#FFFFFF" stroke-width="1.5"/>
+      <line x1="-5" y1="-5" x2="5" y2="5" stroke="#FFFFFF" stroke-width="1.5"/>
+      <line x1="5" y1="-5" x2="-5" y2="5" stroke="#FFFFFF" stroke-width="1.5"/>
+      <circle r="2.5" fill="#FFFFFF"/>
+    </g>
+    <!-- Copo derecho arriba -->
+    <g transform="translate(360, 50)">
+      <line x1="0" y1="-8" x2="0" y2="8" stroke="#FFFFFF" stroke-width="1.8"/>
+      <line x1="-8" y1="0" x2="8" y2="0" stroke="#FFFFFF" stroke-width="1.8"/>
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#FFFFFF" stroke-width="1.8"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#FFFFFF" stroke-width="1.8"/>
+      <circle r="3" fill="#FFFFFF"/>
+    </g>
+    <!-- Copo más pequeño -->
+    <g transform="translate(80, 200)">
+      <line x1="0" y1="-5" x2="0" y2="5" stroke="#FFFFFF" stroke-width="1.2"/>
+      <line x1="-5" y1="0" x2="5" y2="0" stroke="#FFFFFF" stroke-width="1.2"/>
+      <line x1="-4" y1="-4" x2="4" y2="4" stroke="#FFFFFF" stroke-width="1.2"/>
+      <line x1="4" y1="-4" x2="-4" y2="4" stroke="#FFFFFF" stroke-width="1.2"/>
+      <circle r="2" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>
