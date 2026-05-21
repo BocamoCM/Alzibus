@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     active BOOLEAN DEFAULT TRUE,
     last_access TIMESTAMPTZ,
+    game_coins INTEGER NOT NULL DEFAULT 0,           -- monedas de mini-juegos (sincronizadas con cliente)
+    owned_skins TEXT NOT NULL DEFAULT 'default',     -- CSV de IDs de skins poseídos para Albus
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

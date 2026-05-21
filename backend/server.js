@@ -440,6 +440,7 @@ app.use('/api', require('./src/routes/trip.routes'));
 app.use('/api', require('./src/routes/feedback.routes'));
 app.use('/api', require('./src/routes/stat.routes'));
 app.use('/api', require('./src/routes/live-trip.routes'));
+app.use('/api', require('./src/routes/game.routes'));
 
 // ── Logo de Alzitrans para el viewer ──
 // Servido en /v/logo.png ANTES de la ruta /v/:shareToken para que Express
