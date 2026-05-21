@@ -88,6 +88,8 @@ class AlbusShopScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             _earnCoinsWithAdCard(context, ref),
             const SizedBox(height: 10),
+            _dailyProgressCard(ref),
+            const SizedBox(height: 10),
             _howToEarn(),
           ],
         ),
@@ -192,14 +194,30 @@ class AlbusShopScreen extends ConsumerWidget {
     }
     if (!context.mounted) return;
     if (rewarded) {
-      await ref.read(gameCurrencyProvider.notifier).add(30);
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('+30 monedas 🪙 ¡Gracias!'),
-          backgroundColor: Color(0xFF2E7D32),
-          duration: Duration(seconds: 2),
-        ),
+      final added = await ref.read(gameCurrencyProvider.notifier).add(
+        30,
+        source: CoinSource.rewardedAd,
       );
+      if (added == 0) {
+        // Llegó al cap diario de anuncios — la moneda no se añadió.
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('+$added monedas 🪙 ¡Gracias!'),
+            backgroundColor: const Color(0xFF2E7D32),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -231,20 +249,133 @@ class AlbusShopScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber.shade300),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          const Text('💡', style: TextStyle(fontSize: 28)),
-          const SizedBox(width: 10),
-          const Expanded(
+          Text('💡', style: TextStyle(fontSize: 28)),
+          SizedBox(width: 10),
+          Expanded(
             child: Text(
-              'Gana monedas jugando a Caza el Bus, Trivia y Memoria. '
-              'Cada partida te da entre 1 y 20 monedas según la puntuación. '
-              'Los skins más caros valen el esfuerzo — son únicos.',
+              'Cada día puedes ganar hasta 30 monedas jugando + 60 viendo '
+              '2 anuncios. Los skins se ganan con constancia: vuelve cada '
+              'día para subir el monedero.',
               style: TextStyle(fontSize: 13, color: Color(0xFF6B5500), height: 1.35),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Card con barra de progreso del día: monedas ganadas en juegos hoy
+  /// + contador de ads vistos. Refresca al volver de un juego o anuncio.
+  Widget _dailyProgressCard(WidgetRef ref) {
+    return FutureBuilder<({int gameCoins, int adsWatched})>(
+      future: _readDailyProgress(ref),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox(height: 80);
+        final notifier = ref.read(gameCurrencyProvider.notifier);
+        final gc = snap.data!.gameCoins;
+        final ads = snap.data!.adsWatched;
+        final cap = notifier.dailyGameCap;
+        final adCap = notifier.dailyAdCap;
+        final progress = (gc / cap).clamp(0.0, 1.0);
+
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.amber.shade200, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Text('📅', style: TextStyle(fontSize: 20)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Progreso de hoy',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text('🎮', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  const Text('Juegos', style: TextStyle(fontSize: 13)),
+                  const Spacer(),
+                  Text(
+                    '$gc / $cap 🪙',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: gc >= cap ? Colors.orange.shade700 : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation(
+                    gc >= cap ? Colors.orange.shade700 : Colors.amber.shade700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text('🎬', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  const Text('Anuncios extra', style: TextStyle(fontSize: 13)),
+                  const Spacer(),
+                  Text(
+                    '$ads / $adCap',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: ads >= adCap ? Colors.orange.shade700 : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              if (gc >= cap && ads >= adCap) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Has llegado al máximo de hoy. ¡Vuelve mañana!',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.orange.shade800,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<({int gameCoins, int adsWatched})> _readDailyProgress(WidgetRef ref) async {
+    final n = ref.read(gameCurrencyProvider.notifier);
+    return (
+      gameCoins: await n.earnedTodayFromGames(),
+      adsWatched: await n.coinAdsWatchedToday(),
     );
   }
 
