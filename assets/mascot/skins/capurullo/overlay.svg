@@ -1,53 +1,168 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-  <!-- Skin overlay CAPURULLO (nazareno alzireño tradicional de Semana Santa)
-       Va encima del Albus base, mantiene 400x400 viewBox. -->
+  <!-- Skin overlay CAPURULLO v2 — nazareno tradicional de Setmana Santa
+       alzireña, con detalle: capirote elegante + túnica con pliegues +
+       cíngulo dorado + cruz pectoral. -->
 
-  <!-- Sombra suave del capirote sobre el techo del bus -->
-  <ellipse cx="200" cy="125" rx="68" ry="6" fill="#000" opacity="0.18"/>
+  <defs>
+    <linearGradient id="capiroteGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4A1356"/>
+      <stop offset="50%" stop-color="#6D2080"/>
+      <stop offset="100%" stop-color="#3D0E47"/>
+    </linearGradient>
+    <linearGradient id="tunicaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5D1A6B"/>
+      <stop offset="60%" stop-color="#4A1356"/>
+      <stop offset="100%" stop-color="#3D0E47"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD66E"/>
+      <stop offset="100%" stop-color="#B5860B"/>
+    </linearGradient>
+    <filter id="capiroteShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
 
-  <!-- Capirote — cono morado tradicional -->
-  <g>
-    <!-- Cuerpo del cono (forma piramidal con base ancha) -->
-    <path d="M 200 -5 L 138 120 L 262 120 L 200 -5 Z"
-          fill="#5D1A6B" stroke="#3D0E47" stroke-width="2.5"/>
+  <!-- Sombra suave del capirote proyectándose sobre el techo del bus -->
+  <ellipse cx="200" cy="128" rx="72" ry="7" fill="#000" opacity="0.22"/>
 
-    <!-- Highlight izquierdo del cono (light) -->
-    <path d="M 200 -5 L 180 30 L 170 60 L 160 90 L 145 118 L 200 118 Z"
-          fill="#7A2789" opacity="0.55"/>
+  <!-- ═══ CAPIROTE ═══ -->
+  <g filter="url(#capiroteShadow)">
+    <!-- Cuerpo del cono (forma piramidal con base ancha y punta ligeramente
+         redondeada arriba — más realista que un cono perfecto) -->
+    <path d="M 200 -8
+             Q 202 -8 204 -3
+             L 264 122
+             L 136 122
+             L 196 -3
+             Q 198 -8 200 -8 Z"
+          fill="url(#capiroteGrad)"
+          stroke="#2A0530" stroke-width="2.5"/>
 
-    <!-- Cinta blanca en la base del capirote -->
-    <rect x="135" y="115" width="130" height="9" fill="#FFFFFF"
-          stroke="#3D0E47" stroke-width="1.5"/>
+    <!-- Sombra interior izquierda del cono (volumen) -->
+    <path d="M 200 -8 L 196 -3 L 140 122 L 200 122 Z"
+          fill="#3D0E47" opacity="0.45"/>
 
-    <!-- Emblema/cruz al frente del capirote (dorado) -->
-    <g transform="translate(200, 75)">
-      <rect x="-2" y="-14" width="4" height="22" fill="#FFC857"/>
-      <rect x="-9" y="-5" width="18" height="4" fill="#FFC857"/>
+    <!-- Highlight derecho del cono (luz que viene del lado) -->
+    <path d="M 200 -8 L 204 -3 L 250 105 L 220 105 Z"
+          fill="#8A35A0" opacity="0.35"/>
+
+    <!-- Pliegues laterales sutiles -->
+    <line x1="180" y1="35" x2="166" y2="105" stroke="#3D0E47" stroke-width="0.7" opacity="0.6"/>
+    <line x1="220" y1="35" x2="234" y2="105" stroke="#3D0E47" stroke-width="0.7" opacity="0.6"/>
+
+    <!-- ═══ CINTA blanca de la base del capirote ═══ -->
+    <!-- Borde dorado superior -->
+    <rect x="134" y="115" width="132" height="3" fill="url(#goldGrad)"/>
+    <!-- Tela blanca -->
+    <rect x="134" y="118" width="132" height="9" fill="#FFFFFF"
+          stroke="#2A0530" stroke-width="1.2"/>
+    <!-- Borde dorado inferior -->
+    <rect x="134" y="124" width="132" height="3" fill="url(#goldGrad)"/>
+    <!-- Pequeños detalles bordados (puntos dorados decorativos) -->
+    <g fill="#B5860B">
+      <circle cx="150" cy="122" r="1.2"/>
+      <circle cx="170" cy="122" r="1.2"/>
+      <circle cx="200" cy="122" r="1.5"/>
+      <circle cx="230" cy="122" r="1.2"/>
+      <circle cx="250" cy="122" r="1.2"/>
+    </g>
+
+    <!-- ═══ CRUZ pectoral dorada en el frente ═══ -->
+    <g transform="translate(200, 78)">
+      <!-- Sombra de la cruz -->
+      <rect x="-3" y="-13" width="6" height="26" fill="#000" opacity="0.3"/>
+      <!-- Vertical de la cruz -->
+      <rect x="-2.5" y="-14" width="5" height="25" fill="url(#goldGrad)"
+            stroke="#7A5A07" stroke-width="0.8"/>
+      <!-- Horizontal -->
+      <rect x="-10" y="-5" width="20" height="5" fill="url(#goldGrad)"
+            stroke="#7A5A07" stroke-width="0.8"/>
+      <!-- Highlight central -->
+      <rect x="-1" y="-12" width="1.5" height="22" fill="#FFE99B" opacity="0.8"/>
     </g>
   </g>
 
-  <!-- Túnica morada cubriendo el cuerpo del bus -->
+  <!-- ═══ TÚNICA cubriendo el cuerpo del bus ═══ -->
   <g>
-    <!-- Cuerpo principal de la túnica — va desde y=240 hasta y=320,
-         por debajo de la cara/parabrisas que se queda visible -->
-    <path d="M 65 240
-             L 60 320
-             L 340 320
-             L 335 240
-             Q 200 268 65 240 Z"
-          fill="#5D1A6B" stroke="#3D0E47" stroke-width="2"/>
+    <!-- Cuerpo principal de la túnica (con bordes más orgánicos) -->
+    <path d="M 60 240
+             Q 60 245 62 250
+             L 60 322
+             L 340 322
+             L 338 250
+             Q 340 245 340 240
+             Q 270 268 200 263
+             Q 130 268 60 240 Z"
+          fill="url(#tunicaGrad)"
+          stroke="#2A0530" stroke-width="2"/>
 
-    <!-- Pliegue central de la túnica -->
-    <path d="M 200 240 L 195 320 L 205 320 L 200 240 Z"
-          fill="#3D0E47" opacity="0.4"/>
+    <!-- Pliegues verticales de la túnica (varios para dar volumen) -->
+    <g stroke="#2A0530" stroke-width="1" opacity="0.4" fill="none">
+      <path d="M 100 250 Q 102 285 105 320"/>
+      <path d="M 140 250 Q 142 285 145 320"/>
+      <path d="M 175 252 Q 178 285 180 320"/>
+      <path d="M 225 252 Q 222 285 220 320"/>
+      <path d="M 260 250 Q 258 285 255 320"/>
+      <path d="M 300 250 Q 298 285 295 320"/>
+    </g>
 
-    <!-- Cinturón / cíngulo dorado -->
-    <rect x="60" y="280" width="280" height="11" fill="#B5860B"
-          stroke="#7A5A07" stroke-width="1"/>
+    <!-- Pliegue central más oscuro (línea central) -->
+    <path d="M 200 252 L 200 322" stroke="#2A0530" stroke-width="2" opacity="0.5"/>
 
-    <!-- Hebilla central -->
-    <rect x="186" y="276" width="28" height="20" fill="#FFC857"
-          stroke="#7A5A07" stroke-width="1.5"/>
-    <rect x="190" y="282" width="20" height="8" fill="#B5860B"/>
+    <!-- Sombra inferior (donde caería la luz por arriba) -->
+    <rect x="60" y="312" width="280" height="10" fill="#2A0530" opacity="0.25"/>
+
+    <!-- ═══ CÍNGULO (cordón) dorado a la cintura ═══ -->
+    <!-- Cinturón base -->
+    <rect x="60" y="278" width="280" height="13" fill="url(#goldGrad)"
+          stroke="#7A5A07" stroke-width="1.2"/>
+
+    <!-- Trenzado dorado (líneas diagonales simulando trenza) -->
+    <g stroke="#7A5A07" stroke-width="0.7" opacity="0.5" fill="none">
+      <line x1="75" y1="278" x2="82" y2="291"/>
+      <line x1="90" y1="278" x2="97" y2="291"/>
+      <line x1="105" y1="278" x2="112" y2="291"/>
+      <line x1="120" y1="278" x2="127" y2="291"/>
+      <line x1="135" y1="278" x2="142" y2="291"/>
+      <line x1="150" y1="278" x2="157" y2="291"/>
+      <line x1="165" y1="278" x2="172" y2="291"/>
+      <line x1="225" y1="278" x2="232" y2="291"/>
+      <line x1="240" y1="278" x2="247" y2="291"/>
+      <line x1="255" y1="278" x2="262" y2="291"/>
+      <line x1="270" y1="278" x2="277" y2="291"/>
+      <line x1="285" y1="278" x2="292" y2="291"/>
+      <line x1="300" y1="278" x2="307" y2="291"/>
+      <line x1="315" y1="278" x2="322" y2="291"/>
+    </g>
+
+    <!-- ═══ HEBILLA central ornamentada ═══ -->
+    <g transform="translate(200, 284)">
+      <!-- Sombra -->
+      <rect x="-16" y="-9" width="32" height="20" fill="#000" opacity="0.3"/>
+      <!-- Marco dorado -->
+      <rect x="-15" y="-8" width="30" height="18" fill="url(#goldGrad)"
+            stroke="#7A5A07" stroke-width="1.5"/>
+      <!-- Interior -->
+      <rect x="-11" y="-4" width="22" height="10" fill="#B5860B"/>
+      <!-- Detalle central (joya o relieve) -->
+      <circle r="3.5" fill="url(#goldGrad)" stroke="#7A5A07" stroke-width="0.8"/>
+      <circle r="2" fill="#FFE99B"/>
+    </g>
+
+    <!-- ═══ Cordón colgando del cíngulo (detalle de los nazarenos) ═══ -->
+    <g>
+      <!-- Cuerda derecha colgando -->
+      <path d="M 280 291 Q 285 305 282 322" stroke="url(#goldGrad)"
+            stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Borla al final -->
+      <circle cx="282" cy="328" r="5" fill="url(#goldGrad)" stroke="#7A5A07" stroke-width="1"/>
+      <line x1="278" y1="332" x2="278" y2="338" stroke="#7A5A07" stroke-width="0.8"/>
+      <line x1="282" y1="332" x2="282" y2="340" stroke="#7A5A07" stroke-width="0.8"/>
+      <line x1="286" y1="332" x2="286" y2="338" stroke="#7A5A07" stroke-width="0.8"/>
+    </g>
   </g>
 </svg>
