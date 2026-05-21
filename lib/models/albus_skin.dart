@@ -49,7 +49,7 @@ class AlbusSkin {
       description:
           'Vestit per a les Falles: mocador roig amb llunars, faja '
           'i un clavell. Visca Sant Josep!',
-      cost: 200,
+      cost: 500,
       overlayAsset: 'assets/mascot/skins/fallero/overlay.svg',
       accentColor: Color(0xFFD62828),
       previewEmoji: '🪩',
@@ -60,7 +60,7 @@ class AlbusSkin {
       description:
           'Nazareno tradicional de la Setmana Santa d\'Alzira, '
           'amb capirot morat i cíngul daurat.',
-      cost: 250,
+      cost: 600,
       overlayAsset: 'assets/mascot/skins/capurullo/overlay.svg',
       accentColor: Color(0xFF5D1A6B),
       previewEmoji: '✝️',
@@ -71,7 +71,7 @@ class AlbusSkin {
       description:
           'Por si pilla un chaparrón de la Ribera: paraguas amarillo '
           'y chubasquero a juego. ¡Que no te pille mojado!',
-      cost: 100,
+      cost: 200,
       overlayAsset: 'assets/mascot/skins/lluvia/overlay.svg',
       accentColor: Color(0xFFFFC857),
       previewEmoji: '☔',
@@ -82,7 +82,7 @@ class AlbusSkin {
       description:
           'Birrete con borla dorada + diploma con sello. Homenaje '
           'al TFC que dio origen a Alzitrans.',
-      cost: 150,
+      cost: 350,
       overlayAsset: 'assets/mascot/skins/graduado/overlay.svg',
       accentColor: Color(0xFF1A1A1A),
       previewEmoji: '🎓',
@@ -93,7 +93,7 @@ class AlbusSkin {
       description:
           'Gorro de Santa con pompón blanco, bufanda navideña a rayas '
           'y copos de nieve. Bon Nadal!',
-      cost: 150,
+      cost: 350,
       overlayAsset: 'assets/mascot/skins/navidad/overlay.svg',
       accentColor: Color(0xFFE63946),
       previewEmoji: '🎅',
@@ -104,7 +104,7 @@ class AlbusSkin {
       description:
           'Bufanda azulgrana del UD Alzira con flecos, escudo del '
           'club y banderín. ¡Visca el club!',
-      cost: 200,
+      cost: 500,
       overlayAsset: 'assets/mascot/skins/alzira_fc/overlay.svg',
       accentColor: Color(0xFF0D47A1),
       previewEmoji: '⚽',
