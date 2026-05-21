@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay CAPURULLO (nazareno alzireño tradicional de Semana Santa)
+       Va encima del Albus base, mantiene 400x400 viewBox. -->
+
+  <!-- Sombra suave del capirote sobre el techo del bus -->
+  <ellipse cx="200" cy="125" rx="68" ry="6" fill="#000" opacity="0.18"/>
+
+  <!-- Capirote — cono morado tradicional -->
+  <g>
+    <!-- Cuerpo del cono (forma piramidal con base ancha) -->
+    <path d="M 200 -5 L 138 120 L 262 120 L 200 -5 Z"
+          fill="#5D1A6B" stroke="#3D0E47" stroke-width="2.5"/>
+
+    <!-- Highlight izquierdo del cono (light) -->
+    <path d="M 200 -5 L 180 30 L 170 60 L 160 90 L 145 118 L 200 118 Z"
+          fill="#7A2789" opacity="0.55"/>
+
+    <!-- Cinta blanca en la base del capirote -->
+    <rect x="135" y="115" width="130" height="9" fill="#FFFFFF"
+          stroke="#3D0E47" stroke-width="1.5"/>
+
+    <!-- Emblema/cruz al frente del capirote (dorado) -->
+    <g transform="translate(200, 75)">
+      <rect x="-2" y="-14" width="4" height="22" fill="#FFC857"/>
+      <rect x="-9" y="-5" width="18" height="4" fill="#FFC857"/>
+    </g>
+  </g>
+
+  <!-- Túnica morada cubriendo el cuerpo del bus -->
+  <g>
+    <!-- Cuerpo principal de la túnica — va desde y=240 hasta y=320,
+         por debajo de la cara/parabrisas que se queda visible -->
+    <path d="M 65 240
+             L 60 320
+             L 340 320
+             L 335 240
+             Q 200 268 65 240 Z"
+          fill="#5D1A6B" stroke="#3D0E47" stroke-width="2"/>
+
+    <!-- Pliegue central de la túnica -->
+    <path d="M 200 240 L 195 320 L 205 320 L 200 240 Z"
+          fill="#3D0E47" opacity="0.4"/>
+
+    <!-- Cinturón / cíngulo dorado -->
+    <rect x="60" y="280" width="280" height="11" fill="#B5860B"
+          stroke="#7A5A07" stroke-width="1"/>
+
+    <!-- Hebilla central -->
+    <rect x="186" y="276" width="28" height="20" fill="#FFC857"
+          stroke="#7A5A07" stroke-width="1.5"/>
+    <rect x="190" y="282" width="20" height="8" fill="#B5860B"/>
+  </g>
+</svg>

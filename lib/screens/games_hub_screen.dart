@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/game_currency_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
+import 'albus_shop_screen.dart';
 import 'games/catch_the_bus_screen.dart';
 import 'games/memory_stops_screen.dart';
 import 'games/trivia_alzira_screen.dart';
@@ -29,6 +30,14 @@ class GamesHubScreen extends ConsumerWidget {
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
         actions: [
+          // Acceso a la tienda de skins de Albus.
+          IconButton(
+            icon: const Icon(Icons.checkroom),
+            tooltip: 'Vestidor de Albus',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AlbusShopScreen()),
+            ),
+          ),
           // Indicador de monedas en la barra superior.
           Padding(
             padding: const EdgeInsets.only(right: 12),

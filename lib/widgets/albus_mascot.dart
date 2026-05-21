@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
+import '../core/providers/game_currency_provider.dart';
+import '../models/albus_skin.dart';
 
 /// Widget de la mascota Albus.
 ///
-/// Renderiza el SVG correspondiente al estado en `assets/mascot/states/`.
-/// Cuando esté el diseño final en `.riv` (Rive con state machine), bastará
-/// con sustituir [_SvgMascot] por un `RiveAnimation` — el resto de la API
-/// pública del widget se queda igual y los callers no se enteran.
+/// Renderiza el SVG del estado actual (`assets/mascot/states/`) y, si el
+/// usuario tiene un skin equipado distinto del default, superpone el SVG
+/// overlay del skin (`assets/mascot/skins/<skin>/overlay.svg`).
+///
+/// El skin equipado se lee de `equippedAlbusSkinProvider`, así que se
+/// actualiza reactivamente cuando el usuario equipa otro desde la tienda.
 enum AlbusState {
   idle,
   talking,
@@ -28,48 +34,69 @@ extension _AlbusStateAsset on AlbusState {
       };
 }
 
-class AlbusMascot extends StatelessWidget {
-  /// Estado emocional de Albus. Determina qué SVG se renderiza.
+class AlbusMascot extends ConsumerWidget {
+  /// Estado emocional de Albus (idle, talking, etc.).
   final AlbusState state;
 
-  /// Tamaño en píxeles (alto y ancho, ya que los SVG son cuadrados 400×400).
-  /// Usar 80-120 para badges, 180-220 para diálogos en card, 280+ para
-  /// pantalla completa (onboarding).
+  /// Tamaño en píxeles (SVGs son 400x400 cuadrados).
   final double size;
 
-  /// Si true, Albus flota suavemente arriba y abajo (idle animation a nivel
-  /// widget — adicional a las animaciones internas del SVG como la luz
-  /// parpadeante, los Zzz, etc.).
+  /// Animación de flotar arriba/abajo. Desactivar para listas o como
+  /// decoración estática.
   final bool animated;
+
+  /// Si se pasa, ignora el skin equipado y fuerza este. Útil para la
+  /// previsualización dentro de la tienda (ver cada skin sin equiparlo).
+  final AlbusSkin? skinOverride;
 
   const AlbusMascot({
     super.key,
     this.state = AlbusState.idle,
     this.size = 200,
     this.animated = true,
+    this.skinOverride,
   });
 
   @override
-  Widget build(BuildContext context) {
-    // AnimatedSwitcher hace fade entre estados cuando cambia el SVG. Sin
-    // esto, el cambio de estado se ve como un "salto" brusco.
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Tipo explícito para que el analyzer entienda que `skin` NO es null
+    // (el `??` siempre cae al provider que devuelve AlbusSkin no-null).
+    final AlbusSkin skin = skinOverride ?? ref.watch(equippedAlbusSkinProvider);
+
     Widget mascot = SizedBox(
       width: size,
       height: size,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: SvgPicture.asset(
-          state.assetPath,
-          key: ValueKey(state),
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          // Si el SVG falla por algún motivo (asset no incluido en pubspec,
-          // formato inválido…), un placeholder discreto. Mejor que un crash.
-          placeholderBuilder: (_) => _FallbackPlaceholder(size: size),
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1) Base — siempre presente. AnimatedSwitcher para fade entre estados.
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: SvgPicture.asset(
+              state.assetPath,
+              key: ValueKey('base-$state'),
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+              placeholderBuilder: (_) => _FallbackPlaceholder(size: size),
+            ),
+          ),
+
+          // 2) Skin overlay si tiene asset. Default no tiene → no overlay.
+          if (skin.overlayAsset != null)
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: SvgPicture.asset(
+                skin.overlayAsset!,
+                key: ValueKey('skin-${skin.id}'),
+                width: size,
+                height: size,
+                fit: BoxFit.contain,
+              ),
+            ),
+        ],
       ),
     );
 
@@ -83,18 +110,7 @@ class AlbusMascot extends StatelessWidget {
   }
 }
 
-/// Burbuja de diálogo de Albus. Úsala junto al [AlbusMascot] para hacer que
-/// "hable". Animación de aparición incluida.
-///
-/// Ejemplo:
-/// ```dart
-/// Column(
-///   children: [
-///     AlbusBubble(text: '¡Hola! ¿A dónde vamos hoy?'),
-///     AlbusMascot(state: AlbusState.talking, size: 180),
-///   ],
-/// )
-/// ```
+/// Burbuja de diálogo de Albus.
 class AlbusBubble extends StatelessWidget {
   final String text;
   final double maxWidth;
@@ -135,9 +151,6 @@ class AlbusBubble extends StatelessWidget {
   }
 }
 
-/// Fallback si flutter_svg no puede renderizar el asset (raro, pero pasa con
-/// SVGs muy complejos o sin SMIL en algunas plataformas). Mantiene el layout
-/// estable.
 class _FallbackPlaceholder extends StatelessWidget {
   final double size;
   const _FallbackPlaceholder({required this.size});

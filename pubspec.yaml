@@ -93,3 +93,7 @@ flutter:
     # estado (idle, talking, thinking, happy, sleeping, sad) se
     # empaqueten en el bundle.
     - assets/mascot/states/
+    # Skins overlays (Fallero, Capurullo…). Cada skin tiene su carpeta
+    # con un overlay.svg que se renderiza ENCIMA del Albus base.
+    - assets/mascot/skins/fallero/
+    - assets/mascot/skins/capurullo/
