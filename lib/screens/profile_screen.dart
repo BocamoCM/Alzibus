@@ -17,6 +17,8 @@ import '../widgets/ad_ui_factory.dart';
 import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/providers/game_currency_provider.dart';
+import '../models/albus_skin.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -87,6 +89,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _buildInfoCard(theme, l),
                       const SizedBox(height: 16),
                       _buildActionsCard(theme, l),
+                      // Sección debug solo visible para el autor del TFC.
+                      // Email hardcodeado para que solo aparezca en mi cuenta
+                      // — útil para probar skins y monedas sin grindear.
+                      if (_profile?['email'] == 'bcarreres55@gmail.com') ...[
+                        const SizedBox(height: 16),
+                        _buildDebugCard(),
+                      ],
                       const SizedBox(height: 24),
                       if (AppConfig.showAds)
                         Padding(
@@ -601,6 +610,142 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Text(l.logout, style: const TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  // SECCIÓN DEBUG · solo para el autor del TFC
+  // ───────────────────────────────────────────────────────────────────
+  /// Card morada con accesos rápidos para testear el sistema de skins
+  /// sin tener que grindear horas. Solo se renderiza si el email del
+  /// usuario es 'bcarreres55@gmail.com' (chequeado donde se llama).
+  Widget _buildDebugCard() {
+    return Card(
+      elevation: 4,
+      color: Colors.deepPurple.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.deepPurple.shade300, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.science, color: Colors.deepPurple, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Debug · autor TFC',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: Colors.deepPurple.shade800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Solo visible en tu cuenta. Para probar skins sin grindear.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.deepPurple.shade400,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _debugButton('+1.000 🪙', Colors.amber.shade700, () => _grantCoins(1000)),
+                _debugButton('+10.000 🪙', Colors.orange.shade700, () => _grantCoins(10000)),
+                _debugButton('Desbloquear todas skins', Colors.deepPurple, _unlockAllSkins),
+                _debugButton('Reset monedero (0)', Colors.red.shade400, _resetCoins),
+                _debugButton('Reset cap diario', Colors.blue.shade600, _resetDailyCap),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _debugButton(String label, Color color, VoidCallback onTap) {
+    return ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+      child: Text(label),
+    );
+  }
+
+  Future<void> _grantCoins(int amount) async {
+    // Usamos CoinSource.unlimited para saltarse el cap diario de juegos.
+    final added = await ref.read(gameCurrencyProvider.notifier).add(
+      amount,
+      source: CoinSource.unlimited,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('+$added 🪙 al monedero'),
+        backgroundColor: Colors.deepPurple,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _unlockAllSkins() async {
+    final notifier = ref.read(ownedSkinsProvider.notifier);
+    for (final skin in AlbusSkin.all) {
+      await notifier.unlock(skin.id);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${AlbusSkin.all.length} skins desbloqueados'),
+        backgroundColor: Colors.deepPurple,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _resetCoins() async {
+    // Poner a 0: spend de TODO el saldo actual.
+    final current = ref.read(gameCurrencyProvider);
+    if (current > 0) {
+      await ref.read(gameCurrencyProvider.notifier).spend(current);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Monedero a 0'), duration: Duration(seconds: 2)),
+    );
+  }
+
+  Future<void> _resetDailyCap() async {
+    // Borrar las keys del progreso del día. Las funciones del provider
+    // las leen con fecha actual, si no hay valor → 0 → cap desbloqueado.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('coins_earned_today_v1');
+      await prefs.remove('coins_earned_date_v1');
+      await prefs.remove('coin_ads_today_v1');
+      await prefs.remove('coin_ads_date_v1');
+    } catch (_) {}
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Cap diario reseteado — puedes ganar las 30+60 de nuevo'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
