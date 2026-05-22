@@ -99,6 +99,12 @@ class AdService {
   // el siguiente para el próximo tap. Show rate esperado: 30-50%.
   final List<NativeAd> _stopNativeAdPool = [];
   static const int _stopNativeAdPoolSize = 2;
+  /// Contador de ads CARGÁNDOSE actualmente (aún no completados con
+  /// success ni fail). CRÍTICO para evitar disparar cargas en bucle
+  /// porque `load()` es async pero el pool solo se incrementa cuando
+  /// la carga TERMINA. Sin esto el `while (pool < N)` lanzaba miles
+  /// de cargas en milisegundos → OOM / AdMob throttling / crash.
+  int _stopNativeAdLoading = 0;
 
   /// Carga un anuncio de apertura (App Open Ad).
   void loadAppOpenAd() {
@@ -248,23 +254,39 @@ class AdService {
 
   void _refillStopNativeAdPool() {
     if (!canShowAds) return;
-    while (_stopNativeAdPool.length < _stopNativeAdPoolSize) {
-      // Apuntador para saber si fue cargado o falló — para no añadir
-      // al pool si nunca se cargó.
+
+    // BUG ANTERIOR: `while (pool.length < N)` lanzaba load() async pero el
+    // pool solo crecía CUANDO terminaba la carga → en un bucle, lanzaba
+    // cientos/miles de cargas en ms → OOM + AdMob throttling + CRASH.
+    //
+    // FIX: contamos las que YA están cargándose (`_stopNativeAdLoading`)
+    // y solo lanzamos las que falten para llegar al target.
+    final needed = _stopNativeAdPoolSize -
+        _stopNativeAdPool.length -
+        _stopNativeAdLoading;
+    if (needed <= 0) return;
+
+    for (var i = 0; i < needed; i++) {
+      _stopNativeAdLoading++;
+      // Wrapper para asociar el callback con su ad propio (en Dart
+      // las closures capturan por referencia, no se puede usar la
+      // variable `ad` directamente porque aún no está asignada).
       final adWrapper = <NativeAd?>[null];
       final ad = createNativeAd(
-        onAdLoaded: (loaded) {
+        onAdLoaded: (_) {
+          _stopNativeAdLoading = (_stopNativeAdLoading - 1).clamp(0, 100);
           if (adWrapper[0] != null) {
             _stopNativeAdPool.add(adWrapper[0]!);
           }
         },
-        onAdFailedToLoad: (failed, error) {
-          // Tras un pequeño backoff, reintentar el slot.
-          Future.delayed(const Duration(seconds: 8), () {
-            if (_stopNativeAdPool.length < _stopNativeAdPoolSize) {
-              _refillStopNativeAdPool();
-            }
-          });
+        onAdFailedToLoad: (_, error) {
+          _stopNativeAdLoading = (_stopNativeAdLoading - 1).clamp(0, 100);
+          // Sin recargar inmediatamente — el próximo takeStopNativeAd
+          // disparará un refill si la cola está vacía. Evita storm
+          // de reintentos cuando AdMob no tiene fill.
+          if (kDebugMode) {
+            print('[Native pool] load fallido: ${error.code} ${error.message}');
+          }
         },
       );
       adWrapper[0] = ad;
