@@ -241,20 +241,26 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
     setState(() => _isPaused = true);
 
     final adService = ref.read(adServiceProvider);
-    bool rewarded = false;
+    // Completer para esperar fiable al callback de AdMob.
+    // BUG ANTERIOR: polling de ~6s (40×150ms+500ms) expiraba antes
+    // de que terminara un ad de 30s → reward no llegaba.
+    final completer = Completer<bool>();
     try {
       adService.showRewardedAd(onRewarded: () {
-        rewarded = true;
+        if (!completer.isCompleted) completer.complete(true);
       });
-    } catch (_) {/* silencioso */}
+    } catch (_) {
+      if (!completer.isCompleted) completer.complete(false);
+    }
 
-    // Esperamos un instante para que el callback del ad llegue.
-    // No es perfecto pero funciona en la mayoría de OEMs.
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Polling cortito por si el ad tarda en cerrar.
-    for (var i = 0; i < 40; i++) {
-      if (rewarded) break;
-      await Future.delayed(const Duration(milliseconds: 150));
+    bool rewarded;
+    try {
+      rewarded = await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () => false,
+      );
+    } catch (_) {
+      rewarded = false;
     }
 
     if (!mounted) return;
