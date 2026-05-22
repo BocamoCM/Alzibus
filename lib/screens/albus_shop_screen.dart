@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -180,44 +182,61 @@ class AlbusShopScreen extends ConsumerWidget {
       return;
     }
 
-    bool rewarded = false;
+    // Usamos Completer para esperar al callback de AdMob de forma fiable.
+    // BUG ANTERIOR: usábamos polling de 15s (60×250ms) que expiraba ANTES
+    // de que el usuario terminara un ad de 30s → onRewarded llegaba tarde
+    // y las monedas no se sumaban. Ahora damos hasta 5 minutos.
+    final completer = Completer<bool>();
     adService.showRewardedAd(
-      grantBannerFree: false, // no damos doble premio (sin banners + coins)
-      onRewarded: () => rewarded = true,
+      grantBannerFree: false, // no doble premio (banner-free + coins)
+      onRewarded: () {
+        if (!completer.isCompleted) completer.complete(true);
+      },
     );
 
-    // Esperar a que termine el ad (o lo cierren). El callback de
-    // onRewarded marca el flag. Polling corto.
-    for (var i = 0; i < 60; i++) {
-      await Future.delayed(const Duration(milliseconds: 250));
-      if (rewarded) break;
-    }
-    if (!context.mounted) return;
-    if (rewarded) {
-      final added = await ref.read(gameCurrencyProvider.notifier).add(
-        30,
-        source: CoinSource.rewardedAd,
+    // Esperamos al callback con un timeout generoso. Si el usuario
+    // cierra el ad sin ver lo suficiente, el callback nunca dispara
+    // y el timeout salta (sin monedas, comportamiento correcto).
+    bool rewarded;
+    try {
+      rewarded = await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () => false,
       );
-      if (added == 0) {
-        // Llegó al cap diario de anuncios — la moneda no se añadió.
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!',
-            ),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
+    } catch (_) {
+      rewarded = false;
+    }
+
+    if (!context.mounted) return;
+    if (!rewarded) {
+      // Anuncio cerrado sin completarlo o timeout — no decimos nada
+      // (la mayoría de usuarios SÍ completarán y verán el snackbar).
+      return;
+    }
+
+    final added = await ref.read(gameCurrencyProvider.notifier).add(
+      30,
+      source: CoinSource.rewardedAd,
+    );
+    if (added == 0) {
+      // Llegó al cap diario de anuncios — la moneda no se añadió.
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!',
           ),
-        );
-      } else {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('+$added monedas 🪙 ¡Gracias!'),
-            backgroundColor: const Color(0xFF2E7D32),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('+$added monedas 🪙 ¡Gracias!'),
+          backgroundColor: const Color(0xFF2E7D32),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 

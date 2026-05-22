@@ -125,15 +125,20 @@ class _MemoryStopsScreenState extends ConsumerState<MemoryStopsScreen> {
   Future<void> _retryWithAd() async {
     if (_retryUsed) return;
     final adService = ref.read(adServiceProvider);
-    bool rewarded = false;
+    // Completer para esperar al callback de AdMob (antes polling 6s,
+    // demasiado corto para ads de 30s — el reward no llegaba).
+    final completer = Completer<bool>();
     try {
-      adService.showRewardedAd(onRewarded: () { rewarded = true; });
-    } catch (_) {}
-    await Future.delayed(const Duration(milliseconds: 500));
-    for (var i = 0; i < 40; i++) {
-      if (rewarded) break;
-      await Future.delayed(const Duration(milliseconds: 150));
+      adService.showRewardedAd(onRewarded: () {
+        if (!completer.isCompleted) completer.complete(true);
+      });
+    } catch (_) {
+      if (!completer.isCompleted) completer.complete(false);
     }
+    final rewarded = await completer.future.timeout(
+      const Duration(minutes: 5),
+      onTimeout: () => false,
+    );
     if (!mounted) return;
     if (rewarded) {
       setState(() {
