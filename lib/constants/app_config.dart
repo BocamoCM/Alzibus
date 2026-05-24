@@ -61,6 +61,15 @@ class AppConfig {
   /// Hash del commit actual (opcional, vía --dart-define=COMMIT_HASH=...)
   static const String commitHash = String.fromEnvironment('COMMIT_HASH', defaultValue: 'none');
 
+  /// Email del autor / admin con acceso al panel debug en la app.
+  /// Vacío por defecto — solo se setea en builds del autor vía
+  ///   --dart-define=ADMIN_EMAIL=foo@bar.com
+  /// configurado como secreto del workflow CI (no en texto plano).
+  static const String adminEmail = String.fromEnvironment(
+    'ADMIN_EMAIL',
+    defaultValue: '',
+  );
+
   /// Timeout para peticiones HTTP.
   static const Duration httpTimeout = Duration(seconds: 10);
 

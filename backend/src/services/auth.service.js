@@ -2,8 +2,13 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/user.repository');
 const { BadRequestError, UnauthorizedError, ForbiddenError, TooManyRequestsError, NotFoundError } = require('../utils/errors');
-const { sendDiscordNotification } = require('../../utils/discord'); 
-const nodemailer = require('nodemailer');
+const { sendDiscordNotification } = require('../../utils/discord');
+// Antes este fichero tenía su propio nodemailer.createTransport() con
+// fire-and-forget — eso causaba que si Brevo fallaba, el usuario veía
+// "código enviado" pero nunca lo recibía (issue conocido reportado en
+// 05/2026). Ahora reusamos el transporter singleton con pool, reintentos
+// y errores propagados de utils/email.js.
+const { sendOtpEmail } = require('../../utils/email');
 
 // Normaliza el email para comparación / persistencia. Los emails son
 // case-insensitive por RFC 5321 (el local part es case-sensitive según la
@@ -29,28 +34,23 @@ class AuthService {
         return email === 'bcarreres55@gmail.com' ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
     }
 
+    /**
+     * Envía el OTP por email. Delega en utils/email.js → sendOtpEmail,
+     * que SÍ awaitea, reintenta hasta 3 veces y propaga errores. Si el
+     * envío falla tras los reintentos, lanzamos para que el controller
+     * devuelva un error explícito al cliente — antes esto se tragaba
+     * silenciosamente y el usuario veía "se ha enviado un código" sin
+     * recibirlo nunca.
+     */
     async sendOtpEmail(email, verificationCode) {
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST || 'localhost',
-            port: parseInt(process.env.EMAIL_PORT) || 587,
-            secure: false,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            tls: { rejectUnauthorized: false }
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_FROM || 'AlziTrans <bcarreres55@gmail.com>',
-            to: email,
-            subject: 'Verifica tu cuenta de Alzitrans',
-            text: `Tu código de verificación es: ${verificationCode}\nEste código caduca en 15 minutos.`
-        };
-
-        transporter.sendMail(mailOptions)
-            .then(() => console.log('Correo OTP enviado a', email))
-            .catch(err => console.error('Error enviando correo:', err.message));
+        try {
+            await sendOtpEmail(email, verificationCode);
+        } catch (err) {
+            // Avisamos también en Discord para detectar caídas de SMTP
+            // antes de que se acumulen usuarios sin código.
+            sendDiscordNotification(`🛑 **SMTP fallido** al enviar OTP a \`${email}\`: ${err.message}`);
+            throw new Error('No se pudo enviar el código por email. Inténtalo de nuevo en unos segundos.');
+        }
     }
 
     async register(email, password) {

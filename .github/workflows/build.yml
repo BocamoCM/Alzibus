@@ -60,7 +60,14 @@ jobs:
           echo "VERSION=$FULL_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.version.outputs.VERSION }} --build-number=${{ github.run_number }}
+        # ADMIN_EMAIL viene de GitHub Secrets — gating del panel debug en
+        # ProfileScreen. Si el secret no está configurado, queda vacío y
+        # ese panel no aparece en ninguna build.
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.version.outputs.VERSION }} \
+            --build-number=${{ github.run_number }} \
+            --dart-define=ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

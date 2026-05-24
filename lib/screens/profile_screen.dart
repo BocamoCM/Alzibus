@@ -90,9 +90,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 16),
                       _buildActionsCard(theme, l),
                       // Sección debug solo visible para el autor del TFC.
-                      // Email hardcodeado para que solo aparezca en mi cuenta
-                      // — útil para probar skins y monedas sin grindear.
-                      if (_profile?['email'] == 'bcarreres55@gmail.com') ...[
+                      // El email viene de AppConfig.adminEmail (inyectado en
+                      // build vía --dart-define=ADMIN_EMAIL=... desde un
+                      // GitHub Secret, NO está en texto plano en el repo).
+                      // Si adminEmail está vacío (build de terceros), la card
+                      // jamás aparece.
+                      if (AppConfig.adminEmail.isNotEmpty &&
+                          _profile?['email'] == AppConfig.adminEmail) ...[
                         const SizedBox(height: 16),
                         _buildDebugCard(),
                       ],
@@ -619,7 +623,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // ───────────────────────────────────────────────────────────────────
   /// Card morada con accesos rápidos para testear el sistema de skins
   /// sin tener que grindear horas. Solo se renderiza si el email del
-  /// usuario es 'bcarreres55@gmail.com' (chequeado donde se llama).
+  /// usuario coincide con AppConfig.adminEmail (chequeado donde se llama).
   Widget _buildDebugCard() {
     return Card(
       elevation: 4,
