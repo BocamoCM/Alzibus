@@ -743,6 +743,99 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewHistory => 'View history';
 
   @override
+  String get watchAdSubtitle => 'Watch a short video and enjoy without banners';
+
+  @override
+  String get adNotReadyYet => 'Ad not ready yet. Try again in a few seconds.';
+
+  @override
+  String get adsHiddenShort => 'Ads hidden for 30 minutes! 🎉';
+
+  @override
+  String get dailyAdLimitReached =>
+      'You\'ve reached today\'s ad limit. Come back tomorrow!';
+
+  @override
+  String coinsEarnedThanks(int count) {
+    return '+$count coins 🪙 Thanks!';
+  }
+
+  @override
+  String get dailyEarningsExplained =>
+      'Each day you can earn up to 30 coins by playing + 60 by watching ads. It\'s a slow but steady pace: come back daily to fill up the wallet.';
+
+  @override
+  String get dailyMaxReached =>
+      'You\'ve reached today\'s maximum. Come back tomorrow!';
+
+  @override
+  String confirmSpendCoins(int cost, String skin) {
+    return 'Do you confirm you want to spend $cost 🪙 to unlock $skin?';
+  }
+
+  @override
+  String skinUnlockedAndEquipped(String skin) {
+    return '$skin unlocked and equipped! 🎉';
+  }
+
+  @override
+  String wearingSkin(String skin) {
+    return 'Wearing \"$skin\"';
+  }
+
+  @override
+  String unlockSkinTitle(String skin) {
+    return 'Unlock $skin';
+  }
+
+  @override
+  String unlockSkinBody(int cost) {
+    return 'Do you confirm you want to spend $cost 🪙 to unlock this skin? Once unlocked, it\'s yours forever.';
+  }
+
+  @override
+  String get unlockButton => 'Unlock';
+
+  @override
+  String get notEnoughCoins => 'Not enough coins.';
+
+  @override
+  String skinEquipped(String skin) {
+    return '$skin equipped';
+  }
+
+  @override
+  String get mifareClassicInfo =>
+      'Mifare Classic 1K cards require special authentication to read the balance. Most Android phones can\'t read them without specialised hardware.';
+
+  @override
+  String get featureNotAvailableWeb => 'Feature not available in browser';
+
+  @override
+  String get featureAndroidOnly => 'Android-only feature';
+
+  @override
+  String get nfcWebExplained =>
+      'NFC card reading requires hardware access that\'s not available in the web version.\n\nInstall the app to use this feature.';
+
+  @override
+  String get nfcIosExplained =>
+      'Due to Apple restrictions with Mifare Classic cards, balance reading isn\'t supported on iPhone.\n\nUse the map and schedules to plan your trip.';
+
+  @override
+  String get publicTransportAlzira => 'Alzira Public Transport';
+
+  @override
+  String get validateTripPrompt =>
+      'Do you want to validate a trip now? 1 will be deducted from your counter.';
+
+  @override
+  String get confirmTripTitle => 'Confirm trip';
+
+  @override
+  String get rechargeYourCardSoon => 'Top up your card soon!';
+
+  @override
   String get playWhileWaiting => 'Play a quick game while you wait!';
 
   @override

@@ -94,11 +94,13 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                 children: [
                   Icon(Icons.info_outline, color: Colors.amber.shade800),
                   const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Las tarjetas Mifare Classic 1K requieren autenticación especial para leer el saldo. La mayoría de móviles Android no pueden leerlas sin hardware especializado.',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                  Expanded(
+                    child: Builder(builder: (context) {
+                      return Text(
+                        AppLocalizations.of(context)!.mifareClassicInfo,
+                        style: const TextStyle(fontSize: 12),
+                      );
+                    }),
                   ),
                 ],
               ),
@@ -193,19 +195,23 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                   children: [
                     Icon(kIsWeb ? Icons.web_asset_off : Icons.phonelink_erase, size: 80, color: Colors.grey.shade400),
                     const SizedBox(height: 24),
-                    Text(
-                      kIsWeb ? 'Función no disponible en navegador' : 'Función exclusiva de Android',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
+                    Builder(builder: (context) {
+                      final l = AppLocalizations.of(context)!;
+                      return Text(
+                        kIsWeb ? l.featureNotAvailableWeb : l.featureAndroidOnly,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      );
+                    }),
                     const SizedBox(height: 16),
-                    Text(
-                      kIsWeb
-                        ? 'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.'
-                        : 'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                    ),
+                    Builder(builder: (context) {
+                      final l = AppLocalizations.of(context)!;
+                      return Text(
+                        kIsWeb ? l.nfcWebExplained : l.nfcIosExplained,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                      );
+                    }),
                     if (kIsWeb) ...[
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
@@ -302,7 +308,7 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                               ],
                                             ),
                                             Text(
-                                              state.cardData?.cardTypeName ?? 'Transporte Público Alzira',
+                                              state.cardData?.cardTypeName ?? AppLocalizations.of(context)!.publicTransportAlzira,
                                               style: TextStyle(
                                                 color: Colors.white.withOpacity(0.8),
                                                 fontSize: 12,
@@ -401,8 +407,8 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      title: const Text('Confirmar viaje'),
-                                      content: const Text('¿Deseas validar un viaje ahora? Se restará 1 de tu contador.'),
+                                      title: Text(AppLocalizations.of(context)!.confirmTripTitle),
+                                      content: Text(AppLocalizations.of(context)!.validateTripPrompt),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(context, false),
@@ -530,10 +536,10 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                   children: [
                                     const Icon(Icons.warning_amber, color: Colors.orange),
                                     const SizedBox(width: 12),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
-                                        '¡Recarga tu tarjeta pronto!',
-                                        style: TextStyle(
+                                        AppLocalizations.of(context)!.rechargeYourCardSoon,
+                                        style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
                                         ),

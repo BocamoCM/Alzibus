@@ -1426,6 +1426,150 @@ abstract class AppLocalizations {
   /// **'Ver historial'**
   String get viewHistory;
 
+  /// No description provided for @watchAdSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver un vídeo corto y disfrutar sin banners'**
+  String get watchAdSubtitle;
+
+  /// No description provided for @adNotReadyYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Anuncio aún no disponible. Inténtalo en unos segundos.'**
+  String get adNotReadyYet;
+
+  /// No description provided for @adsHiddenShort.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Anuncios ocultos por 30 minutos! 🎉'**
+  String get adsHiddenShort;
+
+  /// No description provided for @dailyAdLimitReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!'**
+  String get dailyAdLimitReached;
+
+  /// No description provided for @coinsEarnedThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'+{count} monedas 🪙 ¡Gracias!'**
+  String coinsEarnedThanks(int count);
+
+  /// No description provided for @dailyEarningsExplained.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada día puedes ganar hasta 30 monedas jugando + 60 viendo anuncios. Es ritmo lento pero constante: vuelve cada día para subir el monedero.'**
+  String get dailyEarningsExplained;
+
+  /// No description provided for @dailyMaxReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Has llegado al máximo de hoy. ¡Vuelve mañana!'**
+  String get dailyMaxReached;
+
+  /// No description provided for @confirmSpendCoins.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Confirmas que quieres gastar {cost} 🪙 para desbloquear {skin}?'**
+  String confirmSpendCoins(int cost, String skin);
+
+  /// No description provided for @skinUnlockedAndEquipped.
+  ///
+  /// In es, this message translates to:
+  /// **'¡{skin} desbloqueado y equipado! 🎉'**
+  String skinUnlockedAndEquipped(String skin);
+
+  /// No description provided for @wearingSkin.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas el \"{skin}\"'**
+  String wearingSkin(String skin);
+
+  /// No description provided for @unlockSkinTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear {skin}'**
+  String unlockSkinTitle(String skin);
+
+  /// No description provided for @unlockSkinBody.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Confirmas que quieres gastar {cost} 🪙 para desbloquear este vestido? Una vez desbloqueado lo tienes para siempre.'**
+  String unlockSkinBody(int cost);
+
+  /// No description provided for @unlockButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear'**
+  String get unlockButton;
+
+  /// No description provided for @notEnoughCoins.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes suficientes monedas.'**
+  String get notEnoughCoins;
+
+  /// No description provided for @skinEquipped.
+  ///
+  /// In es, this message translates to:
+  /// **'{skin} equipado'**
+  String skinEquipped(String skin);
+
+  /// No description provided for @mifareClassicInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Las tarjetas Mifare Classic 1K requieren autenticación especial para leer el saldo. La mayoría de móviles Android no pueden leerlas sin hardware especializado.'**
+  String get mifareClassicInfo;
+
+  /// No description provided for @featureNotAvailableWeb.
+  ///
+  /// In es, this message translates to:
+  /// **'Función no disponible en navegador'**
+  String get featureNotAvailableWeb;
+
+  /// No description provided for @featureAndroidOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Función exclusiva de Android'**
+  String get featureAndroidOnly;
+
+  /// No description provided for @nfcWebExplained.
+  ///
+  /// In es, this message translates to:
+  /// **'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.'**
+  String get nfcWebExplained;
+
+  /// No description provided for @nfcIosExplained.
+  ///
+  /// In es, this message translates to:
+  /// **'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.'**
+  String get nfcIosExplained;
+
+  /// No description provided for @publicTransportAlzira.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte Público Alzira'**
+  String get publicTransportAlzira;
+
+  /// No description provided for @validateTripPrompt.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Deseas validar un viaje ahora? Se restará 1 de tu contador.'**
+  String get validateTripPrompt;
+
+  /// No description provided for @confirmTripTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar viaje'**
+  String get confirmTripTitle;
+
+  /// No description provided for @rechargeYourCardSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Recarga tu tarjeta pronto!'**
+  String get rechargeYourCardSoon;
+
   /// No description provided for @playWhileWaiting.
   ///
   /// In es, this message translates to:

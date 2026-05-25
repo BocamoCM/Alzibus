@@ -749,6 +749,99 @@ class AppLocalizationsEs extends AppLocalizations {
   String get viewHistory => 'Ver historial';
 
   @override
+  String get watchAdSubtitle => 'Ver un vídeo corto y disfrutar sin banners';
+
+  @override
+  String get adNotReadyYet =>
+      'Anuncio aún no disponible. Inténtalo en unos segundos.';
+
+  @override
+  String get adsHiddenShort => '¡Anuncios ocultos por 30 minutos! 🎉';
+
+  @override
+  String get dailyAdLimitReached =>
+      'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!';
+
+  @override
+  String coinsEarnedThanks(int count) {
+    return '+$count monedas 🪙 ¡Gracias!';
+  }
+
+  @override
+  String get dailyEarningsExplained =>
+      'Cada día puedes ganar hasta 30 monedas jugando + 60 viendo anuncios. Es ritmo lento pero constante: vuelve cada día para subir el monedero.';
+
+  @override
+  String get dailyMaxReached => 'Has llegado al máximo de hoy. ¡Vuelve mañana!';
+
+  @override
+  String confirmSpendCoins(int cost, String skin) {
+    return '¿Confirmas que quieres gastar $cost 🪙 para desbloquear $skin?';
+  }
+
+  @override
+  String skinUnlockedAndEquipped(String skin) {
+    return '¡$skin desbloqueado y equipado! 🎉';
+  }
+
+  @override
+  String wearingSkin(String skin) {
+    return 'Llevas el \"$skin\"';
+  }
+
+  @override
+  String unlockSkinTitle(String skin) {
+    return 'Desbloquear $skin';
+  }
+
+  @override
+  String unlockSkinBody(int cost) {
+    return '¿Confirmas que quieres gastar $cost 🪙 para desbloquear este vestido? Una vez desbloqueado lo tienes para siempre.';
+  }
+
+  @override
+  String get unlockButton => 'Desbloquear';
+
+  @override
+  String get notEnoughCoins => 'No tienes suficientes monedas.';
+
+  @override
+  String skinEquipped(String skin) {
+    return '$skin equipado';
+  }
+
+  @override
+  String get mifareClassicInfo =>
+      'Las tarjetas Mifare Classic 1K requieren autenticación especial para leer el saldo. La mayoría de móviles Android no pueden leerlas sin hardware especializado.';
+
+  @override
+  String get featureNotAvailableWeb => 'Función no disponible en navegador';
+
+  @override
+  String get featureAndroidOnly => 'Función exclusiva de Android';
+
+  @override
+  String get nfcWebExplained =>
+      'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.';
+
+  @override
+  String get nfcIosExplained =>
+      'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.';
+
+  @override
+  String get publicTransportAlzira => 'Transporte Público Alzira';
+
+  @override
+  String get validateTripPrompt =>
+      '¿Deseas validar un viaje ahora? Se restará 1 de tu contador.';
+
+  @override
+  String get confirmTripTitle => 'Confirmar viaje';
+
+  @override
+  String get rechargeYourCardSoon => '¡Recarga tu tarjeta pronto!';
+
+  @override
   String get playWhileWaiting => '¡Echa una partida mientras esperas!';
 
   @override

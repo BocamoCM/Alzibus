@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../core/providers/ad_provider.dart';
 import '../constants/app_config.dart';
 import '../theme/app_theme.dart';
@@ -73,22 +74,22 @@ class _RewardedOfferCardState extends ConsumerState<RewardedOfferCard> {
               children: [
                 const Icon(Icons.play_circle_fill, color: Colors.white, size: 28),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Quitar anuncios 30 minutos',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.removeAdsTitle,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Ver un vídeo corto y disfrutar sin banners',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.watchAdSubtitle,
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 11,
                         ),
@@ -106,11 +107,12 @@ class _RewardedOfferCardState extends ConsumerState<RewardedOfferCard> {
   }
 
   void _watchRewarded(BuildContext context, dynamic adService) {
+    final l = AppLocalizations.of(context)!;
     if (!adService.isRewardedAdReady) {
       adService.loadRewardedAd();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anuncio aún no disponible. Inténtalo en unos segundos.'),
+        SnackBar(
+          content: Text(l.adNotReadyYet),
           backgroundColor: Colors.orange,
         ),
       );
@@ -121,8 +123,8 @@ class _RewardedOfferCardState extends ConsumerState<RewardedOfferCard> {
         if (!mounted) return;
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Anuncios ocultos por 30 minutos! 🎉'),
+          SnackBar(
+            content: Text(l.adsHiddenShort),
             backgroundColor: Colors.green,
           ),
         );
