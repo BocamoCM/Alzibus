@@ -473,6 +473,36 @@ class AppLocalizationsEs extends AppLocalizations {
   String get privacyPolicySubtitle => 'Consulta cómo protegemos tus datos';
 
   @override
+  String get dataCredits => 'Créditos y fuentes de datos';
+
+  @override
+  String get dataCreditsSubtitle => 'De dónde vienen los horarios y avisos';
+
+  @override
+  String get dataCreditsTitle => 'Fuentes de datos';
+
+  @override
+  String get dataCreditsBusOperator => 'Tiempos de autobús';
+
+  @override
+  String get dataCreditsBusOperatorBody =>
+      'Los horarios y tiempos de paso de las líneas L1, L2 y L3 son cortesía de Autocares Lozano S.L.U., concesionaria del servicio urbano de Alzira. Alzitrans consulta la información pública directamente desde el dispositivo de cada usuario; no almacena ni redistribuye los datos. Alzitrans no está afiliada con Autocares Lozano S.L.U.';
+
+  @override
+  String get dataCreditsRenfe => 'Trenes Cercanías';
+
+  @override
+  String get dataCreditsRenfeBody =>
+      'Los horarios de Cercanías C2 provienen de Renfe Operadora.';
+
+  @override
+  String get dataCreditsThanks =>
+      'Gracias a Autocares Lozano S.L.U. por hacer pública esta información, sin la cual esta app no podría existir.';
+
+  @override
+  String get creditsLineLozano => 'Datos por Autocares Lozano';
+
+  @override
   String get nfcCardReadSuccess => 'Tarjeta leída correctamente';
 
   @override

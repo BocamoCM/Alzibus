@@ -469,6 +469,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacyPolicySubtitle => 'See how we protect your data';
 
   @override
+  String get dataCredits => 'Credits & data sources';
+
+  @override
+  String get dataCreditsSubtitle => 'Where schedules and notices come from';
+
+  @override
+  String get dataCreditsTitle => 'Data sources';
+
+  @override
+  String get dataCreditsBusOperator => 'Bus arrival times';
+
+  @override
+  String get dataCreditsBusOperatorBody =>
+      'Timetables and arrival times for lines L1, L2 and L3 are courtesy of Autocares Lozano S.L.U., the operator of Alzira\'s urban bus service. Alzitrans queries this public information directly from each user\'s device; it does not store or redistribute the data. Alzitrans is not affiliated with Autocares Lozano S.L.U.';
+
+  @override
+  String get dataCreditsRenfe => 'Commuter trains';
+
+  @override
+  String get dataCreditsRenfeBody =>
+      'Cercanías C2 schedules are provided by Renfe Operadora.';
+
+  @override
+  String get dataCreditsThanks =>
+      'Thanks to Autocares Lozano S.L.U. for making this information publicly available — without it this app could not exist.';
+
+  @override
+  String get creditsLineLozano => 'Data by Autocares Lozano';
+
+  @override
   String get nfcCardReadSuccess => 'Card read successfully';
 
   @override

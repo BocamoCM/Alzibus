@@ -994,6 +994,60 @@ abstract class AppLocalizations {
   /// **'Consulta cómo protegemos tus datos'**
   String get privacyPolicySubtitle;
 
+  /// No description provided for @dataCredits.
+  ///
+  /// In es, this message translates to:
+  /// **'Créditos y fuentes de datos'**
+  String get dataCredits;
+
+  /// No description provided for @dataCreditsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'De dónde vienen los horarios y avisos'**
+  String get dataCreditsSubtitle;
+
+  /// No description provided for @dataCreditsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Fuentes de datos'**
+  String get dataCreditsTitle;
+
+  /// No description provided for @dataCreditsBusOperator.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempos de autobús'**
+  String get dataCreditsBusOperator;
+
+  /// No description provided for @dataCreditsBusOperatorBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los horarios y tiempos de paso de las líneas L1, L2 y L3 son cortesía de Autocares Lozano S.L.U., concesionaria del servicio urbano de Alzira. Alzitrans consulta la información pública directamente desde el dispositivo de cada usuario; no almacena ni redistribuye los datos. Alzitrans no está afiliada con Autocares Lozano S.L.U.'**
+  String get dataCreditsBusOperatorBody;
+
+  /// No description provided for @dataCreditsRenfe.
+  ///
+  /// In es, this message translates to:
+  /// **'Trenes Cercanías'**
+  String get dataCreditsRenfe;
+
+  /// No description provided for @dataCreditsRenfeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los horarios de Cercanías C2 provienen de Renfe Operadora.'**
+  String get dataCreditsRenfeBody;
+
+  /// No description provided for @dataCreditsThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'Gracias a Autocares Lozano S.L.U. por hacer pública esta información, sin la cual esta app no podría existir.'**
+  String get dataCreditsThanks;
+
+  /// No description provided for @creditsLineLozano.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos por Autocares Lozano'**
+  String get creditsLineLozano;
+
   /// No description provided for @nfcCardReadSuccess.
   ///
   /// In es, this message translates to:

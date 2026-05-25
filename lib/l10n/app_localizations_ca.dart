@@ -473,6 +473,36 @@ class AppLocalizationsCa extends AppLocalizations {
   String get privacyPolicySubtitle => 'Consulta com protegim les teues dades';
 
   @override
+  String get dataCredits => 'Crèdits i fonts de dades';
+
+  @override
+  String get dataCreditsSubtitle => 'D\'on venen els horaris i avisos';
+
+  @override
+  String get dataCreditsTitle => 'Fonts de dades';
+
+  @override
+  String get dataCreditsBusOperator => 'Temps d\'autobús';
+
+  @override
+  String get dataCreditsBusOperatorBody =>
+      'Els horaris i temps de pas de les línies L1, L2 i L3 són cortesia d\'Autocars Lozano S.L.U., concessionària del servei urbà d\'Alzira. Alzitrans consulta la informació pública directament des del dispositiu de cada usuari; no emmagatzema ni redistribueix les dades. Alzitrans no està afiliada amb Autocars Lozano S.L.U.';
+
+  @override
+  String get dataCreditsRenfe => 'Trens Rodalia';
+
+  @override
+  String get dataCreditsRenfeBody =>
+      'Els horaris de Rodalia C2 provenen de Renfe Operadora.';
+
+  @override
+  String get dataCreditsThanks =>
+      'Gràcies a Autocars Lozano S.L.U. per fer pública esta informació, sense la qual esta app no podria existir.';
+
+  @override
+  String get creditsLineLozano => 'Dades per Autocars Lozano';
+
+  @override
   String get nfcCardReadSuccess => 'Targeta llegida correctament';
 
   @override

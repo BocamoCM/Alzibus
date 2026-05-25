@@ -19,6 +19,7 @@ import '../core/providers/gamification_provider.dart';
 import '../services/gamification_service.dart';
 import '../services/consent_service.dart';
 import 'support_page.dart';
+import 'credits_page.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   final bool notificationsEnabled;
@@ -252,6 +253,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           subtitle: Text(l.privacyPolicySubtitle),
           onTap: () => launchUrl(Uri.parse(AppConfig.privacyPolicyUrl)),
           trailing: const Icon(Icons.open_in_new, size: 20),
+        ),
+        // Atribución a Autocares Lozano (fuente de los horarios). Visible
+        // desde Ajustes para que cualquier usuario pueda leerla y descargar
+        // el disclaimer de no-afiliación.
+        ListTile(
+          leading: const Icon(Icons.source_outlined, color: AlzitransColors.burgundy),
+          title: Text(l.dataCredits),
+          subtitle: Text(l.dataCreditsSubtitle),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreditsPage()),
+            );
+          },
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         ),
         if (!kIsWeb && AppConfig.showAds && ConsentService.isPrivacyOptionsRequired)
           ListTile(
