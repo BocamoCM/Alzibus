@@ -499,6 +499,131 @@ class AppLocalizationsEn extends AppLocalizations {
   String get creditsLineLozano => 'Data by Autocares Lozano';
 
   @override
+  String get removeAdsTitle => 'Remove Ads (30 min)';
+
+  @override
+  String get removeAdsSubtitle => 'Watch a short video to hide banners';
+
+  @override
+  String get adsHiddenSuccess => 'Ads hidden for 30 minutes! Enjoy 🎉';
+
+  @override
+  String get adNotAvailable => 'Ad not available right now. Try again later.';
+
+  @override
+  String get deleteAccountTitle => 'Delete account';
+
+  @override
+  String get deleteAccountSubtitle => 'Permanent deletion of all your data';
+
+  @override
+  String get deleteAccountDialogTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountIrreversible =>
+      'This action cannot be undone. The following will be permanently deleted:';
+
+  @override
+  String get deleteAccountBullet1 => '• Your trip history and statistics.';
+
+  @override
+  String get deleteAccountBullet2 => '• Your favourite stops.';
+
+  @override
+  String deleteAccountConfirm(String email) {
+    return 'Are you absolutely sure you want to delete the account for $email?';
+  }
+
+  @override
+  String get deleteAccountConfirmButton => 'YES, DELETE EVERYTHING';
+
+  @override
+  String get accountDeletedSuccess =>
+      'Account successfully deleted. Sorry to see you go.';
+
+  @override
+  String get emailUpdatedSuccess => '✅ Email updated';
+
+  @override
+  String get passwordUpdatedSuccess => '✅ Password updated';
+
+  @override
+  String genericError(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get loginWithBiometrics => 'Log in with fingerprint';
+
+  @override
+  String biometricLoginError(String error) {
+    return 'Biometric login error: $error';
+  }
+
+  @override
+  String unexpectedError(String error) {
+    return 'Unexpected error: $error';
+  }
+
+  @override
+  String get registerTitle => 'Register in Alzibus';
+
+  @override
+  String get registerInfoBox =>
+      'We\'ll send you a code when you log in. If you don\'t log in within 7 days, the account will be deleted automatically.';
+
+  @override
+  String get accountCreatedSnack =>
+      'Account created. Log in within the next 7 days or it will be deleted automatically.';
+
+  @override
+  String get registerButton => 'Sign up';
+
+  @override
+  String get verifyEmailTitle => 'Verify Email';
+
+  @override
+  String get confirmYourEmail => 'Confirm your email';
+
+  @override
+  String codeSentToEmail(String email) {
+    return 'We\'ve sent a 6-digit code to:\n$email';
+  }
+
+  @override
+  String get codeExpiresIn15Min => 'The code expires in 15 minutes.';
+
+  @override
+  String get verifyCodeButton => 'Verify Code';
+
+  @override
+  String resendCodeWithLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Resend code ($count left)',
+      one: 'Resend code (1 left)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noResendsLeft => 'No resends available';
+
+  @override
+  String get enableBiometricsDialog => 'Enable Fingerprint?';
+
+  @override
+  String get enableBiometricsBody =>
+      'Want to log in faster next time using your fingerprint?';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get yesActivate => 'Yes, enable!';
+
+  @override
   String get nfcCardReadSuccess => 'Card read successfully';
 
   @override

@@ -79,7 +79,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Error en acceso biométrico: $e';
+          _errorMessage = AppLocalizations.of(context)!.biometricLoginError(e.toString());
         });
       }
     }
@@ -162,7 +162,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Error inesperado: $e';
+        _errorMessage = AppLocalizations.of(context)!.unexpectedError(e.toString());
       });
     }
   }
@@ -259,7 +259,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             OutlinedButton.icon(
                               onPressed: _loginWithBiometrics,
                               icon: const Icon(Icons.fingerprint),
-                              label: const Text('Entrar con huella'),
+                              label: Text(l.loginWithBiometrics),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 45),
                               ),

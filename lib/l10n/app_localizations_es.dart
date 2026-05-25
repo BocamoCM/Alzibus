@@ -503,6 +503,133 @@ class AppLocalizationsEs extends AppLocalizations {
   String get creditsLineLozano => 'Datos por Autocares Lozano';
 
   @override
+  String get removeAdsTitle => 'Quitar Anuncios (30 min)';
+
+  @override
+  String get removeAdsSubtitle => 'Ver un vídeo corto para ocultar banners';
+
+  @override
+  String get adsHiddenSuccess =>
+      '¡Anuncios ocultos por 30 minutos! Disfruta 🎉';
+
+  @override
+  String get adNotAvailable =>
+      'Anuncio no disponible en este momento. Inténtalo más tarde.';
+
+  @override
+  String get deleteAccountTitle => 'Eliminar cuenta';
+
+  @override
+  String get deleteAccountSubtitle => 'Borrado permanente de todos tus datos';
+
+  @override
+  String get deleteAccountDialogTitle => '¿Eliminar tu cuenta?';
+
+  @override
+  String get deleteAccountIrreversible =>
+      'Esta acción es irreversible. Se borrarán permanentemente:';
+
+  @override
+  String get deleteAccountBullet1 => '• Tu historial de viajes y estadísticas.';
+
+  @override
+  String get deleteAccountBullet2 => '• Tus paradas favoritas.';
+
+  @override
+  String deleteAccountConfirm(String email) {
+    return '¿Estás totalmente seguro de que quieres eliminar la cuenta de $email?';
+  }
+
+  @override
+  String get deleteAccountConfirmButton => 'SÍ, ELIMINAR TODO';
+
+  @override
+  String get accountDeletedSuccess =>
+      'Cuenta eliminada con éxito. Sentimos que te vayas.';
+
+  @override
+  String get emailUpdatedSuccess => '✅ Email actualizado';
+
+  @override
+  String get passwordUpdatedSuccess => '✅ Contraseña actualizada';
+
+  @override
+  String genericError(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get loginWithBiometrics => 'Entrar con huella';
+
+  @override
+  String biometricLoginError(String error) {
+    return 'Error en acceso biométrico: $error';
+  }
+
+  @override
+  String unexpectedError(String error) {
+    return 'Error inesperado: $error';
+  }
+
+  @override
+  String get registerTitle => 'Registro en Alzibus';
+
+  @override
+  String get registerInfoBox =>
+      'Te enviaremos un código al iniciar sesión. Si no inicias sesión en 7 días, la cuenta se eliminará automáticamente.';
+
+  @override
+  String get accountCreatedSnack =>
+      'Cuenta creada. Inicia sesión en los próximos 7 días o se eliminará automáticamente.';
+
+  @override
+  String get registerButton => 'Registrarse';
+
+  @override
+  String get verifyEmailTitle => 'Verificar Correo';
+
+  @override
+  String get confirmYourEmail => 'Confirma tu correo';
+
+  @override
+  String codeSentToEmail(String email) {
+    return 'Hemos enviado un código de 6 dígitos a:\n$email';
+  }
+
+  @override
+  String get codeExpiresIn15Min => 'El código caduca en 15 minutos.';
+
+  @override
+  String get verifyCodeButton => 'Verificar Código';
+
+  @override
+  String resendCodeWithLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reenviar código ($count restantes)',
+      one: 'Reenviar código (1 restante)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noResendsLeft => 'Sin reenvíos disponibles';
+
+  @override
+  String get enableBiometricsDialog => '¿Activar Huella?';
+
+  @override
+  String get enableBiometricsBody =>
+      '¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?';
+
+  @override
+  String get notNow => 'Ahora no';
+
+  @override
+  String get yesActivate => '¡Sí, activar!';
+
+  @override
   String get nfcCardReadSuccess => 'Tarjeta leída correctamente';
 
   @override

@@ -1048,6 +1048,210 @@ abstract class AppLocalizations {
   /// **'Datos por Autocares Lozano'**
   String get creditsLineLozano;
 
+  /// No description provided for @removeAdsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar Anuncios (30 min)'**
+  String get removeAdsTitle;
+
+  /// No description provided for @removeAdsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver un vídeo corto para ocultar banners'**
+  String get removeAdsSubtitle;
+
+  /// No description provided for @adsHiddenSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Anuncios ocultos por 30 minutos! Disfruta 🎉'**
+  String get adsHiddenSuccess;
+
+  /// No description provided for @adNotAvailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Anuncio no disponible en este momento. Inténtalo más tarde.'**
+  String get adNotAvailable;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar cuenta'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrado permanente de todos tus datos'**
+  String get deleteAccountSubtitle;
+
+  /// No description provided for @deleteAccountDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar tu cuenta?'**
+  String get deleteAccountDialogTitle;
+
+  /// No description provided for @deleteAccountIrreversible.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta acción es irreversible. Se borrarán permanentemente:'**
+  String get deleteAccountIrreversible;
+
+  /// No description provided for @deleteAccountBullet1.
+  ///
+  /// In es, this message translates to:
+  /// **'• Tu historial de viajes y estadísticas.'**
+  String get deleteAccountBullet1;
+
+  /// No description provided for @deleteAccountBullet2.
+  ///
+  /// In es, this message translates to:
+  /// **'• Tus paradas favoritas.'**
+  String get deleteAccountBullet2;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Estás totalmente seguro de que quieres eliminar la cuenta de {email}?'**
+  String deleteAccountConfirm(String email);
+
+  /// No description provided for @deleteAccountConfirmButton.
+  ///
+  /// In es, this message translates to:
+  /// **'SÍ, ELIMINAR TODO'**
+  String get deleteAccountConfirmButton;
+
+  /// No description provided for @accountDeletedSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta eliminada con éxito. Sentimos que te vayas.'**
+  String get accountDeletedSuccess;
+
+  /// No description provided for @emailUpdatedSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Email actualizado'**
+  String get emailUpdatedSuccess;
+
+  /// No description provided for @passwordUpdatedSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Contraseña actualizada'**
+  String get passwordUpdatedSuccess;
+
+  /// No description provided for @genericError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {message}'**
+  String genericError(String message);
+
+  /// No description provided for @loginWithBiometrics.
+  ///
+  /// In es, this message translates to:
+  /// **'Entrar con huella'**
+  String get loginWithBiometrics;
+
+  /// No description provided for @biometricLoginError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error en acceso biométrico: {error}'**
+  String biometricLoginError(String error);
+
+  /// No description provided for @unexpectedError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error inesperado: {error}'**
+  String unexpectedError(String error);
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Registro en Alzibus'**
+  String get registerTitle;
+
+  /// No description provided for @registerInfoBox.
+  ///
+  /// In es, this message translates to:
+  /// **'Te enviaremos un código al iniciar sesión. Si no inicias sesión en 7 días, la cuenta se eliminará automáticamente.'**
+  String get registerInfoBox;
+
+  /// No description provided for @accountCreatedSnack.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta creada. Inicia sesión en los próximos 7 días o se eliminará automáticamente.'**
+  String get accountCreatedSnack;
+
+  /// No description provided for @registerButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrarse'**
+  String get registerButton;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar Correo'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @confirmYourEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu correo'**
+  String get confirmYourEmail;
+
+  /// No description provided for @codeSentToEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Hemos enviado un código de 6 dígitos a:\n{email}'**
+  String codeSentToEmail(String email);
+
+  /// No description provided for @codeExpiresIn15Min.
+  ///
+  /// In es, this message translates to:
+  /// **'El código caduca en 15 minutos.'**
+  String get codeExpiresIn15Min;
+
+  /// No description provided for @verifyCodeButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar Código'**
+  String get verifyCodeButton;
+
+  /// No description provided for @resendCodeWithLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Reenviar código (1 restante)} other{Reenviar código ({count} restantes)}}'**
+  String resendCodeWithLeft(int count);
+
+  /// No description provided for @noResendsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin reenvíos disponibles'**
+  String get noResendsLeft;
+
+  /// No description provided for @enableBiometricsDialog.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Activar Huella?'**
+  String get enableBiometricsDialog;
+
+  /// No description provided for @enableBiometricsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?'**
+  String get enableBiometricsBody;
+
+  /// No description provided for @notNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora no'**
+  String get notNow;
+
+  /// No description provided for @yesActivate.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Sí, activar!'**
+  String get yesActivate;
+
   /// No description provided for @nfcCardReadSuccess.
   ///
   /// In es, this message translates to:

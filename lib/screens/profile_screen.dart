@@ -329,8 +329,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const Divider(height: 1, indent: 56),
             ListTile(
               leading: const Icon(Icons.tv_off, color: AlzitransColors.burgundy),
-              title: const Text('Quitar Anuncios (30 min)', style: TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
-              subtitle: const Text('Ver un vídeo corto para ocultar banners', style: TextStyle(fontSize: 11)),
+              title: Text(l.removeAdsTitle, style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
+              subtitle: Text(l.removeAdsSubtitle, style: const TextStyle(fontSize: 11)),
               trailing: const Icon(Icons.stars, color: AlzitransColors.burgundy),
               onTap: () {
                 final adService = ref.read(adServiceProvider);
@@ -344,8 +344,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       if (mounted) {
                         Navigator.pop(context); // quitar dialog
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('¡Anuncios ocultos por 30 minutos! Disfruta 🎉'),
+                          SnackBar(
+                            content: Text(l.adsHiddenSuccess),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -355,8 +355,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Anuncio no disponible en este momento. Inténtalo más tarde.'),
+                    SnackBar(
+                      content: Text(l.adNotAvailable),
                       backgroundColor: Colors.orange,
                     ),
                   );
@@ -388,8 +388,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Eliminar cuenta', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            subtitle: const Text('Borrado permanente de todos tus datos', style: TextStyle(fontSize: 11)),
+            title: Text(l.deleteAccountTitle, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            subtitle: Text(l.deleteAccountSubtitle, style: const TextStyle(fontSize: 11)),
             onTap: () => _confirmDeleteAccount(l),
           ),
         ],
@@ -402,17 +402,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('¿Eliminar tu cuenta?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: Text(l.deleteAccountDialogTitle, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Esta acción es irreversible. Se borrarán permanentemente:'),
+            Text(l.deleteAccountIrreversible),
             const SizedBox(height: 12),
-            const Text('• Tu historial de viajes y estadísticas.'),
-            const Text('• Tus paradas favoritas.'),
+            Text(l.deleteAccountBullet1),
+            Text(l.deleteAccountBullet2),
             const SizedBox(height: 12),
-            Text('¿Estás totalmente seguro de que quieres eliminar la cuenta de ${_profile?['email']}?', style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text(
+              l.deleteAccountConfirm(_profile?['email']?.toString() ?? ''),
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
           ],
         ),
         actions: [
@@ -421,16 +424,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () async {
               Navigator.pop(ctx);
-              _performDeletion();
+              _performDeletion(l);
             },
-            child: const Text('SÍ, ELIMINAR TODO'),
+            child: Text(l.deleteAccountConfirmButton),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _performDeletion() async {
+  Future<void> _performDeletion(AppLocalizations l) async {
     // Mostrar indicador de carga
     showDialog(
       context: context,
@@ -444,8 +447,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (mounted) {
           Navigator.pop(context); // Quitar el loading
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cuenta eliminada con éxito. Sentimos que te vayas.'),
+            SnackBar(
+              content: Text(l.accountDeletedSuccess),
               backgroundColor: Colors.black,
             ),
           );
@@ -457,7 +460,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         Navigator.pop(context); // Quitar el loading
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l.genericError(e.toString())), backgroundColor: Colors.red),
         );
       }
     }
@@ -491,7 +494,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   await _auth.updateEmail(_token!, newEmail);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('✅ ${l.email} actualizado'), backgroundColor: Colors.green),
+                      SnackBar(content: Text(l.emailUpdatedSuccess), backgroundColor: Colors.green),
                     );
                     _loadProfile();
                   }
@@ -499,7 +502,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                    SnackBar(content: Text(l.genericError(e.toString())), backgroundColor: Colors.red),
                   );
                 }
               }
@@ -567,7 +570,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('✅ ${l.changePassword}'),
+                          content: Text(l.passwordUpdatedSuccess),
                           backgroundColor: Colors.green,
                         ),
                       );
@@ -576,7 +579,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                      SnackBar(content: Text(l.genericError(e.toString())), backgroundColor: Colors.red),
                     );
                   }
                 }
