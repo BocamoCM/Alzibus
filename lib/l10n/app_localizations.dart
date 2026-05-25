@@ -1252,6 +1252,258 @@ abstract class AppLocalizations {
   /// **'¡Sí, activar!'**
   String get yesActivate;
 
+  /// No description provided for @stopAddedToFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'⭐ Parada añadida a favoritos'**
+  String get stopAddedToFavorites;
+
+  /// No description provided for @alertSetForLine.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Te avisaremos cuando llegue la línea {line}'**
+  String alertSetForLine(String line);
+
+  /// No description provided for @requiresInternet.
+  ///
+  /// In es, this message translates to:
+  /// **'(Requiere conexión a internet)'**
+  String get requiresInternet;
+
+  /// No description provided for @mapView.
+  ///
+  /// In es, this message translates to:
+  /// **'Mapa'**
+  String get mapView;
+
+  /// No description provided for @satelliteView.
+  ///
+  /// In es, this message translates to:
+  /// **'Satélite'**
+  String get satelliteView;
+
+  /// No description provided for @satelliteViewUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Vista satelital no disponible'**
+  String get satelliteViewUnavailable;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar de favoritos'**
+  String get removeFromFavorites;
+
+  /// No description provided for @addToFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir a favoritos'**
+  String get addToFavorites;
+
+  /// No description provided for @nextBuses.
+  ///
+  /// In es, this message translates to:
+  /// **'⏱️ Próximos buses:'**
+  String get nextBuses;
+
+  /// No description provided for @noUpcomingBuses.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay buses próximos'**
+  String get noUpcomingBuses;
+
+  /// No description provided for @nearbyTrainsC2.
+  ///
+  /// In es, this message translates to:
+  /// **'🚆 Trenes Cercanías C2:'**
+  String get nearbyTrainsC2;
+
+  /// No description provided for @noUpcomingTrains.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay trenes próximos'**
+  String get noUpcomingTrains;
+
+  /// No description provided for @refresh.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar'**
+  String get refresh;
+
+  /// No description provided for @refreshTrains.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar trenes'**
+  String get refreshTrains;
+
+  /// No description provided for @linesLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Líneas:'**
+  String get linesLabel;
+
+  /// No description provided for @lines.
+  ///
+  /// In es, this message translates to:
+  /// **'Líneas'**
+  String get lines;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Hoy} =1{Hace 1 día} other{Hace {count} días}}'**
+  String daysAgo(int count);
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ahora mismo} =1{Hace 1 minuto} other{Hace {count} minutos}}'**
+  String minutesAgo(int count);
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Hace 1 hora} other{Hace {count} horas}}'**
+  String hoursAgo(int count);
+
+  /// No description provided for @lineWithNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea {line}'**
+  String lineWithNumber(String line);
+
+  /// No description provided for @oneTripWillBeDeducted.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descontará 1 viaje de tu tarjeta (te quedan {remaining})'**
+  String oneTripWillBeDeducted(int remaining);
+
+  /// No description provided for @unlimitedTrips.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes viajes ILIMITADOS'**
+  String get unlimitedTrips;
+
+  /// No description provided for @noTripsOnCard.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes viajes en la tarjeta'**
+  String get noTripsOnCard;
+
+  /// No description provided for @noTripUnderstood.
+  ///
+  /// In es, this message translates to:
+  /// **'👍 Entendido, no se registró'**
+  String get noTripUnderstood;
+
+  /// No description provided for @iDidntGetOn.
+  ///
+  /// In es, this message translates to:
+  /// **'No he subido'**
+  String get iDidntGetOn;
+
+  /// No description provided for @yesIGotOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, registrar'**
+  String get yesIGotOn;
+
+  /// No description provided for @cardTripRegistered.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Viaje con Tarjeta registrado!'**
+  String get cardTripRegistered;
+
+  /// No description provided for @cashTripRegistered.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Viaje en Efectivo registrado!'**
+  String get cashTripRegistered;
+
+  /// No description provided for @viewHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver historial'**
+  String get viewHistory;
+
+  /// No description provided for @playWhileWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Echa una partida mientras esperas!'**
+  String get playWhileWaiting;
+
+  /// No description provided for @welcomeGreeting.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Hola! 👋'**
+  String get welcomeGreeting;
+
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Espero que te sea de mucha utilidad!'**
+  String get welcomeMessage;
+
+  /// No description provided for @busInService.
+  ///
+  /// In es, this message translates to:
+  /// **'Autobús en servicio'**
+  String get busInService;
+
+  /// No description provided for @nextStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Próxima parada'**
+  String get nextStop;
+
+  /// No description provided for @welcomeThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'Gracias por descargar Alzi Trans.'**
+  String get welcomeThanks;
+
+  /// No description provided for @welcomeStudent.
+  ///
+  /// In es, this message translates to:
+  /// **'Soy un estudiante de 2º de DAM y he creado esta app de forma independiente para mejorar nuestro transporte.'**
+  String get welcomeStudent;
+
+  /// No description provided for @welcomeDevelopmentNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ten en cuenta que es un proyecto en desarrollo y puede contener errores.'**
+  String get welcomeDevelopmentNotice;
+
+  /// No description provided for @understoodCaps.
+  ///
+  /// In es, this message translates to:
+  /// **'ENTENDIDO'**
+  String get understoodCaps;
+
+  /// No description provided for @estimatedTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo estimado'**
+  String get estimatedTime;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado'**
+  String get statusLabel;
+
+  /// No description provided for @atStop.
+  ///
+  /// In es, this message translates to:
+  /// **'🛑 En parada'**
+  String get atStop;
+
+  /// No description provided for @inMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'🚌 En movimiento'**
+  String get inMovement;
+
   /// No description provided for @nfcCardReadSuccess.
   ///
   /// In es, this message translates to:

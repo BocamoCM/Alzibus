@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../constants/line_colors.dart';
 
 class LineFilter extends StatelessWidget {
@@ -29,7 +30,7 @@ class LineFilter extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Líneas', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.lines, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           ...['L1', 'L2', 'L3'].map((line) {
             final isSelected = selectedLines.contains(line);

@@ -631,6 +631,166 @@ class AppLocalizationsCa extends AppLocalizations {
   String get yesActivate => 'Sí, activar!';
 
   @override
+  String get stopAddedToFavorites => '⭐ Parada afegida a preferides';
+
+  @override
+  String alertSetForLine(String line) {
+    return '✅ T\'avisarem quan arribe la línia $line';
+  }
+
+  @override
+  String get requiresInternet => '(Requereix connexió a internet)';
+
+  @override
+  String get mapView => 'Mapa';
+
+  @override
+  String get satelliteView => 'Satèl·lit';
+
+  @override
+  String get satelliteViewUnavailable => 'Vista satèl·lit no disponible';
+
+  @override
+  String get removeFromFavorites => 'Llevar de preferides';
+
+  @override
+  String get addToFavorites => 'Afegir a preferides';
+
+  @override
+  String get nextBuses => '⏱️ Pròxims busos:';
+
+  @override
+  String get noUpcomingBuses => 'No hi ha busos pròxims';
+
+  @override
+  String get nearbyTrainsC2 => '🚆 Trens Rodalia C2:';
+
+  @override
+  String get noUpcomingTrains => 'No hi ha trens pròxims';
+
+  @override
+  String get refresh => 'Actualitzar';
+
+  @override
+  String get refreshTrains => 'Actualitzar trens';
+
+  @override
+  String get linesLabel => 'Línies:';
+
+  @override
+  String get lines => 'Línies';
+
+  @override
+  String daysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fa $count dies',
+      one: 'Fa 1 dia',
+      zero: 'Hui',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fa $count minuts',
+      one: 'Fa 1 minut',
+      zero: 'Ara mateix',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Fa $count hores',
+      one: 'Fa 1 hora',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lineWithNumber(String line) {
+    return 'Línia $line';
+  }
+
+  @override
+  String oneTripWillBeDeducted(int remaining) {
+    return 'Es descomptarà 1 viatge de la teua targeta (et queden $remaining)';
+  }
+
+  @override
+  String get unlimitedTrips => 'Tens viatges IL·LIMITATS';
+
+  @override
+  String get noTripsOnCard => 'No tens viatges a la targeta';
+
+  @override
+  String get noTripUnderstood => '👍 Entés, no s\'ha registrat';
+
+  @override
+  String get iDidntGetOn => 'No he pujat';
+
+  @override
+  String get yesIGotOn => 'Sí, registrar';
+
+  @override
+  String get cardTripRegistered => 'Viatge amb Targeta registrat!';
+
+  @override
+  String get cashTripRegistered => 'Viatge en Efectiu registrat!';
+
+  @override
+  String get viewHistory => 'Veure historial';
+
+  @override
+  String get playWhileWaiting => 'Fes una partida mentre esperes!';
+
+  @override
+  String get welcomeGreeting => 'Hola! 👋';
+
+  @override
+  String get welcomeMessage => 'Espere que et siga de molta utilitat!';
+
+  @override
+  String get busInService => 'Autobús en servei';
+
+  @override
+  String get nextStop => 'Pròxima parada';
+
+  @override
+  String get welcomeThanks => 'Gràcies per descarregar Alzi Trans.';
+
+  @override
+  String get welcomeStudent =>
+      'Soc un estudiant de 2n de DAM i he creat esta app de forma independent per millorar el nostre transport.';
+
+  @override
+  String get welcomeDevelopmentNotice =>
+      'Tingues en compte que és un projecte en desenvolupament i pot contindre errors.';
+
+  @override
+  String get understoodCaps => 'ENTÉS';
+
+  @override
+  String get estimatedTime => 'Temps estimat';
+
+  @override
+  String get statusLabel => 'Estat';
+
+  @override
+  String get atStop => '🛑 En parada';
+
+  @override
+  String get inMovement => '🚌 En moviment';
+
+  @override
   String get nfcCardReadSuccess => 'Targeta llegida correctament';
 
   @override

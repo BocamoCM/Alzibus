@@ -179,10 +179,10 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
       if (mounted) {
         setState(() => _isFavorite = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('⭐ Parada añadida a favoritos'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.stopAddedToFavorites),
             backgroundColor: Colors.amber,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -309,7 +309,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ Te avisaremos cuando llegue la línea ${arrival.line}'),
+          content: Text(AppLocalizations.of(context)!.alertSetForLine(arrival.line)),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.green,
         ),
@@ -469,15 +469,15 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   color: Colors.grey[200],
-                                  child: const Center(
+                                  child: Center(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.satellite_alt, size: 48, color: Colors.grey),
-                                        SizedBox(height: 8),
-                                        Text('Vista satelital no disponible', style: TextStyle(color: Colors.grey)),
-                                        SizedBox(height: 4),
-                                        Text('(Requiere conexión a internet)', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                                        const Icon(Icons.satellite_alt, size: 48, color: Colors.grey),
+                                        const SizedBox(height: 8),
+                                        Text(AppLocalizations.of(context)!.satelliteViewUnavailable, style: const TextStyle(color: Colors.grey)),
+                                        const SizedBox(height: 4),
+                                        Text(AppLocalizations.of(context)!.requiresInternet, style: const TextStyle(color: Colors.grey, fontSize: 10)),
                                       ],
                                     ),
                                   ),
@@ -570,7 +570,9 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            _showStreetView ? 'Mapa' : 'Satélite',
+                            _showStreetView
+                                ? AppLocalizations.of(context)!.mapView
+                                : AppLocalizations.of(context)!.satelliteView,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -607,7 +609,9 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                   size: 28,
                 ),
                 onPressed: _toggleFavorite,
-                tooltip: _isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
+                tooltip: _isFavorite
+                    ? AppLocalizations.of(context)!.removeFromFavorites
+                    : AppLocalizations.of(context)!.addToFavorites,
               ),
             ],
           ),
@@ -615,12 +619,12 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           // Tiempos de llegada en tiempo real
           Row(
             children: [
-              const Text('⏱️ Próximos buses:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(AppLocalizations.of(context)!.nextBuses, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
                 onPressed: _loadArrivalTimes,
-                tooltip: 'Actualizar',
+                tooltip: AppLocalizations.of(context)!.refresh,
               ),
             ],
           ),
@@ -639,14 +643,14 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.grey),
-                  SizedBox(width: 8),
+                  const Icon(Icons.info_outline, color: Colors.grey),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'No hay buses próximos',
-                      style: TextStyle(color: Colors.grey),
+                      AppLocalizations.of(context)!.noUpcomingBuses,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 ],
@@ -818,10 +822,10 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                   child: const Icon(Icons.train, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    '🚆 Trenes Cercanías C2:', 
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    AppLocalizations.of(context)!.nearbyTrainsC2,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -830,7 +834,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 20),
                   onPressed: _loadTrainTimes,
-                  tooltip: 'Actualizar trenes',
+                  tooltip: AppLocalizations.of(context)!.refreshTrains,
                 ),
               ],
             ),
@@ -849,14 +853,14 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
                   color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange),
-                    SizedBox(width: 8),
+                    const Icon(Icons.info_outline, color: Colors.orange),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No hay trenes próximos',
-                        style: TextStyle(color: Colors.orange),
+                        AppLocalizations.of(context)!.noUpcomingTrains,
+                        style: const TextStyle(color: Colors.orange),
                       ),
                     ),
                   ],
@@ -984,7 +988,7 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
           ],
           
           const SizedBox(height: 16),
-          const Text('Líneas:', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.linesLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
