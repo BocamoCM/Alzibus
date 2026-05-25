@@ -50,12 +50,13 @@ transporter.verify()
     .then(() => console.log(`[Email] ✅ SMTP listo (${emailHost})`))
     .catch(err => console.error(`[Email] ❌ SMTP no responde (${emailHost}):`, err.message));
 
-// FROM: por defecto usamos noreply@alzitrans.es porque es el dominio
-// validado en Brevo con SPF/DKIM/DMARC. Si pones bcarreres55@gmail.com
-// como FROM, Brevo firma con su propio dominio pero Gmail/Outlook/iCloud
-// detectan el From: como spoofing y tiran el correo a spam *silenciosamente*.
-// El admin real puede sobreescribirlo vía EMAIL_FROM en .env.
-const defaultFrom = process.env.EMAIL_FROM || '"Alzitrans" <noreply@alzitrans.es>';
+// FROM: respeta lo que haya en .env (EMAIL_FROM) y si no, mantiene el
+// fallback histórico. Nota: usar bcarreres55@gmail.com como FROM tiene
+// el riesgo de que Gmail/Outlook/iCloud lo marquen como spam porque
+// Brevo no puede firmar SPF/DKIM para gmail.com. Si en el futuro se
+// observa baja entrega, conviene cambiar EMAIL_FROM en .env a un
+// dominio validado en Brevo (p.ej. noreply@alzitrans.es).
+const defaultFrom = process.env.EMAIL_FROM || '"Alzitrans Admin" <bcarreres55@gmail.com>';
 
 // ─────────────────────────────────────────────────────────────────────────
 // HELPERS
