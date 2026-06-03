@@ -122,7 +122,13 @@
     }, 8000);
   </script>
 
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- Cache-busting agresivo: el query string fuerza al navegador a
+       considerarlo un recurso distinto y bypassa cualquier caché viejo
+       (incluido el `expires 30d` que tenía nginx hasta el 24/05/2026 y
+       que dejó a usuarios con el bundle viejo de pre-cambio del flujo
+       de auth — "no me llega el código de registro"). Bump el "v="
+       cada vez que se regenere `website/app/`. -->
+  <script src="flutter_bootstrap.js?v=20260524" async></script>
 </body>
 
 </html>

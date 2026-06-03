@@ -24,6 +24,16 @@ class AuthNetworkException implements Exception {
   const AuthNetworkException(this.cause);
 }
 
+/// Lanzada cuando el backend responde con un error de servidor genérico
+/// (típicamente 5xx) que SÍ trae un mensaje legible — por ejemplo cuando
+/// el SMTP de OTP cae y devuelve "No se pudo enviar el código por email".
+/// Antes esto se mostraba como "credenciales inválidas" y engañaba al
+/// usuario haciéndole pensar que la contraseña estaba mal.
+class AuthServerException implements Exception {
+  final String message;
+  const AuthServerException(this.message);
+}
+
 class AuthService {
   final LocalAuthentication _auth = LocalAuthentication();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -158,16 +168,27 @@ class AuthService {
       
       final body = response.data;
       final error = body['error'] as String? ?? 'Error de autenticación';
-      
+
       if (response.statusCode == 403 && error.contains('verificar tu correo')) {
         // Este caso es para cuando la cuenta NO está verificada en absoluto (registro pendiente)
         // Podríamos lanzar una excepción específica o manejarlo como error normal.
       }
-      
+
+      // 5xx = problema del servidor (no credenciales). El backend ya nos
+      // pasa un mensaje legible — p.ej. "No se pudo enviar el código por
+      // email. Inténtalo de nuevo en unos segundos." cuando Brevo cae.
+      // Antes esto se convertía en "credenciales inválidas" → usuario
+      // pensaba que la contraseña estaba mal y dejaba la app.
+      if (response.statusCode != null && response.statusCode! >= 500) {
+        throw AuthServerException(error);
+      }
+
       throw const AuthInvalidCredentialsException();
     } on AuthLoginOtpRequiredException {
       rethrow;
     } on AuthInvalidCredentialsException {
+      rethrow;
+    } on AuthServerException {
       rethrow;
     } catch (e) {
       debugPrint('Error en login: $e');

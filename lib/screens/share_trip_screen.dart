@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../core/providers/live_trip_provider.dart';
 import '../core/router/app_router.dart';
@@ -62,14 +63,28 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
 
   // Albus
   AlbusState _albusState = AlbusState.idle;
-  String _albusMessage =
-      '¿Quieres que alguien sepa por dónde vas? Empieza el viaje compartido y te doy un enlace para enviarles.';
+  // Inicializado vacío y rellenado en didChangeDependencies (necesita context
+  // para AppLocalizations). Si el usuario cambia el idioma, se reasigna.
+  String _albusMessage = '';
+  bool _albusInitialised = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkForExistingTrip();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Inicializar el mensaje default de Albus una vez tengamos contexto
+    // (initState no tiene MediaQuery/Locale aún). Solo lo asignamos si no
+    // se ha modificado por otra interacción del usuario.
+    if (!_albusInitialised) {
+      _albusMessage = AppLocalizations.of(context)!.shareTripIntro;
+      _albusInitialised = true;
+    }
   }
 
   @override
@@ -147,18 +162,20 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
       _starting = true;
       _errorMsg = null;
       _albusState = AlbusState.thinking;
-      _albusMessage = 'Creando tu viaje compartido...';
+      _albusMessage = AppLocalizations.of(context)!.creatingSharedTrip;
     });
 
     try {
       // Permisos GPS antes de empezar.
       final ok = await _ensureLocationPermission();
       if (!ok) {
+        if (!mounted) return;
+        final l = AppLocalizations.of(context)!;
         setState(() {
           _starting = false;
-          _errorMsg = 'Sin permiso de ubicación no puedo compartir el viaje.';
+          _errorMsg = l.noLocationPermissionShare;
           _albusState = AlbusState.sad;
-          _albusMessage = '¡Necesito permiso para ver dónde estás!';
+          _albusMessage = l.needLocationPermissionAlbus;
         });
         return;
       }
@@ -174,12 +191,12 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
       );
 
       if (!mounted) return;
+      final l = AppLocalizations.of(context)!;
       setState(() {
         _trip = trip;
         _starting = false;
         _albusState = AlbusState.happy;
-        _albusMessage =
-            '¡Listo! Comparte el enlace y la gente verá dónde vas en tiempo real.';
+        _albusMessage = l.tripReadyShareIt;
       });
 
       // Persistimos el ID para que el worker en background sepa qué pinguear
@@ -192,11 +209,12 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
       await _share();
     } catch (e) {
       if (!mounted) return;
+      final l = AppLocalizations.of(context)!;
       setState(() {
         _starting = false;
-        _errorMsg = 'No pude crear el viaje: $e';
+        _errorMsg = l.couldntCreateTrip(e.toString());
         _albusState = AlbusState.sad;
-        _albusMessage = 'Algo se torció. ¿Probamos de nuevo?';
+        _albusMessage = l.somethingBrokeRetry;
       });
     }
   }
@@ -208,7 +226,7 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     setState(() {
       _ending = true;
       _albusState = AlbusState.thinking;
-      _albusMessage = 'Terminando el compartido...';
+      _albusMessage = AppLocalizations.of(context)!.endingSharedTrip;
     });
 
     try {
@@ -224,11 +242,12 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     await _setUiSuspended(false);
 
     if (!mounted) return;
+    final l = AppLocalizations.of(context)!;
     setState(() {
       _trip = null;
       _ending = false;
       _albusState = AlbusState.idle;
-      _albusMessage = '¡Viaje terminado! Buen camino 👋';
+      _albusMessage = l.tripEnded;
     });
   }
 
@@ -340,13 +359,14 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
     // Construir mensaje del share: enganchador en castellano + URL.
     // El destino (si lo tenemos) lo metemos en el subject para apps tipo
     // mail que separan asunto y cuerpo.
+    final l = AppLocalizations.of(context)!;
     final destination = trip.destinationStopName;
     final messageBody = destination != null
-        ? '¡Voy en el bus! Mira por dónde voy en vivo: ${trip.shareUrl}'
-        : '¡Sigue mi viaje en bus en vivo! ${trip.shareUrl}';
+        ? l.shareMessageWithDest(trip.shareUrl!)
+        : l.shareMessage(trip.shareUrl!);
     final messageSubject = destination != null
-        ? 'Voy hacia $destination · Alzitrans'
-        : 'Mi viaje en vivo · Alzitrans';
+        ? l.shareSubjectWithDest(destination)
+        : l.shareSubject;
 
     try {
       // Share.share() en share_plus 10.x devuelve ShareResult — sabemos si
@@ -359,9 +379,9 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
       );
       if (result.status == ShareResultStatus.success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Enlace compartido! 🚌'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(l.linkShared),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -372,7 +392,7 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
       await Clipboard.setData(ClipboardData(text: trip.shareUrl!));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Enlace copiado: ${trip.shareUrl}')),
+        SnackBar(content: Text(l.linkCopied(trip.shareUrl!))),
       );
     }
   }
@@ -458,7 +478,7 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (widget.destinationStop != null) ...[
-                  Text('Destino: ${widget.destinationStop!.name}',
+                  Text(AppLocalizations.of(context)!.destinationLabel(widget.destinationStop!.name),
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
@@ -466,8 +486,8 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
                 if (widget.line != null) ...[
                   Row(
                     children: [
-                      const Text('Línea: ',
-                          style: TextStyle(color: Colors.grey)),
+                      Text(AppLocalizations.of(context)!.lineLabelSingular,
+                          style: const TextStyle(color: Colors.grey)),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -484,15 +504,13 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
                   ),
                   const SizedBox(height: 12),
                 ],
-                const Text(
-                  'Al empezar, se generará un enlace público que puedes mandar '
-                  'a quien quieras. Verán tu posición y la hora estimada de '
-                  'llegada actualizadas cada 30 segundos.',
-                  style: TextStyle(color: Colors.black87, height: 1.35),
+                Text(
+                  AppLocalizations.of(context)!.shareTripExplanation,
+                  style: const TextStyle(color: Colors.black87, height: 1.35),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'El enlace caduca solo a las 6 horas.',
+                  AppLocalizations.of(context)!.linkExpires6Hours,
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
               ],
@@ -515,7 +533,9 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                 )
               : const Icon(Icons.share_location),
-          label: Text(_starting ? 'Iniciando...' : 'Empezar a compartir',
+          label: Text(_starting
+                  ? AppLocalizations.of(context)!.startingButton
+                  : AppLocalizations.of(context)!.startSharingButton,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ),
       ],
@@ -548,8 +568,8 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text('Compartiendo en vivo',
-                        style: TextStyle(
+                    Text(AppLocalizations.of(context)!.sharingLive,
+                        style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: Colors.green)),
@@ -557,15 +577,15 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
                 ),
                 const SizedBox(height: 12),
                 if (trip.destinationStopName != null)
-                  _infoRow(Icons.flag, 'Destino', trip.destinationStopName!),
+                  _infoRow(Icons.flag, AppLocalizations.of(context)!.destination, trip.destinationStopName!),
                 if (trip.line != null)
-                  _infoRow(Icons.directions_bus, 'Línea', trip.line!,
+                  _infoRow(Icons.directions_bus, AppLocalizations.of(context)!.lineSingular, trip.line!,
                       valueColor: _lineColor(trip.line!)),
                 if (trip.etaMin != null)
-                  _infoRow(Icons.access_time, 'Llegada estimada',
-                      '${trip.etaMin} min'),
+                  _infoRow(Icons.access_time, AppLocalizations.of(context)!.etaLabel,
+                      AppLocalizations.of(context)!.minutesShort(trip.etaMin!)),
                 if (trip.lastPingAt != null)
-                  _infoRow(Icons.gps_fixed, 'Última posición',
+                  _infoRow(Icons.gps_fixed, AppLocalizations.of(context)!.lastPosition,
                       _formatRelativeTime(trip.lastPingAt!)),
               ],
             ),
@@ -578,14 +598,14 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: ListTile(
               leading: const Icon(Icons.link, color: AlzitransColors.burgundy),
-              title: const Text('Enlace para compartir',
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              title: Text(AppLocalizations.of(context)!.linkToShare,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
               subtitle: Text(trip.shareUrl!,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                   overflow: TextOverflow.ellipsis),
               trailing: IconButton(
                 icon: const Icon(Icons.copy),
-                tooltip: 'Copiar',
+                tooltip: AppLocalizations.of(context)!.copy,
                 onPressed: _share,
               ),
               onTap: _share,
@@ -598,7 +618,7 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
           TextButton.icon(
             onPressed: () => _openViewerPreview(trip.shareUrl!),
             icon: const Icon(Icons.preview, size: 18),
-            label: const Text('Ver como lo ven los demás'),
+            label: Text(AppLocalizations.of(context)!.seeAsOthersSee),
             style: TextButton.styleFrom(
               foregroundColor: AlzitransColors.burgundy,
             ),
@@ -619,7 +639,9 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                 )
               : const Icon(Icons.stop_circle),
-          label: Text(_ending ? 'Terminando...' : 'Terminar de compartir',
+          label: Text(_ending
+                  ? AppLocalizations.of(context)!.endingButton
+                  : AppLocalizations.of(context)!.stopSharingButton,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ),
         const SizedBox(height: 16),
@@ -637,11 +659,10 @@ class _ShareTripScreenState extends ConsumerState<ShareTripScreen>
             children: [
               const Icon(Icons.info_outline, color: AlzitransColors.warning, size: 20),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Puedes minimizar la app sin problema: los pings de '
-                  'ubicación siguen mandándose en segundo plano cada 30 s.',
-                  style: TextStyle(fontSize: 13, height: 1.3),
+                  AppLocalizations.of(context)!.minimizeBackgroundNotice,
+                  style: const TextStyle(fontSize: 13, height: 1.3),
                 ),
               ),
             ],

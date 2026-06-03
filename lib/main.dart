@@ -12,7 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/router/app_router.dart';
-import 'core/providers/onboarding_provider.dart';
 
 import 'screens/home_screen.dart';
 import 'services/foreground_service.dart';
@@ -96,8 +95,8 @@ void main() async {
       
       // 1. Inicialización crítica (rápida)
       final prefs = await SharedPreferences.getInstance();
-      
-      // Determinar si mostrar anuncios (evitar en onboarding/registro)
+
+      // Determinar si mostrar anuncios (evitar en registro)
       final token = prefs.getString('jwt_token');
 
       // REGLA: Solo mostrar anuncios si el usuario está logueado.
@@ -113,25 +112,11 @@ void main() async {
 
       final authService = AuthService();
       final isLoggedIn = await authService.isLoggedIn();
-      
-      // Inicializar Stripe
-      // Onboarding: si el usuario es nuevo (sin token JWT) Y no ha completado
-      // el onboarding antes, lo enviamos primero a la pantalla con Albus.
-      // Si ya tenía sesión (usuario existente actualizando la app), asumimos
-      // que conoce la app y saltamos el onboarding.
-      final onboardingDone =
-          prefs.getBool('onboarding_completed_v1') ?? false;
-      final shouldShowOnboarding = !onboardingDone && token == null;
 
       // 2. Lanzar la interfaz de usuario INMEDIATAMENTE
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
-          // Riverpod 3 usa NotifierProvider; el override pasa una factoría
-          // que devuelve un Notifier con el `initial` apropiado.
-          onboardingCompletedProvider.overrideWith(
-            () => OnboardingCompletedNotifier(initial: !shouldShowOnboarding),
-          ),
         ],
       );
 

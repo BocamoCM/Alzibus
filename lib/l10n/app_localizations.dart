@@ -994,6 +994,1512 @@ abstract class AppLocalizations {
   /// **'Consulta cómo protegemos tus datos'**
   String get privacyPolicySubtitle;
 
+  /// No description provided for @dataCredits.
+  ///
+  /// In es, this message translates to:
+  /// **'Créditos y fuentes de datos'**
+  String get dataCredits;
+
+  /// No description provided for @dataCreditsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'De dónde vienen los horarios y avisos'**
+  String get dataCreditsSubtitle;
+
+  /// No description provided for @dataCreditsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Fuentes de datos'**
+  String get dataCreditsTitle;
+
+  /// No description provided for @dataCreditsBusOperator.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempos de autobús'**
+  String get dataCreditsBusOperator;
+
+  /// No description provided for @dataCreditsBusOperatorBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los horarios y tiempos de paso de las líneas L1, L2 y L3 son cortesía de Autocares Lozano S.L.U., concesionaria del servicio urbano de Alzira. Alzitrans consulta la información pública directamente desde el dispositivo de cada usuario; no almacena ni redistribuye los datos. Alzitrans no está afiliada con Autocares Lozano S.L.U.'**
+  String get dataCreditsBusOperatorBody;
+
+  /// No description provided for @dataCreditsRenfe.
+  ///
+  /// In es, this message translates to:
+  /// **'Trenes Cercanías'**
+  String get dataCreditsRenfe;
+
+  /// No description provided for @dataCreditsRenfeBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Los horarios de Cercanías C2 provienen de Renfe Operadora.'**
+  String get dataCreditsRenfeBody;
+
+  /// No description provided for @dataCreditsThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'Gracias a Autocares Lozano S.L.U. por hacer pública esta información, sin la cual esta app no podría existir.'**
+  String get dataCreditsThanks;
+
+  /// No description provided for @creditsLineLozano.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos por Autocares Lozano'**
+  String get creditsLineLozano;
+
+  /// No description provided for @removeAdsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar Anuncios (30 min)'**
+  String get removeAdsTitle;
+
+  /// No description provided for @removeAdsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver un vídeo corto para ocultar banners'**
+  String get removeAdsSubtitle;
+
+  /// No description provided for @adsHiddenSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Anuncios ocultos por 30 minutos! Disfruta 🎉'**
+  String get adsHiddenSuccess;
+
+  /// No description provided for @adNotAvailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Anuncio no disponible en este momento. Inténtalo más tarde.'**
+  String get adNotAvailable;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar cuenta'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrado permanente de todos tus datos'**
+  String get deleteAccountSubtitle;
+
+  /// No description provided for @deleteAccountDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar tu cuenta?'**
+  String get deleteAccountDialogTitle;
+
+  /// No description provided for @deleteAccountIrreversible.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta acción es irreversible. Se borrarán permanentemente:'**
+  String get deleteAccountIrreversible;
+
+  /// No description provided for @deleteAccountBullet1.
+  ///
+  /// In es, this message translates to:
+  /// **'• Tu historial de viajes y estadísticas.'**
+  String get deleteAccountBullet1;
+
+  /// No description provided for @deleteAccountBullet2.
+  ///
+  /// In es, this message translates to:
+  /// **'• Tus paradas favoritas.'**
+  String get deleteAccountBullet2;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Estás totalmente seguro de que quieres eliminar la cuenta de {email}?'**
+  String deleteAccountConfirm(String email);
+
+  /// No description provided for @deleteAccountConfirmButton.
+  ///
+  /// In es, this message translates to:
+  /// **'SÍ, ELIMINAR TODO'**
+  String get deleteAccountConfirmButton;
+
+  /// No description provided for @accountDeletedSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta eliminada con éxito. Sentimos que te vayas.'**
+  String get accountDeletedSuccess;
+
+  /// No description provided for @emailUpdatedSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Email actualizado'**
+  String get emailUpdatedSuccess;
+
+  /// No description provided for @passwordUpdatedSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Contraseña actualizada'**
+  String get passwordUpdatedSuccess;
+
+  /// No description provided for @genericError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error: {message}'**
+  String genericError(String message);
+
+  /// No description provided for @loginWithBiometrics.
+  ///
+  /// In es, this message translates to:
+  /// **'Entrar con huella'**
+  String get loginWithBiometrics;
+
+  /// No description provided for @biometricLoginError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error en acceso biométrico: {error}'**
+  String biometricLoginError(String error);
+
+  /// No description provided for @unexpectedError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error inesperado: {error}'**
+  String unexpectedError(String error);
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Registro en Alzibus'**
+  String get registerTitle;
+
+  /// No description provided for @registerInfoBox.
+  ///
+  /// In es, this message translates to:
+  /// **'Te enviaremos un código al iniciar sesión. Si no inicias sesión en 7 días, la cuenta se eliminará automáticamente.'**
+  String get registerInfoBox;
+
+  /// No description provided for @accountCreatedSnack.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta creada. Inicia sesión en los próximos 7 días o se eliminará automáticamente.'**
+  String get accountCreatedSnack;
+
+  /// No description provided for @registerButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrarse'**
+  String get registerButton;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar Correo'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @confirmYourEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma tu correo'**
+  String get confirmYourEmail;
+
+  /// No description provided for @codeSentToEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Hemos enviado un código de 6 dígitos a:\n{email}'**
+  String codeSentToEmail(String email);
+
+  /// No description provided for @codeExpiresIn15Min.
+  ///
+  /// In es, this message translates to:
+  /// **'El código caduca en 15 minutos.'**
+  String get codeExpiresIn15Min;
+
+  /// No description provided for @verifyCodeButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificar Código'**
+  String get verifyCodeButton;
+
+  /// No description provided for @resendCodeWithLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Reenviar código (1 restante)} other{Reenviar código ({count} restantes)}}'**
+  String resendCodeWithLeft(int count);
+
+  /// No description provided for @noResendsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin reenvíos disponibles'**
+  String get noResendsLeft;
+
+  /// No description provided for @enableBiometricsDialog.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Activar Huella?'**
+  String get enableBiometricsDialog;
+
+  /// No description provided for @enableBiometricsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?'**
+  String get enableBiometricsBody;
+
+  /// No description provided for @notNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora no'**
+  String get notNow;
+
+  /// No description provided for @yesActivate.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Sí, activar!'**
+  String get yesActivate;
+
+  /// No description provided for @stopAddedToFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'⭐ Parada añadida a favoritos'**
+  String get stopAddedToFavorites;
+
+  /// No description provided for @alertSetForLine.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Te avisaremos cuando llegue la línea {line}'**
+  String alertSetForLine(String line);
+
+  /// No description provided for @requiresInternet.
+  ///
+  /// In es, this message translates to:
+  /// **'(Requiere conexión a internet)'**
+  String get requiresInternet;
+
+  /// No description provided for @mapView.
+  ///
+  /// In es, this message translates to:
+  /// **'Mapa'**
+  String get mapView;
+
+  /// No description provided for @satelliteView.
+  ///
+  /// In es, this message translates to:
+  /// **'Satélite'**
+  String get satelliteView;
+
+  /// No description provided for @satelliteViewUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Vista satelital no disponible'**
+  String get satelliteViewUnavailable;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar de favoritos'**
+  String get removeFromFavorites;
+
+  /// No description provided for @addToFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir a favoritos'**
+  String get addToFavorites;
+
+  /// No description provided for @nextBuses.
+  ///
+  /// In es, this message translates to:
+  /// **'⏱️ Próximos buses:'**
+  String get nextBuses;
+
+  /// No description provided for @noUpcomingBuses.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay buses próximos'**
+  String get noUpcomingBuses;
+
+  /// No description provided for @nearbyTrainsC2.
+  ///
+  /// In es, this message translates to:
+  /// **'🚆 Trenes Cercanías C2:'**
+  String get nearbyTrainsC2;
+
+  /// No description provided for @noUpcomingTrains.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay trenes próximos'**
+  String get noUpcomingTrains;
+
+  /// No description provided for @refresh.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar'**
+  String get refresh;
+
+  /// No description provided for @refreshTrains.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar trenes'**
+  String get refreshTrains;
+
+  /// No description provided for @linesLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Líneas:'**
+  String get linesLabel;
+
+  /// No description provided for @lines.
+  ///
+  /// In es, this message translates to:
+  /// **'Líneas'**
+  String get lines;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Hoy} =1{Hace 1 día} other{Hace {count} días}}'**
+  String daysAgo(int count);
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Ahora mismo} =1{Hace 1 minuto} other{Hace {count} minutos}}'**
+  String minutesAgo(int count);
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Hace 1 hora} other{Hace {count} horas}}'**
+  String hoursAgo(int count);
+
+  /// No description provided for @lineWithNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea {line}'**
+  String lineWithNumber(String line);
+
+  /// No description provided for @oneTripWillBeDeducted.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descontará 1 viaje de tu tarjeta (te quedan {remaining})'**
+  String oneTripWillBeDeducted(int remaining);
+
+  /// No description provided for @unlimitedTrips.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes viajes ILIMITADOS'**
+  String get unlimitedTrips;
+
+  /// No description provided for @noTripsOnCard.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes viajes en la tarjeta'**
+  String get noTripsOnCard;
+
+  /// No description provided for @noTripUnderstood.
+  ///
+  /// In es, this message translates to:
+  /// **'👍 Entendido, no se registró'**
+  String get noTripUnderstood;
+
+  /// No description provided for @iDidntGetOn.
+  ///
+  /// In es, this message translates to:
+  /// **'No he subido'**
+  String get iDidntGetOn;
+
+  /// No description provided for @yesIGotOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, registrar'**
+  String get yesIGotOn;
+
+  /// No description provided for @cardTripRegistered.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Viaje con Tarjeta registrado!'**
+  String get cardTripRegistered;
+
+  /// No description provided for @cashTripRegistered.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Viaje en Efectivo registrado!'**
+  String get cashTripRegistered;
+
+  /// No description provided for @viewHistory.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver historial'**
+  String get viewHistory;
+
+  /// No description provided for @watchAdSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver un vídeo corto y disfrutar sin banners'**
+  String get watchAdSubtitle;
+
+  /// No description provided for @adNotReadyYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Anuncio aún no disponible. Inténtalo en unos segundos.'**
+  String get adNotReadyYet;
+
+  /// No description provided for @adsHiddenShort.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Anuncios ocultos por 30 minutos! 🎉'**
+  String get adsHiddenShort;
+
+  /// No description provided for @dailyAdLimitReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!'**
+  String get dailyAdLimitReached;
+
+  /// No description provided for @coinsEarnedThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'+{count} monedas 🪙 ¡Gracias!'**
+  String coinsEarnedThanks(int count);
+
+  /// No description provided for @dailyEarningsExplained.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada día puedes ganar hasta 30 monedas jugando + 60 viendo anuncios. Es ritmo lento pero constante: vuelve cada día para subir el monedero.'**
+  String get dailyEarningsExplained;
+
+  /// No description provided for @dailyMaxReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Has llegado al máximo de hoy. ¡Vuelve mañana!'**
+  String get dailyMaxReached;
+
+  /// No description provided for @confirmSpendCoins.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Confirmas que quieres gastar {cost} 🪙 para desbloquear {skin}?'**
+  String confirmSpendCoins(int cost, String skin);
+
+  /// No description provided for @skinUnlockedAndEquipped.
+  ///
+  /// In es, this message translates to:
+  /// **'¡{skin} desbloqueado y equipado! 🎉'**
+  String skinUnlockedAndEquipped(String skin);
+
+  /// No description provided for @wearingSkin.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevas el \"{skin}\"'**
+  String wearingSkin(String skin);
+
+  /// No description provided for @unlockSkinTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear {skin}'**
+  String unlockSkinTitle(String skin);
+
+  /// No description provided for @unlockSkinBody.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Confirmas que quieres gastar {cost} 🪙 para desbloquear este vestido? Una vez desbloqueado lo tienes para siempre.'**
+  String unlockSkinBody(int cost);
+
+  /// No description provided for @unlockButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear'**
+  String get unlockButton;
+
+  /// No description provided for @notEnoughCoins.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes suficientes monedas.'**
+  String get notEnoughCoins;
+
+  /// No description provided for @skinEquipped.
+  ///
+  /// In es, this message translates to:
+  /// **'{skin} equipado'**
+  String skinEquipped(String skin);
+
+  /// No description provided for @mifareClassicInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Las tarjetas Mifare Classic 1K requieren autenticación especial para leer el saldo. La mayoría de móviles Android no pueden leerlas sin hardware especializado.'**
+  String get mifareClassicInfo;
+
+  /// No description provided for @featureNotAvailableWeb.
+  ///
+  /// In es, this message translates to:
+  /// **'Función no disponible en navegador'**
+  String get featureNotAvailableWeb;
+
+  /// No description provided for @featureAndroidOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Función exclusiva de Android'**
+  String get featureAndroidOnly;
+
+  /// No description provided for @nfcWebExplained.
+  ///
+  /// In es, this message translates to:
+  /// **'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.'**
+  String get nfcWebExplained;
+
+  /// No description provided for @nfcIosExplained.
+  ///
+  /// In es, this message translates to:
+  /// **'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.'**
+  String get nfcIosExplained;
+
+  /// No description provided for @publicTransportAlzira.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte Público Alzira'**
+  String get publicTransportAlzira;
+
+  /// No description provided for @validateTripPrompt.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Deseas validar un viaje ahora? Se restará 1 de tu contador.'**
+  String get validateTripPrompt;
+
+  /// No description provided for @confirmTripTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar viaje'**
+  String get confirmTripTitle;
+
+  /// No description provided for @shareTripIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quieres que alguien sepa por dónde vas? Empieza el viaje compartido y te doy un enlace para enviarles.'**
+  String get shareTripIntro;
+
+  /// No description provided for @creatingSharedTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Creando tu viaje compartido...'**
+  String get creatingSharedTrip;
+
+  /// No description provided for @noLocationPermissionShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin permiso de ubicación no puedo compartir el viaje.'**
+  String get noLocationPermissionShare;
+
+  /// No description provided for @needLocationPermissionAlbus.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Necesito permiso para ver dónde estás!'**
+  String get needLocationPermissionAlbus;
+
+  /// No description provided for @tripReadyShareIt.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Listo! Comparte el enlace y la gente verá dónde vas en tiempo real.'**
+  String get tripReadyShareIt;
+
+  /// No description provided for @couldntCreateTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude crear el viaje: {error}'**
+  String couldntCreateTrip(String error);
+
+  /// No description provided for @somethingBrokeRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo se torció. ¿Probamos de nuevo?'**
+  String get somethingBrokeRetry;
+
+  /// No description provided for @endingSharedTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminando el compartido...'**
+  String get endingSharedTrip;
+
+  /// No description provided for @tripEnded.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Viaje terminado! Buen camino 👋'**
+  String get tripEnded;
+
+  /// No description provided for @shareMessageWithDest.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Voy en el bus! Mira por dónde voy en vivo: {url}'**
+  String shareMessageWithDest(String url);
+
+  /// No description provided for @shareMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Sigue mi viaje en bus en vivo! {url}'**
+  String shareMessage(String url);
+
+  /// No description provided for @shareSubjectWithDest.
+  ///
+  /// In es, this message translates to:
+  /// **'Voy hacia {destination} · Alzitrans'**
+  String shareSubjectWithDest(String destination);
+
+  /// No description provided for @shareSubject.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi viaje en vivo · Alzitrans'**
+  String get shareSubject;
+
+  /// No description provided for @linkShared.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Enlace compartido! 🚌'**
+  String get linkShared;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace copiado: {url}'**
+  String linkCopied(String url);
+
+  /// No description provided for @destinationLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Destino: {name}'**
+  String destinationLabel(String name);
+
+  /// No description provided for @lineLabelSingular.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea: '**
+  String get lineLabelSingular;
+
+  /// No description provided for @shareTripExplanation.
+  ///
+  /// In es, this message translates to:
+  /// **'Al empezar, se generará un enlace público que puedes mandar a quien quieras. Verán tu posición y la hora estimada de llegada actualizadas cada 30 segundos.'**
+  String get shareTripExplanation;
+
+  /// No description provided for @linkExpires6Hours.
+  ///
+  /// In es, this message translates to:
+  /// **'El enlace caduca solo a las 6 horas.'**
+  String get linkExpires6Hours;
+
+  /// No description provided for @startingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciando...'**
+  String get startingButton;
+
+  /// No description provided for @startSharingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar a compartir'**
+  String get startSharingButton;
+
+  /// No description provided for @sharingLive.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartiendo en vivo'**
+  String get sharingLive;
+
+  /// No description provided for @destination.
+  ///
+  /// In es, this message translates to:
+  /// **'Destino'**
+  String get destination;
+
+  /// No description provided for @lineSingular.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea'**
+  String get lineSingular;
+
+  /// No description provided for @etaLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegada estimada'**
+  String get etaLabel;
+
+  /// No description provided for @lastPosition.
+  ///
+  /// In es, this message translates to:
+  /// **'Última posición'**
+  String get lastPosition;
+
+  /// No description provided for @linkToShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace para compartir'**
+  String get linkToShare;
+
+  /// No description provided for @copy.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar'**
+  String get copy;
+
+  /// No description provided for @seeAsOthersSee.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver como lo ven los demás'**
+  String get seeAsOthersSee;
+
+  /// No description provided for @endingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminando...'**
+  String get endingButton;
+
+  /// No description provided for @stopSharingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminar de compartir'**
+  String get stopSharingButton;
+
+  /// No description provided for @minimizeBackgroundNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes minimizar la app sin problema: los pings de ubicación siguen mandándose en segundo plano cada 30 s.'**
+  String get minimizeBackgroundNotice;
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} min'**
+  String minutesShort(int n);
+
+  /// No description provided for @plannerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Planificador con Albus'**
+  String get plannerTitle;
+
+  /// No description provided for @albusGreeting.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Hola! Soy Albus 🚌. Dime de dónde sales y a dónde vas, y te digo qué bus coger.'**
+  String get albusGreeting;
+
+  /// No description provided for @chooseOriginAndDest.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige origen y destino antes de buscar.'**
+  String get chooseOriginAndDest;
+
+  /// No description provided for @albusNeedsOriginDest.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Ay! Necesito saber de dónde sales y a dónde vas.'**
+  String get albusNeedsOriginDest;
+
+  /// No description provided for @sameStopError.
+  ///
+  /// In es, this message translates to:
+  /// **'El origen y el destino son la misma parada.'**
+  String get sameStopError;
+
+  /// No description provided for @albusAlreadyThere.
+  ///
+  /// In es, this message translates to:
+  /// **'Pero... ¡si ya estás ahí! 😅'**
+  String get albusAlreadyThere;
+
+  /// No description provided for @albusSearchingRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'Estoy mirando qué bus te lleva...'**
+  String get albusSearchingRoute;
+
+  /// No description provided for @albusNoRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'Vaya... no encuentro ruta directa. Quizás merezca la pena ir andando.'**
+  String get albusNoRoute;
+
+  /// No description provided for @albusOneRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Tengo una ruta! Te la explico paso a paso 👇'**
+  String get albusOneRoute;
+
+  /// No description provided for @albusMultipleRoutes.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Tengo {count} opciones! La primera es la más rápida.'**
+  String albusMultipleRoutes(int count);
+
+  /// No description provided for @searchError.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo se torció al buscar ({error}). Inténtalo de nuevo.'**
+  String searchError(String error);
+
+  /// No description provided for @albusCantCalculate.
+  ///
+  /// In es, this message translates to:
+  /// **'Ups, no pude calcular la ruta. ¿Probamos otra vez?'**
+  String get albusCantCalculate;
+
+  /// No description provided for @albusSwapped.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Cambiado! ¿Buscamos esta nueva ruta?'**
+  String get albusSwapped;
+
+  /// No description provided for @albusFindingYou.
+  ///
+  /// In es, this message translates to:
+  /// **'A ver dónde estás...'**
+  String get albusFindingYou;
+
+  /// No description provided for @enableLocationRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación del móvil y vuelve a intentarlo.'**
+  String get enableLocationRetry;
+
+  /// No description provided for @noLocationPermission.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin permiso de ubicación no puedo saber dónde estás.'**
+  String get noLocationPermission;
+
+  /// No description provided for @noStopsNearYou.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay paradas cerca de ti — ¿estás en Alzira?'**
+  String get noStopsNearYou;
+
+  /// No description provided for @veryCloseToStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás muy cerca de {name}. ¿A dónde vamos?'**
+  String veryCloseToStop(String name);
+
+  /// No description provided for @nearestStopIs.
+  ///
+  /// In es, this message translates to:
+  /// **'La parada más cercana es {name} (a {dist} m). ¿A dónde vamos?'**
+  String nearestStopIs(String name, int dist);
+
+  /// No description provided for @couldntFindYou.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude saber dónde estás 😢'**
+  String get couldntFindYou;
+
+  /// No description provided for @okFromStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Vale, sales de {name}. ¿A dónde vas?'**
+  String okFromStop(String name);
+
+  /// No description provided for @askDestRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Buscamos cómo ir a {name}?'**
+  String askDestRoute(String name);
+
+  /// No description provided for @okToStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Vale, vas a {name}. ¿De dónde sales?'**
+  String okToStop(String name);
+
+  /// No description provided for @readyToSearch.
+  ///
+  /// In es, this message translates to:
+  /// **'Listos. Pulsa \"Buscar ruta\" cuando quieras.'**
+  String get readyToSearch;
+
+  /// No description provided for @searchingYourLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscando tu ubicación...'**
+  String get searchingYourLocation;
+
+  /// No description provided for @usingYourLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Usando tu ubicación actual'**
+  String get usingYourLocation;
+
+  /// No description provided for @useMyLocationButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar mi ubicación como origen'**
+  String get useMyLocationButton;
+
+  /// No description provided for @fromNearestStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde (parada más cercana)'**
+  String get fromNearestStop;
+
+  /// No description provided for @fromLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get fromLabel;
+
+  /// No description provided for @toLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta'**
+  String get toLabel;
+
+  /// No description provided for @swap.
+  ///
+  /// In es, this message translates to:
+  /// **'Intercambiar'**
+  String get swap;
+
+  /// No description provided for @searchRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar ruta'**
+  String get searchRoute;
+
+  /// No description provided for @errorLoadingStops.
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando paradas: {error}'**
+  String errorLoadingStops(String error);
+
+  /// No description provided for @searchStopByName.
+  ///
+  /// In es, this message translates to:
+  /// **'Busca parada por nombre…'**
+  String get searchStopByName;
+
+  /// No description provided for @linesWithList.
+  ///
+  /// In es, this message translates to:
+  /// **'Líneas: {lines}'**
+  String linesWithList(String lines);
+
+  /// No description provided for @shareThisTripLive.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir este viaje en vivo'**
+  String get shareThisTripLive;
+
+  /// No description provided for @bestOption.
+  ///
+  /// In es, this message translates to:
+  /// **'MEJOR OPCIÓN'**
+  String get bestOption;
+
+  /// No description provided for @optionN.
+  ///
+  /// In es, this message translates to:
+  /// **'OPCIÓN {n}'**
+  String optionN(int n);
+
+  /// No description provided for @transfersCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 transbordo} other{{count} transbordos}}'**
+  String transfersCount(int count);
+
+  /// No description provided for @walkingStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Andando · {dist} m · {duration} min'**
+  String walkingStep(int dist, int duration);
+
+  /// No description provided for @busStepDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'{stops} paradas · {duration} min'**
+  String busStepDetail(int stops, int duration);
+
+  /// No description provided for @boardAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Sube: {name}'**
+  String boardAt(String name);
+
+  /// No description provided for @alightAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Baja: {name}'**
+  String alightAt(String name);
+
+  /// No description provided for @transferAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Transbordo en {name}'**
+  String transferAt(String name);
+
+  /// No description provided for @transferStep.
+  ///
+  /// In es, this message translates to:
+  /// **'De {from} a {to} · ~{duration} min'**
+  String transferStep(String from, String to, int duration);
+
+  /// No description provided for @triviaTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Trivia de Alzira'**
+  String get triviaTitle;
+
+  /// No description provided for @questionXofY.
+  ///
+  /// In es, this message translates to:
+  /// **'Pregunta {current}/{total}'**
+  String questionXofY(int current, int total);
+
+  /// No description provided for @skipQuestionAd.
+  ///
+  /// In es, this message translates to:
+  /// **'Saltar pregunta (ver anuncio)'**
+  String get skipQuestionAd;
+
+  /// No description provided for @triviaCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Trivia completada'**
+  String get triviaCompleted;
+
+  /// No description provided for @scoreLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Puntuación: {score}'**
+  String scoreLabel(int score);
+
+  /// No description provided for @newRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 ¡Nuevo récord!'**
+  String get newRecord;
+
+  /// No description provided for @currentRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'Récord: {score}'**
+  String currentRecord(int score);
+
+  /// No description provided for @coinsAddedWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'+{count} 🪙 al monedero'**
+  String coinsAddedWallet(int count);
+
+  /// No description provided for @playAgain.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugar otra vez'**
+  String get playAgain;
+
+  /// No description provided for @backToMenu.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al menú'**
+  String get backToMenu;
+
+  /// No description provided for @memoryStopsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Memoria de Paradas'**
+  String get memoryStopsTitle;
+
+  /// No description provided for @catchTheBusTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Atrapa el Bus'**
+  String get catchTheBusTitle;
+
+  /// No description provided for @gamesHubTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mini-Juegos'**
+  String get gamesHubTitle;
+
+  /// No description provided for @playGame.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugar'**
+  String get playGame;
+
+  /// No description provided for @highScore.
+  ///
+  /// In es, this message translates to:
+  /// **'Récord: {score}'**
+  String highScore(int score);
+
+  /// No description provided for @memoryStopsHowTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Memoriza el orden y reprodúcelo'**
+  String get memoryStopsHowTo;
+
+  /// No description provided for @catchTheBusHowTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca el bus cuando pase por la parada'**
+  String get catchTheBusHowTo;
+
+  /// No description provided for @triviaHowTo.
+  ///
+  /// In es, this message translates to:
+  /// **'10 preguntas sobre Alzira y la app'**
+  String get triviaHowTo;
+
+  /// No description provided for @gameOver.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Fin del juego!'**
+  String get gameOver;
+
+  /// No description provided for @tapToStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para empezar'**
+  String get tapToStart;
+
+  /// No description provided for @reachedRound.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaste a la ronda {round}'**
+  String reachedRound(int round);
+
+  /// No description provided for @currentRecordRounds.
+  ///
+  /// In es, this message translates to:
+  /// **'Récord: {score} rondas'**
+  String currentRecordRounds(int score);
+
+  /// No description provided for @repeatSequenceAd.
+  ///
+  /// In es, this message translates to:
+  /// **'Repetir secuencia (anuncio)'**
+  String get repeatSequenceAd;
+
+  /// No description provided for @watchAdForCoinsLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver anuncio +30 🪙'**
+  String get watchAdForCoinsLabel;
+
+  /// No description provided for @missedGreenBus.
+  ///
+  /// In es, this message translates to:
+  /// **'Se te escapó un bus verde'**
+  String get missedGreenBus;
+
+  /// No description provided for @reviveWatchAd.
+  ///
+  /// In es, this message translates to:
+  /// **'Revivir viendo un anuncio'**
+  String get reviveWatchAd;
+
+  /// No description provided for @gamesHubHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Juegos · Mata el tiempo'**
+  String get gamesHubHeading;
+
+  /// No description provided for @wardrobeTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Vestidor de Albus'**
+  String get wardrobeTooltip;
+
+  /// No description provided for @availableGames.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponibles'**
+  String get availableGames;
+
+  /// No description provided for @catchTheBusDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca buses verdes 🚌 antes de que se escapen. Esquiva los rojos 🚒. ¿Cuánto aguantas?'**
+  String get catchTheBusDesc;
+
+  /// No description provided for @currentRecordPrefix.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Récord actual: {score}'**
+  String currentRecordPrefix(int score);
+
+  /// No description provided for @currentRecordPts.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Récord actual: {score} pts'**
+  String currentRecordPts(int score);
+
+  /// No description provided for @beTheFirstRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Sé el primero en marcar récord!'**
+  String get beTheFirstRecord;
+
+  /// No description provided for @triviaDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Preguntas sobre el bus, la ciudad y la comarca. 10 preguntas, 15s cada una.'**
+  String get triviaDesc;
+
+  /// No description provided for @howMuchYouKnow.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto sabes de Alzira?'**
+  String get howMuchYouKnow;
+
+  /// No description provided for @memoryStopsDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Albus muestra paradas en orden. Tú las repites. Cada ronda añade una más.'**
+  String get memoryStopsDesc;
+
+  /// No description provided for @bestRound.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Mejor: ronda {round}'**
+  String bestRound(int round);
+
+  /// No description provided for @simonAlziraStyle.
+  ///
+  /// In es, this message translates to:
+  /// **'Simon Says estilo Alzira'**
+  String get simonAlziraStyle;
+
+  /// No description provided for @gamesLegalNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Los juegos pueden mostrar anuncios opcionales (revivir, bonus). Las monedas son decorativas — futuras versiones permitirán canjearlas por contenido.'**
+  String get gamesLegalNotice;
+
+  /// No description provided for @albusGamesIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.'**
+  String get albusGamesIntro;
+
+  /// No description provided for @skinDefaultName.
+  ///
+  /// In es, this message translates to:
+  /// **'Original'**
+  String get skinDefaultName;
+
+  /// No description provided for @skinFalleroName.
+  ///
+  /// In es, this message translates to:
+  /// **'Fallero'**
+  String get skinFalleroName;
+
+  /// No description provided for @skinCapurulloName.
+  ///
+  /// In es, this message translates to:
+  /// **'Capurullo'**
+  String get skinCapurulloName;
+
+  /// No description provided for @skinLluviaName.
+  ///
+  /// In es, this message translates to:
+  /// **'Lluvia'**
+  String get skinLluviaName;
+
+  /// No description provided for @skinGraduadoName.
+  ///
+  /// In es, this message translates to:
+  /// **'Graduado'**
+  String get skinGraduadoName;
+
+  /// No description provided for @skinNavidadName.
+  ///
+  /// In es, this message translates to:
+  /// **'Navidad'**
+  String get skinNavidadName;
+
+  /// No description provided for @skinAlziraFcName.
+  ///
+  /// In es, this message translates to:
+  /// **'UDA'**
+  String get skinAlziraFcName;
+
+  /// No description provided for @feedbackTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte y feedback'**
+  String get feedbackTitle;
+
+  /// No description provided for @feedbackHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'¿En qué podemos ayudarte?'**
+  String get feedbackHeading;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría'**
+  String get categoryLabel;
+
+  /// No description provided for @subjectLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen breve (Asunto)'**
+  String get subjectLabel;
+
+  /// No description provided for @subjectRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'El asunto es obligatorio'**
+  String get subjectRequired;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción detallada'**
+  String get descriptionLabel;
+
+  /// No description provided for @descriptionRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'La descripción es obligatoria'**
+  String get descriptionRequired;
+
+  /// No description provided for @sendTicket.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar Ticket'**
+  String get sendTicket;
+
+  /// No description provided for @addComment.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir un comentario...'**
+  String get addComment;
+
+  /// No description provided for @attachImage.
+  ///
+  /// In es, this message translates to:
+  /// **'Adjuntar imagen'**
+  String get attachImage;
+
+  /// No description provided for @conversation.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación'**
+  String get conversation;
+
+  /// No description provided for @conversationClosedInactive.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación cerrada (Aviso inactivo)'**
+  String get conversationClosedInactive;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin mensajes aún.\nEscribe para empezar.'**
+  String get noMessagesYet;
+
+  /// No description provided for @couldNotSendRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo enviar. Inténtalo de nuevo.'**
+  String get couldNotSendRetry;
+
+  /// No description provided for @downloadNotSupportedWeb.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga no soportada en web desde la app móvil'**
+  String get downloadNotSupportedWeb;
+
+  /// No description provided for @arVisionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Visión AR'**
+  String get arVisionTitle;
+
+  /// No description provided for @routesPageTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Rutas y líneas'**
+  String get routesPageTitle;
+
+  /// No description provided for @rechargeYourCardSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Recarga tu tarjeta pronto!'**
+  String get rechargeYourCardSoon;
+
+  /// No description provided for @playWhileWaiting.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Echa una partida mientras esperas!'**
+  String get playWhileWaiting;
+
+  /// No description provided for @welcomeGreeting.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Hola! 👋'**
+  String get welcomeGreeting;
+
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Espero que te sea de mucha utilidad!'**
+  String get welcomeMessage;
+
+  /// No description provided for @busInService.
+  ///
+  /// In es, this message translates to:
+  /// **'Autobús en servicio'**
+  String get busInService;
+
+  /// No description provided for @nextStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Próxima parada'**
+  String get nextStop;
+
+  /// No description provided for @welcomeThanks.
+  ///
+  /// In es, this message translates to:
+  /// **'Gracias por descargar Alzi Trans.'**
+  String get welcomeThanks;
+
+  /// No description provided for @welcomeStudent.
+  ///
+  /// In es, this message translates to:
+  /// **'Soy un estudiante de 2º de DAM y he creado esta app de forma independiente para mejorar nuestro transporte.'**
+  String get welcomeStudent;
+
+  /// No description provided for @welcomeDevelopmentNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ten en cuenta que es un proyecto en desarrollo y puede contener errores.'**
+  String get welcomeDevelopmentNotice;
+
+  /// No description provided for @understoodCaps.
+  ///
+  /// In es, this message translates to:
+  /// **'ENTENDIDO'**
+  String get understoodCaps;
+
+  /// No description provided for @estimatedTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo estimado'**
+  String get estimatedTime;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado'**
+  String get statusLabel;
+
+  /// No description provided for @atStop.
+  ///
+  /// In es, this message translates to:
+  /// **'🛑 En parada'**
+  String get atStop;
+
+  /// No description provided for @inMovement.
+  ///
+  /// In es, this message translates to:
+  /// **'🚌 En movimiento'**
+  String get inMovement;
+
   /// No description provided for @nfcCardReadSuccess.
   ///
   /// In es, this message translates to:

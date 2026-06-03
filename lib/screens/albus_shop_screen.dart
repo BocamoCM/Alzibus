@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../core/providers/ad_provider.dart';
 import '../core/providers/game_currency_provider.dart';
@@ -218,21 +219,20 @@ class AlbusShopScreen extends ConsumerWidget {
       30,
       source: CoinSource.rewardedAd,
     );
+    final l = AppLocalizations.of(context)!;
     if (added == 0) {
       // Llegó al cap diario de anuncios — la moneda no se añadió.
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!',
-          ),
+        SnackBar(
+          content: Text(l.dailyAdLimitReached),
           backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('+$added monedas 🪙 ¡Gracias!'),
+          content: Text(l.coinsEarnedThanks(added)),
           backgroundColor: const Color(0xFF2E7D32),
           duration: const Duration(seconds: 2),
         ),
@@ -251,10 +251,12 @@ class AlbusShopScreen extends ConsumerWidget {
             animated: true,
           ),
           const SizedBox(height: 6),
-          Text(
-            'Llevas el "${skin.name}"',
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
-          ),
+          Builder(builder: (context) {
+            return Text(
+              AppLocalizations.of(context)!.wearingSkin(skin.name),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            );
+          }),
         ],
       ),
     );
@@ -268,20 +270,20 @@ class AlbusShopScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber.shade300),
       ),
-      child: const Row(
-        children: [
-          Text('💡', style: TextStyle(fontSize: 28)),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Cada día puedes ganar hasta 30 monedas jugando + 60 viendo '
-              '2 anuncios. Los skins se ganan con constancia: vuelve cada '
-              'día para subir el monedero.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF6B5500), height: 1.35),
+      child: Builder(builder: (context) {
+        return Row(
+          children: [
+            const Text('💡', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context)!.dailyEarningsExplained,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF6B5500), height: 1.35),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 
@@ -374,14 +376,16 @@ class AlbusShopScreen extends ConsumerWidget {
               ),
               if (gc >= cap && ads >= adCap) ...[
                 const SizedBox(height: 8),
-                Text(
-                  'Has llegado al máximo de hoy. ¡Vuelve mañana!',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange.shade800,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
+                Builder(builder: (context) {
+                  return Text(
+                    AppLocalizations.of(context)!.dailyMaxReached,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.orange.shade800,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  );
+                }),
               ],
             ],
           ),
@@ -399,20 +403,18 @@ class AlbusShopScreen extends ConsumerWidget {
   }
 
   Future<void> _attemptBuy(BuildContext context, WidgetRef ref, AlbusSkin skin) async {
+    final l = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     // Confirmación
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Desbloquear ${skin.name}'),
-        content: Text(
-          '¿Confirmas que quieres gastar ${skin.cost} 🪙 para desbloquear '
-          'este vestido? Una vez desbloqueado lo tienes para siempre.',
-        ),
+        title: Text(l.unlockSkinTitle(skin.name)),
+        content: Text(l.unlockSkinBody(skin.cost)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(l.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -420,7 +422,7 @@ class AlbusShopScreen extends ConsumerWidget {
               backgroundColor: AlzitransColors.burgundy,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Desbloquear'),
+            child: Text(l.unlockButton),
           ),
         ],
       ),
@@ -430,7 +432,7 @@ class AlbusShopScreen extends ConsumerWidget {
     final ok = await ref.read(gameCurrencyProvider.notifier).spend(skin.cost);
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No tienes suficientes monedas.')),
+        SnackBar(content: Text(l.notEnoughCoins)),
       );
       return;
     }
@@ -438,16 +440,17 @@ class AlbusShopScreen extends ConsumerWidget {
     // Equipar automáticamente tras comprar
     await ref.read(equippedSkinProvider.notifier).equip(skin.id);
     messenger.showSnackBar(
-      SnackBar(content: Text('¡${skin.name} desbloqueado y equipado! 🎉')),
+      SnackBar(content: Text(l.skinUnlockedAndEquipped(skin.name))),
     );
   }
 
   Future<void> _equip(BuildContext context, WidgetRef ref, AlbusSkin skin) async {
     await ref.read(equippedSkinProvider.notifier).equip(skin.id);
     if (context.mounted) {
+      final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${skin.name} equipado'),
+          content: Text(l.skinEquipped(skin.name)),
           duration: const Duration(seconds: 1),
         ),
       );

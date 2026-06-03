@@ -2,6 +2,7 @@ import 'package:alzitrans/main.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alzitrans/services/auth_service.dart';
 import 'package:alzitrans/theme/app_theme.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
@@ -94,16 +95,16 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
               context: context,
               barrierDismissible: false,
               builder: (context) => AlertDialog(
-                title: const Text('¿Activar Huella?'),
-                content: const Text('¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?'),
+                title: Text(AppLocalizations.of(context)!.enableBiometricsDialog),
+                content: Text(AppLocalizations.of(context)!.enableBiometricsBody),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Ahora no'),
+                    child: Text(AppLocalizations.of(context)!.notNow),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
-                    child: const Text('¡Sí, activar!'),
+                    child: Text(AppLocalizations.of(context)!.yesActivate),
                   ),
                 ],
               ),
@@ -173,9 +174,10 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verificar Correo'),
+        title: Text(l.verifyEmailTitle),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -192,7 +194,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Confirma tu correo',
+                l.confirmYourEmail,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -201,13 +203,13 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Hemos enviado un código de 6 dígitos a:\n${widget.email}',
+                l.codeSentToEmail(widget.email),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'El código caduca en 15 minutos.',
+                l.codeExpiresIn15Min,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
@@ -264,9 +266,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text(
-                        'Verificar Código',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    : Text(
+                        l.verifyCodeButton,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
               const SizedBox(height: 20),
@@ -282,8 +284,8 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                     : const Icon(Icons.refresh),
                 label: Text(
                   _resendsLeft > 0
-                      ? 'Reenviar código (${_resendsLeft} restante${_resendsLeft == 1 ? '' : 's'})'
-                      : 'Sin reenvíos disponibles',
+                      ? l.resendCodeWithLeft(_resendsLeft)
+                      : l.noResendsLeft,
                 ),
               ),
             ],

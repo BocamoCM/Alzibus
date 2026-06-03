@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../core/providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../core/router/app_router.dart';
@@ -60,13 +61,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         // Nuevo flujo (sin OTP en registro): la verificación se hace en el
         // primer login. Avisamos del plazo de 7 días y redirigimos al login.
         if (mounted) {
+          final l = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Cuenta creada. Inicia sesión en los próximos 7 días '
-                'o se eliminará automáticamente.',
-              ),
-              duration: Duration(seconds: 6),
+            SnackBar(
+              content: Text(l.accountCreatedSnack),
+              duration: const Duration(seconds: 6),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -82,15 +81,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _message = 'Sin conexión al servidor. Comprueba tu red.';
+        _message = AppLocalizations.of(context)!.noServerConnection;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Registro en Alzibus')),
+      appBar: AppBar(title: Text(l.registerTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -101,20 +101,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               children: [
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    labelText: l.email,
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.email],
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Introduce tu email';
+                      return l.enterEmail;
                     }
                     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
                     if (!emailRegex.hasMatch(value.trim())) {
-                      return 'El email no tiene un formato válido';
+                      return l.invalidEmail;
                     }
                     return null;
                   },
@@ -123,7 +123,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Contraseña',
+                    labelText: l.password,
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -144,10 +144,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   autofillHints: const [AutofillHints.password],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Introduce tu contraseña';
+                      return l.enterPassword;
                     }
                     if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
+                      return l.passwordTooShort;
                     }
                     return null;
                   },
@@ -172,9 +172,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Te enviaremos un código al iniciar sesión. '
-                          'Si no inicias sesión en 7 días, la cuenta se '
-                          'eliminará automáticamente.',
+                          l.registerInfoBox,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -199,7 +197,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _register,
-                          child: const Text('Registrarse'),
+                          child: Text(l.registerButton),
                         ),
                       ),
               ],

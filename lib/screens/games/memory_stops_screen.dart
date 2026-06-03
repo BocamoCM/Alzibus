@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../../core/providers/ad_provider.dart';
 import '../../core/providers/game_currency_provider.dart';
@@ -316,24 +317,26 @@ class _MemoryStopsScreenState extends ConsumerState<MemoryStopsScreen> {
           children: [
             const Icon(Icons.psychology, size: 80, color: AlzitransColors.burgundy),
             const SizedBox(height: 16),
-            const Text(
-              '¡Game Over!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            Text(
+              AppLocalizations.of(context)!.gameOver,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
             Text(
-              'Llegaste a la ronda $reached',
+              AppLocalizations.of(context)!.reachedRound(reached),
               style: const TextStyle(fontSize: 18),
             ),
             Text(
-              newRecord ? '🏆 ¡Nuevo récord!' : 'Récord: $highScore rondas',
+              newRecord
+                  ? AppLocalizations.of(context)!.newRecord
+                  : AppLocalizations.of(context)!.currentRecordRounds(highScore),
               style: TextStyle(
                 color: newRecord ? Colors.amber.shade800 : Colors.grey,
                 fontWeight: FontWeight.w600,
               ),
             ),
             Text(
-              '+${math.max(0, reached)} 🪙 al monedero',
+              AppLocalizations.of(context)!.coinsAddedWallet(math.max(0, reached)),
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
@@ -343,7 +346,7 @@ class _MemoryStopsScreenState extends ConsumerState<MemoryStopsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _retryWithAd,
                   icon: const Icon(Icons.play_circle),
-                  label: const Text('Repetir secuencia (anuncio)'),
+                  label: Text(AppLocalizations.of(context)!.repeatSequenceAd),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
                     foregroundColor: Colors.white,
@@ -358,7 +361,7 @@ class _MemoryStopsScreenState extends ConsumerState<MemoryStopsScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _startNewGame(allStops),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Jugar otra vez'),
+                label: Text(AppLocalizations.of(context)!.playAgain),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlzitransColors.burgundy,
                   side: const BorderSide(color: AlzitransColors.burgundy, width: 1.5),
@@ -370,7 +373,7 @@ class _MemoryStopsScreenState extends ConsumerState<MemoryStopsScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Volver al menú'),
+              child: Text(AppLocalizations.of(context)!.backToMenu),
             ),
           ],
         ),

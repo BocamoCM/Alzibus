@@ -473,6 +473,935 @@ class AppLocalizationsEs extends AppLocalizations {
   String get privacyPolicySubtitle => 'Consulta cómo protegemos tus datos';
 
   @override
+  String get dataCredits => 'Créditos y fuentes de datos';
+
+  @override
+  String get dataCreditsSubtitle => 'De dónde vienen los horarios y avisos';
+
+  @override
+  String get dataCreditsTitle => 'Fuentes de datos';
+
+  @override
+  String get dataCreditsBusOperator => 'Tiempos de autobús';
+
+  @override
+  String get dataCreditsBusOperatorBody =>
+      'Los horarios y tiempos de paso de las líneas L1, L2 y L3 son cortesía de Autocares Lozano S.L.U., concesionaria del servicio urbano de Alzira. Alzitrans consulta la información pública directamente desde el dispositivo de cada usuario; no almacena ni redistribuye los datos. Alzitrans no está afiliada con Autocares Lozano S.L.U.';
+
+  @override
+  String get dataCreditsRenfe => 'Trenes Cercanías';
+
+  @override
+  String get dataCreditsRenfeBody =>
+      'Los horarios de Cercanías C2 provienen de Renfe Operadora.';
+
+  @override
+  String get dataCreditsThanks =>
+      'Gracias a Autocares Lozano S.L.U. por hacer pública esta información, sin la cual esta app no podría existir.';
+
+  @override
+  String get creditsLineLozano => 'Datos por Autocares Lozano';
+
+  @override
+  String get removeAdsTitle => 'Quitar Anuncios (30 min)';
+
+  @override
+  String get removeAdsSubtitle => 'Ver un vídeo corto para ocultar banners';
+
+  @override
+  String get adsHiddenSuccess =>
+      '¡Anuncios ocultos por 30 minutos! Disfruta 🎉';
+
+  @override
+  String get adNotAvailable =>
+      'Anuncio no disponible en este momento. Inténtalo más tarde.';
+
+  @override
+  String get deleteAccountTitle => 'Eliminar cuenta';
+
+  @override
+  String get deleteAccountSubtitle => 'Borrado permanente de todos tus datos';
+
+  @override
+  String get deleteAccountDialogTitle => '¿Eliminar tu cuenta?';
+
+  @override
+  String get deleteAccountIrreversible =>
+      'Esta acción es irreversible. Se borrarán permanentemente:';
+
+  @override
+  String get deleteAccountBullet1 => '• Tu historial de viajes y estadísticas.';
+
+  @override
+  String get deleteAccountBullet2 => '• Tus paradas favoritas.';
+
+  @override
+  String deleteAccountConfirm(String email) {
+    return '¿Estás totalmente seguro de que quieres eliminar la cuenta de $email?';
+  }
+
+  @override
+  String get deleteAccountConfirmButton => 'SÍ, ELIMINAR TODO';
+
+  @override
+  String get accountDeletedSuccess =>
+      'Cuenta eliminada con éxito. Sentimos que te vayas.';
+
+  @override
+  String get emailUpdatedSuccess => '✅ Email actualizado';
+
+  @override
+  String get passwordUpdatedSuccess => '✅ Contraseña actualizada';
+
+  @override
+  String genericError(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get loginWithBiometrics => 'Entrar con huella';
+
+  @override
+  String biometricLoginError(String error) {
+    return 'Error en acceso biométrico: $error';
+  }
+
+  @override
+  String unexpectedError(String error) {
+    return 'Error inesperado: $error';
+  }
+
+  @override
+  String get registerTitle => 'Registro en Alzibus';
+
+  @override
+  String get registerInfoBox =>
+      'Te enviaremos un código al iniciar sesión. Si no inicias sesión en 7 días, la cuenta se eliminará automáticamente.';
+
+  @override
+  String get accountCreatedSnack =>
+      'Cuenta creada. Inicia sesión en los próximos 7 días o se eliminará automáticamente.';
+
+  @override
+  String get registerButton => 'Registrarse';
+
+  @override
+  String get verifyEmailTitle => 'Verificar Correo';
+
+  @override
+  String get confirmYourEmail => 'Confirma tu correo';
+
+  @override
+  String codeSentToEmail(String email) {
+    return 'Hemos enviado un código de 6 dígitos a:\n$email';
+  }
+
+  @override
+  String get codeExpiresIn15Min => 'El código caduca en 15 minutos.';
+
+  @override
+  String get verifyCodeButton => 'Verificar Código';
+
+  @override
+  String resendCodeWithLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reenviar código ($count restantes)',
+      one: 'Reenviar código (1 restante)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noResendsLeft => 'Sin reenvíos disponibles';
+
+  @override
+  String get enableBiometricsDialog => '¿Activar Huella?';
+
+  @override
+  String get enableBiometricsBody =>
+      '¿Quieres entrar más rápido la próxima vez usando tu huella dactilar?';
+
+  @override
+  String get notNow => 'Ahora no';
+
+  @override
+  String get yesActivate => '¡Sí, activar!';
+
+  @override
+  String get stopAddedToFavorites => '⭐ Parada añadida a favoritos';
+
+  @override
+  String alertSetForLine(String line) {
+    return '✅ Te avisaremos cuando llegue la línea $line';
+  }
+
+  @override
+  String get requiresInternet => '(Requiere conexión a internet)';
+
+  @override
+  String get mapView => 'Mapa';
+
+  @override
+  String get satelliteView => 'Satélite';
+
+  @override
+  String get satelliteViewUnavailable => 'Vista satelital no disponible';
+
+  @override
+  String get removeFromFavorites => 'Quitar de favoritos';
+
+  @override
+  String get addToFavorites => 'Añadir a favoritos';
+
+  @override
+  String get nextBuses => '⏱️ Próximos buses:';
+
+  @override
+  String get noUpcomingBuses => 'No hay buses próximos';
+
+  @override
+  String get nearbyTrainsC2 => '🚆 Trenes Cercanías C2:';
+
+  @override
+  String get noUpcomingTrains => 'No hay trenes próximos';
+
+  @override
+  String get refresh => 'Actualizar';
+
+  @override
+  String get refreshTrains => 'Actualizar trenes';
+
+  @override
+  String get linesLabel => 'Líneas:';
+
+  @override
+  String get lines => 'Líneas';
+
+  @override
+  String daysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count días',
+      one: 'Hace 1 día',
+      zero: 'Hoy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count minutos',
+      one: 'Hace 1 minuto',
+      zero: 'Ahora mismo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hace $count horas',
+      one: 'Hace 1 hora',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lineWithNumber(String line) {
+    return 'Línea $line';
+  }
+
+  @override
+  String oneTripWillBeDeducted(int remaining) {
+    return 'Se descontará 1 viaje de tu tarjeta (te quedan $remaining)';
+  }
+
+  @override
+  String get unlimitedTrips => 'Tienes viajes ILIMITADOS';
+
+  @override
+  String get noTripsOnCard => 'No tienes viajes en la tarjeta';
+
+  @override
+  String get noTripUnderstood => '👍 Entendido, no se registró';
+
+  @override
+  String get iDidntGetOn => 'No he subido';
+
+  @override
+  String get yesIGotOn => 'Sí, registrar';
+
+  @override
+  String get cardTripRegistered => '¡Viaje con Tarjeta registrado!';
+
+  @override
+  String get cashTripRegistered => '¡Viaje en Efectivo registrado!';
+
+  @override
+  String get viewHistory => 'Ver historial';
+
+  @override
+  String get watchAdSubtitle => 'Ver un vídeo corto y disfrutar sin banners';
+
+  @override
+  String get adNotReadyYet =>
+      'Anuncio aún no disponible. Inténtalo en unos segundos.';
+
+  @override
+  String get adsHiddenShort => '¡Anuncios ocultos por 30 minutos! 🎉';
+
+  @override
+  String get dailyAdLimitReached =>
+      'Has alcanzado el límite de anuncios de hoy. ¡Vuelve mañana!';
+
+  @override
+  String coinsEarnedThanks(int count) {
+    return '+$count monedas 🪙 ¡Gracias!';
+  }
+
+  @override
+  String get dailyEarningsExplained =>
+      'Cada día puedes ganar hasta 30 monedas jugando + 60 viendo anuncios. Es ritmo lento pero constante: vuelve cada día para subir el monedero.';
+
+  @override
+  String get dailyMaxReached => 'Has llegado al máximo de hoy. ¡Vuelve mañana!';
+
+  @override
+  String confirmSpendCoins(int cost, String skin) {
+    return '¿Confirmas que quieres gastar $cost 🪙 para desbloquear $skin?';
+  }
+
+  @override
+  String skinUnlockedAndEquipped(String skin) {
+    return '¡$skin desbloqueado y equipado! 🎉';
+  }
+
+  @override
+  String wearingSkin(String skin) {
+    return 'Llevas el \"$skin\"';
+  }
+
+  @override
+  String unlockSkinTitle(String skin) {
+    return 'Desbloquear $skin';
+  }
+
+  @override
+  String unlockSkinBody(int cost) {
+    return '¿Confirmas que quieres gastar $cost 🪙 para desbloquear este vestido? Una vez desbloqueado lo tienes para siempre.';
+  }
+
+  @override
+  String get unlockButton => 'Desbloquear';
+
+  @override
+  String get notEnoughCoins => 'No tienes suficientes monedas.';
+
+  @override
+  String skinEquipped(String skin) {
+    return '$skin equipado';
+  }
+
+  @override
+  String get mifareClassicInfo =>
+      'Las tarjetas Mifare Classic 1K requieren autenticación especial para leer el saldo. La mayoría de móviles Android no pueden leerlas sin hardware especializado.';
+
+  @override
+  String get featureNotAvailableWeb => 'Función no disponible en navegador';
+
+  @override
+  String get featureAndroidOnly => 'Función exclusiva de Android';
+
+  @override
+  String get nfcWebExplained =>
+      'La lectura de tarjetas NFC requiere acceso al hardware que no está disponible en la versión web.\n\nInstala la app para usar esta función.';
+
+  @override
+  String get nfcIosExplained =>
+      'Debido a restricciones de Apple con las tarjetas Mifare Classic, la lectura de saldo no es compatible con iPhone.\n\nUsa el mapa y horarios para planificar tu viaje.';
+
+  @override
+  String get publicTransportAlzira => 'Transporte Público Alzira';
+
+  @override
+  String get validateTripPrompt =>
+      '¿Deseas validar un viaje ahora? Se restará 1 de tu contador.';
+
+  @override
+  String get confirmTripTitle => 'Confirmar viaje';
+
+  @override
+  String get shareTripIntro =>
+      '¿Quieres que alguien sepa por dónde vas? Empieza el viaje compartido y te doy un enlace para enviarles.';
+
+  @override
+  String get creatingSharedTrip => 'Creando tu viaje compartido...';
+
+  @override
+  String get noLocationPermissionShare =>
+      'Sin permiso de ubicación no puedo compartir el viaje.';
+
+  @override
+  String get needLocationPermissionAlbus =>
+      '¡Necesito permiso para ver dónde estás!';
+
+  @override
+  String get tripReadyShareIt =>
+      '¡Listo! Comparte el enlace y la gente verá dónde vas en tiempo real.';
+
+  @override
+  String couldntCreateTrip(String error) {
+    return 'No pude crear el viaje: $error';
+  }
+
+  @override
+  String get somethingBrokeRetry => 'Algo se torció. ¿Probamos de nuevo?';
+
+  @override
+  String get endingSharedTrip => 'Terminando el compartido...';
+
+  @override
+  String get tripEnded => '¡Viaje terminado! Buen camino 👋';
+
+  @override
+  String shareMessageWithDest(String url) {
+    return '¡Voy en el bus! Mira por dónde voy en vivo: $url';
+  }
+
+  @override
+  String shareMessage(String url) {
+    return '¡Sigue mi viaje en bus en vivo! $url';
+  }
+
+  @override
+  String shareSubjectWithDest(String destination) {
+    return 'Voy hacia $destination · Alzitrans';
+  }
+
+  @override
+  String get shareSubject => 'Mi viaje en vivo · Alzitrans';
+
+  @override
+  String get linkShared => '¡Enlace compartido! 🚌';
+
+  @override
+  String linkCopied(String url) {
+    return 'Enlace copiado: $url';
+  }
+
+  @override
+  String destinationLabel(String name) {
+    return 'Destino: $name';
+  }
+
+  @override
+  String get lineLabelSingular => 'Línea: ';
+
+  @override
+  String get shareTripExplanation =>
+      'Al empezar, se generará un enlace público que puedes mandar a quien quieras. Verán tu posición y la hora estimada de llegada actualizadas cada 30 segundos.';
+
+  @override
+  String get linkExpires6Hours => 'El enlace caduca solo a las 6 horas.';
+
+  @override
+  String get startingButton => 'Iniciando...';
+
+  @override
+  String get startSharingButton => 'Empezar a compartir';
+
+  @override
+  String get sharingLive => 'Compartiendo en vivo';
+
+  @override
+  String get destination => 'Destino';
+
+  @override
+  String get lineSingular => 'Línea';
+
+  @override
+  String get etaLabel => 'Llegada estimada';
+
+  @override
+  String get lastPosition => 'Última posición';
+
+  @override
+  String get linkToShare => 'Enlace para compartir';
+
+  @override
+  String get copy => 'Copiar';
+
+  @override
+  String get seeAsOthersSee => 'Ver como lo ven los demás';
+
+  @override
+  String get endingButton => 'Terminando...';
+
+  @override
+  String get stopSharingButton => 'Terminar de compartir';
+
+  @override
+  String get minimizeBackgroundNotice =>
+      'Puedes minimizar la app sin problema: los pings de ubicación siguen mandándose en segundo plano cada 30 s.';
+
+  @override
+  String minutesShort(int n) {
+    return '$n min';
+  }
+
+  @override
+  String get plannerTitle => 'Planificador con Albus';
+
+  @override
+  String get albusGreeting =>
+      '¡Hola! Soy Albus 🚌. Dime de dónde sales y a dónde vas, y te digo qué bus coger.';
+
+  @override
+  String get chooseOriginAndDest => 'Elige origen y destino antes de buscar.';
+
+  @override
+  String get albusNeedsOriginDest =>
+      '¡Ay! Necesito saber de dónde sales y a dónde vas.';
+
+  @override
+  String get sameStopError => 'El origen y el destino son la misma parada.';
+
+  @override
+  String get albusAlreadyThere => 'Pero... ¡si ya estás ahí! 😅';
+
+  @override
+  String get albusSearchingRoute => 'Estoy mirando qué bus te lleva...';
+
+  @override
+  String get albusNoRoute =>
+      'Vaya... no encuentro ruta directa. Quizás merezca la pena ir andando.';
+
+  @override
+  String get albusOneRoute => '¡Tengo una ruta! Te la explico paso a paso 👇';
+
+  @override
+  String albusMultipleRoutes(int count) {
+    return '¡Tengo $count opciones! La primera es la más rápida.';
+  }
+
+  @override
+  String searchError(String error) {
+    return 'Algo se torció al buscar ($error). Inténtalo de nuevo.';
+  }
+
+  @override
+  String get albusCantCalculate =>
+      'Ups, no pude calcular la ruta. ¿Probamos otra vez?';
+
+  @override
+  String get albusSwapped => '¡Cambiado! ¿Buscamos esta nueva ruta?';
+
+  @override
+  String get albusFindingYou => 'A ver dónde estás...';
+
+  @override
+  String get enableLocationRetry =>
+      'Activa la ubicación del móvil y vuelve a intentarlo.';
+
+  @override
+  String get noLocationPermission =>
+      'Sin permiso de ubicación no puedo saber dónde estás.';
+
+  @override
+  String get noStopsNearYou => 'No hay paradas cerca de ti — ¿estás en Alzira?';
+
+  @override
+  String veryCloseToStop(String name) {
+    return 'Estás muy cerca de $name. ¿A dónde vamos?';
+  }
+
+  @override
+  String nearestStopIs(String name, int dist) {
+    return 'La parada más cercana es $name (a $dist m). ¿A dónde vamos?';
+  }
+
+  @override
+  String get couldntFindYou => 'No pude saber dónde estás 😢';
+
+  @override
+  String okFromStop(String name) {
+    return 'Vale, sales de $name. ¿A dónde vas?';
+  }
+
+  @override
+  String askDestRoute(String name) {
+    return '¿Buscamos cómo ir a $name?';
+  }
+
+  @override
+  String okToStop(String name) {
+    return 'Vale, vas a $name. ¿De dónde sales?';
+  }
+
+  @override
+  String get readyToSearch => 'Listos. Pulsa \"Buscar ruta\" cuando quieras.';
+
+  @override
+  String get searchingYourLocation => 'Buscando tu ubicación...';
+
+  @override
+  String get usingYourLocation => 'Usando tu ubicación actual';
+
+  @override
+  String get useMyLocationButton => 'Usar mi ubicación como origen';
+
+  @override
+  String get fromNearestStop => 'Desde (parada más cercana)';
+
+  @override
+  String get fromLabel => 'Desde';
+
+  @override
+  String get toLabel => 'Hasta';
+
+  @override
+  String get swap => 'Intercambiar';
+
+  @override
+  String get searchRoute => 'Buscar ruta';
+
+  @override
+  String errorLoadingStops(String error) {
+    return 'Error cargando paradas: $error';
+  }
+
+  @override
+  String get searchStopByName => 'Busca parada por nombre…';
+
+  @override
+  String linesWithList(String lines) {
+    return 'Líneas: $lines';
+  }
+
+  @override
+  String get shareThisTripLive => 'Compartir este viaje en vivo';
+
+  @override
+  String get bestOption => 'MEJOR OPCIÓN';
+
+  @override
+  String optionN(int n) {
+    return 'OPCIÓN $n';
+  }
+
+  @override
+  String transfersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transbordos',
+      one: '1 transbordo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walkingStep(int dist, int duration) {
+    return 'Andando · $dist m · $duration min';
+  }
+
+  @override
+  String busStepDetail(int stops, int duration) {
+    return '$stops paradas · $duration min';
+  }
+
+  @override
+  String boardAt(String name) {
+    return 'Sube: $name';
+  }
+
+  @override
+  String alightAt(String name) {
+    return 'Baja: $name';
+  }
+
+  @override
+  String transferAt(String name) {
+    return 'Transbordo en $name';
+  }
+
+  @override
+  String transferStep(String from, String to, int duration) {
+    return 'De $from a $to · ~$duration min';
+  }
+
+  @override
+  String get triviaTitle => 'Trivia de Alzira';
+
+  @override
+  String questionXofY(int current, int total) {
+    return 'Pregunta $current/$total';
+  }
+
+  @override
+  String get skipQuestionAd => 'Saltar pregunta (ver anuncio)';
+
+  @override
+  String get triviaCompleted => 'Trivia completada';
+
+  @override
+  String scoreLabel(int score) {
+    return 'Puntuación: $score';
+  }
+
+  @override
+  String get newRecord => '🏆 ¡Nuevo récord!';
+
+  @override
+  String currentRecord(int score) {
+    return 'Récord: $score';
+  }
+
+  @override
+  String coinsAddedWallet(int count) {
+    return '+$count 🪙 al monedero';
+  }
+
+  @override
+  String get playAgain => 'Jugar otra vez';
+
+  @override
+  String get backToMenu => 'Volver al menú';
+
+  @override
+  String get memoryStopsTitle => 'Memoria de Paradas';
+
+  @override
+  String get catchTheBusTitle => 'Atrapa el Bus';
+
+  @override
+  String get gamesHubTitle => 'Mini-Juegos';
+
+  @override
+  String get playGame => 'Jugar';
+
+  @override
+  String highScore(int score) {
+    return 'Récord: $score';
+  }
+
+  @override
+  String get memoryStopsHowTo => 'Memoriza el orden y reprodúcelo';
+
+  @override
+  String get catchTheBusHowTo => 'Toca el bus cuando pase por la parada';
+
+  @override
+  String get triviaHowTo => '10 preguntas sobre Alzira y la app';
+
+  @override
+  String get gameOver => '¡Fin del juego!';
+
+  @override
+  String get tapToStart => 'Toca para empezar';
+
+  @override
+  String reachedRound(int round) {
+    return 'Llegaste a la ronda $round';
+  }
+
+  @override
+  String currentRecordRounds(int score) {
+    return 'Récord: $score rondas';
+  }
+
+  @override
+  String get repeatSequenceAd => 'Repetir secuencia (anuncio)';
+
+  @override
+  String get watchAdForCoinsLabel => 'Ver anuncio +30 🪙';
+
+  @override
+  String get missedGreenBus => 'Se te escapó un bus verde';
+
+  @override
+  String get reviveWatchAd => 'Revivir viendo un anuncio';
+
+  @override
+  String get gamesHubHeading => 'Juegos · Mata el tiempo';
+
+  @override
+  String get wardrobeTooltip => 'Vestidor de Albus';
+
+  @override
+  String get availableGames => 'Disponibles';
+
+  @override
+  String get catchTheBusDesc =>
+      'Toca buses verdes 🚌 antes de que se escapen. Esquiva los rojos 🚒. ¿Cuánto aguantas?';
+
+  @override
+  String currentRecordPrefix(int score) {
+    return '🏆 Récord actual: $score';
+  }
+
+  @override
+  String currentRecordPts(int score) {
+    return '🏆 Récord actual: $score pts';
+  }
+
+  @override
+  String get beTheFirstRecord => '¡Sé el primero en marcar récord!';
+
+  @override
+  String get triviaDesc =>
+      'Preguntas sobre el bus, la ciudad y la comarca. 10 preguntas, 15s cada una.';
+
+  @override
+  String get howMuchYouKnow => '¿Cuánto sabes de Alzira?';
+
+  @override
+  String get memoryStopsDesc =>
+      'Albus muestra paradas en orden. Tú las repites. Cada ronda añade una más.';
+
+  @override
+  String bestRound(int round) {
+    return '🏆 Mejor: ronda $round';
+  }
+
+  @override
+  String get simonAlziraStyle => 'Simon Says estilo Alzira';
+
+  @override
+  String get gamesLegalNotice =>
+      'Los juegos pueden mostrar anuncios opcionales (revivir, bonus). Las monedas son decorativas — futuras versiones permitirán canjearlas por contenido.';
+
+  @override
+  String get albusGamesIntro =>
+      '¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.';
+
+  @override
+  String get skinDefaultName => 'Original';
+
+  @override
+  String get skinFalleroName => 'Fallero';
+
+  @override
+  String get skinCapurulloName => 'Capurullo';
+
+  @override
+  String get skinLluviaName => 'Lluvia';
+
+  @override
+  String get skinGraduadoName => 'Graduado';
+
+  @override
+  String get skinNavidadName => 'Navidad';
+
+  @override
+  String get skinAlziraFcName => 'UDA';
+
+  @override
+  String get feedbackTitle => 'Soporte y feedback';
+
+  @override
+  String get feedbackHeading => '¿En qué podemos ayudarte?';
+
+  @override
+  String get categoryLabel => 'Categoría';
+
+  @override
+  String get subjectLabel => 'Resumen breve (Asunto)';
+
+  @override
+  String get subjectRequired => 'El asunto es obligatorio';
+
+  @override
+  String get descriptionLabel => 'Descripción detallada';
+
+  @override
+  String get descriptionRequired => 'La descripción es obligatoria';
+
+  @override
+  String get sendTicket => 'Enviar Ticket';
+
+  @override
+  String get addComment => 'Añadir un comentario...';
+
+  @override
+  String get attachImage => 'Adjuntar imagen';
+
+  @override
+  String get conversation => 'Conversación';
+
+  @override
+  String get conversationClosedInactive =>
+      'Conversación cerrada (Aviso inactivo)';
+
+  @override
+  String get noMessagesYet => 'Sin mensajes aún.\nEscribe para empezar.';
+
+  @override
+  String get couldNotSendRetry => 'No se pudo enviar. Inténtalo de nuevo.';
+
+  @override
+  String get downloadNotSupportedWeb =>
+      'Descarga no soportada en web desde la app móvil';
+
+  @override
+  String get arVisionTitle => 'Visión AR';
+
+  @override
+  String get routesPageTitle => 'Rutas y líneas';
+
+  @override
+  String get rechargeYourCardSoon => '¡Recarga tu tarjeta pronto!';
+
+  @override
+  String get playWhileWaiting => '¡Echa una partida mientras esperas!';
+
+  @override
+  String get welcomeGreeting => '¡Hola! 👋';
+
+  @override
+  String get welcomeMessage => '¡Espero que te sea de mucha utilidad!';
+
+  @override
+  String get busInService => 'Autobús en servicio';
+
+  @override
+  String get nextStop => 'Próxima parada';
+
+  @override
+  String get welcomeThanks => 'Gracias por descargar Alzi Trans.';
+
+  @override
+  String get welcomeStudent =>
+      'Soy un estudiante de 2º de DAM y he creado esta app de forma independiente para mejorar nuestro transporte.';
+
+  @override
+  String get welcomeDevelopmentNotice =>
+      'Ten en cuenta que es un proyecto en desarrollo y puede contener errores.';
+
+  @override
+  String get understoodCaps => 'ENTENDIDO';
+
+  @override
+  String get estimatedTime => 'Tiempo estimado';
+
+  @override
+  String get statusLabel => 'Estado';
+
+  @override
+  String get atStop => '🛑 En parada';
+
+  @override
+  String get inMovement => '🚌 En movimiento';
+
+  @override
   String get nfcCardReadSuccess => 'Tarjeta leída correctamente';
 
   @override

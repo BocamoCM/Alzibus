@@ -79,7 +79,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Error en acceso biométrico: $e';
+          _errorMessage = AppLocalizations.of(context)!.biometricLoginError(e.toString());
         });
       }
     }
@@ -148,12 +148,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         _isLoading = false;
         _errorMessage = l.noServerConnection;
       });
+    } on AuthServerException catch (e) {
+      // 5xx con mensaje legible — típicamente "SMTP de OTP caído".
+      // Mostramos el mensaje del servidor tal cual (ya viene en español).
+      debugPrint('[LoginPage] AuthServerException capturada: ${e.message}');
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.message;
+      });
     } catch (e) {
       debugPrint('[LoginPage] Otra excepción capturada: $e');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Error inesperado: $e';
+        _errorMessage = AppLocalizations.of(context)!.unexpectedError(e.toString());
       });
     }
   }
@@ -250,7 +259,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             OutlinedButton.icon(
                               onPressed: _loginWithBiometrics,
                               icon: const Icon(Icons.fingerprint),
-                              label: const Text('Entrar con huella'),
+                              label: Text(l.loginWithBiometrics),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 45),
                               ),

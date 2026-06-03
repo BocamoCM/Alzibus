@@ -327,18 +327,19 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   
   void _showTripConfirmDialog(Map<String, dynamic> trip) {
     _isShowingTripDialog = true;
-    
+    final l = AppLocalizations.of(context)!;
+
     // Calcular hace cuánto fue el viaje
     final timestamp = DateTime.tryParse(trip['timestamp'] ?? '');
     String timeAgo = '';
     if (timestamp != null) {
       final diff = DateTime.now().difference(timestamp);
       if (diff.inMinutes < 60) {
-        timeAgo = 'Hace ${diff.inMinutes} minutos';
+        timeAgo = l.minutesAgo(diff.inMinutes);
       } else if (diff.inHours < 24) {
-        timeAgo = 'Hace ${diff.inHours} hora${diff.inHours > 1 ? 's' : ''}';
+        timeAgo = l.hoursAgo(diff.inHours);
       } else {
-        timeAgo = 'Hace ${diff.inDays} día${diff.inDays > 1 ? 's' : ''}';
+        timeAgo = l.daysAgo(diff.inDays);
       }
     }
     
@@ -365,9 +366,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               const SizedBox(height: 20),
               
               // Título
-              const Text(
-                '¿Cogiste el bus?',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Text(
+                l.didYouTakeTheBus,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               
@@ -389,7 +390,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'Línea ${trip['line']}',
+                            l.lineWithNumber(trip['line']?.toString() ?? ''),
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -433,11 +434,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               const SizedBox(height: 8),
               
               Text(
-                _isUnlimited 
-                    ? 'Tienes viajes ILIMITADOS' 
-                    : (_storedTrips > 0 
-                        ? 'Se descontará 1 viaje de tu tarjeta (te quedan $_storedTrips)' 
-                        : 'No tienes viajes en la tarjeta'),
+                _isUnlimited
+                    ? l.unlimitedTrips
+                    : (_storedTrips > 0
+                        ? l.oneTripWillBeDeducted(_storedTrips)
+                        : l.noTripsOnCard),
                 style: TextStyle(
                   color: _isUnlimited || _storedTrips > 0 ? Colors.green[700] : Colors.red[700],
                   fontSize: 13,
@@ -526,15 +527,15 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                         await historyService.rejectTrip();
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('👍 Entendido, no se registró'),
-                              duration: Duration(seconds: 2),
+                            SnackBar(
+                              content: Text(l.noTripUnderstood),
+                              duration: const Duration(seconds: 2),
                             ),
                           );
                         }
                       },
                       icon: const Icon(Icons.close),
-                      label: const Text('No he subido'),
+                      label: Text(l.iDidntGetOn),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -554,19 +555,20 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   }
 
   void _showTripRegisteredSnackBar(bool isCard) {
+    final l = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 8),
-            Text(isCard ? '¡Viaje con Tarjeta registrado!' : '¡Viaje en Efectivo registrado!'),
+            Text(isCard ? l.cardTripRegistered : l.cashTripRegistered),
           ],
         ),
         backgroundColor: isCard ? AlzitransColors.burgundy : Colors.green[700],
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
-          label: 'Ver historial',
+          label: l.viewHistory,
           textColor: Colors.white,
           onPressed: () {
             const TripHistoryRoute().push(context);
@@ -703,7 +705,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
           // Acceso a mini-juegos (mata el tiempo mientras esperas el bus).
           IconButton(
             icon: const Icon(Icons.videogame_asset),
-            tooltip: '¡Echa una partida mientras esperas!',
+            tooltip: l.playWhileWaiting,
             iconSize: 26,
             onPressed: () => const GamesHubRoute().push(context),
           ),

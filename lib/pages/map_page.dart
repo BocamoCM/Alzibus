@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -120,22 +121,20 @@ class MapPageState extends ConsumerState<MapPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              Icon(Icons.school, color: AlzitransColors.burgundy),
+              const Icon(Icons.school, color: AlzitransColors.burgundy),
               const SizedBox(width: 10),
-              const Text('¡Hola! 👋'),
+              Text(AppLocalizations.of(context)!.welcomeGreeting),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Gracias por descargar Alzi Trans.',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                AppLocalizations.of(context)!.welcomeThanks,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Soy un estudiante de 2º de DAM y he creado esta app de forma independiente para mejorar nuestro transporte.',
-              ),
+              Text(AppLocalizations.of(context)!.welcomeStudent),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(10),
@@ -144,23 +143,23 @@ class MapPageState extends ConsumerState<MapPage> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.orange.shade200),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                    SizedBox(width: 8),
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Ten en cuenta que es un proyecto en desarrollo y puede contener errores.',
-                        style: TextStyle(fontSize: 13, color: Colors.brown),
+                        AppLocalizations.of(context)!.welcomeDevelopmentNotice,
+                        style: const TextStyle(fontSize: 13, color: Colors.brown),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                '¡Espero que te sea de mucha utilidad!',
-                style: TextStyle(fontStyle: FontStyle.italic),
+              Text(
+                AppLocalizations.of(context)!.welcomeMessage,
+                style: const TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
           ),
@@ -171,8 +170,8 @@ class MapPageState extends ConsumerState<MapPage> {
                 if (context.mounted) Navigator.pop(context);
               },
               child: Text(
-                'ENTENDIDO',
-                style: TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold),
+                AppLocalizations.of(context)!.understoodCaps,
+                style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -311,9 +310,9 @@ class MapPageState extends ConsumerState<MapPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Autobús en servicio',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.busInService,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -321,14 +320,14 @@ class MapPageState extends ConsumerState<MapPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(Icons.location_on, 'Próxima parada', nextStopName),
+            _buildInfoRow(Icons.location_on, AppLocalizations.of(context)!.nextStop, nextStopName),
             const SizedBox(height: 12),
-            _buildInfoRow(Icons.access_time, 'Tiempo estimado', estimatedTime),
+            _buildInfoRow(Icons.access_time, AppLocalizations.of(context)!.estimatedTime, estimatedTime),
             const SizedBox(height: 12),
             _buildInfoRow(
-              Icons.speed, 
-              'Estado', 
-              bus.isAtStop ? '🛑 En parada' : '🚌 En movimiento',
+              Icons.speed,
+              AppLocalizations.of(context)!.statusLabel,
+              bus.isAtStop ? AppLocalizations.of(context)!.atStop : AppLocalizations.of(context)!.inMovement,
             ),
             const SizedBox(height: 20),
           ],
