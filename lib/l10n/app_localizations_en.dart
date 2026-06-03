@@ -1135,6 +1135,151 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get triviaTitle => 'Alzira Trivia';
+
+  @override
+  String questionXofY(int current, int total) {
+    return 'Question $current/$total';
+  }
+
+  @override
+  String get skipQuestionAd => 'Skip question (watch ad)';
+
+  @override
+  String get triviaCompleted => 'Trivia completed';
+
+  @override
+  String scoreLabel(int score) {
+    return 'Score: $score';
+  }
+
+  @override
+  String get newRecord => '🏆 New record!';
+
+  @override
+  String currentRecord(int score) {
+    return 'Record: $score';
+  }
+
+  @override
+  String coinsAddedWallet(int count) {
+    return '+$count 🪙 to wallet';
+  }
+
+  @override
+  String get playAgain => 'Play again';
+
+  @override
+  String get backToMenu => 'Back to menu';
+
+  @override
+  String get memoryStopsTitle => 'Stops Memory';
+
+  @override
+  String get catchTheBusTitle => 'Catch the Bus';
+
+  @override
+  String get gamesHubTitle => 'Mini-Games';
+
+  @override
+  String get playGame => 'Play';
+
+  @override
+  String highScore(int score) {
+    return 'Record: $score';
+  }
+
+  @override
+  String get memoryStopsHowTo => 'Memorise the order and replay it';
+
+  @override
+  String get catchTheBusHowTo => 'Tap the bus as it passes the stop';
+
+  @override
+  String get triviaHowTo => '10 questions about Alzira and the app';
+
+  @override
+  String get gameOver => 'Game over!';
+
+  @override
+  String get tapToStart => 'Tap to start';
+
+  @override
+  String reachedRound(int round) {
+    return 'You reached round $round';
+  }
+
+  @override
+  String currentRecordRounds(int score) {
+    return 'Record: $score rounds';
+  }
+
+  @override
+  String get repeatSequenceAd => 'Repeat sequence (watch ad)';
+
+  @override
+  String get watchAdForCoinsLabel => 'Watch ad +30 🪙';
+
+  @override
+  String get missedGreenBus => 'A green bus got away';
+
+  @override
+  String get reviveWatchAd => 'Revive by watching an ad';
+
+  @override
+  String get gamesHubHeading => 'Games · Kill time';
+
+  @override
+  String get wardrobeTooltip => 'Albus wardrobe';
+
+  @override
+  String get availableGames => 'Available';
+
+  @override
+  String get catchTheBusDesc =>
+      'Tap green buses 🚌 before they escape. Dodge the red ones 🚒. How long can you last?';
+
+  @override
+  String currentRecordPrefix(int score) {
+    return '🏆 Current record: $score';
+  }
+
+  @override
+  String currentRecordPts(int score) {
+    return '🏆 Current record: $score pts';
+  }
+
+  @override
+  String get beTheFirstRecord => 'Be the first to set a record!';
+
+  @override
+  String get triviaDesc =>
+      'Questions about the bus, the city and the region. 10 questions, 15s each.';
+
+  @override
+  String get howMuchYouKnow => 'How much do you know about Alzira?';
+
+  @override
+  String get memoryStopsDesc =>
+      'Albus shows stops in order. You repeat them. Each round adds one more.';
+
+  @override
+  String bestRound(int round) {
+    return '🏆 Best: round $round';
+  }
+
+  @override
+  String get simonAlziraStyle => 'Simon Says, Alzira style';
+
+  @override
+  String get gamesLegalNotice =>
+      'Games may show optional ads (revive, bonus). Coins are decorative — future versions will let you redeem them for content.';
+
+  @override
+  String get albusGamesIntro =>
+      'Waiting for the bus? Let\'s play a game! Earn coins while you wait.';
+
+  @override
   String get rechargeYourCardSoon => 'Top up your card soon!';
 
   @override

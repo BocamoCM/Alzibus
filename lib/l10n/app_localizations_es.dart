@@ -1139,6 +1139,151 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get triviaTitle => 'Trivia de Alzira';
+
+  @override
+  String questionXofY(int current, int total) {
+    return 'Pregunta $current/$total';
+  }
+
+  @override
+  String get skipQuestionAd => 'Saltar pregunta (ver anuncio)';
+
+  @override
+  String get triviaCompleted => 'Trivia completada';
+
+  @override
+  String scoreLabel(int score) {
+    return 'Puntuación: $score';
+  }
+
+  @override
+  String get newRecord => '🏆 ¡Nuevo récord!';
+
+  @override
+  String currentRecord(int score) {
+    return 'Récord: $score';
+  }
+
+  @override
+  String coinsAddedWallet(int count) {
+    return '+$count 🪙 al monedero';
+  }
+
+  @override
+  String get playAgain => 'Jugar otra vez';
+
+  @override
+  String get backToMenu => 'Volver al menú';
+
+  @override
+  String get memoryStopsTitle => 'Memoria de Paradas';
+
+  @override
+  String get catchTheBusTitle => 'Atrapa el Bus';
+
+  @override
+  String get gamesHubTitle => 'Mini-Juegos';
+
+  @override
+  String get playGame => 'Jugar';
+
+  @override
+  String highScore(int score) {
+    return 'Récord: $score';
+  }
+
+  @override
+  String get memoryStopsHowTo => 'Memoriza el orden y reprodúcelo';
+
+  @override
+  String get catchTheBusHowTo => 'Toca el bus cuando pase por la parada';
+
+  @override
+  String get triviaHowTo => '10 preguntas sobre Alzira y la app';
+
+  @override
+  String get gameOver => '¡Fin del juego!';
+
+  @override
+  String get tapToStart => 'Toca para empezar';
+
+  @override
+  String reachedRound(int round) {
+    return 'Llegaste a la ronda $round';
+  }
+
+  @override
+  String currentRecordRounds(int score) {
+    return 'Récord: $score rondas';
+  }
+
+  @override
+  String get repeatSequenceAd => 'Repetir secuencia (anuncio)';
+
+  @override
+  String get watchAdForCoinsLabel => 'Ver anuncio +30 🪙';
+
+  @override
+  String get missedGreenBus => 'Se te escapó un bus verde';
+
+  @override
+  String get reviveWatchAd => 'Revivir viendo un anuncio';
+
+  @override
+  String get gamesHubHeading => 'Juegos · Mata el tiempo';
+
+  @override
+  String get wardrobeTooltip => 'Vestidor de Albus';
+
+  @override
+  String get availableGames => 'Disponibles';
+
+  @override
+  String get catchTheBusDesc =>
+      'Toca buses verdes 🚌 antes de que se escapen. Esquiva los rojos 🚒. ¿Cuánto aguantas?';
+
+  @override
+  String currentRecordPrefix(int score) {
+    return '🏆 Récord actual: $score';
+  }
+
+  @override
+  String currentRecordPts(int score) {
+    return '🏆 Récord actual: $score pts';
+  }
+
+  @override
+  String get beTheFirstRecord => '¡Sé el primero en marcar récord!';
+
+  @override
+  String get triviaDesc =>
+      'Preguntas sobre el bus, la ciudad y la comarca. 10 preguntas, 15s cada una.';
+
+  @override
+  String get howMuchYouKnow => '¿Cuánto sabes de Alzira?';
+
+  @override
+  String get memoryStopsDesc =>
+      'Albus muestra paradas en orden. Tú las repites. Cada ronda añade una más.';
+
+  @override
+  String bestRound(int round) {
+    return '🏆 Mejor: ronda $round';
+  }
+
+  @override
+  String get simonAlziraStyle => 'Simon Says estilo Alzira';
+
+  @override
+  String get gamesLegalNotice =>
+      'Los juegos pueden mostrar anuncios opcionales (revivir, bonus). Las monedas son decorativas — futuras versiones permitirán canjearlas por contenido.';
+
+  @override
+  String get albusGamesIntro =>
+      '¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.';
+
+  @override
   String get rechargeYourCardSoon => '¡Recarga tu tarjeta pronto!';
 
   @override

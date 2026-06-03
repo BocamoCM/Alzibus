@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../core/providers/game_currency_provider.dart';
 import '../theme/app_theme.dart';
@@ -18,6 +19,7 @@ class GamesHubScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
     final coins = ref.watch(gameCurrencyProvider);
     final highScore = ref.watch(catchTheBusHighScoreProvider);
     final triviaScore = ref.watch(triviaHighScoreProvider);
@@ -26,7 +28,7 @@ class GamesHubScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AlzitransColors.background,
       appBar: AppBar(
-        title: const Text('Juegos · Mata el tiempo'),
+        title: Text(l.gamesHubHeading),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
         actions: [
@@ -35,7 +37,7 @@ class GamesHubScreen extends ConsumerWidget {
           // se vea bien sobre el fondo burgundy del AppBar.
           IconButton(
             icon: const Icon(Icons.checkroom, color: Colors.white, size: 26),
-            tooltip: 'Vestidor de Albus',
+            tooltip: l.wardrobeTooltip,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AlbusShopScreen()),
             ),
@@ -73,23 +75,21 @@ class GamesHubScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildAlbusHeader(),
+            _buildAlbusHeader(l),
             const SizedBox(height: 24),
-            const Text(
-              'Disponibles',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              l.availableGames,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             _GameCard(
-              title: 'Caza el Bus',
-              description:
-                  'Toca buses verdes 🚌 antes de que se escapen. Esquiva '
-                  'los rojos 🚒. ¿Cuánto aguantas?',
+              title: l.catchTheBusTitle,
+              description: l.catchTheBusDesc,
               icon: Icons.directions_bus,
               colors: const [Color(0xFF1565C0), Color(0xFF0D47A1)],
               footer: highScore > 0
-                  ? '🏆 Récord actual: $highScore'
-                  : '¡Sé el primero en marcar récord!',
+                  ? l.currentRecordPrefix(highScore)
+                  : l.beTheFirstRecord,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const CatchTheBusScreen(),
@@ -98,15 +98,13 @@ class GamesHubScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             _GameCard(
-              title: 'Trivia de Alzira',
-              description:
-                  'Preguntas sobre el bus, la ciudad y la comarca. '
-                  '10 preguntas, 15s cada una.',
+              title: l.triviaTitle,
+              description: l.triviaDesc,
               icon: Icons.psychology,
               colors: const [Color(0xFF7B1FA2), Color(0xFF4A148C)],
               footer: triviaScore > 0
-                  ? '🏆 Récord actual: $triviaScore pts'
-                  : '¿Cuánto sabes de Alzira?',
+                  ? l.currentRecordPts(triviaScore)
+                  : l.howMuchYouKnow,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const TriviaAlziraScreen(),
@@ -115,15 +113,13 @@ class GamesHubScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             _GameCard(
-              title: 'Memoria de paradas',
-              description:
-                  'Albus muestra paradas en orden. Tú las repites. '
-                  'Cada ronda añade una más.',
+              title: l.memoryStopsTitle,
+              description: l.memoryStopsDesc,
               icon: Icons.grid_view,
               colors: const [Color(0xFFE65100), Color(0xFFBF360C)],
               footer: memoryRound > 0
-                  ? '🏆 Mejor: ronda $memoryRound'
-                  : 'Simon Says estilo Alzira',
+                  ? l.bestRound(memoryRound)
+                  : l.simonAlziraStyle,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const MemoryStopsScreen(),
@@ -132,12 +128,10 @@ class GamesHubScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             // Footer con avisos legales suaves.
-            const Text(
-              'Los juegos pueden mostrar anuncios opcionales (revivir, '
-              'bonus). Las monedas son decorativas — futuras versiones '
-              'permitirán canjearlas por contenido.',
+            Text(
+              l.gamesLegalNotice,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ],
         ),
@@ -145,18 +139,17 @@ class GamesHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAlbusHeader() {
+  Widget _buildAlbusHeader(AppLocalizations l) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AlbusMascot(state: AlbusState.happy, size: 100),
         const SizedBox(width: 12),
-        const Expanded(
+        Expanded(
           child: Padding(
-            padding: EdgeInsets.only(top: 14),
+            padding: const EdgeInsets.only(top: 14),
             child: AlbusBubble(
-              text: '¿Esperando el bus? ¡Echemos una partida! Gana monedas '
-                  'mientras llega.',
+              text: l.albusGamesIntro,
             ),
           ),
         ),

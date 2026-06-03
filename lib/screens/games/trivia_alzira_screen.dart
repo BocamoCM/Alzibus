@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../../core/providers/ad_provider.dart';
 import '../../core/providers/game_currency_provider.dart';
@@ -160,7 +161,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
     return Scaffold(
       backgroundColor: AlzitransColors.background,
       appBar: AppBar(
-        title: const Text('Trivia de Alzira'),
+        title: Text(AppLocalizations.of(context)!.triviaTitle),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
       ),
@@ -185,7 +186,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
               _Chip(
                 icon: Icons.help_outline,
                 color: AlzitransColors.burgundy,
-                label: 'Pregunta ${_currentIndex + 1}/${_questions.length}',
+                label: AppLocalizations.of(context)!.questionXofY(_currentIndex + 1, _questions.length),
               ),
               const Spacer(),
               _Chip(
@@ -235,7 +236,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
             TextButton.icon(
               onPressed: _skipWithAd,
               icon: const Icon(Icons.skip_next),
-              label: const Text('Saltar pregunta (ver anuncio)'),
+              label: Text(AppLocalizations.of(context)!.skipQuestionAd),
               style: TextButton.styleFrom(foregroundColor: AlzitransColors.burgundy),
             ),
         ],
@@ -328,24 +329,26 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
           children: [
             const Icon(Icons.emoji_events, size: 80, color: Colors.amber),
             const SizedBox(height: 16),
-            const Text(
-              'Trivia completada',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            Text(
+              AppLocalizations.of(context)!.triviaCompleted,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
             Text(
-              'Puntuación: $_score',
+              AppLocalizations.of(context)!.scoreLabel(_score),
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
             ),
             Text(
-              newRecord ? '🏆 ¡Nuevo récord!' : 'Récord: $highScore',
+              newRecord
+                  ? AppLocalizations.of(context)!.newRecord
+                  : AppLocalizations.of(context)!.currentRecord(highScore),
               style: TextStyle(
                 color: newRecord ? Colors.amber.shade800 : Colors.grey,
                 fontWeight: FontWeight.w600,
               ),
             ),
             Text(
-              '+${_score ~/ 75} 🪙 al monedero',
+              AppLocalizations.of(context)!.coinsAddedWallet(_score ~/ 75),
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
@@ -354,7 +357,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
               child: ElevatedButton.icon(
                 onPressed: _start,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Jugar otra vez'),
+                label: Text(AppLocalizations.of(context)!.playAgain),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AlzitransColors.burgundy,
                   foregroundColor: Colors.white,
@@ -366,7 +369,7 @@ class _TriviaAlziraScreenState extends ConsumerState<TriviaAlziraScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Volver al menú'),
+              child: Text(AppLocalizations.of(context)!.backToMenu),
             ),
           ],
         ),

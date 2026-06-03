@@ -2032,6 +2032,246 @@ abstract class AppLocalizations {
   /// **'De {from} a {to} · ~{duration} min'**
   String transferStep(String from, String to, int duration);
 
+  /// No description provided for @triviaTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Trivia de Alzira'**
+  String get triviaTitle;
+
+  /// No description provided for @questionXofY.
+  ///
+  /// In es, this message translates to:
+  /// **'Pregunta {current}/{total}'**
+  String questionXofY(int current, int total);
+
+  /// No description provided for @skipQuestionAd.
+  ///
+  /// In es, this message translates to:
+  /// **'Saltar pregunta (ver anuncio)'**
+  String get skipQuestionAd;
+
+  /// No description provided for @triviaCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Trivia completada'**
+  String get triviaCompleted;
+
+  /// No description provided for @scoreLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Puntuación: {score}'**
+  String scoreLabel(int score);
+
+  /// No description provided for @newRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 ¡Nuevo récord!'**
+  String get newRecord;
+
+  /// No description provided for @currentRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'Récord: {score}'**
+  String currentRecord(int score);
+
+  /// No description provided for @coinsAddedWallet.
+  ///
+  /// In es, this message translates to:
+  /// **'+{count} 🪙 al monedero'**
+  String coinsAddedWallet(int count);
+
+  /// No description provided for @playAgain.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugar otra vez'**
+  String get playAgain;
+
+  /// No description provided for @backToMenu.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al menú'**
+  String get backToMenu;
+
+  /// No description provided for @memoryStopsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Memoria de Paradas'**
+  String get memoryStopsTitle;
+
+  /// No description provided for @catchTheBusTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Atrapa el Bus'**
+  String get catchTheBusTitle;
+
+  /// No description provided for @gamesHubTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mini-Juegos'**
+  String get gamesHubTitle;
+
+  /// No description provided for @playGame.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugar'**
+  String get playGame;
+
+  /// No description provided for @highScore.
+  ///
+  /// In es, this message translates to:
+  /// **'Récord: {score}'**
+  String highScore(int score);
+
+  /// No description provided for @memoryStopsHowTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Memoriza el orden y reprodúcelo'**
+  String get memoryStopsHowTo;
+
+  /// No description provided for @catchTheBusHowTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca el bus cuando pase por la parada'**
+  String get catchTheBusHowTo;
+
+  /// No description provided for @triviaHowTo.
+  ///
+  /// In es, this message translates to:
+  /// **'10 preguntas sobre Alzira y la app'**
+  String get triviaHowTo;
+
+  /// No description provided for @gameOver.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Fin del juego!'**
+  String get gameOver;
+
+  /// No description provided for @tapToStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para empezar'**
+  String get tapToStart;
+
+  /// No description provided for @reachedRound.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegaste a la ronda {round}'**
+  String reachedRound(int round);
+
+  /// No description provided for @currentRecordRounds.
+  ///
+  /// In es, this message translates to:
+  /// **'Récord: {score} rondas'**
+  String currentRecordRounds(int score);
+
+  /// No description provided for @repeatSequenceAd.
+  ///
+  /// In es, this message translates to:
+  /// **'Repetir secuencia (anuncio)'**
+  String get repeatSequenceAd;
+
+  /// No description provided for @watchAdForCoinsLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver anuncio +30 🪙'**
+  String get watchAdForCoinsLabel;
+
+  /// No description provided for @missedGreenBus.
+  ///
+  /// In es, this message translates to:
+  /// **'Se te escapó un bus verde'**
+  String get missedGreenBus;
+
+  /// No description provided for @reviveWatchAd.
+  ///
+  /// In es, this message translates to:
+  /// **'Revivir viendo un anuncio'**
+  String get reviveWatchAd;
+
+  /// No description provided for @gamesHubHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Juegos · Mata el tiempo'**
+  String get gamesHubHeading;
+
+  /// No description provided for @wardrobeTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Vestidor de Albus'**
+  String get wardrobeTooltip;
+
+  /// No description provided for @availableGames.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponibles'**
+  String get availableGames;
+
+  /// No description provided for @catchTheBusDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca buses verdes 🚌 antes de que se escapen. Esquiva los rojos 🚒. ¿Cuánto aguantas?'**
+  String get catchTheBusDesc;
+
+  /// No description provided for @currentRecordPrefix.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Récord actual: {score}'**
+  String currentRecordPrefix(int score);
+
+  /// No description provided for @currentRecordPts.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Récord actual: {score} pts'**
+  String currentRecordPts(int score);
+
+  /// No description provided for @beTheFirstRecord.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Sé el primero en marcar récord!'**
+  String get beTheFirstRecord;
+
+  /// No description provided for @triviaDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Preguntas sobre el bus, la ciudad y la comarca. 10 preguntas, 15s cada una.'**
+  String get triviaDesc;
+
+  /// No description provided for @howMuchYouKnow.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto sabes de Alzira?'**
+  String get howMuchYouKnow;
+
+  /// No description provided for @memoryStopsDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Albus muestra paradas en orden. Tú las repites. Cada ronda añade una más.'**
+  String get memoryStopsDesc;
+
+  /// No description provided for @bestRound.
+  ///
+  /// In es, this message translates to:
+  /// **'🏆 Mejor: ronda {round}'**
+  String bestRound(int round);
+
+  /// No description provided for @simonAlziraStyle.
+  ///
+  /// In es, this message translates to:
+  /// **'Simon Says estilo Alzira'**
+  String get simonAlziraStyle;
+
+  /// No description provided for @gamesLegalNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Los juegos pueden mostrar anuncios opcionales (revivir, bonus). Las monedas son decorativas — futuras versiones permitirán canjearlas por contenido.'**
+  String get gamesLegalNotice;
+
+  /// No description provided for @albusGamesIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.'**
+  String get albusGamesIntro;
+
   /// No description provided for @rechargeYourCardSoon.
   ///
   /// In es, this message translates to:

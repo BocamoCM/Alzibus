@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vibration/vibration.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../../core/providers/ad_provider.dart';
 import '../../core/providers/game_currency_provider.dart';
@@ -159,7 +160,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
       // - Verde escapado → -1 vida
       // - Rojo escapado → +0 (era trampa, está bien evitarlo)
       if (!bus.tapped && !bus.isBad) {
-        _loseLife('Se te escapó un bus verde');
+        _loseLife(AppLocalizations.of(context)!.missedGreenBus);
       }
       _removeBus(bus);
     });
@@ -428,18 +429,20 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              '¡Game Over!',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+            Text(
+              AppLocalizations.of(context)!.gameOver,
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 16),
             Text(
-              'Puntuación: $_score',
+              AppLocalizations.of(context)!.scoreLabel(_score),
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
-              newRecord ? '🏆 ¡Nuevo récord!' : 'Récord: $highScore',
+              newRecord
+                  ? AppLocalizations.of(context)!.newRecord
+                  : AppLocalizations.of(context)!.currentRecord(highScore),
               style: TextStyle(
                 color: newRecord ? Colors.amber.shade800 : Colors.grey,
                 fontWeight: FontWeight.w600,
@@ -447,7 +450,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              '+${_score ~/ 15} 🪙 al monedero',
+              AppLocalizations.of(context)!.coinsAddedWallet(_score ~/ 15),
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
@@ -458,7 +461,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
                 child: ElevatedButton.icon(
                   onPressed: _watchAdToRevive,
                   icon: const Icon(Icons.play_circle),
-                  label: const Text('Revivir viendo un anuncio'),
+                  label: Text(AppLocalizations.of(context)!.reviveWatchAd),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
                     foregroundColor: Colors.white,
@@ -477,7 +480,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
               child: OutlinedButton.icon(
                 onPressed: _start,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Jugar otra vez'),
+                label: Text(AppLocalizations.of(context)!.playAgain),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlzitransColors.burgundy,
                   side: const BorderSide(color: AlzitransColors.burgundy, width: 1.5),
@@ -491,7 +494,7 @@ class _CatchTheBusScreenState extends ConsumerState<CatchTheBusScreen>
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Volver al menú'),
+              child: Text(AppLocalizations.of(context)!.backToMenu),
             ),
           ],
         ),
