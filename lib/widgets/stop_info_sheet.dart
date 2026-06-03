@@ -771,40 +771,39 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
             }),
 
           // Atribución a la fuente de datos (Autocares Lozano). Aparece
-          // justo debajo de los tiempos que vienen de su web, que es el
-          // sitio jurídicamente correcto para la atribución (donde se
-          // muestra el dato). Tocando se abre la pantalla de créditos
-          // con el detalle completo y el disclaimer de no-afiliación.
-          if (_arrivals != null && _arrivals!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreditsPage()),
-                );
-              },
-              borderRadius: BorderRadius.circular(6),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.info_outline, size: 12, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      l.creditsLineLozano,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
+          // SIEMPRE bajo la sección de tiempos (haya o no buses próximos),
+          // porque los horarios siguen siendo cortesía suya aunque ahora
+          // mismo no haya servicio. Es además el sitio jurídicamente
+          // correcto para la atribución (donde se muestra el dato).
+          // Tocando se abre la pantalla de créditos completa.
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreditsPage()),
+              );
+            },
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.info_outline, size: 12, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    l.creditsLineLozano,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
 
           // Sección de trenes (solo para estación Renfe)
           if (_isRenfeStation) ...[

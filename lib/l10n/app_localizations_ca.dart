@@ -496,10 +496,6 @@ class AppLocalizationsCa extends AppLocalizations {
       'Els horaris de Rodalia C2 provenen de Renfe Operadora.';
 
   @override
-  String get dataCreditsThanks =>
-      'Gràcies a Autocars Lozano S.L.U. per fer pública esta informació, sense la qual esta app no podria existir.';
-
-  @override
   String get creditsLineLozano => 'Dades per Autocars Lozano';
 
   @override

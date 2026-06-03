@@ -1036,12 +1036,6 @@ abstract class AppLocalizations {
   /// **'Los horarios de Cercanías C2 provienen de Renfe Operadora.'**
   String get dataCreditsRenfeBody;
 
-  /// No description provided for @dataCreditsThanks.
-  ///
-  /// In es, this message translates to:
-  /// **'Gracias a Autocares Lozano S.L.U. por hacer pública esta información, sin la cual esta app no podría existir.'**
-  String get dataCreditsThanks;
-
   /// No description provided for @creditsLineLozano.
   ///
   /// In es, this message translates to:

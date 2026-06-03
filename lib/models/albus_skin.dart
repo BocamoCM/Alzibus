@@ -102,11 +102,13 @@ class AlbusSkin {
       id: 'alzira_fc',
       name: 'Albus UD Alzira',
       description:
-          'Bufanda azulgrana del UD Alzira con flecos, escudo del '
-          'club y banderín. ¡Visca el club!',
+          'Bufanda a rayas rojo i morat del UD Alzira amb flocs, '
+          'escut del club i banderí. Visca la UDA!',
       cost: 500,
       overlayAsset: 'assets/mascot/skins/alzira_fc/overlay.svg',
-      accentColor: Color(0xFF0D47A1),
+      // Rojo del club como accent (queda mejor que el morado en la card
+      // sobre el fondo claro de la tienda).
+      accentColor: Color(0xFFC62828),
       previewEmoji: '⚽',
     ),
   ];

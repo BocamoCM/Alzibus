@@ -496,10 +496,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Los horarios de Cercanías C2 provienen de Renfe Operadora.';
 
   @override
-  String get dataCreditsThanks =>
-      'Gracias a Autocares Lozano S.L.U. por hacer pública esta información, sin la cual esta app no podría existir.';
-
-  @override
   String get creditsLineLozano => 'Datos por Autocares Lozano';
 
   @override

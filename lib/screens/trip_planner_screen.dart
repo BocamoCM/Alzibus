@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 
+import '../core/providers/game_currency_provider.dart';
 import '../core/providers/stops_provider.dart';
 import '../core/providers/trip_planner_provider.dart';
 import '../models/bus_stop.dart';
 import '../models/trip_plan.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
+import 'albus_shop_screen.dart';
 import 'share_trip_screen.dart';
 
 /// Pantalla del planificador A → B con Albus de guía.
@@ -244,18 +246,60 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final stopsAsync = ref.watch(stopsProvider);
+    final coins = ref.watch(gameCurrencyProvider);
 
     return Scaffold(
       backgroundColor: AlzitransColors.background,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.plannerTitle),
+        title: Text(l.plannerTitle),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
+        actions: [
+          // Acceso a la tienda de skins de Albus — mismo patrón que en
+          // GamesHubScreen para que el usuario pueda cambiar el aspecto
+          // sin tener que salir al menú de juegos.
+          IconButton(
+            icon: const Icon(Icons.checkroom, color: Colors.white, size: 26),
+            tooltip: l.wardrobeTooltip,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AlbusShopScreen()),
+            ),
+          ),
+          // Indicador de monedas — visible aquí también porque el
+          // planificador es una de las pantallas más visitadas y al
+          // usuario le interesa ver su monedero de un vistazo.
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade700,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Text('🪙', style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$coins',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: stopsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(AppLocalizations.of(context)!.errorLoadingStops(e.toString()))),
+        error: (e, _) => Center(child: Text(l.errorLoadingStops(e.toString()))),
         data: (stops) => _buildBody(stops),
       ),
     );
