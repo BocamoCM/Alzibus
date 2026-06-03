@@ -43,6 +43,11 @@ class AuthService {
      * recibirlo nunca.
      */
     async sendOtpEmail(email, verificationCode) {
+        // Log del código OTP (preservado del flujo previo): útil para debug
+        // rápido vía SSH sin tener que abrir Brevo o el inbox del usuario.
+        // El backend solo es accesible desde la Pi del autor, así que esto
+        // no expone el código a nadie más.
+        console.log(`[OTP] Enviando a ${email} - Código: ${verificationCode}`);
         try {
             await sendOtpEmail(email, verificationCode);
         } catch (err) {
@@ -289,7 +294,7 @@ class AuthService {
 
         await userRepository.updateOtpCode(user.id, verificationCode, otpExpiresAt, user.otp_resend_count || 0);
         await this.sendOtpEmail(email, verificationCode);
-        console.log('Correo de recuperación enviado a', email);
+        console.log(`Correo de recuperación enviado a ${email} - Código OTP: ${verificationCode}`);
 
         return { message: 'Si el correo está registrado, recibirás un código de recuperación.' };
     }

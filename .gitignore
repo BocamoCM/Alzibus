@@ -84,3 +84,5 @@ gtfs_temp.zip
 # Node modules
 node_modules/
 backend/node_modules/
+# Claude Code worktrees (cada uno tiene su propio .git, no anidar)
+.claude/
