@@ -1286,43 +1286,6 @@ class AppLocalizationsCa extends AppLocalizations {
       'Esperant el bus? Fem una partida! Guanya monedes mentre arriba.';
 
   @override
-  String get onboardingHelloTitle => 'Hola! Soc Albus 🚌';
-
-  @override
-  String get onboardingHelloBody =>
-      'Soc la teua mascota i guia dins d\'Alzitrans, l\'app del bus d\'Alzira. Te conte en 30 segons què pots fer.';
-
-  @override
-  String get onboardingPlanTitle => 'Planifica les teues rutes';
-
-  @override
-  String get onboardingPlanBody =>
-      'Dis-me d\'on ixes i a on vas i t\'explique pas a pas quin bus agafar, on baixar-te i quant tarda. Te mostre fins a 3 alternatives.';
-
-  @override
-  String get onboardingShareTitle => 'Comparteix el teu viatge';
-
-  @override
-  String get onboardingShareBody =>
-      'Envia un enllaç a la teua família o amics i veuran la teua posició en temps real en un mapa fins que arribes. Sense que hagen d\'instal·lar res.';
-
-  @override
-  String get onboardingReadyTitle => 'Llestos!';
-
-  @override
-  String get onboardingReadyBody =>
-      'Polsa el botó \"Planifica amb Albus\" a la pantalla principal per començar. Estic ací si em necessites.';
-
-  @override
-  String get onboardingSkip => 'Saltar';
-
-  @override
-  String get onboardingStart => 'Començar';
-
-  @override
-  String get onboardingNext => 'Següent';
-
-  @override
   String get skinDefaultName => 'Original';
 
   @override
