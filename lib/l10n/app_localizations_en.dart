@@ -1301,6 +1301,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skinAlziraFcName => 'UDA';
 
   @override
+  String get feedbackTitle => 'Support & feedback';
+
+  @override
+  String get feedbackHeading => 'How can we help you?';
+
+  @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String get subjectLabel => 'Brief summary (Subject)';
+
+  @override
+  String get subjectRequired => 'Subject is required';
+
+  @override
+  String get descriptionLabel => 'Detailed description';
+
+  @override
+  String get descriptionRequired => 'Description is required';
+
+  @override
+  String get sendTicket => 'Send Ticket';
+
+  @override
+  String get addComment => 'Add a comment...';
+
+  @override
+  String get attachImage => 'Attach image';
+
+  @override
+  String get conversation => 'Conversation';
+
+  @override
+  String get conversationClosedInactive =>
+      'Conversation closed (notice inactive)';
+
+  @override
+  String get noMessagesYet => 'No messages yet.\nType to start.';
+
+  @override
+  String get couldNotSendRetry => 'Couldn\'t send. Try again.';
+
+  @override
+  String get downloadNotSupportedWeb =>
+      'Download not supported in web from mobile app';
+
+  @override
+  String get arVisionTitle => 'AR Vision';
+
+  @override
+  String get routesPageTitle => 'Routes & lines';
+
+  @override
   String get rechargeYourCardSoon => 'Top up your card soon!';
 
   @override

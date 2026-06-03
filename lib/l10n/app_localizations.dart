@@ -2314,6 +2314,108 @@ abstract class AppLocalizations {
   /// **'UDA'**
   String get skinAlziraFcName;
 
+  /// No description provided for @feedbackTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte y feedback'**
+  String get feedbackTitle;
+
+  /// No description provided for @feedbackHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'¿En qué podemos ayudarte?'**
+  String get feedbackHeading;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría'**
+  String get categoryLabel;
+
+  /// No description provided for @subjectLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen breve (Asunto)'**
+  String get subjectLabel;
+
+  /// No description provided for @subjectRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'El asunto es obligatorio'**
+  String get subjectRequired;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción detallada'**
+  String get descriptionLabel;
+
+  /// No description provided for @descriptionRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'La descripción es obligatoria'**
+  String get descriptionRequired;
+
+  /// No description provided for @sendTicket.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar Ticket'**
+  String get sendTicket;
+
+  /// No description provided for @addComment.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir un comentario...'**
+  String get addComment;
+
+  /// No description provided for @attachImage.
+  ///
+  /// In es, this message translates to:
+  /// **'Adjuntar imagen'**
+  String get attachImage;
+
+  /// No description provided for @conversation.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación'**
+  String get conversation;
+
+  /// No description provided for @conversationClosedInactive.
+  ///
+  /// In es, this message translates to:
+  /// **'Conversación cerrada (Aviso inactivo)'**
+  String get conversationClosedInactive;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin mensajes aún.\nEscribe para empezar.'**
+  String get noMessagesYet;
+
+  /// No description provided for @couldNotSendRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo enviar. Inténtalo de nuevo.'**
+  String get couldNotSendRetry;
+
+  /// No description provided for @downloadNotSupportedWeb.
+  ///
+  /// In es, this message translates to:
+  /// **'Descarga no soportada en web desde la app móvil'**
+  String get downloadNotSupportedWeb;
+
+  /// No description provided for @arVisionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Visión AR'**
+  String get arVisionTitle;
+
+  /// No description provided for @routesPageTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Rutas y líneas'**
+  String get routesPageTitle;
+
   /// No description provided for @rechargeYourCardSoon.
   ///
   /// In es, this message translates to:

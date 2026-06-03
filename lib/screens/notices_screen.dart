@@ -250,7 +250,7 @@ class _NoticesScreenState extends State<NoticesScreen> {
                         leading: const Icon(Icons.forum, color: AlzitransColors.burgundy, size: 20),
                         title: Row(
                           children: [
-                            const Text('Conversación', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(AppLocalizations.of(context)!.conversation, style: const TextStyle(fontWeight: FontWeight.bold)),
                             if (notice.unreadAdminCount > 0) ...[
                               const SizedBox(width: 8),
                               Container(
@@ -372,7 +372,7 @@ class _ReplyWidgetState extends State<_ReplyWidget> {
       setState(() => _sending = false);
       if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo enviar. Inténtalo de nuevo.'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context)!.couldNotSendRetry), backgroundColor: Colors.red),
         );
       } else {
         _controller.clear();
@@ -403,7 +403,7 @@ class _ReplyWidgetState extends State<_ReplyWidget> {
           child: _isLoading && _messages.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : _messages.isEmpty
-                  ? const Center(child: Text('Sin mensajes aún.\nEscribe para empezar.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)))
+                  ? Center(child: Text(AppLocalizations.of(context)!.noMessagesYet, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)))
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(12),
@@ -514,7 +514,7 @@ class _ReplyWidgetState extends State<_ReplyWidget> {
             padding: const EdgeInsets.all(12),
             alignment: Alignment.center,
             decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
-            child: const Text('Conversación cerrada (Aviso inactivo)', style: TextStyle(color: Colors.grey)),
+            child: Text(AppLocalizations.of(context)!.conversationClosedInactive, style: const TextStyle(color: Colors.grey)),
           ),
       ],
     );

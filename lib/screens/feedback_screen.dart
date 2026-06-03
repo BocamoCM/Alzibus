@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../core/network/api_client.dart';
 import '../services/feedback_service.dart';
 import '../theme/app_theme.dart';
@@ -274,16 +275,16 @@ class _NewTicketFormState extends State<_NewTicketForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              '¿En qué podemos ayudarte?',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context)!.feedbackHeading,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedTag,
-              decoration: const InputDecoration(
-                labelText: 'Categoría',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.categoryLabel,
+                border: const OutlineInputBorder(),
               ),
               items: _tags.map((tag) {
                 return DropdownMenuItem(value: tag, child: Text(tag));
@@ -295,23 +296,23 @@ class _NewTicketFormState extends State<_NewTicketForm> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Resumen breve (Asunto)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.subjectLabel,
+                border: const OutlineInputBorder(),
               ),
-              validator: (val) => val == null || val.trim().isEmpty ? 'El asunto es obligatorio' : null,
+              validator: (val) => val == null || val.trim().isEmpty ? AppLocalizations.of(context)!.subjectRequired : null,
               maxLength: 100,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _descController,
-              decoration: const InputDecoration(
-                labelText: 'Descripción detallada',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.descriptionLabel,
+                border: const OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
               maxLines: 6,
-              validator: (val) => val == null || val.trim().isEmpty ? 'La descripción es obligatoria' : null,
+              validator: (val) => val == null || val.trim().isEmpty ? AppLocalizations.of(context)!.descriptionRequired : null,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -323,7 +324,7 @@ class _NewTicketFormState extends State<_NewTicketForm> {
               onPressed: _isSubmitting ? null : _submit,
               child: _isSubmitting
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Enviar Ticket', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  : Text(AppLocalizations.of(context)!.sendTicket, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -532,14 +533,14 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.attach_file, color: AlzitransColors.burgundy),
-                  tooltip: 'Adjuntar imagen',
+                  tooltip: AppLocalizations.of(context)!.attachImage,
                   onPressed: _pendingAttachments.length >= 3 ? null : _pickAttachment,
                 ),
                 Expanded(
                   child: TextField(
                     controller: _msgController,
                     decoration: InputDecoration(
-                      hintText: 'Añadir un comentario...',
+                      hintText: AppLocalizations.of(context)!.addComment,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
@@ -758,7 +759,7 @@ class _FeedbackChatScreenState extends State<_FeedbackChatScreen> {
     // intervención nuestra. Aquí asumimos móvil.
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Descarga no soportada en web desde la app móvil')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.downloadNotSupportedWeb)),
       );
       return;
     }
