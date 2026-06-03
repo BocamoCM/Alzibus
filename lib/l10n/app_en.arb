@@ -175,7 +175,6 @@
   "dataCreditsBusOperatorBody": "Timetables and arrival times for lines L1, L2 and L3 are courtesy of Autocares Lozano S.L.U., the operator of Alzira's urban bus service. Alzitrans queries this public information directly from each user's device; it does not store or redistribute the data. Alzitrans is not affiliated with Autocares Lozano S.L.U.",
   "dataCreditsRenfe": "Commuter trains",
   "dataCreditsRenfeBody": "Cercanías C2 schedules are provided by Renfe Operadora.",
-  "dataCreditsThanks": "Thanks to Autocares Lozano S.L.U. for making this information publicly available — without it this app could not exist.",
   "creditsLineLozano": "Data by Autocares Lozano",
 
   "removeAdsTitle": "Remove Ads (30 min)",

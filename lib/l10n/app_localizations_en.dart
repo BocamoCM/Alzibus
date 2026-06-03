@@ -492,10 +492,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cercanías C2 schedules are provided by Renfe Operadora.';
 
   @override
-  String get dataCreditsThanks =>
-      'Thanks to Autocares Lozano S.L.U. for making this information publicly available — without it this app could not exist.';
-
-  @override
   String get creditsLineLozano => 'Data by Autocares Lozano';
 
   @override

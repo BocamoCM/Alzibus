@@ -45,33 +45,6 @@ class CreditsPage extends StatelessWidget {
             link: 'https://www.renfe.com/es/es/cercanias/cercanias-valencia',
             linkLabel: 'renfe.com',
           ),
-
-          const SizedBox(height: 24),
-
-          // ── Agradecimiento ────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AlzitransColors.burgundy.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AlzitransColors.burgundy.withOpacity(0.2),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.favorite, color: AlzitransColors.burgundy, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l.dataCreditsThanks,
-                    style: const TextStyle(fontSize: 13, height: 1.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
