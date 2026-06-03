@@ -840,6 +840,307 @@ class AppLocalizationsCa extends AppLocalizations {
   String get confirmTripTitle => 'Confirmar viatge';
 
   @override
+  String get shareTripIntro =>
+      'Vols que algú sàpia per on vas? Comença el viatge compartit i et done un enllaç per enviar-los.';
+
+  @override
+  String get creatingSharedTrip => 'Creant el teu viatge compartit...';
+
+  @override
+  String get noLocationPermissionShare =>
+      'Sense permís d\'ubicació no puc compartir el viatge.';
+
+  @override
+  String get needLocationPermissionAlbus =>
+      'Necessite permís per veure on estàs!';
+
+  @override
+  String get tripReadyShareIt =>
+      'Llest! Comparteix l\'enllaç i la gent veurà per on vas en temps real.';
+
+  @override
+  String couldntCreateTrip(String error) {
+    return 'No he pogut crear el viatge: $error';
+  }
+
+  @override
+  String get somethingBrokeRetry =>
+      'Alguna cosa s\'ha torçat. Ho tornem a provar?';
+
+  @override
+  String get endingSharedTrip => 'Acabant el compartit...';
+
+  @override
+  String get tripEnded => 'Viatge acabat! Bon camí 👋';
+
+  @override
+  String shareMessageWithDest(String url) {
+    return 'Vaig al bus! Mira per on vaig en directe: $url';
+  }
+
+  @override
+  String shareMessage(String url) {
+    return 'Segueix el meu viatge en bus en directe! $url';
+  }
+
+  @override
+  String shareSubjectWithDest(String destination) {
+    return 'Vaig cap a $destination · Alzitrans';
+  }
+
+  @override
+  String get shareSubject => 'El meu viatge en directe · Alzitrans';
+
+  @override
+  String get linkShared => 'Enllaç compartit! 🚌';
+
+  @override
+  String linkCopied(String url) {
+    return 'Enllaç copiat: $url';
+  }
+
+  @override
+  String destinationLabel(String name) {
+    return 'Destí: $name';
+  }
+
+  @override
+  String get lineLabelSingular => 'Línia: ';
+
+  @override
+  String get shareTripExplanation =>
+      'Quan comences, es generarà un enllaç públic que pots enviar a qui vulgues. Veuran la teua posició i l\'hora estimada d\'arribada actualitzades cada 30 segons.';
+
+  @override
+  String get linkExpires6Hours => 'L\'enllaç caduca al cap de 6 hores.';
+
+  @override
+  String get startingButton => 'Començant...';
+
+  @override
+  String get startSharingButton => 'Començar a compartir';
+
+  @override
+  String get sharingLive => 'Compartint en directe';
+
+  @override
+  String get destination => 'Destí';
+
+  @override
+  String get lineSingular => 'Línia';
+
+  @override
+  String get etaLabel => 'Arribada estimada';
+
+  @override
+  String get lastPosition => 'Última posició';
+
+  @override
+  String get linkToShare => 'Enllaç per compartir';
+
+  @override
+  String get copy => 'Copiar';
+
+  @override
+  String get seeAsOthersSee => 'Mira com ho veuen els altres';
+
+  @override
+  String get endingButton => 'Acabant...';
+
+  @override
+  String get stopSharingButton => 'Acabar de compartir';
+
+  @override
+  String get minimizeBackgroundNotice =>
+      'Pots minimitzar l\'app sense problema: els pings d\'ubicació segueixen enviant-se en segon pla cada 30 s.';
+
+  @override
+  String minutesShort(int n) {
+    return '$n min';
+  }
+
+  @override
+  String get plannerTitle => 'Planificador amb Albus';
+
+  @override
+  String get albusGreeting =>
+      'Hola! Soc Albus 🚌. Dis-me d\'on ixes i a on vas, i et dic quin bus agafar.';
+
+  @override
+  String get chooseOriginAndDest => 'Tria origen i destí abans de buscar.';
+
+  @override
+  String get albusNeedsOriginDest =>
+      'Ai! Necessite saber d\'on ixes i a on vas.';
+
+  @override
+  String get sameStopError => 'L\'origen i el destí són la mateixa parada.';
+
+  @override
+  String get albusAlreadyThere => 'Però... si ja estàs ahí! 😅';
+
+  @override
+  String get albusSearchingRoute => 'Estic mirant quin bus et porta...';
+
+  @override
+  String get albusNoRoute =>
+      'Vaja... no trobe ruta directa. Potser val la pena anar a peu.';
+
+  @override
+  String get albusOneRoute => 'Tinc una ruta! Te l\'explique pas a pas 👇';
+
+  @override
+  String albusMultipleRoutes(int count) {
+    return 'Tinc $count opcions! La primera és la més ràpida.';
+  }
+
+  @override
+  String searchError(String error) {
+    return 'Alguna cosa s\'ha torçat buscant ($error). Torna-ho a provar.';
+  }
+
+  @override
+  String get albusCantCalculate =>
+      'Ups, no he pogut calcular la ruta. Ho tornem a provar?';
+
+  @override
+  String get albusSwapped => 'Canviat! Busquem esta nova ruta?';
+
+  @override
+  String get albusFindingYou => 'A veure on estàs...';
+
+  @override
+  String get enableLocationRetry =>
+      'Activa la ubicació del mòbil i torna-ho a intentar.';
+
+  @override
+  String get noLocationPermission =>
+      'Sense permís d\'ubicació no puc saber on estàs.';
+
+  @override
+  String get noStopsNearYou => 'No hi ha parades prop teu — estàs a Alzira?';
+
+  @override
+  String veryCloseToStop(String name) {
+    return 'Estàs molt prop de $name. A on anem?';
+  }
+
+  @override
+  String nearestStopIs(String name, int dist) {
+    return 'La parada més pròxima és $name (a $dist m). A on anem?';
+  }
+
+  @override
+  String get couldntFindYou => 'No he pogut saber on estàs 😢';
+
+  @override
+  String okFromStop(String name) {
+    return 'Val, ixes de $name. A on vas?';
+  }
+
+  @override
+  String askDestRoute(String name) {
+    return 'Busquem com anar a $name?';
+  }
+
+  @override
+  String okToStop(String name) {
+    return 'Val, vas a $name. D\'on ixes?';
+  }
+
+  @override
+  String get readyToSearch => 'A punt. Polsa \"Buscar ruta\" quan vulgues.';
+
+  @override
+  String get searchingYourLocation => 'Buscant la teua ubicació...';
+
+  @override
+  String get usingYourLocation => 'Utilitzant la teua ubicació actual';
+
+  @override
+  String get useMyLocationButton => 'Utilitzar la meua ubicació com a origen';
+
+  @override
+  String get fromNearestStop => 'Des de (parada més pròxima)';
+
+  @override
+  String get fromLabel => 'Des de';
+
+  @override
+  String get toLabel => 'Fins a';
+
+  @override
+  String get swap => 'Intercanviar';
+
+  @override
+  String get searchRoute => 'Buscar ruta';
+
+  @override
+  String errorLoadingStops(String error) {
+    return 'Error carregant parades: $error';
+  }
+
+  @override
+  String get searchStopByName => 'Busca parada per nom…';
+
+  @override
+  String linesWithList(String lines) {
+    return 'Línies: $lines';
+  }
+
+  @override
+  String get shareThisTripLive => 'Compartir este viatge en directe';
+
+  @override
+  String get bestOption => 'MILLOR OPCIÓ';
+
+  @override
+  String optionN(int n) {
+    return 'OPCIÓ $n';
+  }
+
+  @override
+  String transfersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transbordaments',
+      one: '1 transbordament',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walkingStep(int dist, int duration) {
+    return 'A peu · $dist m · $duration min';
+  }
+
+  @override
+  String busStepDetail(int stops, int duration) {
+    return '$stops parades · $duration min';
+  }
+
+  @override
+  String boardAt(String name) {
+    return 'Puja: $name';
+  }
+
+  @override
+  String alightAt(String name) {
+    return 'Baixa: $name';
+  }
+
+  @override
+  String transferAt(String name) {
+    return 'Transbordament a $name';
+  }
+
+  @override
+  String transferStep(String from, String to, int duration) {
+    return 'De $from a $to · ~$duration min';
+  }
+
+  @override
   String get rechargeYourCardSoon => 'Recarrega la teua targeta prompte!';
 
   @override

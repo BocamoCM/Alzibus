@@ -1564,6 +1564,474 @@ abstract class AppLocalizations {
   /// **'Confirmar viaje'**
   String get confirmTripTitle;
 
+  /// No description provided for @shareTripIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quieres que alguien sepa por dónde vas? Empieza el viaje compartido y te doy un enlace para enviarles.'**
+  String get shareTripIntro;
+
+  /// No description provided for @creatingSharedTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Creando tu viaje compartido...'**
+  String get creatingSharedTrip;
+
+  /// No description provided for @noLocationPermissionShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin permiso de ubicación no puedo compartir el viaje.'**
+  String get noLocationPermissionShare;
+
+  /// No description provided for @needLocationPermissionAlbus.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Necesito permiso para ver dónde estás!'**
+  String get needLocationPermissionAlbus;
+
+  /// No description provided for @tripReadyShareIt.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Listo! Comparte el enlace y la gente verá dónde vas en tiempo real.'**
+  String get tripReadyShareIt;
+
+  /// No description provided for @couldntCreateTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude crear el viaje: {error}'**
+  String couldntCreateTrip(String error);
+
+  /// No description provided for @somethingBrokeRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo se torció. ¿Probamos de nuevo?'**
+  String get somethingBrokeRetry;
+
+  /// No description provided for @endingSharedTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminando el compartido...'**
+  String get endingSharedTrip;
+
+  /// No description provided for @tripEnded.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Viaje terminado! Buen camino 👋'**
+  String get tripEnded;
+
+  /// No description provided for @shareMessageWithDest.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Voy en el bus! Mira por dónde voy en vivo: {url}'**
+  String shareMessageWithDest(String url);
+
+  /// No description provided for @shareMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Sigue mi viaje en bus en vivo! {url}'**
+  String shareMessage(String url);
+
+  /// No description provided for @shareSubjectWithDest.
+  ///
+  /// In es, this message translates to:
+  /// **'Voy hacia {destination} · Alzitrans'**
+  String shareSubjectWithDest(String destination);
+
+  /// No description provided for @shareSubject.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi viaje en vivo · Alzitrans'**
+  String get shareSubject;
+
+  /// No description provided for @linkShared.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Enlace compartido! 🚌'**
+  String get linkShared;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace copiado: {url}'**
+  String linkCopied(String url);
+
+  /// No description provided for @destinationLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Destino: {name}'**
+  String destinationLabel(String name);
+
+  /// No description provided for @lineLabelSingular.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea: '**
+  String get lineLabelSingular;
+
+  /// No description provided for @shareTripExplanation.
+  ///
+  /// In es, this message translates to:
+  /// **'Al empezar, se generará un enlace público que puedes mandar a quien quieras. Verán tu posición y la hora estimada de llegada actualizadas cada 30 segundos.'**
+  String get shareTripExplanation;
+
+  /// No description provided for @linkExpires6Hours.
+  ///
+  /// In es, this message translates to:
+  /// **'El enlace caduca solo a las 6 horas.'**
+  String get linkExpires6Hours;
+
+  /// No description provided for @startingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Iniciando...'**
+  String get startingButton;
+
+  /// No description provided for @startSharingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar a compartir'**
+  String get startSharingButton;
+
+  /// No description provided for @sharingLive.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartiendo en vivo'**
+  String get sharingLive;
+
+  /// No description provided for @destination.
+  ///
+  /// In es, this message translates to:
+  /// **'Destino'**
+  String get destination;
+
+  /// No description provided for @lineSingular.
+  ///
+  /// In es, this message translates to:
+  /// **'Línea'**
+  String get lineSingular;
+
+  /// No description provided for @etaLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegada estimada'**
+  String get etaLabel;
+
+  /// No description provided for @lastPosition.
+  ///
+  /// In es, this message translates to:
+  /// **'Última posición'**
+  String get lastPosition;
+
+  /// No description provided for @linkToShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace para compartir'**
+  String get linkToShare;
+
+  /// No description provided for @copy.
+  ///
+  /// In es, this message translates to:
+  /// **'Copiar'**
+  String get copy;
+
+  /// No description provided for @seeAsOthersSee.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver como lo ven los demás'**
+  String get seeAsOthersSee;
+
+  /// No description provided for @endingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminando...'**
+  String get endingButton;
+
+  /// No description provided for @stopSharingButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Terminar de compartir'**
+  String get stopSharingButton;
+
+  /// No description provided for @minimizeBackgroundNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes minimizar la app sin problema: los pings de ubicación siguen mandándose en segundo plano cada 30 s.'**
+  String get minimizeBackgroundNotice;
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} min'**
+  String minutesShort(int n);
+
+  /// No description provided for @plannerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Planificador con Albus'**
+  String get plannerTitle;
+
+  /// No description provided for @albusGreeting.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Hola! Soy Albus 🚌. Dime de dónde sales y a dónde vas, y te digo qué bus coger.'**
+  String get albusGreeting;
+
+  /// No description provided for @chooseOriginAndDest.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige origen y destino antes de buscar.'**
+  String get chooseOriginAndDest;
+
+  /// No description provided for @albusNeedsOriginDest.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Ay! Necesito saber de dónde sales y a dónde vas.'**
+  String get albusNeedsOriginDest;
+
+  /// No description provided for @sameStopError.
+  ///
+  /// In es, this message translates to:
+  /// **'El origen y el destino son la misma parada.'**
+  String get sameStopError;
+
+  /// No description provided for @albusAlreadyThere.
+  ///
+  /// In es, this message translates to:
+  /// **'Pero... ¡si ya estás ahí! 😅'**
+  String get albusAlreadyThere;
+
+  /// No description provided for @albusSearchingRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'Estoy mirando qué bus te lleva...'**
+  String get albusSearchingRoute;
+
+  /// No description provided for @albusNoRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'Vaya... no encuentro ruta directa. Quizás merezca la pena ir andando.'**
+  String get albusNoRoute;
+
+  /// No description provided for @albusOneRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Tengo una ruta! Te la explico paso a paso 👇'**
+  String get albusOneRoute;
+
+  /// No description provided for @albusMultipleRoutes.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Tengo {count} opciones! La primera es la más rápida.'**
+  String albusMultipleRoutes(int count);
+
+  /// No description provided for @searchError.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo se torció al buscar ({error}). Inténtalo de nuevo.'**
+  String searchError(String error);
+
+  /// No description provided for @albusCantCalculate.
+  ///
+  /// In es, this message translates to:
+  /// **'Ups, no pude calcular la ruta. ¿Probamos otra vez?'**
+  String get albusCantCalculate;
+
+  /// No description provided for @albusSwapped.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Cambiado! ¿Buscamos esta nueva ruta?'**
+  String get albusSwapped;
+
+  /// No description provided for @albusFindingYou.
+  ///
+  /// In es, this message translates to:
+  /// **'A ver dónde estás...'**
+  String get albusFindingYou;
+
+  /// No description provided for @enableLocationRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación del móvil y vuelve a intentarlo.'**
+  String get enableLocationRetry;
+
+  /// No description provided for @noLocationPermission.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin permiso de ubicación no puedo saber dónde estás.'**
+  String get noLocationPermission;
+
+  /// No description provided for @noStopsNearYou.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay paradas cerca de ti — ¿estás en Alzira?'**
+  String get noStopsNearYou;
+
+  /// No description provided for @veryCloseToStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás muy cerca de {name}. ¿A dónde vamos?'**
+  String veryCloseToStop(String name);
+
+  /// No description provided for @nearestStopIs.
+  ///
+  /// In es, this message translates to:
+  /// **'La parada más cercana es {name} (a {dist} m). ¿A dónde vamos?'**
+  String nearestStopIs(String name, int dist);
+
+  /// No description provided for @couldntFindYou.
+  ///
+  /// In es, this message translates to:
+  /// **'No pude saber dónde estás 😢'**
+  String get couldntFindYou;
+
+  /// No description provided for @okFromStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Vale, sales de {name}. ¿A dónde vas?'**
+  String okFromStop(String name);
+
+  /// No description provided for @askDestRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Buscamos cómo ir a {name}?'**
+  String askDestRoute(String name);
+
+  /// No description provided for @okToStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Vale, vas a {name}. ¿De dónde sales?'**
+  String okToStop(String name);
+
+  /// No description provided for @readyToSearch.
+  ///
+  /// In es, this message translates to:
+  /// **'Listos. Pulsa \"Buscar ruta\" cuando quieras.'**
+  String get readyToSearch;
+
+  /// No description provided for @searchingYourLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscando tu ubicación...'**
+  String get searchingYourLocation;
+
+  /// No description provided for @usingYourLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Usando tu ubicación actual'**
+  String get usingYourLocation;
+
+  /// No description provided for @useMyLocationButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar mi ubicación como origen'**
+  String get useMyLocationButton;
+
+  /// No description provided for @fromNearestStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde (parada más cercana)'**
+  String get fromNearestStop;
+
+  /// No description provided for @fromLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde'**
+  String get fromLabel;
+
+  /// No description provided for @toLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta'**
+  String get toLabel;
+
+  /// No description provided for @swap.
+  ///
+  /// In es, this message translates to:
+  /// **'Intercambiar'**
+  String get swap;
+
+  /// No description provided for @searchRoute.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar ruta'**
+  String get searchRoute;
+
+  /// No description provided for @errorLoadingStops.
+  ///
+  /// In es, this message translates to:
+  /// **'Error cargando paradas: {error}'**
+  String errorLoadingStops(String error);
+
+  /// No description provided for @searchStopByName.
+  ///
+  /// In es, this message translates to:
+  /// **'Busca parada por nombre…'**
+  String get searchStopByName;
+
+  /// No description provided for @linesWithList.
+  ///
+  /// In es, this message translates to:
+  /// **'Líneas: {lines}'**
+  String linesWithList(String lines);
+
+  /// No description provided for @shareThisTripLive.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir este viaje en vivo'**
+  String get shareThisTripLive;
+
+  /// No description provided for @bestOption.
+  ///
+  /// In es, this message translates to:
+  /// **'MEJOR OPCIÓN'**
+  String get bestOption;
+
+  /// No description provided for @optionN.
+  ///
+  /// In es, this message translates to:
+  /// **'OPCIÓN {n}'**
+  String optionN(int n);
+
+  /// No description provided for @transfersCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 transbordo} other{{count} transbordos}}'**
+  String transfersCount(int count);
+
+  /// No description provided for @walkingStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Andando · {dist} m · {duration} min'**
+  String walkingStep(int dist, int duration);
+
+  /// No description provided for @busStepDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'{stops} paradas · {duration} min'**
+  String busStepDetail(int stops, int duration);
+
+  /// No description provided for @boardAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Sube: {name}'**
+  String boardAt(String name);
+
+  /// No description provided for @alightAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Baja: {name}'**
+  String alightAt(String name);
+
+  /// No description provided for @transferAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Transbordo en {name}'**
+  String transferAt(String name);
+
+  /// No description provided for @transferStep.
+  ///
+  /// In es, this message translates to:
+  /// **'De {from} a {to} · ~{duration} min'**
+  String transferStep(String from, String to, int duration);
+
   /// No description provided for @rechargeYourCardSoon.
   ///
   /// In es, this message translates to:

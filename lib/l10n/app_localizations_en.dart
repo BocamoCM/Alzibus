@@ -833,6 +833,308 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmTripTitle => 'Confirm trip';
 
   @override
+  String get shareTripIntro =>
+      'Want someone to know where you are? Start the shared trip and I\'ll give you a link to send them.';
+
+  @override
+  String get creatingSharedTrip => 'Creating your shared trip...';
+
+  @override
+  String get noLocationPermissionShare =>
+      'Without location permission I can\'t share the trip.';
+
+  @override
+  String get needLocationPermissionAlbus =>
+      'I need permission to see where you are!';
+
+  @override
+  String get tripReadyShareIt =>
+      'Ready! Share the link and people will see where you are in real time.';
+
+  @override
+  String couldntCreateTrip(String error) {
+    return 'Couldn\'t create the trip: $error';
+  }
+
+  @override
+  String get somethingBrokeRetry => 'Something broke. Want to try again?';
+
+  @override
+  String get endingSharedTrip => 'Ending the shared trip...';
+
+  @override
+  String get tripEnded => 'Trip finished! Safe travels 👋';
+
+  @override
+  String shareMessageWithDest(String url) {
+    return 'I\'m on the bus! Track me live: $url';
+  }
+
+  @override
+  String shareMessage(String url) {
+    return 'Follow my live bus trip! $url';
+  }
+
+  @override
+  String shareSubjectWithDest(String destination) {
+    return 'On my way to $destination · Alzitrans';
+  }
+
+  @override
+  String get shareSubject => 'My live trip · Alzitrans';
+
+  @override
+  String get linkShared => 'Link shared! 🚌';
+
+  @override
+  String linkCopied(String url) {
+    return 'Link copied: $url';
+  }
+
+  @override
+  String destinationLabel(String name) {
+    return 'Destination: $name';
+  }
+
+  @override
+  String get lineLabelSingular => 'Line: ';
+
+  @override
+  String get shareTripExplanation =>
+      'When you start, a public link will be generated that you can send to anyone. They\'ll see your position and estimated arrival time updated every 30 seconds.';
+
+  @override
+  String get linkExpires6Hours => 'The link expires after 6 hours.';
+
+  @override
+  String get startingButton => 'Starting...';
+
+  @override
+  String get startSharingButton => 'Start sharing';
+
+  @override
+  String get sharingLive => 'Sharing live';
+
+  @override
+  String get destination => 'Destination';
+
+  @override
+  String get lineSingular => 'Line';
+
+  @override
+  String get etaLabel => 'Estimated arrival';
+
+  @override
+  String get lastPosition => 'Last position';
+
+  @override
+  String get linkToShare => 'Link to share';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get seeAsOthersSee => 'See it as others do';
+
+  @override
+  String get endingButton => 'Ending...';
+
+  @override
+  String get stopSharingButton => 'Stop sharing';
+
+  @override
+  String get minimizeBackgroundNotice =>
+      'You can minimise the app safely: location pings keep being sent in the background every 30 s.';
+
+  @override
+  String minutesShort(int n) {
+    return '$n min';
+  }
+
+  @override
+  String get plannerTitle => 'Planner with Albus';
+
+  @override
+  String get albusGreeting =>
+      'Hi! I\'m Albus 🚌. Tell me where you\'re leaving from and where you\'re going, and I\'ll tell you which bus to take.';
+
+  @override
+  String get chooseOriginAndDest =>
+      'Choose origin and destination before searching.';
+
+  @override
+  String get albusNeedsOriginDest =>
+      'Oh! I need to know where you\'re leaving from and where you\'re going.';
+
+  @override
+  String get sameStopError => 'Origin and destination are the same stop.';
+
+  @override
+  String get albusAlreadyThere => 'But… you\'re already there! 😅';
+
+  @override
+  String get albusSearchingRoute => 'Let me check which bus takes you there...';
+
+  @override
+  String get albusNoRoute =>
+      'Well... I can\'t find a direct route. Maybe it\'s worth walking.';
+
+  @override
+  String get albusOneRoute =>
+      'I\'ve got a route! I\'ll explain it step by step 👇';
+
+  @override
+  String albusMultipleRoutes(int count) {
+    return 'I\'ve got $count options! The first one is the fastest.';
+  }
+
+  @override
+  String searchError(String error) {
+    return 'Something broke while searching ($error). Try again.';
+  }
+
+  @override
+  String get albusCantCalculate =>
+      'Oops, I couldn\'t calculate the route. Want to try again?';
+
+  @override
+  String get albusSwapped => 'Swapped! Want to look up this new route?';
+
+  @override
+  String get albusFindingYou => 'Let\'s see where you are...';
+
+  @override
+  String get enableLocationRetry =>
+      'Turn on the phone\'s location and try again.';
+
+  @override
+  String get noLocationPermission =>
+      'Without location permission I can\'t tell where you are.';
+
+  @override
+  String get noStopsNearYou => 'No stops near you — are you in Alzira?';
+
+  @override
+  String veryCloseToStop(String name) {
+    return 'You\'re very close to $name. Where are we going?';
+  }
+
+  @override
+  String nearestStopIs(String name, int dist) {
+    return 'The nearest stop is $name ($dist m away). Where are we going?';
+  }
+
+  @override
+  String get couldntFindYou => 'I couldn\'t tell where you are 😢';
+
+  @override
+  String okFromStop(String name) {
+    return 'OK, you\'re leaving from $name. Where to?';
+  }
+
+  @override
+  String askDestRoute(String name) {
+    return 'Shall we look up how to get to $name?';
+  }
+
+  @override
+  String okToStop(String name) {
+    return 'OK, you\'re going to $name. Where from?';
+  }
+
+  @override
+  String get readyToSearch => 'Ready. Tap \"Search route\" whenever you want.';
+
+  @override
+  String get searchingYourLocation => 'Searching for your location...';
+
+  @override
+  String get usingYourLocation => 'Using your current location';
+
+  @override
+  String get useMyLocationButton => 'Use my location as origin';
+
+  @override
+  String get fromNearestStop => 'From (nearest stop)';
+
+  @override
+  String get fromLabel => 'From';
+
+  @override
+  String get toLabel => 'To';
+
+  @override
+  String get swap => 'Swap';
+
+  @override
+  String get searchRoute => 'Search route';
+
+  @override
+  String errorLoadingStops(String error) {
+    return 'Error loading stops: $error';
+  }
+
+  @override
+  String get searchStopByName => 'Search stop by name…';
+
+  @override
+  String linesWithList(String lines) {
+    return 'Lines: $lines';
+  }
+
+  @override
+  String get shareThisTripLive => 'Share this trip live';
+
+  @override
+  String get bestOption => 'BEST OPTION';
+
+  @override
+  String optionN(int n) {
+    return 'OPTION $n';
+  }
+
+  @override
+  String transfersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transfers',
+      one: '1 transfer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walkingStep(int dist, int duration) {
+    return 'Walking · $dist m · $duration min';
+  }
+
+  @override
+  String busStepDetail(int stops, int duration) {
+    return '$stops stops · $duration min';
+  }
+
+  @override
+  String boardAt(String name) {
+    return 'Board at: $name';
+  }
+
+  @override
+  String alightAt(String name) {
+    return 'Get off at: $name';
+  }
+
+  @override
+  String transferAt(String name) {
+    return 'Transfer at $name';
+  }
+
+  @override
+  String transferStep(String from, String to, int duration) {
+    return 'From $from to $to · ~$duration min';
+  }
+
+  @override
   String get rechargeYourCardSoon => 'Top up your card soon!';
 
   @override

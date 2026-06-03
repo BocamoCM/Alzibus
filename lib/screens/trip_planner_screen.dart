@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../core/providers/stops_provider.dart';
 import '../core/providers/trip_planner_provider.dart';
@@ -44,22 +45,34 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
   ({double lat, double lng})? _originUserCoord;
 
   AlbusState _albusState = AlbusState.idle;
-  String _albusMessage = '¡Hola! Soy Albus 🚌. Dime de dónde sales y a dónde vas, y te digo qué bus coger.';
+  // Inicializado vacío y rellenado en didChangeDependencies (necesita context).
+  String _albusMessage = '';
+  bool _albusInitialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_albusInitialised) {
+      _albusMessage = AppLocalizations.of(context)!.albusGreeting;
+      _albusInitialised = true;
+    }
+  }
 
   Future<void> _search() async {
+    final l = AppLocalizations.of(context)!;
     if (_origin == null || _destination == null) {
       setState(() {
-        _errorMsg = 'Elige origen y destino antes de buscar.';
+        _errorMsg = l.chooseOriginAndDest;
         _albusState = AlbusState.sad;
-        _albusMessage = '¡Ay! Necesito saber de dónde sales y a dónde vas.';
+        _albusMessage = l.albusNeedsOriginDest;
       });
       return;
     }
     if (_origin!.id == _destination!.id) {
       setState(() {
-        _errorMsg = 'El origen y el destino son la misma parada.';
+        _errorMsg = l.sameStopError;
         _albusState = AlbusState.thinking;
-        _albusMessage = 'Pero... ¡si ya estás ahí! 😅';
+        _albusMessage = l.albusAlreadyThere;
       });
       return;
     }
@@ -69,7 +82,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       _errorMsg = null;
       _plans = null;
       _albusState = AlbusState.thinking;
-      _albusMessage = 'Estoy mirando qué bus te lleva...';
+      _albusMessage = l.albusSearchingRoute;
     });
 
     try {
@@ -85,30 +98,35 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       if (!mounted) return;
 
       if (results.isEmpty) {
+        if (!mounted) return;
+        final l2 = AppLocalizations.of(context)!;
         setState(() {
           _isSearching = false;
           _plans = [];
           _albusState = AlbusState.sad;
-          _albusMessage = 'Vaya... no encuentro ruta directa. Quizás merezca la pena ir andando.';
+          _albusMessage = l2.albusNoRoute;
         });
         return;
       }
 
+      if (!mounted) return;
+      final l2 = AppLocalizations.of(context)!;
       setState(() {
         _isSearching = false;
         _plans = results;
         _albusState = AlbusState.happy;
         _albusMessage = results.length == 1
-            ? '¡Tengo una ruta! Te la explico paso a paso 👇'
-            : '¡Tengo ${results.length} opciones! La primera es la más rápida.';
+            ? l2.albusOneRoute
+            : l2.albusMultipleRoutes(results.length);
       });
     } catch (e) {
       if (!mounted) return;
+      final l2 = AppLocalizations.of(context)!;
       setState(() {
         _isSearching = false;
-        _errorMsg = 'Algo se torció al buscar ($e). Inténtalo de nuevo.';
+        _errorMsg = l2.searchError(e.toString());
         _albusState = AlbusState.sad;
-        _albusMessage = 'Ups, no pude calcular la ruta. ¿Probamos otra vez?';
+        _albusMessage = l2.albusCantCalculate;
       });
     }
   }
@@ -125,7 +143,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       // parada concreta del usuario, no su GPS.
       _originUserCoord = null;
       _albusState = AlbusState.talking;
-      _albusMessage = '¡Cambiado! ¿Buscamos esta nueva ruta?';
+      _albusMessage = AppLocalizations.of(context)!.albusSwapped;
     });
   }
 
@@ -133,18 +151,19 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
   /// las coordenadas exactas del usuario para que el motor añada un WalkStep
   /// inicial. Si algo falla, muestra mensaje con Albus triste.
   Future<void> _useMyLocation(List<BusStop> stops) async {
+    final l = AppLocalizations.of(context)!;
     setState(() {
       _isLocating = true;
       _errorMsg = null;
       _albusState = AlbusState.thinking;
-      _albusMessage = 'A ver dónde estás...';
+      _albusMessage = l.albusFindingYou;
     });
 
     try {
       // Verificar servicio + permiso.
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw 'Activa la ubicación del móvil y vuelve a intentarlo.';
+        throw l.enableLocationRetry;
       }
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -152,7 +171,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        throw 'Sin permiso de ubicación no puedo saber dónde estás.';
+        throw l.noLocationPermission;
       }
 
       // Obtener posición actual (con timeout para que no se quede colgado).
@@ -166,12 +185,13 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       // Buscar la parada más cercana.
       final nearest = _findNearestStop(stops, pos.latitude, pos.longitude);
       if (nearest == null) {
-        throw 'No hay paradas cerca de ti — ¿estás en Alzira?';
+        throw l.noStopsNearYou;
       }
       final distM = _haversineM(
         pos.latitude, pos.longitude, nearest.lat, nearest.lng);
 
       if (!mounted) return;
+      final l2 = AppLocalizations.of(context)!;
       setState(() {
         _origin = nearest;
         _originUserCoord = (lat: pos.latitude, lng: pos.longitude);
@@ -179,17 +199,17 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
         _plans = null;
         _albusState = AlbusState.happy;
         _albusMessage = distM < 80
-            ? 'Estás muy cerca de ${nearest.name}. ¿A dónde vamos?'
-            : 'La parada más cercana es ${nearest.name} (a ${distM.round()} m). '
-              '¿A dónde vamos?';
+            ? l2.veryCloseToStop(nearest.name)
+            : l2.nearestStopIs(nearest.name, distM.round());
       });
     } catch (e) {
       if (!mounted) return;
+      final l2 = AppLocalizations.of(context)!;
       setState(() {
         _isLocating = false;
         _errorMsg = e.toString();
         _albusState = AlbusState.sad;
-        _albusMessage = 'No pude saber dónde estás 😢';
+        _albusMessage = l2.couldntFindYou;
       });
     }
   }
@@ -229,13 +249,13 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
     return Scaffold(
       backgroundColor: AlzitransColors.background,
       appBar: AppBar(
-        title: const Text('Planificador con Albus'),
+        title: Text(AppLocalizations.of(context)!.plannerTitle),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
       ),
       body: stopsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error cargando paradas: $e')),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context)!.errorLoadingStops(e.toString()))),
         data: (stops) => _buildBody(stops),
       ),
     );
@@ -311,10 +331,10 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                     : const Icon(Icons.gps_fixed, size: 18),
                 label: Text(
                   _isLocating
-                      ? 'Buscando tu ubicación...'
+                      ? AppLocalizations.of(context)!.searchingYourLocation
                       : (_originUserCoord != null
-                          ? 'Usando tu ubicación actual'
-                          : 'Usar mi ubicación como origen'),
+                          ? AppLocalizations.of(context)!.usingYourLocation
+                          : AppLocalizations.of(context)!.useMyLocationButton),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -322,8 +342,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
             const SizedBox(height: 12),
             _StopPicker(
               label: _originUserCoord != null
-                  ? 'Desde (parada más cercana)'
-                  : 'Desde',
+                  ? AppLocalizations.of(context)!.fromNearestStop
+                  : AppLocalizations.of(context)!.fromLabel,
               icon: _originUserCoord != null ? Icons.gps_fixed : Icons.my_location,
               stops: stops,
               selected: _origin,
@@ -333,9 +353,10 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                 // tratarlo como "Mi ubicación" — ya no añadimos walk inicial.
                 _originUserCoord = null;
                 _albusState = AlbusState.talking;
+                final l = AppLocalizations.of(context)!;
                 _albusMessage = _destination == null
-                    ? 'Vale, sales de ${s.name}. ¿A dónde vas?'
-                    : '¿Buscamos cómo ir a ${_destination!.name}?';
+                    ? l.okFromStop(s.name)
+                    : l.askDestRoute(_destination!.name);
               }),
             ),
             const SizedBox(height: 8),
@@ -343,7 +364,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
               children: [
                 const Expanded(child: Divider()),
                 IconButton(
-                  tooltip: 'Intercambiar',
+                  tooltip: AppLocalizations.of(context)!.swap,
                   onPressed: _swapOriginDestination,
                   icon: const Icon(Icons.swap_vert, color: AlzitransColors.burgundy),
                 ),
@@ -351,16 +372,17 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
               ],
             ),
             _StopPicker(
-              label: 'Hasta',
+              label: AppLocalizations.of(context)!.toLabel,
               icon: Icons.flag,
               stops: stops,
               selected: _destination,
               onPicked: (s) => setState(() {
                 _destination = s;
                 _albusState = AlbusState.talking;
+                final l = AppLocalizations.of(context)!;
                 _albusMessage = _origin == null
-                    ? 'Vale, vas a ${s.name}. ¿De dónde sales?'
-                    : 'Listos. Pulsa "Buscar ruta" cuando quieras.';
+                    ? l.okToStop(s.name)
+                    : l.readyToSearch;
               }),
             ),
           ],
@@ -379,7 +401,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       icon: const Icon(Icons.directions_bus),
-      label: const Text('Buscar ruta', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      label: Text(AppLocalizations.of(context)!.searchRoute, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -491,7 +513,7 @@ class _StopSearchDialogState extends State<_StopSearchDialog> {
               child: TextField(
                 autofocus: true,
                 decoration: InputDecoration(
-                  hintText: 'Busca parada por nombre…',
+                  hintText: AppLocalizations.of(context)!.searchStopByName,
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -508,7 +530,7 @@ class _StopSearchDialogState extends State<_StopSearchDialog> {
                     leading: const Icon(Icons.directions_bus,
                         color: AlzitransColors.burgundy),
                     title: Text(s.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    subtitle: Text('Líneas: ${s.lines.join(", ")}'),
+                    subtitle: Text(AppLocalizations.of(context)!.linesWithList(s.lines.join(", "))),
                     onTap: () => Navigator.of(context).pop(s),
                   );
                 },
@@ -529,6 +551,7 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Card(
       elevation: isPrimary ? 6 : 2,
       shape: RoundedRectangleBorder(
@@ -543,9 +566,9 @@ class _PlanCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _planHeader(),
+            _planHeader(l),
             const SizedBox(height: 12),
-            ...plan.steps.asMap().entries.map((e) => _stepTile(e.key, e.value)),
+            ...plan.steps.asMap().entries.map((e) => _stepTile(e.key, e.value, l)),
             const SizedBox(height: 8),
             _shareButton(),
           ],
@@ -588,14 +611,14 @@ class _PlanCard extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
           icon: const Icon(Icons.share_location, size: 18),
-          label: const Text('Compartir este viaje en vivo',
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          label: Text(AppLocalizations.of(context)!.shareThisTripLive,
+              style: const TextStyle(fontWeight: FontWeight.w600)),
         ),
       ),
     );
   }
 
-  Widget _planHeader() {
+  Widget _planHeader(AppLocalizations l) {
     return Row(
       children: [
         Container(
@@ -607,7 +630,7 @@ class _PlanCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            isPrimary ? 'MEJOR OPCIÓN' : 'OPCIÓN ${index + 1}',
+            isPrimary ? l.bestOption : l.optionN(index + 1),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
@@ -619,7 +642,7 @@ class _PlanCard extends StatelessWidget {
         Row(children: [
           const Icon(Icons.access_time, size: 16, color: Colors.grey),
           const SizedBox(width: 4),
-          Text('${plan.totalDurationMin} min',
+          Text(l.minutesShort(plan.totalDurationMin),
               style: const TextStyle(fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(width: 12),
@@ -628,9 +651,7 @@ class _PlanCard extends StatelessWidget {
             const Icon(Icons.swap_horiz, size: 16, color: Colors.grey),
             const SizedBox(width: 4),
             Text(
-              plan.transferCount == 1
-                  ? '1 transbordo'
-                  : '${plan.transferCount} transbordos',
+              l.transfersCount(plan.transferCount),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ]),
@@ -638,7 +659,7 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  Widget _stepTile(int idx, TripStep step) {
+  Widget _stepTile(int idx, TripStep step, AppLocalizations l) {
     final isLast = idx == plan.steps.length - 1;
     return IntrinsicHeight(
       child: Row(
@@ -661,7 +682,7 @@ class _PlanCard extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 14, top: 4),
-              child: _stepBody(step),
+              child: _stepBody(step, l),
             ),
           ),
         ],
@@ -684,7 +705,7 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  Widget _stepBody(TripStep step) {
+  Widget _stepBody(TripStep step, AppLocalizations l) {
     if (step is WalkStep) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,7 +716,7 @@ class _PlanCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Andando · ${step.distanceM} m · ${step.durationMin} min',
+            l.walkingStep(step.distanceM, step.durationMin),
             style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
           ),
           const SizedBox(height: 6),
@@ -722,14 +743,14 @@ class _PlanCard extends StatelessWidget {
                         fontSize: 12)),
               ),
               const SizedBox(width: 8),
-              Text('${step.stopsToCount} paradas · ${step.durationMin} min',
+              Text(l.busStepDetail(step.stopsToCount, step.durationMin),
                   style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 6),
-          Text('Sube: ${step.fromStop.name}',
+          Text(l.boardAt(step.fromStop.name),
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-          Text('Baja: ${step.toStop.name}',
+          Text(l.alightAt(step.toStop.name),
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           const SizedBox(height: 6),
           _AlbusHint(text: step.albusSays()),
@@ -740,13 +761,13 @@ class _PlanCard extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Transbordo en ${step.atStop.name}',
+          Text(l.transferAt(step.atStop.name),
               style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                   color: AlzitransColors.warning)),
           const SizedBox(height: 4),
-          Text('De ${step.fromLine} a ${step.toLine} · ~${step.durationMin} min',
+          Text(l.transferStep(step.fromLine, step.toLine, step.durationMin),
               style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
           const SizedBox(height: 6),
           _AlbusHint(text: step.albusSays()),
