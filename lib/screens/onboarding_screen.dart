@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 import '../core/providers/onboarding_provider.dart';
 import '../core/router/app_router.dart';
@@ -30,37 +31,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
 
-  late final List<_OnboardingPageData> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
+  /// Las 4 páginas del onboarding. Se computan en build() porque los textos
+  /// dependen de AppLocalizations (que requiere context). Si el usuario
+  /// cambia el idioma a mitad del onboarding, las páginas se re-traducen
+  /// automáticamente.
+  List<_OnboardingPageData> _buildPages(AppLocalizations l) {
+    return [
       _OnboardingPageData(
         albusState: AlbusState.happy,
-        title: '¡Hola! Soy Albus 🚌',
-        body: 'Soy tu mascota y guía dentro de Alzitrans, la app del bus '
-            'de Alzira. Te voy a contar en 30 segundos qué puedes hacer.',
+        title: l.onboardingHelloTitle,
+        body: l.onboardingHelloBody,
       ),
       _OnboardingPageData(
         albusState: AlbusState.talking,
-        title: 'Planifica tus rutas',
-        body: 'Dime de dónde sales y a dónde vas y te explico paso a paso '
-            'qué bus coger, dónde bajarte y cuánto tarda. Te muestro hasta '
-            '3 alternativas.',
+        title: l.onboardingPlanTitle,
+        body: l.onboardingPlanBody,
       ),
       _OnboardingPageData(
         albusState: AlbusState.thinking,
-        title: 'Comparte tu viaje',
-        body: 'Manda un enlace a tu familia o amigos y verán tu posición '
-            'en tiempo real en un mapa hasta que llegues. Sin que tengan '
-            'que instalar nada.',
+        title: l.onboardingShareTitle,
+        body: l.onboardingShareBody,
       ),
       _OnboardingPageData(
         albusState: AlbusState.happy,
-        title: '¡Listos!',
-        body: 'Pulsa el botón "Planifica con Albus" en la pantalla '
-            'principal para empezar. Estoy aquí si me necesitas.',
+        title: l.onboardingReadyTitle,
+        body: l.onboardingReadyBody,
         isLast: true,
       ),
     ];
@@ -86,8 +81,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     const HomeRoute().go(context);
   }
 
-  void _nextPage() {
-    if (_currentPage >= _pages.length - 1) {
+  void _nextPage(int totalPages) {
+    if (_currentPage >= totalPages - 1) {
       _completeOnboarding();
       return;
     }
@@ -99,6 +94,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final pages = _buildPages(l);
     return Scaffold(
       backgroundColor: AlzitransColors.background,
       body: SafeArea(
@@ -112,9 +109,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const Spacer(),
                   TextButton(
                     onPressed: _completeOnboarding,
-                    child: const Text(
-                      'Saltar',
-                      style: TextStyle(
+                    child: Text(
+                      l.onboardingSkip,
+                      style: const TextStyle(
                         color: AlzitransColors.burgundy,
                         fontWeight: FontWeight.w600,
                       ),
@@ -129,8 +126,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: (i) => setState(() => _currentPage = i),
-                itemCount: _pages.length,
-                itemBuilder: (_, i) => _OnboardingPage(data: _pages[i]),
+                itemCount: pages.length,
+                itemBuilder: (_, i) => _OnboardingPage(data: pages[i]),
               ),
             ),
 
@@ -141,7 +138,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_pages.length, (i) {
+                    children: List.generate(pages.length, (i) {
                       final active = i == _currentPage;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
@@ -161,7 +158,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _nextPage,
+                      onPressed: () => _nextPage(pages.length),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AlzitransColors.burgundy,
                         foregroundColor: Colors.white,
@@ -171,7 +168,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                       ),
                       child: Text(
-                        _currentPage >= _pages.length - 1 ? 'Empezar' : 'Siguiente',
+                        _currentPage >= pages.length - 1
+                            ? l.onboardingStart
+                            : l.onboardingNext,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

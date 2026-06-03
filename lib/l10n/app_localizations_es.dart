@@ -1284,6 +1284,64 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.';
 
   @override
+  String get onboardingHelloTitle => '¡Hola! Soy Albus 🚌';
+
+  @override
+  String get onboardingHelloBody =>
+      'Soy tu mascota y guía dentro de Alzitrans, la app del bus de Alzira. Te voy a contar en 30 segundos qué puedes hacer.';
+
+  @override
+  String get onboardingPlanTitle => 'Planifica tus rutas';
+
+  @override
+  String get onboardingPlanBody =>
+      'Dime de dónde sales y a dónde vas y te explico paso a paso qué bus coger, dónde bajarte y cuánto tarda. Te muestro hasta 3 alternativas.';
+
+  @override
+  String get onboardingShareTitle => 'Comparte tu viaje';
+
+  @override
+  String get onboardingShareBody =>
+      'Manda un enlace a tu familia o amigos y verán tu posición en tiempo real en un mapa hasta que llegues. Sin que tengan que instalar nada.';
+
+  @override
+  String get onboardingReadyTitle => '¡Listos!';
+
+  @override
+  String get onboardingReadyBody =>
+      'Pulsa el botón \"Planifica con Albus\" en la pantalla principal para empezar. Estoy aquí si me necesitas.';
+
+  @override
+  String get onboardingSkip => 'Saltar';
+
+  @override
+  String get onboardingStart => 'Empezar';
+
+  @override
+  String get onboardingNext => 'Siguiente';
+
+  @override
+  String get skinDefaultName => 'Original';
+
+  @override
+  String get skinFalleroName => 'Fallero';
+
+  @override
+  String get skinCapurulloName => 'Capurullo';
+
+  @override
+  String get skinLluviaName => 'Lluvia';
+
+  @override
+  String get skinGraduadoName => 'Graduado';
+
+  @override
+  String get skinNavidadName => 'Navidad';
+
+  @override
+  String get skinAlziraFcName => 'UDA';
+
+  @override
   String get rechargeYourCardSoon => '¡Recarga tu tarjeta pronto!';
 
   @override
