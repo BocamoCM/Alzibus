@@ -1280,25 +1280,72 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.';
 
   @override
-  String get skinDefaultName => 'Original';
+  String get skinDefaultName => 'Albus clásico';
 
   @override
-  String get skinFalleroName => 'Fallero';
+  String get skinFalleroName => 'Albus Fallero';
 
   @override
-  String get skinCapurulloName => 'Capurullo';
+  String get skinCapurulloName => 'Albus Capurullo';
 
   @override
-  String get skinLluviaName => 'Lluvia';
+  String get skinLluviaName => 'Albus en la lluvia';
 
   @override
-  String get skinGraduadoName => 'Graduado';
+  String get skinGraduadoName => 'Albus graduado';
 
   @override
-  String get skinNavidadName => 'Navidad';
+  String get skinNavidadName => 'Albus de Navidad';
 
   @override
-  String get skinAlziraFcName => 'UDA';
+  String get skinAlziraFcName => 'Albus UD Alzira';
+
+  @override
+  String get skinDefaultDesc =>
+      'El Albus original. El que conoces de toda la vida.';
+
+  @override
+  String get skinFalleroDesc =>
+      'Vestido para las Fallas: pañuelo rojo con lunares, faja y un clavel. ¡Visca Sant Josep!';
+
+  @override
+  String get skinCapurulloDesc =>
+      'Nazareno tradicional de la Semana Santa de Alzira, con capirote morado y cíngulo dorado.';
+
+  @override
+  String get skinLluviaDesc =>
+      'Por si pilla un chaparrón de la Ribera: paraguas amarillo y chubasquero a juego. ¡Que no te pille mojado!';
+
+  @override
+  String get skinGraduadoDesc =>
+      'Birrete con borla dorada + diploma con sello. Homenaje al TFC que dio origen a Alzitrans.';
+
+  @override
+  String get skinNavidadDesc =>
+      'Gorro de Papá Noel con pompón blanco, bufanda navideña a rayas y copos de nieve. ¡Feliz Navidad!';
+
+  @override
+  String get skinAlziraFcDesc =>
+      'Bufanda a rayas rojas y moradas del UD Alzira con flecos, escudo del club y banderín. ¡Visca la UDA!';
+
+  @override
+  String get equippedBadge => 'EQUIPADO';
+
+  @override
+  String get equippedLabel => 'Equipado';
+
+  @override
+  String get equipButton => 'Equipar';
+
+  @override
+  String unlockForCost(int cost) {
+    return 'Desbloquear · $cost';
+  }
+
+  @override
+  String missingCoins(int n) {
+    return 'Faltan $n 🪙';
+  }
 
   @override
   String get feedbackTitle => 'Soporte y feedback';

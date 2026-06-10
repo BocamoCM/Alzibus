@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 
 /// Catálogo de skins disponibles para Albus.
 ///
@@ -9,6 +10,11 @@ import 'package:flutter/material.dart';
 ///   - Asset path al SVG overlay (opcional; null si es default sin overlay)
 ///   - Color de acento para la card de la tienda
 ///   - Emoji "preview" rápido para el botón sin tener que cargar el SVG
+///
+/// Nombre y descripción están traducidos en es/en/ca. El `name` y `description`
+/// hardcoded en castellano se mantienen como fallback por si en algún caller
+/// no hay AppLocalizations disponible (notificaciones del sistema, logs, etc).
+/// En UI usar siempre `localizedName(l)` / `localizedDescription(l)`.
 class AlbusSkin {
   final String id;
   final String name;
@@ -31,6 +37,35 @@ class AlbusSkin {
   });
 
   bool get isFree => cost == 0;
+
+  /// Nombre traducido al idioma activo. Mapea por `id` a la clave ARB
+  /// correspondiente. Si el id no se reconoce, cae al `name` hardcoded.
+  String localizedName(AppLocalizations l) {
+    switch (id) {
+      case 'default':   return l.skinDefaultName;
+      case 'fallero':   return l.skinFalleroName;
+      case 'capurullo': return l.skinCapurulloName;
+      case 'lluvia':    return l.skinLluviaName;
+      case 'graduado':  return l.skinGraduadoName;
+      case 'navidad':   return l.skinNavidadName;
+      case 'alzira_fc': return l.skinAlziraFcName;
+      default:          return name;
+    }
+  }
+
+  /// Descripción traducida al idioma activo. Mismo patrón que localizedName.
+  String localizedDescription(AppLocalizations l) {
+    switch (id) {
+      case 'default':   return l.skinDefaultDesc;
+      case 'fallero':   return l.skinFalleroDesc;
+      case 'capurullo': return l.skinCapurulloDesc;
+      case 'lluvia':    return l.skinLluviaDesc;
+      case 'graduado':  return l.skinGraduadoDesc;
+      case 'navidad':   return l.skinNavidadDesc;
+      case 'alzira_fc': return l.skinAlziraFcDesc;
+      default:          return description;
+    }
+  }
 
   /// Lista cerrada de skins. Cuando añadas más, mete una entrada nueva.
   static const List<AlbusSkin> all = [

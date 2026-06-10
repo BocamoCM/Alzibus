@@ -1276,25 +1276,72 @@ class AppLocalizationsEn extends AppLocalizations {
       'Waiting for the bus? Let\'s play a game! Earn coins while you wait.';
 
   @override
-  String get skinDefaultName => 'Original';
+  String get skinDefaultName => 'Classic Albus';
 
   @override
-  String get skinFalleroName => 'Fallero';
+  String get skinFalleroName => 'Fallero Albus';
 
   @override
-  String get skinCapurulloName => 'Capurullo';
+  String get skinCapurulloName => 'Capurullo Albus';
 
   @override
-  String get skinLluviaName => 'Rain';
+  String get skinLluviaName => 'Rainy Albus';
 
   @override
-  String get skinGraduadoName => 'Graduate';
+  String get skinGraduadoName => 'Graduate Albus';
 
   @override
-  String get skinNavidadName => 'Christmas';
+  String get skinNavidadName => 'Christmas Albus';
 
   @override
-  String get skinAlziraFcName => 'UDA';
+  String get skinAlziraFcName => 'UD Alzira Albus';
+
+  @override
+  String get skinDefaultDesc =>
+      'The original Albus. The one you\'ve always known.';
+
+  @override
+  String get skinFalleroDesc =>
+      'Dressed for Fallas: red polka-dot scarf, sash and a carnation. Visca Sant Josep!';
+
+  @override
+  String get skinCapurulloDesc =>
+      'Traditional Holy Week Nazareno from Alzira, with purple capirote and golden cincture.';
+
+  @override
+  String get skinLluviaDesc =>
+      'For when a Ribera downpour catches you: yellow umbrella and matching raincoat. Don\'t get soaked!';
+
+  @override
+  String get skinGraduadoDesc =>
+      'Cap with golden tassel + diploma with seal. Tribute to the final-year project that gave birth to Alzitrans.';
+
+  @override
+  String get skinNavidadDesc =>
+      'Santa hat with white pompom, striped Christmas scarf and snowflakes. Merry Christmas!';
+
+  @override
+  String get skinAlziraFcDesc =>
+      'Red and purple striped UD Alzira scarf with fringes, club crest and pennant. Visca la UDA!';
+
+  @override
+  String get equippedBadge => 'EQUIPPED';
+
+  @override
+  String get equippedLabel => 'Equipped';
+
+  @override
+  String get equipButton => 'Equip';
+
+  @override
+  String unlockForCost(int cost) {
+    return 'Unlock · $cost';
+  }
+
+  @override
+  String missingCoins(int n) {
+    return '$n 🪙 short';
+  }
 
   @override
   String get feedbackTitle => 'Support & feedback';

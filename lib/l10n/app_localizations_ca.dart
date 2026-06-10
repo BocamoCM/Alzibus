@@ -1282,25 +1282,72 @@ class AppLocalizationsCa extends AppLocalizations {
       'Esperant el bus? Fem una partida! Guanya monedes mentre arriba.';
 
   @override
-  String get skinDefaultName => 'Original';
+  String get skinDefaultName => 'Albus clàssic';
 
   @override
-  String get skinFalleroName => 'Faller';
+  String get skinFalleroName => 'Albus Faller';
 
   @override
-  String get skinCapurulloName => 'Capurullo';
+  String get skinCapurulloName => 'Albus Capurullo';
 
   @override
-  String get skinLluviaName => 'Pluja';
+  String get skinLluviaName => 'Albus a la pluja';
 
   @override
-  String get skinGraduadoName => 'Graduat';
+  String get skinGraduadoName => 'Albus graduat';
 
   @override
-  String get skinNavidadName => 'Nadal';
+  String get skinNavidadName => 'Albus de Nadal';
 
   @override
-  String get skinAlziraFcName => 'UDA';
+  String get skinAlziraFcName => 'Albus UD Alzira';
+
+  @override
+  String get skinDefaultDesc =>
+      'L\'Albus original. El que coneixes de tota la vida.';
+
+  @override
+  String get skinFalleroDesc =>
+      'Vestit per a les Falles: mocador roig amb llunars, faixa i un clavell. Visca Sant Josep!';
+
+  @override
+  String get skinCapurulloDesc =>
+      'Natzaré tradicional de la Setmana Santa d\'Alzira, amb capirot morat i cíngol daurat.';
+
+  @override
+  String get skinLluviaDesc =>
+      'Per si t\'agafa un xàfec de la Ribera: paraigua groc i impermeable a joc. Que no t\'agafe mullat!';
+
+  @override
+  String get skinGraduadoDesc =>
+      'Birret amb borla daurada + diploma amb segell. Homenatge al TFC que va donar origen a Alzitrans.';
+
+  @override
+  String get skinNavidadDesc =>
+      'Gorro de Pare Noel amb pompó blanc, bufanda nadalenca a ratlles i flocs de neu. Bon Nadal!';
+
+  @override
+  String get skinAlziraFcDesc =>
+      'Bufanda a ratlles roges i morades de l\'UD Alzira amb flocs, escut del club i banderí. Visca la UDA!';
+
+  @override
+  String get equippedBadge => 'EQUIPAT';
+
+  @override
+  String get equippedLabel => 'Equipat';
+
+  @override
+  String get equipButton => 'Equipar';
+
+  @override
+  String unlockForCost(int cost) {
+    return 'Desbloquejar · $cost';
+  }
+
+  @override
+  String missingCoins(int n) {
+    return 'Falten $n 🪙';
+  }
 
   @override
   String get feedbackTitle => 'Suport i feedback';
