@@ -764,7 +764,7 @@ class _PlanCard extends StatelessWidget {
             style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
           ),
           const SizedBox(height: 6),
-          _AlbusHint(text: step.albusSays()),
+          _AlbusHint(text: step.albusSays(l)),
         ],
       );
     }
@@ -797,7 +797,7 @@ class _PlanCard extends StatelessWidget {
           Text(l.alightAt(step.toStop.name),
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           const SizedBox(height: 6),
-          _AlbusHint(text: step.albusSays()),
+          _AlbusHint(text: step.albusSays(l)),
         ],
       );
     }
@@ -814,11 +814,11 @@ class _PlanCard extends StatelessWidget {
           Text(l.transferStep(step.fromLine, step.toLine, step.durationMin),
               style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
           const SizedBox(height: 6),
-          _AlbusHint(text: step.albusSays()),
+          _AlbusHint(text: step.albusSays(l)),
         ],
       );
     }
-    return Text(step.albusSays());
+    return Text(step.albusSays(l));
   }
 
   Color _lineColor(String line) => switch (line) {

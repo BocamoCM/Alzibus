@@ -1,3 +1,4 @@
+import 'package:alzitrans/l10n/app_localizations.dart';
 import 'bus_stop.dart';
 
 /// Un plan de viaje completo entre dos paradas (o ubicación → parada).
@@ -39,8 +40,10 @@ abstract class TripStep {
   int get durationMin;
 
   /// Descripción corta usada por Albus para "hablar" el paso.
-  /// Debe ser corta (1 frase) y en español castizo, family-friendly.
-  String albusSays();
+  /// Recibe el AppLocalizations del contexto para que la frase salga
+  /// en el idioma activo (es / en / ca). Debe ser corta (1 frase) y
+  /// family-friendly.
+  String albusSays(AppLocalizations l);
 }
 
 /// Paso a pie: del origen a una parada de bus, de una parada a otra (transbordo
@@ -66,14 +69,14 @@ class WalkStep extends TripStep {
   });
 
   @override
-  String albusSays() {
+  String albusSays(AppLocalizations l) {
     if (distanceM < 100) {
-      return 'Da unos pasos hasta $toLabel — no está lejos.';
+      return l.albusWalkShort(toLabel);
     }
     if (distanceM < 500) {
-      return 'Camina unos $distanceM metros hasta $toLabel. ¡En $durationMin min lo tienes!';
+      return l.albusWalkMid(distanceM, toLabel, durationMin);
     }
-    return 'Camina hasta $toLabel ($distanceM m, unos $durationMin min).';
+    return l.albusWalkLong(toLabel, distanceM, durationMin);
   }
 }
 
@@ -113,11 +116,8 @@ class BusStep extends TripStep {
   int get stopsToCount => intermediateStops.length + 1;
 
   @override
-  String albusSays() {
-    final stops = stopsToCount;
-    final stopWord = stops == 1 ? 'parada' : 'paradas';
-    return 'Coge la $line en ${fromStop.name}. Bájate $stops $stopWord '
-        'después, en ${toStop.name}.';
+  String albusSays(AppLocalizations l) {
+    return l.albusBusStep(stopsToCount, line, fromStop.name, toStop.name);
   }
 }
 
@@ -141,8 +141,7 @@ class TransferStep extends TripStep {
   });
 
   @override
-  String albusSays() {
-    return 'En ${atStop.name} bájate y coge la $toLine. '
-        '¡Échale un ojo al horario, son unos $durationMin min!';
+  String albusSays(AppLocalizations l) {
+    return l.albusTransferStep(atStop.name, toLine, durationMin);
   }
 }

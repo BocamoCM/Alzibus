@@ -1356,6 +1356,102 @@ class AppLocalizationsCa extends AppLocalizations {
   String get routesPageTitle => 'Rutes i línies';
 
   @override
+  String get planWithAlbus => 'Planifica amb Albus';
+
+  @override
+  String get planWithAlbusTooltip => 'Planificador de ruta A → B amb Albus';
+
+  @override
+  String albusWalkShort(String to) {
+    return 'Fes uns passos fins a $to — no està lluny.';
+  }
+
+  @override
+  String albusWalkMid(int dist, String to, int duration) {
+    return 'Camina uns $dist metres fins a $to. En $duration min el tens!';
+  }
+
+  @override
+  String albusWalkLong(String to, int dist, int duration) {
+    return 'Camina fins a $to ($dist m, uns $duration min).';
+  }
+
+  @override
+  String albusBusStep(int count, String line, String from, String to) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Agafa la $line a $from. Baixa $count parades després, a $to.',
+      one: 'Agafa la $line a $from. Baixa 1 parada després, a $to.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String albusTransferStep(String at, String toLine, int duration) {
+    return 'A $at baixa i agafa la $toLine. Mira l\'horari, són uns $duration min!';
+  }
+
+  @override
+  String get supportTitle => 'Ajuda i Suport';
+
+  @override
+  String get supportFaqHeading => 'Preguntes Freqüents';
+
+  @override
+  String get supportFaqAlertsQ => 'Com funcionen les alertes?';
+
+  @override
+  String get supportFaqAlertsA =>
+      'Quan actives una alerta en una arribada, l\'app monitoritza en segon pla el temps restant. T\'avisarà quan el bus estiga a menys de la distància configurada (ex: 80 metres) perquè no el perdes.';
+
+  @override
+  String get supportFaqLocationQ => 'Per què demana ubicació \"Sempre\"?';
+
+  @override
+  String get supportFaqLocationA =>
+      'Perquè les alertes funcionen encara que tingues el mòbil a la butxaca o estigues utilitzant una altra app. Alzitrans només utilitza la teua ubicació quan tens una alerta activa per avisar-te just a temps.';
+
+  @override
+  String get supportFaqRechargeQ => 'Com recarregue la meua targeta Alzibus?';
+
+  @override
+  String get supportFaqRechargeA =>
+      'Les targetes físiques d\'Alzibus es poden recarregar directament a l\'autobús en pujar o als punts de venda autoritzats de la ciutat. Molt prompte podràs consultar el teu saldo real aproximat des de l\'app.';
+
+  @override
+  String get supportFaqPointsQ => 'Què són els punts i el Rank?';
+
+  @override
+  String get supportFaqPointsA =>
+      'És el nostre sistema de Gamificació. Guanyaràs punts per cada viatge registrat i per obrir l\'app diàriament. Puja de Rank per demostrar que ets l\'usuari #1 d\'Alzitrans!';
+
+  @override
+  String get supportSuggestionsHeading => 'Tens suggeriments?';
+
+  @override
+  String get supportSuggestionsBody =>
+      'Ens encanta escoltar les vostres idees per millorar Alzitrans. Escriu-nos!';
+
+  @override
+  String get supportSendButton => 'Enviar Proposta de Millora';
+
+  @override
+  String get supportEmailSubject => 'Suggeriment Alzitrans - Millora';
+
+  @override
+  String get supportEmailBody =>
+      'Hola,\n\nVoldria suggerir el següent per a Alzitrans:\n\n';
+
+  @override
+  String get supportEmailError => 'No s\'ha pogut obrir l\'app de correu';
+
+  @override
+  String supportVersion(String version) {
+    return 'Versió $version\nFet amb ❤️ a Alzira';
+  }
+
+  @override
   String get rechargeYourCardSoon => 'Recarrega la teua targeta prompte!';
 
   @override
