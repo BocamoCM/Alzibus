@@ -32,7 +32,7 @@ class AlbusShopScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AlzitransColors.background,
       appBar: AppBar(
-        title: const Text('Vestidor de Albus'),
+        title: Text(AppLocalizations.of(context)!.wardrobeTooltip),
         backgroundColor: AlzitransColors.burgundy,
         foregroundColor: Colors.white,
         actions: [
@@ -252,8 +252,9 @@ class AlbusShopScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Builder(builder: (context) {
+            final l = AppLocalizations.of(context)!;
             return Text(
-              AppLocalizations.of(context)!.wearingSkin(skin.name),
+              l.wearingSkin(skin.localizedName(l)),
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             );
           }),
@@ -409,7 +410,7 @@ class AlbusShopScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(l.unlockSkinTitle(skin.name)),
+        title: Text(l.unlockSkinTitle(skin.localizedName(l))),
         content: Text(l.unlockSkinBody(skin.cost)),
         actions: [
           TextButton(
@@ -440,7 +441,7 @@ class AlbusShopScreen extends ConsumerWidget {
     // Equipar automáticamente tras comprar
     await ref.read(equippedSkinProvider.notifier).equip(skin.id);
     messenger.showSnackBar(
-      SnackBar(content: Text(l.skinUnlockedAndEquipped(skin.name))),
+      SnackBar(content: Text(l.skinUnlockedAndEquipped(skin.localizedName(l)))),
     );
   }
 
@@ -450,7 +451,7 @@ class AlbusShopScreen extends ConsumerWidget {
       final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l.skinEquipped(skin.name)),
+          content: Text(l.skinEquipped(skin.localizedName(l))),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -477,6 +478,7 @@ class _SkinCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Material(
       elevation: equipped ? 4 : 1.5,
       borderRadius: BorderRadius.circular(16),
@@ -512,7 +514,7 @@ class _SkinCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          skin.name,
+                          skin.localizedName(l),
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 16,
@@ -527,9 +529,9 @@ class _SkinCard extends StatelessWidget {
                             color: skin.accentColor,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Text(
-                            'EQUIPADO',
-                            style: TextStyle(
+                          child: Text(
+                            l.equippedBadge,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -540,7 +542,7 @@ class _SkinCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    skin.description,
+                    skin.localizedDescription(l),
                     style: TextStyle(
                       fontSize: 12.5,
                       color: Colors.grey.shade700,
@@ -548,7 +550,7 @@ class _SkinCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildActionButton(),
+                  _buildActionButton(l),
                 ],
               ),
             ),
@@ -558,14 +560,14 @@ class _SkinCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(AppLocalizations l) {
     if (equipped) {
       return SizedBox(
         height: 32,
         child: OutlinedButton.icon(
           onPressed: null, // disabled
           icon: const Icon(Icons.check_circle, size: 16),
-          label: const Text('Equipado'),
+          label: Text(l.equippedLabel),
           style: OutlinedButton.styleFrom(
             foregroundColor: skin.accentColor,
             side: BorderSide(color: skin.accentColor.withValues(alpha: 0.4)),
@@ -581,7 +583,7 @@ class _SkinCard extends StatelessWidget {
         child: ElevatedButton.icon(
           onPressed: onEquip,
           icon: const Icon(Icons.checkroom, size: 16),
-          label: const Text('Equipar'),
+          label: Text(l.equipButton),
           style: ElevatedButton.styleFrom(
             backgroundColor: skin.accentColor,
             foregroundColor: Colors.white,
@@ -600,8 +602,8 @@ class _SkinCard extends StatelessWidget {
         onPressed: canAfford ? onBuy : null,
         icon: const Text('🪙', style: TextStyle(fontSize: 13)),
         label: Text(canAfford
-            ? 'Desbloquear · ${skin.cost}'
-            : 'Faltan ${missing} 🪙'),
+            ? l.unlockForCost(skin.cost)
+            : l.missingCoins(missing)),
         style: ElevatedButton.styleFrom(
           backgroundColor: canAfford ? Colors.amber.shade700 : Colors.grey.shade300,
           foregroundColor: canAfford ? Colors.white : Colors.grey.shade600,

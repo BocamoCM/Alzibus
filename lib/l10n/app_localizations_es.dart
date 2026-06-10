@@ -1280,25 +1280,72 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Esperando el bus? ¡Echemos una partida! Gana monedas mientras llega.';
 
   @override
-  String get skinDefaultName => 'Original';
+  String get skinDefaultName => 'Albus clásico';
 
   @override
-  String get skinFalleroName => 'Fallero';
+  String get skinFalleroName => 'Albus Fallero';
 
   @override
-  String get skinCapurulloName => 'Capurullo';
+  String get skinCapurulloName => 'Albus Capurullo';
 
   @override
-  String get skinLluviaName => 'Lluvia';
+  String get skinLluviaName => 'Albus en la lluvia';
 
   @override
-  String get skinGraduadoName => 'Graduado';
+  String get skinGraduadoName => 'Albus graduado';
 
   @override
-  String get skinNavidadName => 'Navidad';
+  String get skinNavidadName => 'Albus de Navidad';
 
   @override
-  String get skinAlziraFcName => 'UDA';
+  String get skinAlziraFcName => 'Albus UD Alzira';
+
+  @override
+  String get skinDefaultDesc =>
+      'El Albus original. El que conoces de toda la vida.';
+
+  @override
+  String get skinFalleroDesc =>
+      'Vestido para las Fallas: pañuelo rojo con lunares, faja y un clavel. ¡Visca Sant Josep!';
+
+  @override
+  String get skinCapurulloDesc =>
+      'Nazareno tradicional de la Semana Santa de Alzira, con capirote morado y cíngulo dorado.';
+
+  @override
+  String get skinLluviaDesc =>
+      'Por si pilla un chaparrón de la Ribera: paraguas amarillo y chubasquero a juego. ¡Que no te pille mojado!';
+
+  @override
+  String get skinGraduadoDesc =>
+      'Birrete con borla dorada + diploma con sello. Homenaje al TFC que dio origen a Alzitrans.';
+
+  @override
+  String get skinNavidadDesc =>
+      'Gorro de Papá Noel con pompón blanco, bufanda navideña a rayas y copos de nieve. ¡Feliz Navidad!';
+
+  @override
+  String get skinAlziraFcDesc =>
+      'Bufanda a rayas rojas y moradas del UD Alzira con flecos, escudo del club y banderín. ¡Visca la UDA!';
+
+  @override
+  String get equippedBadge => 'EQUIPADO';
+
+  @override
+  String get equippedLabel => 'Equipado';
+
+  @override
+  String get equipButton => 'Equipar';
+
+  @override
+  String unlockForCost(int cost) {
+    return 'Desbloquear · $cost';
+  }
+
+  @override
+  String missingCoins(int n) {
+    return 'Faltan $n 🪙';
+  }
 
   @override
   String get feedbackTitle => 'Soporte y feedback';
@@ -1352,6 +1399,102 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get routesPageTitle => 'Rutas y líneas';
+
+  @override
+  String get planWithAlbus => 'Planifica con Albus';
+
+  @override
+  String get planWithAlbusTooltip => 'Planificador de ruta A → B con Albus';
+
+  @override
+  String albusWalkShort(String to) {
+    return 'Da unos pasos hasta $to — no está lejos.';
+  }
+
+  @override
+  String albusWalkMid(int dist, String to, int duration) {
+    return 'Camina unos $dist metros hasta $to. ¡En $duration min lo tienes!';
+  }
+
+  @override
+  String albusWalkLong(String to, int dist, int duration) {
+    return 'Camina hasta $to ($dist m, unos $duration min).';
+  }
+
+  @override
+  String albusBusStep(int count, String line, String from, String to) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Coge la $line en $from. Bájate $count paradas después, en $to.',
+      one: 'Coge la $line en $from. Bájate 1 parada después, en $to.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String albusTransferStep(String at, String toLine, int duration) {
+    return 'En $at bájate y coge la $toLine. ¡Échale un ojo al horario, son unos $duration min!';
+  }
+
+  @override
+  String get supportTitle => 'Ayuda y Soporte';
+
+  @override
+  String get supportFaqHeading => 'Preguntas Frecuentes';
+
+  @override
+  String get supportFaqAlertsQ => '¿Cómo funcionan las alertas?';
+
+  @override
+  String get supportFaqAlertsA =>
+      'Cuando activas una alerta en una llegada, la app monitoriza en segundo plano el tiempo restante. Te avisará cuando el bus esté a menos de la distancia configurada (ej: 80 metros) para que no lo pierdas.';
+
+  @override
+  String get supportFaqLocationQ => '¿Por qué pide ubicación \"Siempre\"?';
+
+  @override
+  String get supportFaqLocationA =>
+      'Para que las alertas funcionen aunque tengas el móvil en el bolsillo o estés usando otra app. Alzitrans solo usa tu ubicación cuando tienes una alerta activa para avisarte justo a tiempo.';
+
+  @override
+  String get supportFaqRechargeQ => '¿Cómo recargar mi tarjeta Alzibus?';
+
+  @override
+  String get supportFaqRechargeA =>
+      'Las tarjetas físicas de Alzibus se pueden recargar directamente en el autobús al subir o en los puntos de venta autorizados de la ciudad. Muy pronto podrás consultar tu saldo real aproximado desde la app.';
+
+  @override
+  String get supportFaqPointsQ => '¿Qué son los puntos y el Rank?';
+
+  @override
+  String get supportFaqPointsA =>
+      'Es nuestro sistema de Gamificación. Ganarás puntos por cada viaje registrado y por abrir la app diariamente. ¡Sube de Rank para demostrar que eres el usuario #1 de Alzitrans!';
+
+  @override
+  String get supportSuggestionsHeading => '¿Tienes sugerencias?';
+
+  @override
+  String get supportSuggestionsBody =>
+      'Nos encanta escuchar vuestras ideas para mejorar Alzitrans. ¡Escríbenos!';
+
+  @override
+  String get supportSendButton => 'Enviar Propuesta de Mejora';
+
+  @override
+  String get supportEmailSubject => 'Sugerencia Alzitrans - Mejora';
+
+  @override
+  String get supportEmailBody =>
+      'Hola,\n\nMe gustaría sugerir lo siguiente para Alzitrans:\n\n';
+
+  @override
+  String get supportEmailError => 'No se ha podido abrir la app de correo';
+
+  @override
+  String supportVersion(String version) {
+    return 'Versión $version\nHecho con ❤️ en Alzira';
+  }
 
   @override
   String get rechargeYourCardSoon => '¡Recarga tu tarjeta pronto!';

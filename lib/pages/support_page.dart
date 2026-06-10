@@ -1,61 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
-import '../constants/app_config.dart';
 
 class SupportPage extends StatelessWidget {
   const SupportPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ayuda y Soporte'),
+        title: Text(l.supportTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // SECCIÓN FAQ
-          const Text(
-            'Preguntas Frecuentes',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy),
+          Text(
+            l.supportFaqHeading,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy),
           ),
           const SizedBox(height: 16),
-          _buildFaqItem(
-            '¿Cómo funcionan las alertas?',
-            'Cuando activas una alerta en una llegada, la app monitoriza en segundo plano el tiempo restante. Te avisará cuando el bus esté a menos de la distancia configurada (ej: 80 metros) para que no lo pierdas.',
-          ),
-          _buildFaqItem(
-            '¿Por qué pide ubicación "Siempre"?',
-            'Para que las alertas funcionen aunque tengas el móvil en el bolsillo o estés usando otra app. Alzitrans solo usa tu ubicación cuando tienes una alerta activa para avisarte justo a tiempo.',
-          ),
-          _buildFaqItem(
-            '¿Cómo recargar mi tarjeta Alzibus?',
-            'Las tarjetas físicas de Alzibus se pueden recargar directamente en el autobús al subir o en los puntos de venta autorizados de la ciudad. Muy pronto podrás consultar tu saldo real aproximado desde la app.',
-          ),
-          _buildFaqItem(
-            '¿Qué son los puntos y el Rank?',
-            'Es nuestro sistema de Gamificación. Ganarás puntos por cada viaje registrado y por abrir la app diariamente. ¡Sube de Rank para demostrar que eres el usuario #1 de Alzitrans!',
-          ),
-          
+          _buildFaqItem(l.supportFaqAlertsQ, l.supportFaqAlertsA),
+          _buildFaqItem(l.supportFaqLocationQ, l.supportFaqLocationA),
+          _buildFaqItem(l.supportFaqRechargeQ, l.supportFaqRechargeA),
+          _buildFaqItem(l.supportFaqPointsQ, l.supportFaqPointsA),
+
           const SizedBox(height: 32),
-          
+
           // SECCIÓN CONTACTO
-          const Text(
-            '¿Tienes sugerencias?',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy),
+          Text(
+            l.supportSuggestionsHeading,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AlzitransColors.burgundy),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Nos encanta escuchar vuestras ideas para mejorar Alzitrans. ¡Escríbenos!',
-            style: TextStyle(color: Colors.grey),
+          Text(
+            l.supportSuggestionsBody,
+            style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 16),
-          
+
           ElevatedButton.icon(
-            onPressed: () => _launchEmail(context),
+            onPressed: () => _launchEmail(context, l),
             icon: const Icon(Icons.email),
-            label: const Text('Enviar Propuesta de Mejora'),
+            label: Text(l.supportSendButton),
             style: ElevatedButton.styleFrom(
               backgroundColor: AlzitransColors.burgundy,
               foregroundColor: Colors.white,
@@ -63,15 +52,15 @@ class SupportPage extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // VERSIÓN
-          const Center(
+          Center(
             child: Text(
-              'Versión 5.1.2\nHecho con ❤️ en Alzira',
+              l.supportVersion('5.1.2'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ),
         ],
@@ -105,13 +94,13 @@ class SupportPage extends StatelessWidget {
     );
   }
 
-  Future<void> _launchEmail(BuildContext context) async {
+  Future<void> _launchEmail(BuildContext context, AppLocalizations l) async {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       path: 'bcarreres55@gmail.com', // Uso tu correo vinculado por seguridad
       query: encodeQueryParameters(<String, String>{
-        'subject': 'Sugerencia Alzitrans - Mejora',
-        'body': 'Hola,\n\nMe gustaría sugerir lo siguiente para Alzitrans:\n\n'
+        'subject': l.supportEmailSubject,
+        'body': l.supportEmailBody,
       }),
     );
 
@@ -120,7 +109,7 @@ class SupportPage extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se ha podido abrir la app de correo')),
+          SnackBar(content: Text(l.supportEmailError)),
         );
       }
     }

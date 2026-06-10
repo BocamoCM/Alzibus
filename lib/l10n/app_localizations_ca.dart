@@ -1282,25 +1282,72 @@ class AppLocalizationsCa extends AppLocalizations {
       'Esperant el bus? Fem una partida! Guanya monedes mentre arriba.';
 
   @override
-  String get skinDefaultName => 'Original';
+  String get skinDefaultName => 'Albus clàssic';
 
   @override
-  String get skinFalleroName => 'Faller';
+  String get skinFalleroName => 'Albus Faller';
 
   @override
-  String get skinCapurulloName => 'Capurullo';
+  String get skinCapurulloName => 'Albus Capurullo';
 
   @override
-  String get skinLluviaName => 'Pluja';
+  String get skinLluviaName => 'Albus a la pluja';
 
   @override
-  String get skinGraduadoName => 'Graduat';
+  String get skinGraduadoName => 'Albus graduat';
 
   @override
-  String get skinNavidadName => 'Nadal';
+  String get skinNavidadName => 'Albus de Nadal';
 
   @override
-  String get skinAlziraFcName => 'UDA';
+  String get skinAlziraFcName => 'Albus UD Alzira';
+
+  @override
+  String get skinDefaultDesc =>
+      'L\'Albus original. El que coneixes de tota la vida.';
+
+  @override
+  String get skinFalleroDesc =>
+      'Vestit per a les Falles: mocador roig amb llunars, faixa i un clavell. Visca Sant Josep!';
+
+  @override
+  String get skinCapurulloDesc =>
+      'Natzaré tradicional de la Setmana Santa d\'Alzira, amb capirot morat i cíngol daurat.';
+
+  @override
+  String get skinLluviaDesc =>
+      'Per si t\'agafa un xàfec de la Ribera: paraigua groc i impermeable a joc. Que no t\'agafe mullat!';
+
+  @override
+  String get skinGraduadoDesc =>
+      'Birret amb borla daurada + diploma amb segell. Homenatge al TFC que va donar origen a Alzitrans.';
+
+  @override
+  String get skinNavidadDesc =>
+      'Gorro de Pare Noel amb pompó blanc, bufanda nadalenca a ratlles i flocs de neu. Bon Nadal!';
+
+  @override
+  String get skinAlziraFcDesc =>
+      'Bufanda a ratlles roges i morades de l\'UD Alzira amb flocs, escut del club i banderí. Visca la UDA!';
+
+  @override
+  String get equippedBadge => 'EQUIPAT';
+
+  @override
+  String get equippedLabel => 'Equipat';
+
+  @override
+  String get equipButton => 'Equipar';
+
+  @override
+  String unlockForCost(int cost) {
+    return 'Desbloquejar · $cost';
+  }
+
+  @override
+  String missingCoins(int n) {
+    return 'Falten $n 🪙';
+  }
 
   @override
   String get feedbackTitle => 'Suport i feedback';
@@ -1354,6 +1401,102 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get routesPageTitle => 'Rutes i línies';
+
+  @override
+  String get planWithAlbus => 'Planifica amb Albus';
+
+  @override
+  String get planWithAlbusTooltip => 'Planificador de ruta A → B amb Albus';
+
+  @override
+  String albusWalkShort(String to) {
+    return 'Fes uns passos fins a $to — no està lluny.';
+  }
+
+  @override
+  String albusWalkMid(int dist, String to, int duration) {
+    return 'Camina uns $dist metres fins a $to. En $duration min el tens!';
+  }
+
+  @override
+  String albusWalkLong(String to, int dist, int duration) {
+    return 'Camina fins a $to ($dist m, uns $duration min).';
+  }
+
+  @override
+  String albusBusStep(int count, String line, String from, String to) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Agafa la $line a $from. Baixa $count parades després, a $to.',
+      one: 'Agafa la $line a $from. Baixa 1 parada després, a $to.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String albusTransferStep(String at, String toLine, int duration) {
+    return 'A $at baixa i agafa la $toLine. Mira l\'horari, són uns $duration min!';
+  }
+
+  @override
+  String get supportTitle => 'Ajuda i Suport';
+
+  @override
+  String get supportFaqHeading => 'Preguntes Freqüents';
+
+  @override
+  String get supportFaqAlertsQ => 'Com funcionen les alertes?';
+
+  @override
+  String get supportFaqAlertsA =>
+      'Quan actives una alerta en una arribada, l\'app monitoritza en segon pla el temps restant. T\'avisarà quan el bus estiga a menys de la distància configurada (ex: 80 metres) perquè no el perdes.';
+
+  @override
+  String get supportFaqLocationQ => 'Per què demana ubicació \"Sempre\"?';
+
+  @override
+  String get supportFaqLocationA =>
+      'Perquè les alertes funcionen encara que tingues el mòbil a la butxaca o estigues utilitzant una altra app. Alzitrans només utilitza la teua ubicació quan tens una alerta activa per avisar-te just a temps.';
+
+  @override
+  String get supportFaqRechargeQ => 'Com recarregue la meua targeta Alzibus?';
+
+  @override
+  String get supportFaqRechargeA =>
+      'Les targetes físiques d\'Alzibus es poden recarregar directament a l\'autobús en pujar o als punts de venda autoritzats de la ciutat. Molt prompte podràs consultar el teu saldo real aproximat des de l\'app.';
+
+  @override
+  String get supportFaqPointsQ => 'Què són els punts i el Rank?';
+
+  @override
+  String get supportFaqPointsA =>
+      'És el nostre sistema de Gamificació. Guanyaràs punts per cada viatge registrat i per obrir l\'app diàriament. Puja de Rank per demostrar que ets l\'usuari #1 d\'Alzitrans!';
+
+  @override
+  String get supportSuggestionsHeading => 'Tens suggeriments?';
+
+  @override
+  String get supportSuggestionsBody =>
+      'Ens encanta escoltar les vostres idees per millorar Alzitrans. Escriu-nos!';
+
+  @override
+  String get supportSendButton => 'Enviar Proposta de Millora';
+
+  @override
+  String get supportEmailSubject => 'Suggeriment Alzitrans - Millora';
+
+  @override
+  String get supportEmailBody =>
+      'Hola,\n\nVoldria suggerir el següent per a Alzitrans:\n\n';
+
+  @override
+  String get supportEmailError => 'No s\'ha pogut obrir l\'app de correu';
+
+  @override
+  String supportVersion(String version) {
+    return 'Versió $version\nFet amb ❤️ a Alzira';
+  }
 
   @override
   String get rechargeYourCardSoon => 'Recarrega la teua targeta prompte!';

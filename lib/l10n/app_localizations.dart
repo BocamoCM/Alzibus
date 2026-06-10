@@ -2269,44 +2269,116 @@ abstract class AppLocalizations {
   /// No description provided for @skinDefaultName.
   ///
   /// In es, this message translates to:
-  /// **'Original'**
+  /// **'Albus clásico'**
   String get skinDefaultName;
 
   /// No description provided for @skinFalleroName.
   ///
   /// In es, this message translates to:
-  /// **'Fallero'**
+  /// **'Albus Fallero'**
   String get skinFalleroName;
 
   /// No description provided for @skinCapurulloName.
   ///
   /// In es, this message translates to:
-  /// **'Capurullo'**
+  /// **'Albus Capurullo'**
   String get skinCapurulloName;
 
   /// No description provided for @skinLluviaName.
   ///
   /// In es, this message translates to:
-  /// **'Lluvia'**
+  /// **'Albus en la lluvia'**
   String get skinLluviaName;
 
   /// No description provided for @skinGraduadoName.
   ///
   /// In es, this message translates to:
-  /// **'Graduado'**
+  /// **'Albus graduado'**
   String get skinGraduadoName;
 
   /// No description provided for @skinNavidadName.
   ///
   /// In es, this message translates to:
-  /// **'Navidad'**
+  /// **'Albus de Navidad'**
   String get skinNavidadName;
 
   /// No description provided for @skinAlziraFcName.
   ///
   /// In es, this message translates to:
-  /// **'UDA'**
+  /// **'Albus UD Alzira'**
   String get skinAlziraFcName;
+
+  /// No description provided for @skinDefaultDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'El Albus original. El que conoces de toda la vida.'**
+  String get skinDefaultDesc;
+
+  /// No description provided for @skinFalleroDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Vestido para las Fallas: pañuelo rojo con lunares, faja y un clavel. ¡Visca Sant Josep!'**
+  String get skinFalleroDesc;
+
+  /// No description provided for @skinCapurulloDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Nazareno tradicional de la Semana Santa de Alzira, con capirote morado y cíngulo dorado.'**
+  String get skinCapurulloDesc;
+
+  /// No description provided for @skinLluviaDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Por si pilla un chaparrón de la Ribera: paraguas amarillo y chubasquero a juego. ¡Que no te pille mojado!'**
+  String get skinLluviaDesc;
+
+  /// No description provided for @skinGraduadoDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Birrete con borla dorada + diploma con sello. Homenaje al TFC que dio origen a Alzitrans.'**
+  String get skinGraduadoDesc;
+
+  /// No description provided for @skinNavidadDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Gorro de Papá Noel con pompón blanco, bufanda navideña a rayas y copos de nieve. ¡Feliz Navidad!'**
+  String get skinNavidadDesc;
+
+  /// No description provided for @skinAlziraFcDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Bufanda a rayas rojas y moradas del UD Alzira con flecos, escudo del club y banderín. ¡Visca la UDA!'**
+  String get skinAlziraFcDesc;
+
+  /// No description provided for @equippedBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'EQUIPADO'**
+  String get equippedBadge;
+
+  /// No description provided for @equippedLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipado'**
+  String get equippedLabel;
+
+  /// No description provided for @equipButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipar'**
+  String get equipButton;
+
+  /// No description provided for @unlockForCost.
+  ///
+  /// In es, this message translates to:
+  /// **'Desbloquear · {cost}'**
+  String unlockForCost(int cost);
+
+  /// No description provided for @missingCoins.
+  ///
+  /// In es, this message translates to:
+  /// **'Faltan {n} 🪙'**
+  String missingCoins(int n);
 
   /// No description provided for @feedbackTitle.
   ///
@@ -2409,6 +2481,150 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Rutas y líneas'**
   String get routesPageTitle;
+
+  /// No description provided for @planWithAlbus.
+  ///
+  /// In es, this message translates to:
+  /// **'Planifica con Albus'**
+  String get planWithAlbus;
+
+  /// No description provided for @planWithAlbusTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Planificador de ruta A → B con Albus'**
+  String get planWithAlbusTooltip;
+
+  /// No description provided for @albusWalkShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Da unos pasos hasta {to} — no está lejos.'**
+  String albusWalkShort(String to);
+
+  /// No description provided for @albusWalkMid.
+  ///
+  /// In es, this message translates to:
+  /// **'Camina unos {dist} metros hasta {to}. ¡En {duration} min lo tienes!'**
+  String albusWalkMid(int dist, String to, int duration);
+
+  /// No description provided for @albusWalkLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Camina hasta {to} ({dist} m, unos {duration} min).'**
+  String albusWalkLong(String to, int dist, int duration);
+
+  /// No description provided for @albusBusStep.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Coge la {line} en {from}. Bájate 1 parada después, en {to}.} other{Coge la {line} en {from}. Bájate {count} paradas después, en {to}.}}'**
+  String albusBusStep(int count, String line, String from, String to);
+
+  /// No description provided for @albusTransferStep.
+  ///
+  /// In es, this message translates to:
+  /// **'En {at} bájate y coge la {toLine}. ¡Échale un ojo al horario, son unos {duration} min!'**
+  String albusTransferStep(String at, String toLine, int duration);
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda y Soporte'**
+  String get supportTitle;
+
+  /// No description provided for @supportFaqHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Preguntas Frecuentes'**
+  String get supportFaqHeading;
+
+  /// No description provided for @supportFaqAlertsQ.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo funcionan las alertas?'**
+  String get supportFaqAlertsQ;
+
+  /// No description provided for @supportFaqAlertsA.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando activas una alerta en una llegada, la app monitoriza en segundo plano el tiempo restante. Te avisará cuando el bus esté a menos de la distancia configurada (ej: 80 metros) para que no lo pierdas.'**
+  String get supportFaqAlertsA;
+
+  /// No description provided for @supportFaqLocationQ.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Por qué pide ubicación \"Siempre\"?'**
+  String get supportFaqLocationQ;
+
+  /// No description provided for @supportFaqLocationA.
+  ///
+  /// In es, this message translates to:
+  /// **'Para que las alertas funcionen aunque tengas el móvil en el bolsillo o estés usando otra app. Alzitrans solo usa tu ubicación cuando tienes una alerta activa para avisarte justo a tiempo.'**
+  String get supportFaqLocationA;
+
+  /// No description provided for @supportFaqRechargeQ.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo recargar mi tarjeta Alzibus?'**
+  String get supportFaqRechargeQ;
+
+  /// No description provided for @supportFaqRechargeA.
+  ///
+  /// In es, this message translates to:
+  /// **'Las tarjetas físicas de Alzibus se pueden recargar directamente en el autobús al subir o en los puntos de venta autorizados de la ciudad. Muy pronto podrás consultar tu saldo real aproximado desde la app.'**
+  String get supportFaqRechargeA;
+
+  /// No description provided for @supportFaqPointsQ.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué son los puntos y el Rank?'**
+  String get supportFaqPointsQ;
+
+  /// No description provided for @supportFaqPointsA.
+  ///
+  /// In es, this message translates to:
+  /// **'Es nuestro sistema de Gamificación. Ganarás puntos por cada viaje registrado y por abrir la app diariamente. ¡Sube de Rank para demostrar que eres el usuario #1 de Alzitrans!'**
+  String get supportFaqPointsA;
+
+  /// No description provided for @supportSuggestionsHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Tienes sugerencias?'**
+  String get supportSuggestionsHeading;
+
+  /// No description provided for @supportSuggestionsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Nos encanta escuchar vuestras ideas para mejorar Alzitrans. ¡Escríbenos!'**
+  String get supportSuggestionsBody;
+
+  /// No description provided for @supportSendButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar Propuesta de Mejora'**
+  String get supportSendButton;
+
+  /// No description provided for @supportEmailSubject.
+  ///
+  /// In es, this message translates to:
+  /// **'Sugerencia Alzitrans - Mejora'**
+  String get supportEmailSubject;
+
+  /// No description provided for @supportEmailBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola,\n\nMe gustaría sugerir lo siguiente para Alzitrans:\n\n'**
+  String get supportEmailBody;
+
+  /// No description provided for @supportEmailError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se ha podido abrir la app de correo'**
+  String get supportEmailError;
+
+  /// No description provided for @supportVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión {version}\nHecho con ❤️ en Alzira'**
+  String supportVersion(String version);
 
   /// No description provided for @rechargeYourCardSoon.
   ///

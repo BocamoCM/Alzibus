@@ -752,9 +752,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               backgroundColor: AlzitransColors.burgundy,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.alt_route),
-              label: const Text('Planifica con Albus',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              tooltip: 'Planificador de ruta A → B con Albus',
+              label: Text(l.planWithAlbus,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              tooltip: l.planWithAlbusTooltip,
             )
           : null,
       bottomNavigationBar: NavigationBar(

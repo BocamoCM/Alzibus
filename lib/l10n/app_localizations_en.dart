@@ -1276,25 +1276,72 @@ class AppLocalizationsEn extends AppLocalizations {
       'Waiting for the bus? Let\'s play a game! Earn coins while you wait.';
 
   @override
-  String get skinDefaultName => 'Original';
+  String get skinDefaultName => 'Classic Albus';
 
   @override
-  String get skinFalleroName => 'Fallero';
+  String get skinFalleroName => 'Fallero Albus';
 
   @override
-  String get skinCapurulloName => 'Capurullo';
+  String get skinCapurulloName => 'Capurullo Albus';
 
   @override
-  String get skinLluviaName => 'Rain';
+  String get skinLluviaName => 'Rainy Albus';
 
   @override
-  String get skinGraduadoName => 'Graduate';
+  String get skinGraduadoName => 'Graduate Albus';
 
   @override
-  String get skinNavidadName => 'Christmas';
+  String get skinNavidadName => 'Christmas Albus';
 
   @override
-  String get skinAlziraFcName => 'UDA';
+  String get skinAlziraFcName => 'UD Alzira Albus';
+
+  @override
+  String get skinDefaultDesc =>
+      'The original Albus. The one you\'ve always known.';
+
+  @override
+  String get skinFalleroDesc =>
+      'Dressed for Fallas: red polka-dot scarf, sash and a carnation. Visca Sant Josep!';
+
+  @override
+  String get skinCapurulloDesc =>
+      'Traditional Holy Week Nazareno from Alzira, with purple capirote and golden cincture.';
+
+  @override
+  String get skinLluviaDesc =>
+      'For when a Ribera downpour catches you: yellow umbrella and matching raincoat. Don\'t get soaked!';
+
+  @override
+  String get skinGraduadoDesc =>
+      'Cap with golden tassel + diploma with seal. Tribute to the final-year project that gave birth to Alzitrans.';
+
+  @override
+  String get skinNavidadDesc =>
+      'Santa hat with white pompom, striped Christmas scarf and snowflakes. Merry Christmas!';
+
+  @override
+  String get skinAlziraFcDesc =>
+      'Red and purple striped UD Alzira scarf with fringes, club crest and pennant. Visca la UDA!';
+
+  @override
+  String get equippedBadge => 'EQUIPPED';
+
+  @override
+  String get equippedLabel => 'Equipped';
+
+  @override
+  String get equipButton => 'Equip';
+
+  @override
+  String unlockForCost(int cost) {
+    return 'Unlock · $cost';
+  }
+
+  @override
+  String missingCoins(int n) {
+    return '$n 🪙 short';
+  }
 
   @override
   String get feedbackTitle => 'Support & feedback';
@@ -1348,6 +1395,102 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routesPageTitle => 'Routes & lines';
+
+  @override
+  String get planWithAlbus => 'Plan with Albus';
+
+  @override
+  String get planWithAlbusTooltip => 'A → B route planner with Albus';
+
+  @override
+  String albusWalkShort(String to) {
+    return 'Take a few steps to $to — it\'s close.';
+  }
+
+  @override
+  String albusWalkMid(int dist, String to, int duration) {
+    return 'Walk about $dist metres to $to. $duration min and you\'re there!';
+  }
+
+  @override
+  String albusWalkLong(String to, int dist, int duration) {
+    return 'Walk to $to ($dist m, about $duration min).';
+  }
+
+  @override
+  String albusBusStep(int count, String line, String from, String to) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Take line $line at $from. Get off $count stops later, at $to.',
+      one: 'Take line $line at $from. Get off 1 stop later, at $to.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String albusTransferStep(String at, String toLine, int duration) {
+    return 'Get off at $at and take line $toLine. Check the schedule — about $duration min!';
+  }
+
+  @override
+  String get supportTitle => 'Help & Support';
+
+  @override
+  String get supportFaqHeading => 'Frequently Asked Questions';
+
+  @override
+  String get supportFaqAlertsQ => 'How do alerts work?';
+
+  @override
+  String get supportFaqAlertsA =>
+      'When you enable an alert on an arrival, the app monitors the remaining time in the background. It\'ll notify you when the bus is closer than the configured distance (e.g. 80 metres) so you don\'t miss it.';
+
+  @override
+  String get supportFaqLocationQ => 'Why does it ask for \"Always\" location?';
+
+  @override
+  String get supportFaqLocationA =>
+      'So alerts work even if your phone is in your pocket or you\'re using another app. Alzitrans only uses your location when you have an active alert, to notify you just in time.';
+
+  @override
+  String get supportFaqRechargeQ => 'How do I top up my Alzibus card?';
+
+  @override
+  String get supportFaqRechargeA =>
+      'Physical Alzibus cards can be topped up directly on the bus when you board, or at the city\'s authorised sales points. You\'ll soon be able to check your approximate balance from the app.';
+
+  @override
+  String get supportFaqPointsQ => 'What are points and Rank?';
+
+  @override
+  String get supportFaqPointsA =>
+      'It\'s our gamification system. You\'ll earn points for each registered trip and for opening the app daily. Climb the Rank to prove you\'re the #1 Alzitrans user!';
+
+  @override
+  String get supportSuggestionsHeading => 'Got suggestions?';
+
+  @override
+  String get supportSuggestionsBody =>
+      'We love hearing your ideas to improve Alzitrans. Drop us a line!';
+
+  @override
+  String get supportSendButton => 'Send Improvement Proposal';
+
+  @override
+  String get supportEmailSubject => 'Alzitrans Suggestion - Improvement';
+
+  @override
+  String get supportEmailBody =>
+      'Hi,\n\nI\'d like to suggest the following for Alzitrans:\n\n';
+
+  @override
+  String get supportEmailError => 'Couldn\'t open the email app';
+
+  @override
+  String supportVersion(String version) {
+    return 'Version $version\nMade with ❤️ in Alzira';
+  }
 
   @override
   String get rechargeYourCardSoon => 'Top up your card soon!';
