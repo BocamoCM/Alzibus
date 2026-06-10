@@ -1,10 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-  <!-- Skin overlay LLUVIA — paraguas amarillo + gotas + capa impermeable -->
+  <!-- Skin overlay LLUVIA — paraguas amarillo flotando + chubasquero +
+       gotas y charcos.
+
+       Referencias del Albus base (viewBox 400x400):
+       - Techo del bus: y ≈ 95-130 (zona superior redondeada).
+       - Mástil del paraguas: NO debe atravesar la cara. Termina justo
+         encima del techo (y ≈ 80), suspendido visualmente con sombra. -->
 
   <defs>
     <linearGradient id="umbrellaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#FFE066"/>
       <stop offset="100%" stop-color="#FFC857"/>
+    </linearGradient>
+    <linearGradient id="umbrellaShade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
     </linearGradient>
     <linearGradient id="raincoatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#FFD54F"/>
@@ -12,55 +22,62 @@
     </linearGradient>
   </defs>
 
-  <!-- ═══ PARAGUAS amarillo flotando sobre el techo del bus ═══ -->
+  <!-- ═══ PARAGUAS amarillo flotando sobre el bus ═══ -->
   <g>
-    <!-- Mástil del paraguas -->
-    <line x1="200" y1="38" x2="200" y2="125" stroke="#5D4037" stroke-width="3"
+    <!-- Sombra del paraguas sobre el techo del bus (la oscurece) -->
+    <ellipse cx="200" cy="92" rx="115" ry="8" fill="#000" opacity="0.18"/>
+
+    <!-- Mástil corto: termina justo antes del techo, no lo atraviesa.
+         La punta inferior queda "flotando" — Albus no tiene manos. -->
+    <line x1="200" y1="32" x2="200" y2="82" stroke="#5D4037" stroke-width="3.5"
           stroke-linecap="round"/>
 
-    <!-- Sombra del paraguas (en el techo del bus) -->
-    <ellipse cx="200" cy="125" rx="92" ry="6" fill="#000" opacity="0.2"/>
-
-    <!-- Cúpula del paraguas (8 gajos) -->
-    <path d="M 105 50
-             Q 110 25 145 18
-             Q 175 12 200 12
-             Q 225 12 255 18
-             Q 290 25 295 50
-             Q 200 90 105 50 Z"
+    <!-- Cúpula del paraguas — más amplia (200px de diámetro) y más
+         baja, así protege visualmente toda la cabeza del bus. -->
+    <path d="M 90 75
+             Q 95 32 140 18
+             Q 175 8 200 8
+             Q 225 8 260 18
+             Q 305 32 310 75
+             Q 200 105 90 75 Z"
           fill="url(#umbrellaGrad)"
           stroke="#A67400" stroke-width="2.5"/>
 
-    <!-- Líneas separadoras de gajos -->
+    <!-- Sombreado interior de la cúpula para volumen -->
+    <path d="M 90 75
+             Q 95 32 140 18
+             Q 175 8 200 8
+             Q 225 8 260 18
+             Q 305 32 310 75
+             Q 200 105 90 75 Z"
+          fill="url(#umbrellaShade)"/>
+
+    <!-- Líneas separadoras de los 6 gajos del paraguas -->
     <g stroke="#A67400" stroke-width="1.5" fill="none" opacity="0.7">
-      <path d="M 135 30 Q 145 55 145 75"/>
-      <path d="M 170 22 Q 175 55 175 78"/>
-      <path d="M 200 18 L 200 80"/>
-      <path d="M 230 22 Q 225 55 225 78"/>
-      <path d="M 265 30 Q 255 55 255 75"/>
+      <path d="M 125 28 Q 138 55 138 82"/>
+      <path d="M 162 14 Q 170 50 170 92"/>
+      <path d="M 200 8  L 200 100"/>
+      <path d="M 238 14 Q 230 50 230 92"/>
+      <path d="M 275 28 Q 262 55 262 82"/>
     </g>
 
     <!-- Punta del paraguas arriba -->
-    <circle cx="200" cy="12" r="4" fill="#A67400"/>
+    <circle cx="200" cy="8" r="4.5" fill="#A67400"/>
 
-    <!-- Borde inferior festoneado (terminación natural del paraguas) -->
+    <!-- Borde inferior festoneado (terminación entre gajos) -->
     <g fill="url(#umbrellaGrad)" stroke="#A67400" stroke-width="1.5">
-      <path d="M 105 50 Q 125 70 140 60"/>
-      <path d="M 140 60 Q 155 75 170 64"/>
-      <path d="M 170 64 Q 185 80 200 65"/>
-      <path d="M 200 65 Q 215 80 230 64"/>
-      <path d="M 230 64 Q 245 75 260 60"/>
-      <path d="M 260 60 Q 275 70 295 50"/>
+      <path d="M 90 75  Q 115 92 138 82"/>
+      <path d="M 138 82 Q 155 96 170 88"/>
+      <path d="M 170 88 Q 185 102 200 92"/>
+      <path d="M 200 92 Q 215 102 230 88"/>
+      <path d="M 230 88 Q 245 96 262 82"/>
+      <path d="M 262 82 Q 285 92 310 75"/>
     </g>
-
-    <!-- Mango curvado del paraguas (J en la parte inferior) -->
-    <path d="M 200 125 Q 200 135 215 140 Q 225 140 222 130"
-          stroke="#5D4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
   </g>
 
-  <!-- ═══ CAPA IMPERMEABLE amarilla al cuerpo ═══ -->
+  <!-- ═══ CHUBASQUERO amarillo al cuerpo ═══ -->
   <g>
-    <!-- Cuerpo principal de la capa -->
+    <!-- Cuerpo principal del chubasquero (cubriendo la cintura del bus) -->
     <path d="M 60 285
              L 56 322
              L 344 322

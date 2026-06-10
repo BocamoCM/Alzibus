@@ -1,53 +1,88 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-  <!-- Skin overlay NAVIDAD — gorro de Santa + bufanda + copos -->
+  <!-- Skin overlay NAVIDAD — gorro de Santa, bufanda y copos.
+
+       Referencias del Albus base (viewBox 400x400):
+       - Techo del bus: y ≈ 95-130. El gorro debe APOYARSE encima,
+         con su ribete blanco descansando justo sobre el techo
+         (y ≈ 100-115), no flotando ni metido dentro del cuerpo.
+       - El cono cae lateralmente hacia la derecha (gorro de Santa
+         típico), con el pompón al final. -->
 
   <defs>
     <linearGradient id="santaHatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#E63946"/>
       <stop offset="100%" stop-color="#A02530"/>
     </linearGradient>
+    <linearGradient id="santaHatShade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
+    </linearGradient>
     <radialGradient id="pompon" cx="35%" cy="35%" r="60%">
       <stop offset="0%" stop-color="#FFFFFF"/>
       <stop offset="60%" stop-color="#E8E8E8"/>
       <stop offset="100%" stop-color="#B8B8B8"/>
     </radialGradient>
+    <radialGradient id="ribbet" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#DCDCDC"/>
+    </radialGradient>
   </defs>
 
   <!-- ═══ GORRO DE SANTA ═══ -->
   <g>
-    <!-- Cono principal rojo (cae hacia un lateral) -->
-    <path d="M 130 125
-             Q 145 100 200 90
-             Q 270 84 295 90
-             Q 290 50 280 25
-             Q 270 8 250 18
-             Q 220 40 180 75
-             Q 150 100 130 125 Z"
+    <!-- Base del cono: parte ancha apoyada en el techo (~y=100-110),
+         curvándose hacia arriba y a la derecha, terminando en la
+         punta donde está el pompón.
+         Camino: parte de la izquierda del ribete (x=130, y=105),
+         sube curvándose por arriba, cae hacia la derecha-arriba
+         (y=20), y vuelve por la derecha del ribete (x=270, y=105). -->
+    <path d="M 130 108
+             Q 145 70 175 50
+             Q 220 30 268 22
+             Q 295 18 310 30
+             Q 315 50 290 80
+             Q 285 95 270 108
+             Z"
           fill="url(#santaHatGrad)"
           stroke="#5C0E18" stroke-width="2.5"/>
 
-    <!-- Pliegue del gorro (línea de sombra) -->
-    <path d="M 250 25 Q 240 50 220 70" stroke="#5C0E18" stroke-width="1" opacity="0.6" fill="none"/>
+    <!-- Sombreado de volumen del cono -->
+    <path d="M 130 108
+             Q 145 70 175 50
+             Q 220 30 268 22
+             Q 295 18 310 30
+             Q 315 50 290 80
+             Q 285 95 270 108
+             Z"
+          fill="url(#santaHatShade)"/>
 
-    <!-- Borde blanco peludo (ribete inferior del gorro) -->
-    <ellipse cx="200" cy="123" rx="80" ry="14" fill="#FFFFFF"
-             stroke="#5C0E18" stroke-width="2"/>
+    <!-- Pliegue sutil (línea de sombra interior) -->
+    <path d="M 285 25 Q 260 50 230 70"
+          stroke="#5C0E18" stroke-width="1.2" opacity="0.45" fill="none"/>
+
+    <!-- Borde blanco peludo (ribete del gorro) apoyado en el techo.
+         Tamaño: rx=80 ry=11, centrado en (200,108) — descansa sobre la
+         curvatura superior del bus. -->
+    <ellipse cx="200" cy="108" rx="78" ry="11"
+             fill="url(#ribbet)" stroke="#5C0E18" stroke-width="2"/>
+
     <!-- Textura "pelusa" del ribete (pequeños círculos) -->
     <g fill="#FFFFFF" stroke="#D0D0D0" stroke-width="0.5">
-      <circle cx="135" cy="120" r="4"/>
-      <circle cx="150" cy="125" r="3.5"/>
-      <circle cx="165" cy="121" r="4"/>
-      <circle cx="180" cy="126" r="3.8"/>
-      <circle cx="200" cy="123" r="4"/>
-      <circle cx="220" cy="126" r="3.8"/>
-      <circle cx="240" cy="121" r="4"/>
-      <circle cx="255" cy="125" r="3.5"/>
-      <circle cx="270" cy="120" r="4"/>
+      <circle cx="135" cy="106" r="4"/>
+      <circle cx="150" cy="111" r="3.6"/>
+      <circle cx="165" cy="106" r="4"/>
+      <circle cx="180" cy="111" r="3.8"/>
+      <circle cx="200" cy="107" r="4"/>
+      <circle cx="220" cy="111" r="3.8"/>
+      <circle cx="240" cy="106" r="4"/>
+      <circle cx="255" cy="110" r="3.6"/>
+      <circle cx="268" cy="106" r="4"/>
     </g>
 
-    <!-- Pompón blanco en la punta del gorro -->
-    <circle cx="250" cy="18" r="14" fill="url(#pompon)" stroke="#888" stroke-width="1.2"/>
-    <circle cx="247" cy="15" r="4" fill="#FFFFFF" opacity="0.7"/>
+    <!-- Pompón blanco grande en la punta del gorro -->
+    <circle cx="305" cy="32" r="15" fill="url(#pompon)" stroke="#888" stroke-width="1.2"/>
+    <!-- Brillo del pompón -->
+    <circle cx="301" cy="28" r="4.5" fill="#FFFFFF" opacity="0.75"/>
   </g>
 
   <!-- ═══ BUFANDA roja con flecos ═══ -->
@@ -93,8 +128,8 @@
       <line x1="5" y1="-5" x2="-5" y2="5" stroke="#FFFFFF" stroke-width="1.5"/>
       <circle r="2.5" fill="#FFFFFF"/>
     </g>
-    <!-- Copo derecho arriba -->
-    <g transform="translate(360, 50)">
+    <!-- Copo derecho abajo (el de arriba lo ocupa ahora el pompón) -->
+    <g transform="translate(360, 180)">
       <line x1="0" y1="-8" x2="0" y2="8" stroke="#FFFFFF" stroke-width="1.8"/>
       <line x1="-8" y1="0" x2="8" y2="0" stroke="#FFFFFF" stroke-width="1.8"/>
       <line x1="-6" y1="-6" x2="6" y2="6" stroke="#FFFFFF" stroke-width="1.8"/>
