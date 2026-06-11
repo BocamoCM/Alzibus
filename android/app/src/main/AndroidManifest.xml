@@ -17,6 +17,14 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- AdMob: necesario desde Android 13 (API 33+) para que el SDK pueda
+         leer el Advertising ID (AAID). Sin este permiso el SDK trata cada
+         impresión como anónima → cae el eCPM en EU+US a aproximadamente
+         la mitad. El usuario sigue pudiendo resetear/limitar el AAID
+         desde Ajustes del sistema (Google → Anuncios), y la UMP/CMP que
+         ya tienes integrada decide si se sirven personalizados o no. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
     <!-- file_picker hereda READ_MEDIA_IMAGES y READ_MEDIA_VIDEO en su propio
          AndroidManifest. Google Play los rechaza porque la app solo necesita
          acceso PUNTUAL a archivos (al adjuntar imágenes/PDFs en tickets de

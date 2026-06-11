@@ -57,6 +57,27 @@ class AdService {
     if (_isInitialized) return;
 
     try {
+      // Configuración global de las requests ANTES de initialize().
+      //
+      // - tagForChildDirectedTreatment: la app NO está dirigida a niños
+      //   (COPPA, EE.UU.). Declararlo explícitamente como 'no' nos protege
+      //   ante una auditoría de Play Console: si dejas 'unspecified' y
+      //   Google te detecta tráfico en EE.UU. con perfil infantil, puede
+      //   suspender la cuenta de AdMob.
+      // - tagForUnderAgeOfConsent: no nos dirigimos específicamente a
+      //   menores de 16 en EU (GDPR-K). La UMP que ya tienes integrada se
+      //   encarga del consentimiento real por usuario.
+      // - maxAdContentRating: limita el rating del creative a PG (apto
+      //   para todos los públicos). Filtra contenido para adultos que
+      //   no encaja con una app de transporte municipal.
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(
+          tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
+          tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
+          maxAdContentRating: MaxAdContentRating.pg,
+        ),
+      );
+
       await MobileAds.instance.initialize();
       _isInitialized = true;
       if (!_initCompleter.isCompleted) _initCompleter.complete();
