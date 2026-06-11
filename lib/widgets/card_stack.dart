@@ -62,6 +62,20 @@ class _CardStackState extends State<CardStack>
   }
 
   @override
+  void didUpdateWidget(covariant CardStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // El padre acaba de aplicar el swap (cambio de selectedIndex). Si en
+    // ese momento _ctrl estaba al final de la animación de swap (t≈1),
+    // ahora podemos resetearlo a 0 SIN flicker — porque con el nuevo
+    // selectedIndex el estado visual de "_ctrl=0" coincide pixel a pixel
+    // con el de "_ctrl=1 + selectedIndex viejo".
+    if (oldWidget.selectedIndex != widget.selectedIndex && _ctrl.value > 0.9) {
+      _ctrl.value = 0;
+      _dragDy = 0;
+    }
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
@@ -80,14 +94,14 @@ class _CardStackState extends State<CardStack>
     final v = velocity > 0 ? velocity : 0.0;
     _animateTo(1.0, velocity: v).then((_) {
       if (!mounted) return;
-      // Cuando t=1 cada carta está exactamente en la posición que
-      // tendrá tras el swap: la entrante en FRONTAL, la saliente en
-      // TRASERA. Intercambiamos los índices Y reseteamos a 0 sin que
-      // se note el cambio.
+      // Notificamos al padre del cambio de slot pero NO reseteamos
+      // _ctrl aquí. El reset (a 0) ocurre dentro de didUpdateWidget,
+      // que se dispara solo cuando el rebuild del padre llega con el
+      // nuevo selectedIndex. Si reseteamos antes había un frame en el
+      // que widget.selectedIndex aún era el viejo + _ctrl=0 → pintaba
+      // el estado pre-swap durante un instante (flicker).
       final next = widget.selectedIndex == 0 ? 1 : 0;
       widget.onSelected(next);
-      _dragDy = 0;
-      _ctrl.value = 0;
     });
   }
 
