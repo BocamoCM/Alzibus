@@ -146,12 +146,10 @@ class _CardStackState extends State<CardStack>
           // Carta SALIENTE (frontIdx): pasa de frontal → trasera.
           final goingY = peek - peek * t;
           final goingScale = 1.0 - 0.04 * t;
-          final goingShadow = 1.0 - 0.6 * t;
 
           // Carta ENTRANTE (backIdx): pasa de trasera → frontal.
           final comingY = peek * t;
           final comingScale = 0.96 + 0.04 * t;
-          final comingShadow = 0.4 + 0.6 * t;
 
           // Z-order: hasta el punto medio (t=0.5) la SALIENTE está encima
           // (es la que el usuario "agarra"); a partir de ahí la ENTRANTE
@@ -159,26 +157,57 @@ class _CardStackState extends State<CardStack>
           // sin que ninguna se vea cortada.
           final entranteOnTop = t >= 0.5;
 
-          final goingCard = _PositionedCard(
+          // Función auxiliar: devuelve un Positioned para meter en el Stack.
+          // Si `withGestures` es true le inyectamos el GestureDetector
+          // DENTRO del Positioned (no fuera, lo cual rompía el layout y
+          // dejaba un overlay invisible flotando sobre la pila).
+          Positioned buildLayer({
+            required double top,
+            required double scale,
+            required Widget child,
+            required bool withGestures,
+          }) {
+            final visual = Transform.scale(
+              scale: scale,
+              alignment: Alignment.topCenter,
+              child: SizedBox(height: h, child: child),
+            );
+            return Positioned(
+              left: 0,
+              right: 0,
+              top: top,
+              child: withGestures
+                  ? GestureDetector(
+                      behavior: HitTestBehavior.deferToChild,
+                      onVerticalDragUpdate: _onVerticalDragUpdate,
+                      onVerticalDragEnd: _onVerticalDragEnd,
+                      child: visual,
+                    )
+                  : visual,
+            );
+          }
+
+          final goingLayer = buildLayer(
             top: goingY,
             scale: goingScale,
-            shadowOpacity: goingShadow,
-            height: h,
             child: cards[frontIdx],
+            withGestures: !entranteOnTop, // la saliente capta los gestos hasta t=0.5
           );
-          final comingCard = _PositionedCard(
+          final comingLayer = buildLayer(
             top: comingY,
             scale: comingScale,
-            shadowOpacity: comingShadow,
-            height: h,
             child: cards[backIdx],
+            withGestures: entranteOnTop, // a partir de t=0.5 los gestos pasan a la entrante
           );
+
+          // Las sombras visuales las pinta cada NfcCardVisual con su
+          // propio boxShadow en su Container — aquí solo controlamos
+          // posición, escala y z-order.
 
           return Stack(
             children: [
-              // Capa de gestos en la zona del peek (siempre captura tap
-              // mientras la trasera asoma — incluso durante la animación
-              // de vuelta tras un drag parcial).
+              // Capa invisible que captura el TAP en la franja superior
+              // (la zona "peek") cuando la pila está en reposo.
               if (t < 0.05)
                 Positioned(
                   left: 0,
@@ -186,18 +215,13 @@ class _CardStackState extends State<CardStack>
                   top: 0,
                   height: peek,
                   child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
+                    behavior: HitTestBehavior.translucent,
                     onTap: _onTapBack,
                   ),
                 ),
-              // Carta de abajo en z-order.
-              entranteOnTop ? goingCard : comingCard,
-              // Carta de arriba en z-order, captura los gestos verticales.
-              GestureDetector(
-                onVerticalDragUpdate: _onVerticalDragUpdate,
-                onVerticalDragEnd: _onVerticalDragEnd,
-                child: entranteOnTop ? comingCard : goingCard,
-              ),
+              // Orden visual: la que va detrás primero, la que va delante después.
+              entranteOnTop ? goingLayer : comingLayer,
+              entranteOnTop ? comingLayer : goingLayer,
             ],
           );
         },
@@ -206,35 +230,3 @@ class _CardStackState extends State<CardStack>
   }
 }
 
-class _PositionedCard extends StatelessWidget {
-  final double top;
-  final double scale;
-  final double shadowOpacity;
-  final double height;
-  final Widget child;
-
-  const _PositionedCard({
-    required this.top,
-    required this.scale,
-    required this.shadowOpacity,
-    required this.height,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      top: top,
-      child: Transform.scale(
-        scale: scale,
-        alignment: Alignment.topCenter,
-        child: SizedBox(
-          height: height,
-          child: child,
-        ),
-      ),
-    );
-  }
-}
