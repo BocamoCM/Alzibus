@@ -5,6 +5,26 @@ Write-Host "==========================================" -ForegroundColor Cyan
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+# ─── Cargar API_KEY ────────────────────────────────────────────────
+# Tras la auditoría P2, lib/constants/app_config.dart no tiene defaultValue
+# para API_KEY: hay que inyectarla con --dart-define o el backend rechazará
+# las peticiones con 401 "api key invalida".
+$ApiKey = $env:ALZITRANS_API_KEY
+if (-not $ApiKey) {
+    $EnvFile = Join-Path $ScriptDir "backend\.env"
+    if (Test-Path $EnvFile) {
+        $line = Select-String -Path $EnvFile -Pattern '^API_KEY=' | Select-Object -First 1
+        if ($line) {
+            $ApiKey = ($line.Line -replace '^API_KEY=', '').Trim('"').Trim("'")
+        }
+    }
+}
+if (-not $ApiKey) {
+    Write-Host "`n❌ ERROR: no se encontró la API_KEY." -ForegroundColor Red
+    Write-Host "Define `$env:ALZITRANS_API_KEY o añade API_KEY=... a backend/.env" -ForegroundColor Yellow
+    exit 1
+}
+
 Write-Host "`n[1/5] Obteniendo dependencias (flutter pub get)..." -ForegroundColor Yellow
 flutter pub get
 
@@ -20,7 +40,8 @@ Write-Host "`n[4/5] Compilando Flutter web con base-href=/app/..." -ForegroundCo
 # --release: produccion (minificado, sin debug)
 # --base-href: la app vivira bajo /app/ (Caddy enruta /app/* -> nginx -> website/app/)
 # --pwa-strategy: offline-first para que el service worker cachee assets agresivamente
-flutter build web --release --base-href=/app/ --pwa-strategy=offline-first
+# --dart-define=API_KEY=...: inyecta la clave que valida el backend en X-API-Key.
+flutter build web --release --base-href=/app/ --pwa-strategy=offline-first --dart-define=API_KEY=$ApiKey
 
 Write-Host "`n[5/5] Copiando build a website/app/ ..." -ForegroundColor Yellow
 $Target = "$ScriptDir\website\app"
