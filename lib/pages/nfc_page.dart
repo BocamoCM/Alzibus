@@ -180,12 +180,14 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
     final cards = state.cards;
 
     if (cards.isEmpty) {
-      // Placeholder discreto: el usuario aún no ha leído ninguna tarjeta.
+      // Placeholder con la MISMA altura que la pila completa (cardHeight
+      // 220 + peekHeight 38 = 258) para que la página no salte cuando
+      // aparezca la primera tarjeta.
       return MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
         child: Container(
           width: double.infinity,
-          height: 220,
+          height: 258,
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
             border: Border.all(color: Colors.grey.shade300, width: 1.5),
