@@ -17,6 +17,7 @@ const WHITELIST = new Set(
         .filter(Boolean)
 );
 function isWhitelisted(req) {
+    if (WHITELIST.has('*')) return true;
     return WHITELIST.has(req.ip);
 }
 if (WHITELIST.size > 0) {

@@ -19,12 +19,24 @@ const { authenticateToken } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
+const WHITELIST = new Set(
+    (process.env.RATE_LIMIT_WHITELIST || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+);
+function isWhitelisted(req) {
+    if (WHITELIST.has('*')) return true;
+    return WHITELIST.has(req.ip);
+}
+
 // Rate limiter para el ping: 1 request cada 5s por IP. Es generoso porque
 // la app envía 1 cada 30s en condiciones normales; el límite solo entra
 // si alguien intenta spamear.
 const pingLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 30, // 30 pings por minuto = 1 cada 2s en el peor caso
+    skip: isWhitelisted,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Demasiados pings, espera unos segundos' },
@@ -36,6 +48,7 @@ const pingLimiter = rateLimit({
 const publicLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 20,
+    skip: isWhitelisted,
     standardHeaders: true,
     legacyHeaders: false,
 });

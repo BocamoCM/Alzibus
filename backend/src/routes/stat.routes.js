@@ -10,7 +10,10 @@ const WHITELIST = new Set(
     (process.env.RATE_LIMIT_WHITELIST || '')
         .split(',').map(s => s.trim()).filter(Boolean)
 );
-const isWhitelisted = (req) => WHITELIST.has(req.ip);
+const isWhitelisted = (req) => {
+    if (WHITELIST.has('*')) return true;
+    return WHITELIST.has(req.ip);
+};
 
 const contactLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 2, skip: isWhitelisted, message: { error: 'Límite alcanzado' } });
 const metricsLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 2, skip: isWhitelisted, message: { error: 'Límite alcanzado' } });
