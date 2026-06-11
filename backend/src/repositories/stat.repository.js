@@ -1,5 +1,20 @@
 const pool = require('../../db');
 
+// Mapa cerrado de periodos → literal INTERVAL válido en PostgreSQL.
+// PostgreSQL NO acepta INTERVAL parametrizado vía $1 con el placeholder,
+// así que sustituimos por interpolación PERO desde una whitelist hardcoded.
+// Si `period` no está en el mapa devolvemos el default ('7 days') —
+// nunca un valor proveniente del request del usuario llega al SQL.
+const INTERVAL_MAP = Object.freeze({
+    day:   '24 hours',
+    week:  '7 days',
+    month: '30 days',
+    year:  '365 days',
+});
+function resolveInterval(period) {
+    return INTERVAL_MAP[period] || INTERVAL_MAP.week;
+}
+
 class StatRepository {
     async getGeneralStats() {
         const stopsCount = await pool.query('SELECT COUNT(*) FROM stops');
@@ -30,14 +45,11 @@ class StatRepository {
     }
 
     async getUsageStats(period = 'week') {
-        let interval = "7 days";
-        if (period === 'day') interval = "24 hours";
-        else if (period === 'month') interval = "30 days";
-        else if (period === 'year') interval = "365 days";
+        const interval = resolveInterval(period);
 
         const result = await pool.query(`
-            SELECT DATE(created_at) as day, COUNT(*) as queries 
-            FROM api_logs 
+            SELECT DATE(created_at) as day, COUNT(*) as queries
+            FROM api_logs
             WHERE created_at >= NOW() - INTERVAL '${interval}'
             GROUP BY day ORDER BY day
         `);
@@ -77,10 +89,7 @@ class StatRepository {
     }
 
     async getDashboard(period = 'week') {
-        let interval = "7 days";
-        if (period === 'day') interval = "24 hours";
-        else if (period === 'month') interval = "30 days";
-        else if (period === 'year') interval = "365 days";
+        const interval = resolveInterval(period);
 
         const [
             usersTotal, usersVerified, usersThisWeek, usersActive7d, tripsTotal, tripsConfirmed,
@@ -167,10 +176,7 @@ class StatRepository {
      * Cuenta tanto eventos totales como IPs únicas en el último periodo.
      */
     async getTelemetryBreakdown(period = 'week') {
-        let interval = '7 days';
-        if (period === 'day') interval = '24 hours';
-        else if (period === 'month') interval = '30 days';
-        else if (period === 'year') interval = '365 days';
+        const interval = resolveInterval(period);
 
         const byPlatformSource = await pool.query(`
             SELECT

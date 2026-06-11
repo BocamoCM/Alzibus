@@ -93,7 +93,7 @@ class UserService {
         const valid = await bcrypt.compare(currentPassword, user.password_hash);
         if (!valid) throw new UnauthorizedError('Contraseña actual incorrecta');
 
-        const newHash = await bcrypt.hash(newPassword, 10);
+        const newHash = await bcrypt.hash(newPassword, 12);
         await userRepository.updatePassword(userId, newHash);
         
         sendDiscordNotification(`🔐 **Usuario**: \`${currentEmail}\` ha cambiado su contraseña.`);

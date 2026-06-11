@@ -370,11 +370,19 @@
         function render(trip) {
             const badge = document.getElementById('statusBadge');
             badge.className = 'badge ' + trip.status;
-            badge.innerHTML = {
-                active: '<span class="dot"></span>VIVO',
-                ended: 'FINALIZADO',
-                expired: 'CADUCADO',
-            }[trip.status] || trip.status.toUpperCase();
+            // Defensa en profundidad: para los 3 estados conocidos usamos
+            // innerHTML/textContent con valores literales. Para cualquier
+            // otro status devuelto por el backend, textContent garantiza
+            // que aunque venga con HTML/JS no se ejecute en el cliente.
+            if (trip.status === 'active') {
+                badge.innerHTML = '<span class="dot"></span>VIVO';
+            } else if (trip.status === 'ended') {
+                badge.textContent = 'FINALIZADO';
+            } else if (trip.status === 'expired') {
+                badge.textContent = 'CADUCADO';
+            } else {
+                badge.textContent = String(trip.status || '').toUpperCase();
+            }
 
             if (trip.status !== 'active') {
                 document.getElementById('map').style.display = 'none';

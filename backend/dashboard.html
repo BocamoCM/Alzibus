@@ -644,11 +644,28 @@
     // ── Configuración ──
     // Detecta automáticamente si estamos en local o en producción.
     // Si abres el archivo localmente, puedes cambiar esto a la IP de tu Raspberry.
-    const SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || !window.location.hostname 
+    const SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || !window.location.hostname
                    ? 'http://149.74.26.171:4000' // Tu Raspberry Pi (IP fija)
                    : window.location.origin;     // El mismo dominio si está desplegado
-    
+
     document.getElementById('server-url').textContent = SERVER;
+
+    // Escapa caracteres peligrosos antes de meterlos en plantillas que usan
+    // innerHTML. Necesario para defensa en profundidad incluso cuando el
+    // backend ya valida (p. ej. source/platform están en whitelist en
+    // stat.service.js) y obligatorio para campos persistidos sin validar
+    // (stop_name de qr_scans viene del query-string del cartel QR, que un
+    // atacante puede falsificar). Reemplaza los 5 chars críticos por
+    // entidades HTML; null/undefined → string vacío.
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     // Opciones por defecto para todas las gráficas de Chart.js.
     // Define el estilo de los ejes, colores del grid, y tamaño de fuente.
@@ -822,6 +839,9 @@
         if (d.qr.byStop.length === 0) {
           qrTable.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">Sin escaneos aún</p>';
         } else {
+          // s.name (stop_name de qr_scans) viene del query-string del cartel
+          // QR físico — atacante puede inyectar HTML/JS en /qr?name=<script>.
+          // Sin escape, queda XSS persistente al admin abrir el dashboard.
           qrTable.innerHTML = `
             <table>
               <thead>
@@ -830,8 +850,8 @@
               <tbody>
                 ${d.qr.byStop.map(s => `
                   <tr>
-                    <td>${s.name}</td>
-                    <td style="font-weight:700;color:var(--accent)">${s.cnt}</td>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td style="font-weight:700;color:var(--accent)">${parseInt(s.cnt) || 0}</td>
                     <td>
                       <div class="bar-wrap"><div class="bar-fill" style="width:${(s.cnt/d.qr.byStop[0].cnt)*100}%; background:#FF4757"></div></div>
                     </td>
@@ -1109,12 +1129,17 @@
         if (rows.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px">Sin datos aún</td></tr>';
         } else {
+          // source/platform están restringidos a whitelist en el backend
+          // (stat.service.js → sanitizeSource/Platform), pero aplicamos
+          // escapeHtml igualmente como defensa en profundidad por si una
+          // futura migración o backfill insertara valores sin pasar por
+          // ese sanitizador.
           tbody.innerHTML = rows.map(r => `
             <tr>
-              <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${SOURCE_COLORS[r.source] || '#7f8c8d'};margin-right:6px"></span>${r.source}</td>
-              <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PLATFORM_COLORS[r.platform] || '#9A8090'};margin-right:6px"></span>${r.platform}</td>
-              <td style="font-weight:700;color:var(--accent)">${r.visits}</td>
-              <td>${r.uniques}</td>
+              <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${SOURCE_COLORS[r.source] || '#7f8c8d'};margin-right:6px"></span>${escapeHtml(r.source)}</td>
+              <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PLATFORM_COLORS[r.platform] || '#9A8090'};margin-right:6px"></span>${escapeHtml(r.platform)}</td>
+              <td style="font-weight:700;color:var(--accent)">${parseInt(r.visits) || 0}</td>
+              <td>${parseInt(r.uniques) || 0}</td>
             </tr>
           `).join('');
         }

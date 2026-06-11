@@ -89,8 +89,16 @@ class UserRepository {
     }
 
     async getActiveUsers(minutes) {
+        // Forzamos `minutes` a entero antes de meterlo en el SQL para evitar
+        // que un callsite futuro pase un string del request del usuario y abra
+        // una inyección. Si no es un número válido, default a 5.
+        const n = Number.isFinite(Number(minutes)) ? parseInt(minutes, 10) : 5;
+        const safeMinutes = n > 0 && n <= 60 * 24 * 7 ? n : 5; // techo: 1 semana
+        // PostgreSQL no permite parametrizar el literal completo del INTERVAL,
+        // pero sí podemos parametrizar el número de minutos como entero seguro.
         const result = await pool.query(
-            "SELECT email, last_access FROM users WHERE last_access > NOW() - INTERVAL '" + minutes + " minutes' ORDER BY last_access DESC"
+            "SELECT email, last_access FROM users WHERE last_access > NOW() - ($1 || ' minutes')::interval ORDER BY last_access DESC",
+            [safeMinutes]
         );
         return result.rows;
     }

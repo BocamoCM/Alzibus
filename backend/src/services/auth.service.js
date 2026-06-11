@@ -66,7 +66,8 @@ class AuthService {
         await userRepository.deleteStaleUnverifiedAccounts();
 
         const existingUser = await userRepository.findByEmail(email);
-        const passwordHash = await bcrypt.hash(password, 10);
+        // cost 12 = ~250-300 ms en la Pi. OWASP recomienda ≥12 para 2025-26.
+        const passwordHash = await bcrypt.hash(password, 12);
         let userToReturn;
 
         if (existingUser) {
@@ -320,7 +321,7 @@ class AuthService {
             throw new BadRequestError('Código de recuperación incorrecto');
         }
 
-        const passwordHash = await bcrypt.hash(newPassword, 10);
+        const passwordHash = await bcrypt.hash(newPassword, 12);
         await userRepository.updatePassword(user.id, passwordHash);
 
         return { message: 'Contraseña actualizada correctamente' };
