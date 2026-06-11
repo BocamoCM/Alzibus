@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../core/providers/nfc_controller.dart';
+import '../models/bus_card.dart' show BusCardKind;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -178,6 +179,9 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
     final trips = state.cardData?.trips;
     final isLowBalance = trips != null && trips > 0 && trips <= state.lowBalanceThreshold;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    // Variante SUMA (ATMV / Generalitat Valenciana). Cambia colores, texto y
+    // deshabilita "Validar viaje" porque la app solo lee este tipo, no escribe.
+    final isSuma = state.cardData?.kind == BusCardKind.sumaValencia;
 
     return Scaffold(
       appBar: AppBar(
@@ -250,16 +254,26 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                               width: double.infinity,
                               height: 220,
                               decoration: BoxDecoration(
-                                gradient: state.isUnlimited
-                                    ? AlzitransColors.primaryGradient
-                                    : const LinearGradient(
+                                gradient: isSuma
+                                    ? const LinearGradient(
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
+                                        // Rojo institucional de la tarjeta SUMA física.
                                         colors: [
-                                          Color(0xFF4CAF50),
-                                          Color(0xFFFF9800),
+                                          Color(0xFFE63946),
+                                          Color(0xFFB81D2C),
                                         ],
-                                      ),
+                                      )
+                                    : state.isUnlimited
+                                        ? AlzitransColors.primaryGradient
+                                        : const LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Color(0xFF4CAF50),
+                                              Color(0xFFFF9800),
+                                            ],
+                                          ),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
@@ -294,11 +308,15 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                           children: [
                                             Row(
                                               children: [
-                                                Icon(Icons.directions_bus, color: Colors.white.withOpacity(0.9), size: 24),
+                                                Icon(
+                                                  isSuma ? Icons.train : Icons.directions_bus,
+                                                  color: Colors.white.withOpacity(0.9),
+                                                  size: 24,
+                                                ),
                                                 const SizedBox(width: 8),
-                                                const Text(
-                                                  'Alzitrans NFC',
-                                                  style: TextStyle(
+                                                Text(
+                                                  isSuma ? 'SUMA' : 'Alzitrans NFC',
+                                                  style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 18,
                                                     fontWeight: FontWeight.w900,
@@ -308,7 +326,9 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                               ],
                                             ),
                                             Text(
-                                              state.cardData?.cardTypeName ?? AppLocalizations.of(context)!.publicTransportAlzira,
+                                              isSuma
+                                                  ? 'Generalitat Valenciana · ATMV'
+                                                  : (state.cardData?.cardTypeName ?? AppLocalizations.of(context)!.publicTransportAlzira),
                                               style: TextStyle(
                                                 color: Colors.white.withOpacity(0.8),
                                                 fontSize: 12,
@@ -346,18 +366,42 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                             ),
                                           ),
                                         ),
-                                        if (state.lastCardUid != null)
-                                          Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              'ID: ${state.lastCardUid}',
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(0.5),
-                                                fontSize: 9,
-                                                fontFamily: 'monospace',
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            // Zona SUMA en la esquina inferior izquierda
+                                            // (solo aparece en tarjetas SUMA con zona conocida).
+                                            if (isSuma && state.cardData?.sumaZone != null)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.18),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  'ZONA ${state.cardData!.sumaZone}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                    letterSpacing: 0.8,
+                                                  ),
+                                                ),
+                                              )
+                                            else
+                                              const SizedBox.shrink(),
+                                            if (state.lastCardUid != null)
+                                              Text(
+                                                'ID: ${state.lastCardUid}',
+                                                style: TextStyle(
+                                                  color: Colors.white.withOpacity(0.5),
+                                                  fontSize: 9,
+                                                  fontFamily: 'monospace',
+                                                ),
                                               ),
-                                            ),
-                                          ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -403,7 +447,10 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: (state.storedTrips > 0 && !state.isUnlimited) ? () async {
+                                // SUMA es solo lectura: no manipulamos el saldo de
+                                // la tarjeta de la ATMV desde la app. Desactivamos
+                                // el botón y abajo cambiamos el texto.
+                                onPressed: (state.storedTrips > 0 && !state.isUnlimited && !isSuma) ? () async {
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
@@ -438,9 +485,13 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                   }
                                 } : null,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: state.isUnlimited ? AlzitransColors.wine : Colors.green.shade700,
+                                  backgroundColor: isSuma
+                                      ? const Color(0xFFB81D2C)
+                                      : (state.isUnlimited ? AlzitransColors.wine : Colors.green.shade700),
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: state.isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey,
+                                  disabledBackgroundColor: isSuma
+                                      ? const Color(0xFFB81D2C).withOpacity(0.5)
+                                      : (state.isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -450,11 +501,18 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(state.isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline, size: 28),
+                                    Icon(
+                                      isSuma
+                                          ? Icons.lock_outline
+                                          : (state.isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline),
+                                      size: 28,
+                                    ),
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        state.isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje',
+                                        isSuma
+                                            ? 'Solo lectura · valida en el torno'
+                                            : (state.isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje'),
                                         style: const TextStyle(fontSize: 18),
                                         textAlign: TextAlign.center,
                                       ),

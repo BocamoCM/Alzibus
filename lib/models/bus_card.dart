@@ -1,11 +1,29 @@
+/// Distintos sistemas de tarjeta soportados por la app.
+///
+/// `alzira` → tarjeta del bus urbano de Alzira (la histórica, claves
+///            específicas del operador, balance en céntimos en bloque 8).
+/// `sumaValencia` → tarjeta SUMA 10 / SUMA 30 de la ATMV (Generalitat
+///            Valenciana, Cercanías Renfe + Metrovalencia). Solo se lee
+///            número de viajes restantes y código de zona.
+enum BusCardKind { alzira, sumaValencia }
+
 /// Modelo para tarjeta de bus NFC Mifare Classic
 class BusCard {
   final String uid;
-  final int balance; // En céntimos
+  final int balance; // En céntimos (no aplica para SUMA → 0)
   final int trips;
   final int cardType;
   final DateTime? lastUse;
   final List<TripRecord> tripHistory;
+  final BusCardKind kind;
+
+  /// Solo SUMA: etiqueta legible de la zona ("AB", "ABC", "C", …). `null`
+  /// si no se pudo determinar o es una tarjeta Alzira.
+  final String? sumaZone;
+
+  /// Solo SUMA: código de zona en crudo (16 bits) por si la UI quiere
+  /// mostrarlo cuando el nombre no se conoce.
+  final int? sumaZoneCode;
 
   BusCard({
     required this.uid,
@@ -15,6 +33,9 @@ class BusCard {
     required this.isUnlimited,
     this.lastUse,
     this.tripHistory = const [],
+    this.kind = BusCardKind.alzira,
+    this.sumaZone,
+    this.sumaZoneCode,
   });
 
   /// Saldo formateado en euros
@@ -26,6 +47,9 @@ class BusCard {
 
   /// Tipo de tarjeta como texto
   String get cardTypeName {
+    if (kind == BusCardKind.sumaValencia) {
+      return sumaZone != null ? 'SUMA · Zona $sumaZone' : 'SUMA 10';
+    }
     switch (cardType) {
       case 1: return 'Bono 10 viajes';
       case 2: return 'Bono 20 viajes';

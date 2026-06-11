@@ -9,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 import '../../models/bus_card.dart';
+import '../../services/suma_parser.dart';
 import 'tts_provider.dart';
 import '../../services/ad_service.dart';
 import 'ad_provider.dart';
@@ -256,6 +257,43 @@ class NfcController extends Notifier<NfcState> {
     }
   }
 
+  /// Intenta leer la tarjeta como SUMA 10 (ATMV / Generalitat Valenciana).
+  ///
+  /// Solo se invoca cuando la lectura como tarjeta de Alzira ha fallado
+  /// (claves distintas, bloques distintos). Autentica el sector 1 con la
+  /// clave SUMA y, si el bloque 5 lleva el marcador `01 00 00 00`, extrae
+  /// viajes y zona.
+  Future<BusCard?> _tryReadSumaCard(
+    MifareClassicAndroid mifareClassic,
+    String uid,
+  ) async {
+    try {
+      final ok = await mifareClassic.authenticateSectorWithKeyA(
+        sectorIndex: 1,
+        key: SumaParser.sector1KeyA,
+      );
+      if (!ok) return null;
+
+      final block5 = await mifareClassic.readBlock(blockIndex: 5);
+      final parsed = SumaParser.parseBlock5(block5);
+      if (parsed == null) return null;
+
+      return BusCard(
+        uid: uid,
+        balance: 0,
+        trips: parsed.trips,
+        cardType: 0,
+        isUnlimited: false,
+        kind: BusCardKind.sumaValencia,
+        sumaZone: parsed.zoneName,
+        sumaZoneCode: parsed.zoneCode,
+      );
+    } catch (e) {
+      debugPrint('SUMA read fail: $e');
+      return null;
+    }
+  }
+
   Future<void> _saveTrips(int trips, String uid, bool isUnlimited, Function(String text) onVoiceAnnounce) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('stored_trips', trips);
@@ -329,12 +367,12 @@ class NfcController extends Notifier<NfcState> {
           if (block8 != null && block5 != null) {
             final balance = block8[0] | (block8[1] << 8) | (block8[2] << 16) | (block8[3] << 24);
             final cardType = block5[1];
-            
+
             int trips = 0;
             if (balance >= 50) {
               trips = (balance - 50) ~/ 150;
             }
-            
+
             final bool isCardUnlimited = (block5[2] == 0 && block5[3] == 0) || block5[6] == 0x01 || cardType == 5;
             cardData = BusCard(
               uid: uid,
@@ -343,7 +381,7 @@ class NfcController extends Notifier<NfcState> {
               cardType: isCardUnlimited ? 5 : cardType,
               isUnlimited: isCardUnlimited,
             );
-            
+
             state = state.copyWith(
               status: cardData.isUnlimited ? 'Bono Ilimitado Detectado' : 'Tarjeta leída correctamente',
               cardData: cardData,
@@ -351,7 +389,7 @@ class NfcController extends Notifier<NfcState> {
               isUnlimited: cardData.isUnlimited,
               scanning: false,
             );
-            
+
             await _saveTrips(trips, uid, cardData.isUnlimited, onVoiceAnnounce);
             await _checkLowBalance(trips);
 
@@ -363,10 +401,27 @@ class NfcController extends Notifier<NfcState> {
               ref.read(adServiceProvider).showInterstitialAd();
             }
           } else {
-            state = state.copyWith(
-              status: 'Error al leer bloques de la tarjeta',
-              scanning: false,
-            );
+            // Fallback SUMA: si no hemos podido leer como Alzira, probamos
+            // si es una tarjeta SUMA de la ATMV (Cercanías Valencia /
+            // Metrovalencia). Solo necesitamos autenticar el sector 1 con
+            // la clave SUMA y leer el bloque 5.
+            final suma = await _tryReadSumaCard(mifareClassic, uid);
+            if (suma != null) {
+              state = state.copyWith(
+                status: 'Tarjeta SUMA detectada',
+                cardData: suma,
+                storedTrips: suma.trips,
+                isUnlimited: false,
+                scanning: false,
+              );
+              await _saveTrips(suma.trips, uid, false, onVoiceAnnounce);
+              await _checkLowBalance(suma.trips);
+            } else {
+              state = state.copyWith(
+                status: 'Error al leer bloques de la tarjeta',
+                scanning: false,
+              );
+            }
           }
         } catch (e) {
           debugPrint('Error en lectura multi-sector: $e');
