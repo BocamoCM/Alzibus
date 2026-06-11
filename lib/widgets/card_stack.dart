@@ -38,13 +38,16 @@ class _CardStackState extends State<CardStack>
   late AnimationController _ctrl;
   double _dragDy = 0;
 
-  // Spring suave, casi sin rebote: la transición entera dura ~600 ms y
-  // el "settle" final es prácticamente plano. Damping alto = más fluido,
-  // stiffness moderada = no se siente lenta.
+  // Spring crítico-amortiguado: no rebota nada, baja exponencialmente
+  // hasta el target. Es lo que da la sensación de "deslizar suave hasta
+  // pararse" sin micro-oscilaciones cuando sueltas a mitad de drag.
+  // damping² = 4*mass*stiffness → critical damping. Con mass=1 y
+  // stiffness=160 el critical es damping≈25.3, redondeamos a 26 para
+  // estar ligeramente sobre-amortiguado (cero rebote garantizado).
   static const SpringDescription _spring = SpringDescription(
     mass: 1.0,
-    stiffness: 130,
-    damping: 18,
+    stiffness: 160,
+    damping: 26,
   );
 
   @override
@@ -70,12 +73,17 @@ class _CardStackState extends State<CardStack>
   }
 
   void _completeSwap(double velocity) {
-    _animateTo(1.0, velocity: velocity).then((_) {
+    // Solo aceptamos velocidad positiva (hacia el target 1.0) — si el
+    // usuario soltó "frenando" o moviéndose hacia arriba, la convertimos
+    // a 0 para que el spring no haga un rebote raro hacia atrás antes
+    // de avanzar.
+    final v = velocity > 0 ? velocity : 0.0;
+    _animateTo(1.0, velocity: v).then((_) {
       if (!mounted) return;
-      // Cuando t=1, la "saliente" ya está en posición de TRASERA y la
-      // "entrante" ya está en posición de FRONTAL. Intercambiamos los
-      // índices Y reseteamos _ctrl a 0 — visualmente no se nota porque
-      // las posiciones de cada tarjeta son las correctas en ambos lados.
+      // Cuando t=1 cada carta está exactamente en la posición que
+      // tendrá tras el swap: la entrante en FRONTAL, la saliente en
+      // TRASERA. Intercambiamos los índices Y reseteamos a 0 sin que
+      // se note el cambio.
       final next = widget.selectedIndex == 0 ? 1 : 0;
       widget.onSelected(next);
       _dragDy = 0;
@@ -85,6 +93,10 @@ class _CardStackState extends State<CardStack>
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
     if (widget.cards.length < 2) return;
+    // Si había una animación en curso (p. ej. el usuario empieza un nuevo
+    // drag mientras la pila aún estaba rebotando), la paramos para que
+    // el seguimiento del dedo sea inmediato.
+    if (_ctrl.isAnimating) _ctrl.stop();
     _dragDy += details.delta.dy;
     if (_dragDy < 0) _dragDy = 0;
     final progress = (_dragDy / (widget.cardHeight * 0.55)).clamp(0.0, 1.0);
@@ -97,20 +109,26 @@ class _CardStackState extends State<CardStack>
       return;
     }
     final vy = details.velocity.pixelsPerSecond.dy;
-    final normalizedVel =
-        (vy / (widget.cardHeight * 0.55)).clamp(-8.0, 8.0);
+    // Convertimos la velocidad en píxeles a la escala 0..1 del controller
+    // para que el spring "herede" el momento del usuario.
+    final normalizedVel = vy / (widget.cardHeight * 0.55);
     final shouldSwap = _ctrl.value > 0.32 || vy > 700;
 
     if (shouldSwap) {
-      _completeSwap(normalizedVel.toDouble().clamp(0.0, 8.0));
+      _completeSwap(normalizedVel.clamp(0.0, 10.0));
     } else {
-      _animateTo(0.0, velocity: normalizedVel.toDouble().clamp(-8.0, 0.0));
+      // Volver a 0: la velocidad útil es negativa (o cero si el dedo se
+      // frenó). Una velocidad positiva aquí provocaría un overshoot
+      // descendente antes de subir, que es lo que se notaba como salto.
+      final retVel = normalizedVel < 0 ? normalizedVel : 0.0;
+      _animateTo(0.0, velocity: retVel.clamp(-10.0, 0.0));
       _dragDy = 0;
     }
   }
 
   void _onTapBack() {
     if (widget.cards.length < 2) return;
+    if (_ctrl.isAnimating) _ctrl.stop();
     _completeSwap(0);
   }
 

@@ -65,6 +65,11 @@ class NfcCardVisual extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 220,
+        // clipBehavior + antiAlias: el contenido (franjas SUMA, círculo
+        // decorativo) se recorta respetando el borderRadius del Container.
+        // Antes Clip.hardEdge en el Stack interno recortaba con esquinas
+        // rectas y las franjas asomaban fuera de las esquinas redondeadas.
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(16),
@@ -77,7 +82,6 @@ class NfcCardVisual extends StatelessWidget {
           ],
         ),
         child: Stack(
-          clipBehavior: Clip.hardEdge,
           children: [
             Positioned(
               right: -30,
