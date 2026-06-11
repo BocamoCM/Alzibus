@@ -15,13 +15,23 @@ import '../../services/ad_service.dart';
 import 'ad_provider.dart';
 import '../../constants/app_config.dart';
 
+/// Estado del flujo NFC. Ahora soporta **dos slots** de tarjeta:
+///
+/// * [alziraCard]    → tarjeta del bus de Alzira (o ilimitada).
+/// * [sumaCard]      → tarjeta SUMA 10 de la ATMV.
+/// * [selectedSlot]  → 0 = Alzira, 1 = SUMA. Determina qué tarjeta se
+///                     muestra al frente y sobre cuál opera `validateTrip`.
+///
+/// Para mantener compat con la UI y el resto del código, `cardData`,
+/// `storedTrips`, `isUnlimited` y `lastCardUid` siguen existiendo como
+/// **getters derivados** de la tarjeta seleccionada — no como campos
+/// independientes.
 class NfcState {
   final String status;
   final bool scanning;
-  final BusCard? cardData;
-  final int storedTrips;
-  final bool isUnlimited;
-  final String? lastCardUid;
+  final BusCard? alziraCard;
+  final BusCard? sumaCard;
+  final int selectedSlot;
   final bool nfcAvailable;
   final bool lowBalanceWarningsEnabled;
   final int lowBalanceThreshold;
@@ -29,22 +39,45 @@ class NfcState {
   const NfcState({
     this.status = 'Acerca tu tarjeta para leer el saldo',
     this.scanning = false,
-    this.cardData,
-    this.storedTrips = 0,
-    this.isUnlimited = false,
-    this.lastCardUid,
+    this.alziraCard,
+    this.sumaCard,
+    this.selectedSlot = 0,
     this.nfcAvailable = true,
     this.lowBalanceWarningsEnabled = true,
     this.lowBalanceThreshold = 5,
   });
 
+  /// La tarjeta seleccionada (delante). `null` si ese slot aún está vacío.
+  BusCard? get cardData => selectedSlot == 1 ? sumaCard : alziraCard;
+
+  int get storedTrips => cardData?.trips ?? 0;
+  bool get isUnlimited => cardData?.isUnlimited ?? false;
+  String? get lastCardUid => cardData?.uid;
+
+  /// Las tarjetas que existen, en orden Alzira → SUMA. Útil para el
+  /// CardStack: tamaño 0/1/2.
+  List<BusCard> get cards => [
+        if (alziraCard != null) alziraCard!,
+        if (sumaCard != null) sumaCard!,
+      ];
+
+  /// Índice de la tarjeta seleccionada **dentro de [cards]** (la lista
+  /// filtrada). Sirve para que el widget de pila sepa cuál está delante.
+  int get displayIndex {
+    final list = cards;
+    if (list.isEmpty) return 0;
+    final selected = cardData;
+    if (selected == null) return 0;
+    final idx = list.indexOf(selected);
+    return idx < 0 ? 0 : idx;
+  }
+
   NfcState copyWith({
     String? status,
     bool? scanning,
-    BusCard? cardData,
-    int? storedTrips,
-    bool? isUnlimited,
-    String? lastCardUid,
+    Object? alziraCard = _sentinel,
+    Object? sumaCard = _sentinel,
+    int? selectedSlot,
     bool? nfcAvailable,
     bool? lowBalanceWarningsEnabled,
     int? lowBalanceThreshold,
@@ -52,16 +85,20 @@ class NfcState {
     return NfcState(
       status: status ?? this.status,
       scanning: scanning ?? this.scanning,
-      cardData: cardData ?? this.cardData,
-      storedTrips: storedTrips ?? this.storedTrips,
-      isUnlimited: isUnlimited ?? this.isUnlimited,
-      lastCardUid: lastCardUid ?? this.lastCardUid,
+      // `_sentinel` distingue "no se ha pasado" de "se ha pasado null".
+      // Para poder explícitamente vaciar un slot hacemos falta este truco;
+      // si copyWith usase `??` no podríamos limpiar la tarjeta tras logout.
+      alziraCard: identical(alziraCard, _sentinel) ? this.alziraCard : alziraCard as BusCard?,
+      sumaCard: identical(sumaCard, _sentinel) ? this.sumaCard : sumaCard as BusCard?,
+      selectedSlot: selectedSlot ?? this.selectedSlot,
       nfcAvailable: nfcAvailable ?? this.nfcAvailable,
       lowBalanceWarningsEnabled: lowBalanceWarningsEnabled ?? this.lowBalanceWarningsEnabled,
       lowBalanceThreshold: lowBalanceThreshold ?? this.lowBalanceThreshold,
     );
   }
 }
+
+const Object _sentinel = Object();
 
 class BusCardKeys {
   static final Map<int, Uint8List> keyA = {
@@ -114,25 +151,123 @@ class NfcController extends Notifier<NfcState> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    final isUnlimited = prefs.getBool('is_unlimited') ?? false;
-    final storedTrips = prefs.getInt('stored_trips') ?? 0;
-    
-    String initialStatus = state.status;
-    if (isUnlimited) {
-      initialStatus = 'Tienes viajes ILIMITADOS';
-    } else if (storedTrips > 0) {
-      initialStatus = 'Tienes $storedTrips viajes guardados';
+    _scanCounter = prefs.getInt('nfc_scan_count') ?? 0;
+
+    // ── Slot Alzira ──
+    BusCard? alzira;
+    final alziraUid = prefs.getString('card_alzira_uid');
+    if (alziraUid != null) {
+      alzira = BusCard(
+        uid: alziraUid,
+        balance: prefs.getInt('card_alzira_balance') ?? 0,
+        trips: prefs.getInt('card_alzira_trips') ?? 0,
+        cardType: prefs.getInt('card_alzira_card_type') ?? 0,
+        isUnlimited: prefs.getBool('card_alzira_is_unlimited') ?? false,
+        kind: BusCardKind.alzira,
+      );
+    } else {
+      // Migración desde el formato antiguo (1 tarjeta sin slots).
+      // Si existía `last_card_uid` + `stored_trips`, era una Alzira.
+      final legacyUid = prefs.getString('last_card_uid');
+      if (legacyUid != null) {
+        alzira = BusCard(
+          uid: legacyUid,
+          balance: 0,
+          trips: prefs.getInt('stored_trips') ?? 0,
+          cardType: 0,
+          isUnlimited: prefs.getBool('is_unlimited') ?? false,
+          kind: BusCardKind.alzira,
+        );
+        // Persistimos en el nuevo formato y dejamos las claves antiguas
+        // un par de releases por si hay rollback.
+        await _persistAlzira(alzira, prefs);
+      }
     }
 
-    _scanCounter = prefs.getInt('nfc_scan_count') ?? 0;
+    // ── Slot SUMA ──
+    BusCard? suma;
+    final sumaUid = prefs.getString('card_suma_uid');
+    if (sumaUid != null) {
+      suma = BusCard(
+        uid: sumaUid,
+        balance: 0,
+        trips: prefs.getInt('card_suma_trips') ?? 0,
+        cardType: 0,
+        isUnlimited: false,
+        kind: BusCardKind.sumaValencia,
+        sumaZone: prefs.getString('card_suma_zone'),
+        sumaZoneCode: prefs.getInt('card_suma_zone_code'),
+      );
+    }
+
+    final selectedSlot = prefs.getInt('selected_slot') ?? 0;
 
     state = state.copyWith(
       lowBalanceWarningsEnabled: prefs.getBool('low_balance_warnings') ?? true,
       lowBalanceThreshold: prefs.getInt('low_balance_threshold') ?? 5,
-      storedTrips: storedTrips,
-      isUnlimited: isUnlimited,
-      lastCardUid: prefs.getString('last_card_uid'),
-      status: initialStatus,
+      alziraCard: alzira,
+      sumaCard: suma,
+      selectedSlot: selectedSlot.clamp(0, 1),
+      status: _statusFor(alzira: alzira, suma: suma, slot: selectedSlot),
+    );
+  }
+
+  /// Texto inicial según las tarjetas presentes y el slot seleccionado.
+  String _statusFor({BusCard? alzira, BusCard? suma, int slot = 0}) {
+    final shown = slot == 1 ? suma : alzira;
+    if (shown == null) {
+      // El slot pedido está vacío: caemos al otro si existe.
+      final fallback = slot == 1 ? alzira : suma;
+      if (fallback == null) return 'Acerca tu tarjeta para leer el saldo';
+      if (fallback.isUnlimited) return 'Tienes viajes ILIMITADOS';
+      return 'Tienes ${fallback.trips} viajes guardados';
+    }
+    if (shown.isUnlimited) return 'Tienes viajes ILIMITADOS';
+    if (shown.kind == BusCardKind.sumaValencia) {
+      return 'SUMA — ${shown.trips} viajes';
+    }
+    return 'Tienes ${shown.trips} viajes guardados';
+  }
+
+  Future<void> _persistAlzira(BusCard card, SharedPreferences prefs) async {
+    await prefs.setString('card_alzira_uid', card.uid);
+    await prefs.setInt('card_alzira_trips', card.trips);
+    await prefs.setInt('card_alzira_balance', card.balance);
+    await prefs.setInt('card_alzira_card_type', card.cardType);
+    await prefs.setBool('card_alzira_is_unlimited', card.isUnlimited);
+    // Compat con código antiguo (otros sitios todavía leen estas claves).
+    await prefs.setString('last_card_uid', card.uid);
+    await prefs.setInt('stored_trips', card.trips);
+    await prefs.setBool('is_unlimited', card.isUnlimited);
+  }
+
+  Future<void> _persistSuma(BusCard card, SharedPreferences prefs) async {
+    await prefs.setString('card_suma_uid', card.uid);
+    await prefs.setInt('card_suma_trips', card.trips);
+    if (card.sumaZone != null) {
+      await prefs.setString('card_suma_zone', card.sumaZone!);
+    } else {
+      await prefs.remove('card_suma_zone');
+    }
+    if (card.sumaZoneCode != null) {
+      await prefs.setInt('card_suma_zone_code', card.sumaZoneCode!);
+    }
+  }
+
+  /// Cambia la tarjeta visible (delante). Lo llama el CardStack al
+  /// completar un swipe.
+  Future<void> selectSlot(int slot) async {
+    final clamped = slot.clamp(0, 1);
+    if (clamped == state.selectedSlot) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('selected_slot', clamped);
+    state = state.copyWith(
+      selectedSlot: clamped,
+      status: _statusFor(
+        alzira: state.alziraCard,
+        suma: state.sumaCard,
+        slot: clamped,
+      ),
     );
   }
 
@@ -154,29 +289,25 @@ class NfcController extends Notifier<NfcState> {
   }
 
   Future<int> validateTrip() async {
-    if (state.storedTrips <= 0) {
-      return -1; // Not enough trips
+    // Solo opera sobre Alzira. Si la seleccionada es SUMA o está vacía,
+    // ignora la pulsación — la UI ya deshabilita el botón en esos casos.
+    final card = state.alziraCard;
+    if (card == null || card.isUnlimited || card.trips <= 0) {
+      return -1;
     }
-
-    final newTrips = state.storedTrips - 1;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('stored_trips', newTrips);
-    
-    BusCard? newCardData;
-    if (state.cardData != null) {
-      newCardData = BusCard(
-        uid: state.cardData!.uid,
-        balance: state.cardData!.balance,
-        trips: newTrips,
-        cardType: state.cardData!.cardType,
-        isUnlimited: state.cardData!.isUnlimited,
-      );
-    }
-    
-    state = state.copyWith(
-      storedTrips: newTrips,
-      cardData: newCardData,
+    final newTrips = card.trips - 1;
+    final updated = BusCard(
+      uid: card.uid,
+      balance: card.balance,
+      trips: newTrips,
+      cardType: card.cardType,
+      isUnlimited: card.isUnlimited,
+      kind: BusCardKind.alzira,
     );
+    final prefs = await SharedPreferences.getInstance();
+    await _persistAlzira(updated, prefs);
+
+    state = state.copyWith(alziraCard: updated);
 
     await _checkLowBalance(newTrips);
     return newTrips;
@@ -232,10 +363,12 @@ class NfcController extends Notifier<NfcState> {
       return;
     }
 
+    // Solo marcamos que estamos escaneando — NO borramos las tarjetas
+    // guardadas, así el CardStack sigue mostrando las que ya tenías
+    // mientras esperas a la nueva.
     state = state.copyWith(
       scanning: true,
       status: 'Acerca tu tarjeta al teléfono...',
-      cardData: null,
     );
 
     try {
@@ -294,17 +427,21 @@ class NfcController extends Notifier<NfcState> {
     }
   }
 
-  Future<void> _saveTrips(int trips, String uid, bool isUnlimited, Function(String text) onVoiceAnnounce) async {
+  /// Guarda la tarjeta recién escaneada en su slot y la activa como
+  /// seleccionada. Cada tipo va a su slot, así puedes tener Alzira + SUMA
+  /// guardadas a la vez y cambiar entre ellas deslizando.
+  Future<void> _storeReadCard(BusCard card, Function(String text) onVoiceAnnounce) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('stored_trips', trips);
-    await prefs.setString('last_card_uid', uid);
-    await prefs.setBool('is_unlimited', isUnlimited);
-    
-    state = state.copyWith(
-      isUnlimited: isUnlimited,
-    );
-    
-    onVoiceAnnounce("trigger"); // Special keyword, UI will decode the localizations.
+    if (card.kind == BusCardKind.sumaValencia) {
+      await _persistSuma(card, prefs);
+      await prefs.setInt('selected_slot', 1);
+      state = state.copyWith(sumaCard: card, selectedSlot: 1);
+    } else {
+      await _persistAlzira(card, prefs);
+      await prefs.setInt('selected_slot', 0);
+      state = state.copyWith(alziraCard: card, selectedSlot: 0);
+    }
+    onVoiceAnnounce('trigger'); // Special keyword, UI will decode the localizations.
   }
 
   Future<void> _handleTagDiscovered(NfcTag tag, Function(String text) onVoiceAnnounce) async {
@@ -380,17 +517,15 @@ class NfcController extends Notifier<NfcState> {
               trips: trips,
               cardType: isCardUnlimited ? 5 : cardType,
               isUnlimited: isCardUnlimited,
+              kind: BusCardKind.alzira,
             );
 
             state = state.copyWith(
               status: cardData.isUnlimited ? 'Bono Ilimitado Detectado' : 'Tarjeta leída correctamente',
-              cardData: cardData,
-              storedTrips: trips,
-              isUnlimited: cardData.isUnlimited,
               scanning: false,
             );
 
-            await _saveTrips(trips, uid, cardData.isUnlimited, onVoiceAnnounce);
+            await _storeReadCard(cardData, onVoiceAnnounce);
             await _checkLowBalance(trips);
 
             final prefs = await SharedPreferences.getInstance();
@@ -409,12 +544,9 @@ class NfcController extends Notifier<NfcState> {
             if (suma != null) {
               state = state.copyWith(
                 status: 'Tarjeta SUMA detectada',
-                cardData: suma,
-                storedTrips: suma.trips,
-                isUnlimited: false,
                 scanning: false,
               );
-              await _saveTrips(suma.trips, uid, false, onVoiceAnnounce);
+              await _storeReadCard(suma, onVoiceAnnounce);
               await _checkLowBalance(suma.trips);
             } else {
               state = state.copyWith(
@@ -431,10 +563,10 @@ class NfcController extends Notifier<NfcState> {
           );
         }
       } else {
-        uid ??= 'Desconocido';
+        // Tarjeta no compatible: no la guardamos en ningún slot, solo
+        // mostramos el aviso en el status.
         state = state.copyWith(
           status: 'Tarjeta detectada (no es Mifare Classic)',
-          cardData: BusCard(uid: uid, balance: 0, trips: 0, cardType: 0, isUnlimited: false),
           scanning: false,
         );
       }

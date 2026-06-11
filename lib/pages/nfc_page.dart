@@ -5,6 +5,8 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../core/providers/nfc_controller.dart';
 import '../models/bus_card.dart' show BusCardKind;
+import '../widgets/card_stack.dart';
+import '../widgets/nfc_card_visual.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -171,6 +173,78 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
     );
   }
 
+  /// Tarjeta(s) NFC: pila animada o placeholder si aún no se ha escaneado
+  /// ninguna. Solo la tarjeta de delante muestra la animación de pulso
+  /// mientras se escanea.
+  Widget _buildCardArea(NfcState state) {
+    final cards = state.cards;
+
+    if (cards.isEmpty) {
+      // Placeholder discreto: el usuario aún no ha leído ninguna tarjeta.
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+        child: Container(
+          width: double.infinity,
+          height: 220,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            border: Border.all(color: Colors.grey.shade300, width: 1.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              state.scanning
+                  ? AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, _) => Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: Icon(Icons.nfc, size: 48, color: Colors.grey.shade400),
+                      ),
+                    )
+                  : Icon(Icons.nfc, size: 48, color: Colors.grey.shade400),
+              const SizedBox(height: 12),
+              Text(
+                'Acerca tu tarjeta para empezar',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 1 o 2 tarjetas: las pasamos al CardStack. La animación de pulso
+    // (NFC escaneando) solo se aplica a la tarjeta que tiene el slot
+    // seleccionado — la otra se queda quieta detrás.
+    final selectedSlot = state.selectedSlot;
+    final visuals = <Widget>[];
+    for (var i = 0; i < cards.length; i++) {
+      final card = cards[i];
+      final isFront = i == state.displayIndex;
+      visuals.add(NfcCardVisual(
+        card: card,
+        scanning: state.scanning && isFront,
+        pulseAnimation: _pulseAnimation,
+      ));
+    }
+    return CardStack(
+      cards: visuals,
+      selectedIndex: state.displayIndex,
+      onSelected: (i) {
+        // Mapear displayIndex (posición en cards filtrada) al slot real
+        // (0=Alzira, 1=SUMA). Como la lista mantiene ese mismo orden
+        // cuando ambas existen, displayIndex coincide con el slot.
+        final newSlot = cards.length == 2 ? i : selectedSlot;
+        ref.read(nfcControllerProvider.notifier).selectSlot(newSlot);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(nfcControllerProvider);
@@ -248,183 +322,12 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                       child: Column(
                         children: [
                           const SizedBox(height: 40),
-                          MediaQuery(
-                            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-                            child: Container(
-                              width: double.infinity,
-                              height: 220,
-                              decoration: BoxDecoration(
-                                gradient: isSuma
-                                    ? const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        // Rojo institucional de la tarjeta SUMA física.
-                                        colors: [
-                                          Color(0xFFE63946),
-                                          Color(0xFFB81D2C),
-                                        ],
-                                      )
-                                    : state.isUnlimited
-                                        ? AlzitransColors.primaryGradient
-                                        : const LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Color(0xFF4CAF50),
-                                              Color(0xFFFF9800),
-                                            ],
-                                          ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    right: -30,
-                                    bottom: -30,
-                                    child: Container(
-                                      width: 150,
-                                      height: 150,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors.white.withOpacity(0.1),
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  isSuma ? Icons.train : Icons.directions_bus,
-                                                  color: Colors.white.withOpacity(0.9),
-                                                  size: 24,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  isSuma ? 'SUMA' : 'Alzitrans NFC',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w900,
-                                                    letterSpacing: 0.5,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            Text(
-                                              isSuma
-                                                  ? 'Generalitat Valenciana · ATMV'
-                                                  : (state.cardData?.cardTypeName ?? AppLocalizations.of(context)!.publicTransportAlzira),
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(0.8),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          state.isUnlimited ? 'CONTRATO' : 'VIAJES DISPONIBLES',
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(0.7),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 1.1,
-                                          ),
-                                        ),
-                                        Center(
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Text(
-                                              state.isUnlimited ? 'ILIMITADO' : '${state.storedTrips}',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: state.isUnlimited ? 36 : 48,
-                                                fontWeight: FontWeight.w900,
-                                                shadows: [
-                                                  Shadow(
-                                                    color: Colors.black.withOpacity(0.2),
-                                                    offset: const Offset(0, 2),
-                                                    blurRadius: 4,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            // Zona SUMA en la esquina inferior izquierda
-                                            // (solo aparece en tarjetas SUMA con zona conocida).
-                                            if (isSuma && state.cardData?.sumaZone != null)
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white.withOpacity(0.18),
-                                                  borderRadius: BorderRadius.circular(6),
-                                                ),
-                                                child: Text(
-                                                  'ZONA ${state.cardData!.sumaZone}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w800,
-                                                    letterSpacing: 0.8,
-                                                  ),
-                                                ),
-                                              )
-                                            else
-                                              const SizedBox.shrink(),
-                                            if (state.lastCardUid != null)
-                                              Text(
-                                                'ID: ${state.lastCardUid}',
-                                                style: TextStyle(
-                                                  color: Colors.white.withOpacity(0.5),
-                                                  fontSize: 9,
-                                                  fontFamily: 'monospace',
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 15,
-                                    right: 15,
-                                    child: Opacity(
-                                      opacity: 0.8,
-                                      child: state.scanning
-                                          ? AnimatedBuilder(
-                                              animation: _pulseAnimation,
-                                              builder: (context, child) => Transform.scale(
-                                                scale: _pulseAnimation.value,
-                                                child: const Icon(Icons.nfc, color: Colors.white, size: 36),
-                                              ),
-                                            )
-                                          : const Icon(Icons.nfc, color: Colors.white, size: 36),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          // CardStack: hasta 2 tarjetas (Alzira + SUMA) en
+                          // pila, swipe horizontal para cambiar la del
+                          // frente. Si solo hay 1 la muestra sin gesto;
+                          // si no hay ninguna pinta un placeholder con la
+                          // bienvenida.
+                          _buildCardArea(state),
                           const SizedBox(height: 32),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
