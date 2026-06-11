@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import '../models/bus_card.dart';
 import '../theme/app_theme.dart';
 
+/// Colores oficiales de las tarjetas SUMA (de izquierda a derecha en el
+/// abanico físico): verde lima · amarillo mostaza · azul cian · rojo
+/// bermellón. Los reproducimos como franja vertical decorativa en el
+/// borde izquierdo de la tarjeta SUMA para que se identifique de un
+/// vistazo igual que la tarjeta plástica.
+const List<Color> _sumaStripes = [
+  Color(0xFF7DC242), // verde
+  Color(0xFFFFC72C), // amarillo
+  Color(0xFF1FA0DA), // azul
+];
+const Color _sumaRedTop = Color(0xFFD90D2C);
+const Color _sumaRedBottom = Color(0xFFAE0A22);
+
 /// Tarjeta visual NFC (Alzira o SUMA). Widget puro y sin estado:
 /// recibe el [BusCard] que tiene que pintar y devuelve la "carátula"
 /// con su gradient, branding e información (viajes, zona, UID).
@@ -29,7 +42,9 @@ class NfcCardVisual extends StatelessWidget {
         ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFE63946), Color(0xFFB81D2C)],
+            // Rojo SUMA más saturado y profundo que el anterior — más
+            // próximo al color real de la tarjeta plástica.
+            colors: [_sumaRedTop, _sumaRedBottom],
           )
         : card.isUnlimited
             ? AlzitransColors.primaryGradient
@@ -62,6 +77,7 @@ class NfcCardVisual extends StatelessWidget {
           ],
         ),
         child: Stack(
+          clipBehavior: Clip.hardEdge,
           children: [
             Positioned(
               right: -30,
@@ -75,8 +91,30 @@ class NfcCardVisual extends StatelessWidget {
                 ),
               ),
             ),
+            // Franjas verde/amarillo/azul en el lateral izquierdo (solo
+            // SUMA). Reproducen el efecto visual de las otras tarjetas de
+            // la familia ATMV asomando detrás de la roja en la foto real.
+            // Quedan dentro del clip del BorderRadius del Container padre,
+            // por eso clipBehavior: Clip.hardEdge en el Stack.
+            if (isSuma)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Row(
+                  children: [
+                    for (final color in _sumaStripes)
+                      Container(width: 6, color: color),
+                  ],
+                ),
+              ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              // Cuando es SUMA, dejamos 36 px a la izquierda para que las
+              // franjas no se queden tapadas por el contenido.
+              padding: EdgeInsets.symmetric(
+                horizontal: isSuma ? 0 : 20,
+                vertical: 12,
+              ).copyWith(left: isSuma ? 36 : 20, right: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
