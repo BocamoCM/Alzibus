@@ -26,7 +26,10 @@ class CardStack extends StatefulWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.cardHeight = 220,
-    this.peekHeight = 38,
+    // 56 px ≈ 48 dp en pantallas mdpi y mucho más en hdpi/xxhdpi: es la
+    // recomendación oficial de Material para targets táctiles. Antes 38 px
+    // era demasiado fino para un dedo y costaba hacer tap en la trasera.
+    this.peekHeight = 56,
   });
 
   @override
@@ -142,8 +145,21 @@ class _CardStackState extends State<CardStack>
 
   void _onTapBack() {
     if (widget.cards.length < 2) return;
+    // Si estamos a mitad de una animación previa que iba hacia el reposo
+    // (volviendo desde un drag parcial), la cortamos y lanzamos el swap
+    // desde donde estábamos. Si estamos a mitad de un swap previo en
+    // curso (t cerca de 1), ignoramos el tap para no encadenar dos
+    // swaps que se solaparían.
+    if (_ctrl.value > 0.5) return;
     if (_ctrl.isAnimating) _ctrl.stop();
     _completeSwap(0);
+  }
+
+  /// Equivalente al tap, pero captable también con un mini-drag hacia
+  /// arriba sobre la franja superior — algunos usuarios deslizan el
+  /// dedo en vez de tap-pulsar limpio.
+  void _onPeekDragStart(DragStartDetails _) {
+    _onTapBack();
   }
 
   @override
@@ -236,24 +252,38 @@ class _CardStackState extends State<CardStack>
           // propio boxShadow en su Container — aquí solo controlamos
           // posición, escala y z-order.
 
+          // La zona de tap de la trasera es más grande que el peek
+          // visible (peek + 12 px de "hit slop" hacia abajo, estilo iOS)
+          // para que el dedo no tenga que afinar tanto. Como esta zona
+          // está SOLO activa en reposo (no durante el drag de la
+          // frontal), no interfiere con el gesto vertical.
+          const tapHitSlop = 12.0;
+          final tapTargetHeight = peek + tapHitSlop;
+          final tapEnabled = t < 0.5;
+
           return Stack(
             children: [
-              // Capa invisible que captura el TAP en la franja superior
-              // (la zona "peek") cuando la pila está en reposo.
-              if (t < 0.05)
+              // Orden visual: la que va detrás primero, la que va delante después.
+              entranteOnTop ? goingLayer : comingLayer,
+              entranteOnTop ? comingLayer : goingLayer,
+              // Capa de tap encima de todo SOLO en la franja superior
+              // (peek + hit slop). Translucent: no roba taps fuera de
+              // esa zona. Si se desactiva (mid-swap), no pinta.
+              if (tapEnabled)
                 Positioned(
                   left: 0,
                   right: 0,
                   top: 0,
-                  height: peek,
+                  height: tapTargetHeight,
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onTap: _onTapBack,
+                    // Algunos usuarios deslizan el dedo (sin levantarlo)
+                    // en vez de hacer un tap limpio en la franja — lo
+                    // tratamos como tap también.
+                    onVerticalDragStart: _onPeekDragStart,
                   ),
                 ),
-              // Orden visual: la que va detrás primero, la que va delante después.
-              entranteOnTop ? goingLayer : comingLayer,
-              entranteOnTop ? comingLayer : goingLayer,
             ],
           );
         },
