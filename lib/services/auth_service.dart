@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../core/network/api_client.dart';
+import '../core/storage/session_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:local_auth/local_auth.dart';
@@ -36,15 +37,24 @@ class AuthServerException implements Exception {
 
 class AuthService {
   final LocalAuthentication _auth = LocalAuthentication();
+  // FSS para los metadatos de biometría (flag + email). YA NO guardamos
+  // la password del usuario aquí; el patrón anterior persistía la contraseña
+  // en claro dentro de FSS y permitía a un atacante con acceso al dispositivo
+  // (root, malware, backup ADB capaz de leer el Keystore) recuperarla.
+  // Ahora el JWT vive en [SessionStorage] (también FSS) y se reutiliza
+  // mientras no expire; cuando expira, el usuario vuelve a hacer login OTP.
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   static const String _keyEmail = 'biometric_email';
-  static const String _keyPassword = 'biometric_password';
   static const String _keyEnabled = 'biometric_enabled';
+  // Clave legacy (preauditoría) — sólo se usa para borrarla al arrancar y
+  // así eliminar contraseñas de instalaciones anteriores tras la actualización.
+  static const String _legacyKeyPassword = 'biometric_password';
 
-  // Caché temporal para persistir tras el OTP (estática para compartir entre instancias)
+  // Email del último login exitoso, usado por [persistBiometricCredentials]
+  // cuando el usuario decide activar biometría tras pasar el OTP. Estático
+  // para compartir entre instancias del servicio dentro del mismo proceso.
   static String? _tempEmail;
-  static String? _tempPassword;
 
   /// Comprueba si el dispositivo soporta biometría y tiene huellas registradas.
   Future<bool> canCheckBiometrics() async {
@@ -73,19 +83,22 @@ class AuthService {
     }
   }
 
-  /// Guarda las credenciales de forma segura para futuro login biométrico.
-  Future<void> saveBiometricCredentials(String email, String password) async {
+  /// Activa el login biométrico para el [email] dado. Ya no recibe password:
+  /// el JWT vigente en [SessionStorage] es lo que se reutiliza tras validar
+  /// la huella.
+  Future<void> saveBiometricCredentials(String email) async {
     await _storage.write(key: _keyEmail, value: email);
-    await _storage.write(key: _keyPassword, value: password);
     await _storage.write(key: _keyEnabled, value: 'true');
+    // Limpieza por si quedaba una password de versiones anteriores.
+    await _storage.delete(key: _legacyKeyPassword);
   }
 
-  /// Pasa la caché temporal a persistente (se llama tras verificar OTP)
+  /// Persiste la activación biométrica tras un OTP exitoso, usando el email
+  /// cacheado en [_tempEmail] por el último login.
   Future<void> persistBiometricCredentials() async {
-    if (_tempEmail != null && _tempPassword != null) {
-      await saveBiometricCredentials(_tempEmail!, _tempPassword!);
+    if (_tempEmail != null) {
+      await saveBiometricCredentials(_tempEmail!);
       _tempEmail = null;
-      _tempPassword = null;
     }
   }
 
@@ -98,40 +111,45 @@ class AuthService {
   /// Elimina las credenciales biométricas (ej. al cerrar sesión).
   Future<void> clearBiometricCredentials() async {
     await _storage.delete(key: _keyEmail);
-    await _storage.delete(key: _keyPassword);
     await _storage.delete(key: _keyEnabled);
+    await _storage.delete(key: _legacyKeyPassword);
   }
 
-  /// Intenta el login automático usando biometría.
+  /// Intenta acceso automático usando biometría.
+  ///
+  /// Devuelve `true` si la huella es válida y aún hay un JWT vivo en
+  /// [SessionStorage] (la sesión queda activa sin pasar por el backend).
+  /// Devuelve `false` si la biometría falla, no está activada, o el JWT
+  /// ha expirado — en ese caso el caller debe pedir login normal con OTP.
   Future<bool> loginWithBiometrics() async {
     if (!await isBiometricEnabled()) return false;
+    if (!await authenticateWithBiometrics()) return false;
 
-    if (await authenticateWithBiometrics()) {
-      final String? email = await _storage.read(key: _keyEmail);
-      final String? password = await _storage.read(key: _keyPassword);
+    final token = await SessionStorage.getToken();
+    if (token == null) return false;
 
-      if (email != null && password != null) {
-        // Login con biometric: true → el servidor salta el OTP.
-        // La autenticación biométrica del dispositivo ya actúa como 2FA.
-        try {
-          await login(email, password, biometric: true);
-          return true;
-        } catch (e) {
-          debugPrint('Error login tras biometría: $e');
-          return false;
-        }
+    final expiryEpoch = await SessionStorage.getExpiry();
+    if (expiryEpoch != null) {
+      final expires = DateTime.fromMillisecondsSinceEpoch(expiryEpoch * 1000);
+      if (!DateTime.now().isBefore(expires)) {
+        // Token caducado: forzar login con OTP. No podemos renovar solo con
+        // huella porque ya no guardamos la password — y el backend tampoco
+        // tiene un endpoint de refresh todavía. Limpiamos la sesión expirada
+        // para que el resto de la app no la considere viva.
+        await SessionStorage.clear();
+        return false;
       }
     }
-    return false;
+    return true;
   }
 
   /// Intenta iniciar sesión. Lanza [AuthInvalidCredentialsException] si las
   /// credenciales son incorrectas, o [AuthNetworkException] si no hay red.
   /// Si [biometric] es true, el servidor salta el OTP (la huella actúa como 2FA).
   Future<void> login(String email, String password, {bool biometric = false}) async {
-    // Guardar en caché temporal por si el usuario activa la huella tras el OTP
+    // Cacheamos solo el email para que persistBiometricCredentials pueda
+    // marcar la huella tras el OTP. La password NUNCA se persiste.
     _tempEmail = email;
-    _tempPassword = password;
 
     try {
       final response = await ApiClient().post(
@@ -240,24 +258,24 @@ class AuthService {
   /// Guarda los datos de la sesión tras un login exitoso.
   Future<void> _saveSession(Map<String, dynamic> data) async {
     final token = data['token'] as String;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt_token', token);
-    await prefs.setString('user_email', data['user']['email'] as String);
-    await prefs.setInt('user_id', data['user']['id'] as int);
+    final email = data['user']['email'] as String;
+    final userId = data['user']['id'] as int;
+    final expiry = _extractExpiry(token);
+
+    // Token + identidad → secure storage (Keystore/Keychain). Antes vivían
+    // en SharedPreferences sin cifrar → cualquier backup ADB o app con root
+    // podía leerlos.
+    await SessionStorage.saveSession(
+      token: token,
+      email: email,
+      userId: userId,
+      expiryEpoch: expiry,
+    );
 
     // Establecer identidad en Sentry
     await Sentry.configureScope((scope) {
-      scope.setUser(SentryUser(
-        id: (data['user']['id'] as int).toString(),
-        email: data['user']['email'] as String,
-      ));
+      scope.setUser(SentryUser(id: userId.toString(), email: email));
     });
-
-    // Guardar expiración del token para validación futura
-    final expiry = _extractExpiry(token);
-    if (expiry != null) {
-      await prefs.setInt('token_expiry', expiry);
-    }
 
     // Telemetría: notificar el inicio de sesión (sin cooldown). Cubre todos
     // los caminos de login (directo, OTP, biométrico) porque todos pasan por aquí.
@@ -309,13 +327,10 @@ class AuthService {
       // No bloquear el logout si falla la notificación
     }
 
+    await SessionStorage.clear();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    await prefs.remove('user_email');
-    await prefs.remove('user_id');
-    await prefs.remove('token_expiry');
-    await prefs.remove('pending_trip'); // Eliminar viajes pendientes al cerrar sesión
-    
+    await prefs.remove('pending_trip'); // No-PII pero ligado a la sesión
+
     // Limpiar identidad en Sentry
     await Sentry.configureScope((scope) {
       scope.setUser(null);
@@ -324,12 +339,10 @@ class AuthService {
 
   /// Comprueba si hay sesión activa Y el token no ha expirado.
   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
+    final token = await SessionStorage.getToken();
     if (token == null) return false;
 
-    // Validar expiración
-    final expiry = prefs.getInt('token_expiry');
+    final expiry = await SessionStorage.getExpiry();
     if (expiry != null) {
       final expiryDate = DateTime.fromMillisecondsSinceEpoch(expiry * 1000);
       if (DateTime.now().isAfter(expiryDate)) {
@@ -341,15 +354,9 @@ class AuthService {
     return true;
   }
 
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('jwt_token');
-  }
+  Future<String?> getToken() => SessionStorage.getToken();
 
-  Future<String?> getSavedEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_email');
-  }
+  Future<String?> getSavedEmail() => SessionStorage.getEmail();
 
   /// Obtiene el perfil del usuario desde la API.
   Future<Map<String, dynamic>?> getProfile(String token) async {
@@ -372,8 +379,7 @@ class AuthService {
         data: {'email': newEmail},
       );
       if (response.statusCode == 200) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_email', newEmail);
+        await SessionStorage.updateEmail(newEmail);
         return true;
       }
       final error = response.data['error'] ?? 'Error desconocido';

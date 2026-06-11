@@ -1,19 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../services/auth_service.dart';
-import '../../providers/high_visibility_provider.dart';
+import '../storage/session_storage.dart';
 
 // Provider básico para el servicio de autenticación
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
+/// Token JWT pre-cargado en `main()` desde [SessionStorage] (FSS).
+///
+/// El `build()` del [AuthNotifier] es síncrono y Riverpod no permite usar
+/// `await` directamente; por eso `main()` lee el token de FSS antes de
+/// `runApp()` y lo inyecta aquí como override. Si no se override-a (p. ej.
+/// en tests) devuelve `null` (= no logueado).
+final initialJwtTokenProvider = Provider<String?>((ref) => null);
+
 // Estado de la autenticación
 class AuthState {
   final bool isLoading;
   final bool isLoggedIn;
-  
+
   const AuthState({this.isLoading = false, this.isLoggedIn = false});
 
   AuthState copyWith({bool? isLoading, bool? isLoggedIn}) {
@@ -28,24 +35,21 @@ class AuthState {
 class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    // Lectura síncrona gracias a sharedPreferencesProvider
-    final prefs = ref.watch(sharedPreferencesProvider);
-    final token = prefs.getString('jwt_token');
+    final token = ref.watch(initialJwtTokenProvider);
     bool isLogged = false;
-    
+
     if (token != null && token.split('.').length == 3) {
       try {
-        final isExpired = JwtDecoder.isExpired(token);
-        if (!isExpired) {
+        if (!JwtDecoder.isExpired(token)) {
           isLogged = true;
         } else {
-          // Si está expirado, limpiamos
-          prefs.remove('jwt_token');
-          prefs.remove('user_email');
-          prefs.remove('user_id');
+          // El token estaba expirado al arrancar: limpiamos el secure storage
+          // en background (no podemos await aquí — Notifier.build es síncrono).
+          // ignore: discarded_futures
+          SessionStorage.clear();
         }
-      } catch (e) {
-        // Ignorar
+      } catch (_) {
+        // Token malformado → ignoramos y dejamos isLogged=false
       }
     }
     return AuthState(isLoading: false, isLoggedIn: isLogged);

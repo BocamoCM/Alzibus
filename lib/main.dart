@@ -45,6 +45,7 @@ import 'services/consent_service.dart';
 import 'providers/high_visibility_provider.dart';
 import 'widgets/ad_banner_widget.dart';
 import 'core/providers/auth_provider.dart';
+import 'core/storage/session_storage.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/bus_simulation_provider.dart';
 import 'core/providers/ad_provider.dart';
@@ -96,8 +97,13 @@ void main() async {
       // 1. Inicialización crítica (rápida)
       final prefs = await SharedPreferences.getInstance();
 
-      // Determinar si mostrar anuncios (evitar en registro)
-      final token = prefs.getString('jwt_token');
+      // Migración one-shot de la sesión (jwt_token, user_email, user_id,
+      // token_expiry) desde SharedPreferences a FlutterSecureStorage. En
+      // arranques siguientes es un no-op.
+      await SessionStorage.migrateFromSharedPreferencesIfNeeded(prefs);
+
+      // Token leído del secure storage (FSS). Ya no vive en prefs.
+      final token = await SessionStorage.getToken();
 
       // REGLA: Solo mostrar anuncios si el usuario está logueado.
       // Esto elimina la fricción durante el registro para nuevos usuarios.
@@ -117,6 +123,9 @@ void main() async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          // El AuthNotifier necesita conocer el token al arrancar de forma
+          // síncrona — FSS es async, así que lo pre-cargamos aquí.
+          initialJwtTokenProvider.overrideWithValue(token),
         ],
       );
 
@@ -182,8 +191,8 @@ void main() async {
 
   // Establecer identidad en Sentry si ya ha iniciado sesión
   if (isLoggedIn) {
-    final userEmail = prefs.getString('user_email');
-    final userId = prefs.getInt('user_id');
+    final userEmail = await SessionStorage.getEmail();
+    final userId = await SessionStorage.getUserId();
     if (userEmail != null && userId != null) {
       Sentry.configureScope((scope) {
         scope.setUser(SentryUser(id: userId.toString(), email: userEmail));

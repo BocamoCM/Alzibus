@@ -18,8 +18,16 @@ class AppConfig {
 
   /// API Key que el servidor debe validar en el header [X-API-Key].
   /// Debe coincidir con la que configures en tu servidor Node.js.
-  // API Key para validación básica (se debe pasar como --dart-define=API_KEY=...)
-  static const String apiKey = String.fromEnvironment('API_KEY', defaultValue: 'alzibus-secret-key-2024');
+  ///
+  /// Se inyecta SIEMPRE en build time con `--dart-define=API_KEY=...`.
+  /// Sin defaultValue intencionadamente: si alguien compila sin la flag,
+  /// el header viaja vacío y el backend rechaza con 401, evitando que
+  /// builds de pruebas/forks usen una clave embedded.
+  ///
+  /// Nota: esta clave NO es un secreto fuerte (cualquiera puede descompilar
+  /// el APK y verla); su valor es servir de filtro anti-bots. La seguridad
+  /// real reside en la auth JWT por endpoint y el rate limiting del servidor.
+  static const String apiKey = String.fromEnvironment('API_KEY');
   
   /// URL de la Política de Privacidad (Requerido por Google Play)
   static const String privacyPolicyUrl = 'https://github.com/BocamoCM/Alzibus/blob/main/backend/POLITICA_PRIVACIDAD_ALZITRANS.md';
