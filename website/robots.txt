@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
 # Evitar que los bots de anuncios analicen /app/ (Flutter SPA: el bot
 # ve la pantalla negra de bootstrap y marca "contenido insuficiente").

@@ -85,7 +85,7 @@ alzitrans.es {
     }
 
     # Redirigir /app a /app/ (Evita errores de rutas relativas)
-    redir /app /app/
+    redir /app /app/ permanent
 
     # Configuración para la App en subruta /app
     handle /app/* {
