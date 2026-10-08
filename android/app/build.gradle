@@ -83,7 +83,12 @@ android {
     defaultConfig {
         applicationId "com.alzitrans.app"
         minSdkVersion 24
-        targetSdk 35
+        // Google Play sube el target mínimo +1 cada año (deadline ~31 ago):
+        //   2024 → API 34 · 2025 → API 35 · 2026 → API 36 (Android 16).
+        // Con 35 ya no se podían publicar updates tras el 31-ago-2026. Como
+        // compileSdk ya es 36 y AGP 8.9.1 lo soporta, subir el target es
+        // directo. (Siguiente deadline, 2027, pedirá API 37.)
+        targetSdk 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
