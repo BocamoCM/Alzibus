@@ -118,13 +118,26 @@ android {
                 resources {
                     excludes += '/META-INF/{AL2.0,LGPL2.1}'
                 }
-                doNotStrip "**/*.so"
+                // ANTES: doNotStrip "**/*.so" → le decía a Gradle que NO
+                // estripara NINGUNA librería nativa, dejando libflutter.so en
+                // ~163 MB y el AAB en 154 MB (irreal para subir a Play).
+                // Eso, junto con el strip de Flutter que fallaba, inflaba el
+                // bundle. Quitándolo, AGP estripa las .so con el NDK (las
+                // tools llvm-strip existen) y el AAB vuelve a ~40-60 MB.
             }
 
-            // ⚡ Habilitar debug symbols para Google Play
-            ndk {
-                debugSymbolLevel 'FULL'
-            }
+            // Símbolos de depuración nativos para Play DESACTIVADOS.
+            //
+            // Con `debugSymbolLevel 'FULL'` el build de release falla en el
+            // paso de strip de Flutter ("Release app bundle failed to strip
+            // debug symbols from native libraries") y además generaba un AAB
+            // enorme (~154 MB). Es una función OPCIONAL: solo sirve para que
+            // Play simbolique crashes de código NATIVO (NDK), de los que esta
+            // app casi no tiene; los crashes Dart ya van por Sentry.
+            //
+            // Para reactivarlo hay que arreglar antes la toolchain NDK (ver
+            // `flutter doctor`) y volver a poner:
+            //   ndk { debugSymbolLevel 'FULL' }
         }
     }
 }

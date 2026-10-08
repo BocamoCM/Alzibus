@@ -9,6 +9,39 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+// Forzar Java 17 + Kotlin jvmTarget 17 en TODOS los módulos de plugins.
+//
+// Sin esto, plugins como home_widget 0.8.1 compilan su Kotlin a JVM 1.8 por
+// defecto y, al traer dependencias androidx ya compiladas en JVM 11 (p. ej.
+// WorkManager), el build de release peta con:
+//   "Cannot inline bytecode built with JVM target 11 into bytecode that is
+//    being built with JVM target 1.8"
+// El módulo :app ya fija jvmTarget 17; esto alinea el resto.
+//
+// IMPORTANTE: este bloque va ANTES del de evaluationDependsOn(':app'). Ese
+// otro fuerza la evaluación temprana de :app; si registráramos el
+// afterEvaluate después (o en el mismo bloque), al llegar la iteración a :app
+// ya estaría evaluado y Gradle lanzaría "Cannot run Project.afterEvaluate
+// when the project is already evaluated". Registrándolo aquí primero, el hook
+// queda puesto en todos los subproyectos ANTES de que nada se evalúe.
+subprojects {
+    afterEvaluate { project ->
+        if (project.extensions.findByName("android") != null) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+            if (project.plugins.hasPlugin("org.jetbrains.kotlin.android")) {
+                project.android.kotlinOptions {
+                    jvmTarget = "17"
+                }
+            }
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(':app')
 }
