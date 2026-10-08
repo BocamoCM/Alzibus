@@ -70,6 +70,35 @@ class GameRepository {
     }
 
     /**
+     * Sube el saldo al MAYOR entre el actual en BD y `coins`, de forma
+     * ATÓMICA (una sola sentencia `GREATEST`). Esto evita la carrera
+     * read-modify-write del antiguo flujo (getState + setCoins), donde dos
+     * sincronizaciones concurrentes podían "pisarse" y perder el valor más
+     * alto. El servidor nunca baja el saldo aquí (semántica max-wins).
+     * Devuelve el saldo resultante.
+     * Resiliente a missing column (devuelve el valor enviado sin persistir).
+     */
+    async bumpCoins(userId, coins) {
+        try {
+            const res = await pool.query(
+                `UPDATE users SET game_coins = GREATEST(game_coins, $2)
+                 WHERE id = $1
+                 RETURNING game_coins`,
+                [userId, coins]
+            );
+            // Usuario inexistente (0 filas): devolvemos el valor pedido como
+            // mejor aproximación, sin persistir (coherente con getState).
+            return res.rows[0]?.game_coins ?? coins;
+        } catch (err) {
+            if (err.code === '42703') {
+                console.warn('[GameRepository] bumpCoins: falta columna, no se persiste');
+                return coins;
+            }
+            throw err;
+        }
+    }
+
+    /**
      * Actualiza el set de skins poseídos como CSV.
      * Resiliente a missing column.
      */

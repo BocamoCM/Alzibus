@@ -22,6 +22,19 @@ const { BadRequestError } = require('../utils/errors');
 // obviamente inválidos en logs y dashboards.
 const MAX_COINS = 100000;
 
+// owned_skins se persiste como CSV (ver repository). Por tanto un ID de skin
+// NO puede contener comas ni caracteres raros: si lo hiciera, un cliente
+// podría inyectar separadores y "colar" múltiples tokens en un solo string
+// (bypass del límite por-item), o guardar payloads arbitrarios que algún
+// día se rendericen en un panel admin (XSS almacenado). Restringimos a un
+// charset seguro que cubre todos los IDs reales (default, fallero,
+// capurullo, lluvia, graduado, navidad, alzira_fc, …) con margen de sobra.
+const SKIN_ID_REGEX = /^[a-z0-9_]{1,32}$/;
+// Tope de skins distintos por usuario. El catálogo real son ~7; 64 deja
+// margen para años de skins futuros pero impide que un cliente infle la
+// columna TEXT con miles de IDs válidos de charset.
+const MAX_OWNED_SKINS = 64;
+
 class GameService {
     async getState(userId) {
         return await gameRepository.getState(userId);
@@ -51,13 +64,11 @@ class GameService {
             throw new BadRequestError(`coins no puede exceder ${MAX_COINS}`);
         }
 
-        const state = await gameRepository.getState(userId);
-        const winner = Math.max(state.coins, Math.floor(clientCoins));
-
-        if (winner !== state.coins) {
-            await gameRepository.setCoins(userId, winner);
-        }
-        return { coins: winner };
+        // Actualización atómica (GREATEST en una sola query): elimina la
+        // carrera del antiguo read-then-write. El servidor se queda con el
+        // mayor entre lo que había y lo que envía el cliente.
+        const coins = await gameRepository.bumpCoins(userId, Math.floor(clientCoins));
+        return { coins };
     }
 
     /**
@@ -70,11 +81,29 @@ class GameService {
         if (!Array.isArray(clientSkins)) {
             throw new BadRequestError('ownedSkins debe ser un array');
         }
-        const validated = clientSkins
-            .filter(s => typeof s === 'string' && s.length > 0 && s.length < 50);
+        if (clientSkins.length > MAX_OWNED_SKINS) {
+            throw new BadRequestError(
+                `ownedSkins no puede contener más de ${MAX_OWNED_SKINS} elementos`
+            );
+        }
+        // Solo IDs con charset seguro (ver SKIN_ID_REGEX). Descartamos el
+        // resto silenciosamente: un cliente legítimo nunca manda otra cosa,
+        // y así un atacante no puede inyectar comas (separador CSV) ni
+        // payloads arbitrarios en la columna TEXT.
+        const validated = clientSkins.filter(
+            s => typeof s === 'string' && SKIN_ID_REGEX.test(s)
+        );
 
         const state = await gameRepository.getState(userId);
         const union = Array.from(new Set([...state.ownedSkins, ...validated, 'default']));
+        // Defensa en profundidad: aunque el input venga acotado, el estado
+        // previo en BD podría estar "sucio" de antes de esta validación.
+        // Nunca persistimos un set por encima del tope.
+        if (union.length > MAX_OWNED_SKINS) {
+            throw new BadRequestError(
+                `El conjunto de skins excede el máximo de ${MAX_OWNED_SKINS}`
+            );
+        }
 
         if (union.length !== state.ownedSkins.length) {
             await gameRepository.setOwnedSkins(userId, union);
