@@ -66,3 +66,17 @@ node server.js
 
 - Se trabaja directo sobre `main`, sin feature branches (visto en el historial de commits).
 - Mensajes de commit en español, formato `tipo(scope): descripción` (ej. `fix(nfc): ...`, `feat(nfc): ...`, `security(backend): ...`).
+
+## Herramientas de Claude Code para este proyecto (2026-10-08)
+
+Todo esto vive en el repo (viaja por USB o por `git clone`, no hay que rehacerlo en el PC nuevo salvo un paso):
+
+- **`CLAUDE.md`** (raíz) — reglas e índice que Claude Code carga automáticamente en cada sesión de este repo (convenciones de commits, qué no tocar, dónde está cada subagente).
+- **Subagentes** en `.claude/agents/`: `flutter-nfc`, `backend-api`, `release-ops` — ver sección "Subagentes" de `CLAUDE.md`.
+- **Pre-commit hook** en `.githooks/pre-commit`: bloquea subir `.env`, formatea los `.dart` staged y corre `flutter analyze`/chequeo de sintaxis en `.js` staged.
+  - **Paso manual una vez por máquina** (si clonas con `git clone` en vez de copiar la carpeta `.git` entera por USB):
+    ```bash
+    git config core.hooksPath .githooks
+    ```
+  - Si copias la carpeta completa (incluyendo `.git`) por USB, esta configuración ya viaja dentro de `.git/config` y no hace falta repetirlo.
+- **CI** (`.github/workflows/build.yml`): nuevo job `lint-and-analyze` (corre `flutter analyze`) que debe pasar antes de `build-android`. Nota: no se añadió un check estricto de `dart format` porque ~89 de 110 archivos de `lib/` no estaban formateados con la regla por defecto y reformatearlos todos de golpe generaría un diff masivo fuera del alcance de este cambio — si se quiere ese check, hay que reformatear el repo primero en un commit dedicado.

@@ -85,4 +85,6 @@ gtfs_temp.zip
 node_modules/
 backend/node_modules/
 # Claude Code worktrees (cada uno tiene su propio .git, no anidar)
-.claude/
+.claude/*
+# ...pero sí versionamos los subagentes del proyecto para que viajen con el repo
+!.claude/agents/

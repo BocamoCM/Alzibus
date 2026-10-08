@@ -1,0 +1,43 @@
+#!/bin/sh
+# Pre-commit de Alzitrans: evita filtrar secretos y aplica formato/analisis
+# basico antes de cada commit. Instalar una vez por maquina con:
+#   git config core.hooksPath .githooks
+
+set -e
+
+# 1. Bloquear cualquier archivo .env que se intente subir
+ENV_FILES=$(git diff --cached --name-only | grep -E '(^|/)\.env(\..*)?$' || true)
+if [ -n "$ENV_FILES" ]; then
+  echo "Commit bloqueado: intentas subir un archivo .env (secretos):"
+  echo "$ENV_FILES"
+  exit 1
+fi
+
+# 2. Formatear y analizar los .dart staged (si hay y flutter/dart estan en PATH)
+DART_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.dart$' || true)
+if [ -n "$DART_FILES" ]; then
+  if command -v dart >/dev/null 2>&1; then
+    echo "Formateando Dart staged..."
+    echo "$DART_FILES" | xargs dart format
+    echo "$DART_FILES" | xargs git add
+  fi
+  if command -v flutter >/dev/null 2>&1; then
+    echo "Ejecutando flutter analyze..."
+    if ! flutter analyze --no-fatal-warnings --no-fatal-infos; then
+      echo "Commit bloqueado: flutter analyze encontro errores."
+      exit 1
+    fi
+  fi
+fi
+
+# 3. Chequeo de sintaxis de los .js staged del backend (si node esta en PATH)
+JS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.js$' || true)
+if [ -n "$JS_FILES" ] && command -v node >/dev/null 2>&1; then
+  for f in $JS_FILES; do
+    if [ -f "$f" ]; then
+      node --check "$f" || { echo "Commit bloqueado: error de sintaxis en $f"; exit 1; }
+    fi
+  done
+fi
+
+exit 0

@@ -1,0 +1,4 @@
+# Los hooks y scripts de shell deben conservar LF siempre,
+# aunque Windows tenga autocrlf=true, o el script se rompe al ejecutarse.
+.githooks/* text eol=lf
+*.sh text eol=lf
