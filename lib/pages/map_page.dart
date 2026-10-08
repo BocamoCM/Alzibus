@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -20,6 +21,7 @@ import '../widgets/multi_line_stop_marker.dart';
 import '../widgets/animated_bus_marker.dart';
 import '../theme/app_theme.dart';
 import '../core/providers/bus_simulation_provider.dart';
+import '../core/providers/ad_provider.dart';
 
 class MapPage extends ConsumerStatefulWidget {
   final FlutterLocalNotificationsPlugin notif;
@@ -50,18 +52,18 @@ class MapPageState extends ConsumerState<MapPage> {
   LatLng? myLocation;
   double? myHeading = 0.0;
   final TextEditingController _searchController = TextEditingController();
-  
+
   final Distance distance = Distance();
   final Map<String, DateTime> _lastNotified = {};
   final MapController _mapController = MapController();
-  
+
   late final NotificationService _notificationService;
   late final LocationService _locationService;
   late final BusSimulationService _busSimulationService;
-  
+
   Map<String, SimulatedBus> _simulatedBuses = {};
   Timer? _busUpdateTimer;
-  
+
   // Exponer el servicio de simulación para otras páginas
   BusSimulationService get busSimulationService => _busSimulationService;
 
@@ -79,11 +81,11 @@ class MapPageState extends ConsumerState<MapPage> {
         _checkProximity(position);
       },
     );
-    
+
     _loadStops();
     _locationService.startTracking();
     _setupBusSimulation();
-    
+
     // Si hay una parada inicial, ir a ella después de cargar
     if (widget.initialStop != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -96,12 +98,12 @@ class MapPageState extends ConsumerState<MapPage> {
       _showDisclaimer();
     });
   }
-  
+
   /// Método público para ir a una parada desde otras pantallas
   void goToStop(BusStop stop) {
     // Mover el mapa a la parada
     _mapController.move(LatLng(stop.lat, stop.lng), 17);
-    
+
     // Mostrar la info de la parada
     Future.delayed(const Duration(milliseconds: 300), () {
       _showStopInfo(stop);
@@ -118,7 +120,8 @@ class MapPageState extends ConsumerState<MapPage> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               const Icon(Icons.school, color: AlzitransColors.burgundy),
@@ -131,7 +134,8 @@ class MapPageState extends ConsumerState<MapPage> {
             children: [
               Text(
                 AppLocalizations.of(context)!.welcomeThanks,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
               Text(AppLocalizations.of(context)!.welcomeStudent),
@@ -145,12 +149,14 @@ class MapPageState extends ConsumerState<MapPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                    const Icon(Icons.warning_amber_rounded,
+                        color: Colors.orange),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         AppLocalizations.of(context)!.welcomeDevelopmentNotice,
-                        style: const TextStyle(fontSize: 13, color: Colors.brown),
+                        style:
+                            const TextStyle(fontSize: 13, color: Colors.brown),
                       ),
                     ),
                   ],
@@ -171,7 +177,9 @@ class MapPageState extends ConsumerState<MapPage> {
               },
               child: Text(
                 AppLocalizations.of(context)!.understoodCaps,
-                style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: AlzitransColors.burgundy,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -188,7 +196,7 @@ class MapPageState extends ConsumerState<MapPage> {
     _searchController.dispose();
     super.dispose();
   }
-  
+
   void _setupBusSimulation() {
     _busSimulationService.busStream.listen((buses) {
       if (mounted) {
@@ -197,7 +205,7 @@ class MapPageState extends ConsumerState<MapPage> {
         });
       }
     });
-    
+
     // Obtener estado actual INMEDIATO
     if (mounted) {
       setState(() {
@@ -205,13 +213,12 @@ class MapPageState extends ConsumerState<MapPage> {
       });
     }
   }
-  
 
   Future<void> _loadStops() async {
     print('Intentando cargar paradas...');
     final loadedStops = await ref.read(stopsProvider.future);
     print('Paradas cargadas: ${loadedStops.length}');
-    
+
     if (mounted) {
       setState(() {
         stops = loadedStops;
@@ -227,7 +234,7 @@ class MapPageState extends ConsumerState<MapPage> {
       final stopPos = LatLng(stop.lat, stop.lng);
       final d = distance(myPos, stopPos);
       final id = stop.id.toString();
-      
+
       if (d <= thresholdMeters) {
         final last = _lastNotified[id];
         final cooldown = Duration(minutes: widget.notificationCooldown);
@@ -250,35 +257,49 @@ class MapPageState extends ConsumerState<MapPage> {
         stop: stop,
         userLocation: myLocation,
       ),
-    );
+    ).whenComplete(() {
+      // Registrar la consulta de parada para el intersticial "cada N
+      // consultas". Este es el flujo PRINCIPAL (tap de parada en el mapa) y
+      // antes no contaba — solo lo hacían Rutas y Alertas, que son
+      // secundarios. Lo disparamos AL CERRAR el sheet (transición natural,
+      // no interrumpe el contenido que el usuario pidió → seguro para la
+      // política de intersticiales de AdMob). La línea principal va como
+      // señal contextual para mejorar el eCPM.
+      if (!kIsWeb) {
+        final line = stop.lines.isNotEmpty ? stop.lines.first : null;
+        ref.read(adServiceProvider).trackStopQuery(line: line);
+      }
+    });
   }
 
   void _showBusInfo(SimulatedBus bus) {
     final lineStops = _busSimulationService.getLineStops(bus.lineId);
     String nextStopName = 'Desconocida';
     String estimatedTime = '--';
-    
+
     if (lineStops != null && lineStops.isNotEmpty) {
       if (bus.trackingStopId != null) {
         try {
-          final stop = lineStops.firstWhere((s) => s['id'] == bus.trackingStopId);
+          final stop =
+              lineStops.firstWhere((s) => s['id'] == bus.trackingStopId);
           nextStopName = stop['name'] ?? 'Desconocida';
         } catch (_) {
           if (bus.nextStopIndex < lineStops.length) {
-            nextStopName = lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
+            nextStopName =
+                lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
           }
         }
       } else if (bus.nextStopIndex < lineStops.length) {
         nextStopName = lineStops[bus.nextStopIndex]['name'] ?? 'Desconocida';
       }
     }
-    
+
     if (bus.lastKnownMinutes != null) {
-      estimatedTime = bus.lastKnownMinutes == 0 
-          ? 'Llegando' 
+      estimatedTime = bus.lastKnownMinutes == 0
+          ? 'Llegando'
           : '${bus.lastKnownMinutes} min';
     }
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -295,7 +316,8 @@ class MapPageState extends ConsumerState<MapPage> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: _getLineColor(bus.lineId),
                     borderRadius: BorderRadius.circular(8),
@@ -320,14 +342,18 @@ class MapPageState extends ConsumerState<MapPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(Icons.location_on, AppLocalizations.of(context)!.nextStop, nextStopName),
+            _buildInfoRow(Icons.location_on,
+                AppLocalizations.of(context)!.nextStop, nextStopName),
             const SizedBox(height: 12),
-            _buildInfoRow(Icons.access_time, AppLocalizations.of(context)!.estimatedTime, estimatedTime),
+            _buildInfoRow(Icons.access_time,
+                AppLocalizations.of(context)!.estimatedTime, estimatedTime),
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.speed,
               AppLocalizations.of(context)!.statusLabel,
-              bus.isAtStop ? AppLocalizations.of(context)!.atStop : AppLocalizations.of(context)!.inMovement,
+              bus.isAtStop
+                  ? AppLocalizations.of(context)!.atStop
+                  : AppLocalizations.of(context)!.inMovement,
             ),
             const SizedBox(height: 20),
           ],
@@ -377,10 +403,10 @@ class MapPageState extends ConsumerState<MapPage> {
   void goToStopById(int stopId) {
     try {
       final stop = stops.firstWhere((s) => s.id == stopId);
-      
+
       // Move map logic similar to the search logic
       _mapController.move(LatLng(stop.lat, stop.lng), 17.0);
-      
+
       // Select the lines of this stop so it appears
       setState(() {
         for (final line in stop.lines) {
@@ -389,7 +415,7 @@ class MapPageState extends ConsumerState<MapPage> {
           }
         }
       });
-      
+
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) _showStopInfo(stop);
       });
@@ -455,7 +481,7 @@ class MapPageState extends ConsumerState<MapPage> {
                     final filteredStops = stops.where((stop) {
                       return stop.name.toLowerCase().contains(query);
                     }).toList();
-                    
+
                     return ListView.builder(
                       controller: scrollController,
                       itemCount: filteredStops.length,
@@ -463,15 +489,19 @@ class MapPageState extends ConsumerState<MapPage> {
                         final stop = filteredStops[index];
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: LineColors.getStopColor(stop.lines, selectedLines),
-                            child: const Icon(Icons.directions_bus, color: Colors.white, size: 20),
+                            backgroundColor: LineColors.getStopColor(
+                                stop.lines, selectedLines),
+                            child: const Icon(Icons.directions_bus,
+                                color: Colors.white, size: 20),
                           ),
                           title: Text(stop.name),
                           subtitle: Text(stop.lines.join(', ')),
                           onTap: () {
                             Navigator.pop(context);
-                            _mapController.move(LatLng(stop.lat, stop.lng), 17.0);
-                            Future.delayed(const Duration(milliseconds: 300), () {
+                            _mapController.move(
+                                LatLng(stop.lat, stop.lng), 17.0);
+                            Future.delayed(const Duration(milliseconds: 300),
+                                () {
                               _showStopInfo(stop);
                             });
                           },
@@ -525,17 +555,18 @@ class MapPageState extends ConsumerState<MapPage> {
           point: myLocation!,
           child: Transform.rotate(
             angle: (myHeading ?? 0) * 3.14159 / 180,
-            child: const Icon(Icons.navigation, color: AlzitransColors.burgundy, size: 40),
+            child: const Icon(Icons.navigation,
+                color: AlzitransColors.burgundy, size: 40),
           ),
         ),
       );
     }
-    
+
     // Agregar marcadores de autobuses simulados (si está habilitado)
     if (widget.showSimulatedBuses) {
       for (final bus in _simulatedBuses.values) {
         if (!selectedLines.contains(bus.lineId)) continue;
-        
+
         markers.add(
           Marker(
             width: 60,
@@ -641,7 +672,8 @@ class MapPageState extends ConsumerState<MapPage> {
             backgroundColor: Colors.white,
             child: Icon(
               Icons.my_location,
-              color: myLocation != null ? AlzitransColors.burgundy : Colors.grey,
+              color:
+                  myLocation != null ? AlzitransColors.burgundy : Colors.grey,
             ),
           ),
         ),

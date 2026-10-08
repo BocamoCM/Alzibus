@@ -26,8 +26,13 @@ class AdService {
   /// Construye un AdRequest con keywords y URL de contexto.
   AdRequest _buildAdRequest({Map<String, String>? extras}) {
     final keywords = <String>[
-      'transport', 'public transport', 'bus', 'urban mobility',
-      'alzira', 'valencia', 'spain',
+      'transport',
+      'public transport',
+      'bus',
+      'urban mobility',
+      'alzira',
+      'valencia',
+      'spain',
       if (_currentLine != null) 'line $_currentLine',
       if (_currentLine != null) 'bus $_currentLine',
       if (_currentScreen != null) _currentScreen!,
@@ -103,7 +108,7 @@ class AdService {
   DateTime? _lastAppOpenShowTime;
   bool _isAppOpenAdLoading = false;
   bool _isShowingAppOpenAd = false;
-  
+
   // Nativos Precargados
   NativeAd? _profileNativeAd;
   bool _isProfileNativeAdLoaded = false;
@@ -120,6 +125,7 @@ class AdService {
   // el siguiente para el próximo tap. Show rate esperado: 30-50%.
   final List<NativeAd> _stopNativeAdPool = [];
   static const int _stopNativeAdPoolSize = 2;
+
   /// Contador de ads CARGÁNDOSE actualmente (aún no completados con
   /// success ni fail). CRÍTICO para evitar disparar cargas en bucle
   /// porque `load()` es async pero el pool solo se incrementa cuando
@@ -130,10 +136,16 @@ class AdService {
   /// Carga un anuncio de apertura (App Open Ad).
   void loadAppOpenAd() {
     if (!canShowAds || _isAppOpenAdLoading) return;
+    // Ya hay uno en memoria listo: no lo re-cargamos (evita duplicar la
+    // request — cada carga desperdiciada cuenta como match-rate perdido
+    // en el report de AdMob — y evita fugar el ad anterior sin dispose).
+    if (_appOpenAd != null) return;
 
     _isAppOpenAdLoading = true;
     AppOpenAd.load(
-      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/9257395921' : AppConfig.appOpenAdId,
+      adUnitId: kDebugMode
+          ? 'ca-app-pub-3940256099942544/9257395921'
+          : AppConfig.appOpenAdId,
       request: _buildAdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) {
@@ -170,7 +182,7 @@ class AdService {
       debugPrint('AppOpenAd: Postergado por inicio muy reciente.');
       return;
     }
-    
+
     // Si cerramos CUALQUIER anuncio hace menos de 8 segundos, saltamos
     // este App Open (evita bucle: ad → pause → resume → ad). Antes eran
     // 15s pero eso bloqueaba ads válidos en flujos rápidos (cerrar
@@ -179,7 +191,8 @@ class AdService {
     if (lastAdDismissedTime != null) {
       final diff = DateTime.now().difference(lastAdDismissedTime!);
       if (diff.inSeconds < 8) {
-        debugPrint('AppOpenAd: Global dismiss cooldown activo. Evitando bucle.');
+        debugPrint(
+            'AppOpenAd: Global dismiss cooldown activo. Evitando bucle.');
         return;
       }
     }
@@ -193,8 +206,9 @@ class AdService {
       }
     }
 
-    if (_appOpenLoadTime != null && 
-        DateTime.now().difference(_appOpenLoadTime!) > const Duration(hours: 4)) {
+    if (_appOpenLoadTime != null &&
+        DateTime.now().difference(_appOpenLoadTime!) >
+            const Duration(hours: 4)) {
       _appOpenAd!.dispose();
       _appOpenAd = null;
       loadAppOpenAd();
@@ -226,15 +240,31 @@ class AdService {
     _appOpenAd!.show();
   }
 
+  /// Precarga los anuncios full-screen (Intersticial + App Open) para que
+  /// el PRIMER trigger en frío los muestre al instante.
+  ///
+  /// Antes, en frío, `_interstitialAd`/`_appOpenAd` eran null: el primer
+  /// `showXxx()` solo lanzaba `load()` y hacía `return` sin mostrar, así que
+  /// el usuario tenía que disparar el trigger DOS veces para ver el primer
+  /// anuncio. En una base recurrente eso perdía la impresión más valiosa
+  /// (la de la primera sesión). Con esta precarga el stock ya está listo.
+  ///
+  /// Idempotente gracias a los guards `_xxxAd != null` de cada loader.
+  void preloadFullScreenAds() {
+    if (!canShowAds) return;
+    loadInterstitialAd();
+    loadAppOpenAd();
+  }
+
   /// Precarga los anuncios nativos para las pantallas principales.
   void preloadNativeAds() {
     if (!canShowAds) return;
-    
+
     _profileNativeAd = createNativeAd(
       onAdLoaded: (ad) => _isProfileNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isProfileNativeAdLoaded = false,
     )..load();
-    
+
     _settingsNativeAd = createNativeAd(
       onAdLoaded: (ad) => _isSettingsNativeAdLoaded = true,
       onAdFailedToLoad: (ad, error) => _isSettingsNativeAdLoaded = false,
@@ -249,9 +279,12 @@ class AdService {
     _refillStopNativeAdPool();
   }
 
-  NativeAd? get profileNativeAd => _isProfileNativeAdLoaded ? _profileNativeAd : null;
-  NativeAd? get settingsNativeAd => _isSettingsNativeAdLoaded ? _settingsNativeAd : null;
-  NativeAd? get alertsNativeAd => _isAlertsNativeAdLoaded ? _alertsNativeAd : null;
+  NativeAd? get profileNativeAd =>
+      _isProfileNativeAdLoaded ? _profileNativeAd : null;
+  NativeAd? get settingsNativeAd =>
+      _isSettingsNativeAdLoaded ? _settingsNativeAd : null;
+  NativeAd? get alertsNativeAd =>
+      _isAlertsNativeAdLoaded ? _alertsNativeAd : null;
 
   /// Devuelve un native ad LISTO para mostrar en el sheet de una parada,
   /// y rellena el pool en background. Null si no hay ninguno listo o si
@@ -282,9 +315,8 @@ class AdService {
     //
     // FIX: contamos las que YA están cargándose (`_stopNativeAdLoading`)
     // y solo lanzamos las que falten para llegar al target.
-    final needed = _stopNativeAdPoolSize -
-        _stopNativeAdPool.length -
-        _stopNativeAdLoading;
+    final needed =
+        _stopNativeAdPoolSize - _stopNativeAdPool.length - _stopNativeAdLoading;
     if (needed <= 0) return;
 
     for (var i = 0; i < needed; i++) {
@@ -351,7 +383,8 @@ class AdService {
     String? adUnitId,
   }) async {
     final width = MediaQuery.of(context).size.width.truncate();
-    final adSize = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+    final adSize =
+        await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
     if (adSize == null) return null;
 
     return BannerAd(
@@ -377,7 +410,7 @@ class AdService {
   InterstitialAd? _interstitialAd;
   DateTime? _interstitialLoadTime;
   bool _isInterstitialLoading = false;
-  
+
   // Contador global para intersticiales inteligentes
   int _stopQueryCount = 0;
   DateTime? _lastInterstitialShowTime;
@@ -416,10 +449,16 @@ class AdService {
 
   void loadInterstitialAd() {
     if (!canShowAds || _isInterstitialLoading) return;
+    // Ya hay uno listo en memoria: no re-cargar (evita duplicar la request
+    // y fugar el ad previo). Las recargas tras dismiss ponen _interstitialAd
+    // a null antes de llamar, así que ese caso no se bloquea.
+    if (_interstitialAd != null) return;
 
     _isInterstitialLoading = true;
     InterstitialAd.load(
-      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/1033173712' : AppConfig.interstitialAdId,
+      adUnitId: kDebugMode
+          ? 'ca-app-pub-3940256099942544/1033173712'
+          : AppConfig.interstitialAdId,
       request: _buildAdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -437,8 +476,10 @@ class AdService {
 
   /// Muestra intersticial si está disponible y respeta cooldown + capping diario.
   Future<void> showInterstitialAd() async {
-    if (_interstitialAd != null && _interstitialLoadTime != null &&
-        DateTime.now().difference(_interstitialLoadTime!) > const Duration(hours: 1)) {
+    if (_interstitialAd != null &&
+        _interstitialLoadTime != null &&
+        DateTime.now().difference(_interstitialLoadTime!) >
+            const Duration(hours: 1)) {
       _interstitialAd!.dispose();
       _interstitialAd = null;
     }
@@ -450,13 +491,15 @@ class AdService {
 
     // Respetar cooldown global
     if (_lastInterstitialShowTime != null &&
-        DateTime.now().difference(_lastInterstitialShowTime!).inMinutes < _interstitialCooldownMinutes) {
+        DateTime.now().difference(_lastInterstitialShowTime!).inMinutes <
+            _interstitialCooldownMinutes) {
       debugPrint('[AdService] Interstitial cooldown activo. Saltando.');
       return;
     }
 
     if (!await _canShowInterstitialToday()) {
-      debugPrint('[AdService] Cap diario de intersticiales alcanzado. Saltando.');
+      debugPrint(
+          '[AdService] Cap diario de intersticiales alcanzado. Saltando.');
       return;
     }
 
@@ -522,10 +565,16 @@ class AdService {
 
   void loadRewardedAd() {
     if (!canShowAds || _isRewardedAdLoading) return;
+    // Ya hay uno listo: no re-cargar. Esta función se invoca desde muchos
+    // sitios (build de RewardedOfferCard, tienda, init de home), así que sin
+    // este guard se lanzarían cargas duplicadas que fugan el ad anterior.
+    if (_rewardedAd != null) return;
 
     _isRewardedAdLoading = true;
     RewardedAd.load(
-      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/5224354917' : AppConfig.rewardedAdId,
+      adUnitId: kDebugMode
+          ? 'ca-app-pub-3940256099942544/5224354917'
+          : AppConfig.rewardedAdId,
       request: _buildAdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -593,7 +642,9 @@ class AdService {
     required void Function(Ad, LoadAdError) onAdFailedToLoad,
   }) {
     return NativeAd(
-      adUnitId: kDebugMode ? 'ca-app-pub-3940256099942544/2247696110' : AppConfig.nativeAdId,
+      adUnitId: kDebugMode
+          ? 'ca-app-pub-3940256099942544/2247696110'
+          : AppConfig.nativeAdId,
       request: _buildAdRequest(),
       listener: NativeAdListener(
         onAdLoaded: onAdLoaded,

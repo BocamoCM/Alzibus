@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// En la web no usamos el SDK nativo de AdMob.
 class AdService {
   AdService();
-  
+
   bool _isInitialized = false;
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initializationFuture => _initCompleter.future;
@@ -15,7 +15,8 @@ class AdService {
     if (!_initCompleter.isCompleted) _initCompleter.complete();
   }
 
-  bool get canShowAds => true; // En web permitimos "mostrar" nuestros propios anuncios
+  bool get canShowAds =>
+      true; // En web permitimos "mostrar" nuestros propios anuncios
 
   // Stub targeting contextual
   void updateContext({String? line, String? screen}) {}
@@ -25,20 +26,24 @@ class AdService {
   Future<void> showAppOpenAdIfAvailable() async {}
   bool get hasAppOpenAdReady => false;
 
-  // Stubs para Nativo
+  // Stubs para Nativo / Full-screen
+  void preloadFullScreenAds() {}
   void preloadNativeAds() {}
   dynamic get profileNativeAd => null;
   dynamic get settingsNativeAd => null;
   dynamic get alertsNativeAd => null;
 
   // Stubs para Banner (Devuelven null o disparan lógica web)
-  dynamic createBannerAd({required Function onAdLoaded, required Function onAdFailedToLoad}) => null;
+  dynamic createBannerAd(
+          {required Function onAdLoaded, required Function onAdFailedToLoad}) =>
+      null;
   Future<dynamic> createAdaptiveBannerAd({
     required BuildContext context,
     required void Function(dynamic) onAdLoaded,
     required void Function(dynamic, dynamic) onAdFailedToLoad,
     bool isCollapsible = false,
-  }) async => null;
+  }) async =>
+      null;
 
   // Stubs para Intersticial
   void loadInterstitialAd() {}
@@ -51,7 +56,8 @@ class AdService {
   int get bannerFreeMinutesLeft => 0;
   void loadRewardedAd() {}
   bool get isRewardedAdReady => false;
-  void showRewardedAd({VoidCallback? onRewarded, bool grantBannerFree = true}) {}
+  void showRewardedAd(
+      {VoidCallback? onRewarded, bool grantBannerFree = true}) {}
 
   // Native ad stubs
   dynamic createNativeAd({
@@ -70,13 +76,15 @@ class AdService {
       height: 60,
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF800020), Color(0xFF4A1D3D)]),
+        gradient: const LinearGradient(
+            colors: [Color(0xFF800020), Color(0xFF4A1D3D)]),
         borderRadius: BorderRadius.circular(8),
       ),
       child: const Center(
         child: Text(
           'Descarga Alzitrans para Android para la experiencia completa 🚀',
-          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
       ),

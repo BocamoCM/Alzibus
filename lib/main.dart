@@ -58,7 +58,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // Asegurar inicialización antes de nada para usar PackageInfo
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   final packageInfo = await PackageInfo.fromPlatform();
   final version = packageInfo.version;
   final buildNumber = packageInfo.buildNumber;
@@ -67,23 +67,24 @@ void main() async {
   await SentryFlutter.init(
     (options) {
       options.dsn = AppConfig.sentryDsn;
-      
+
       // Configuración de Releases y Entornos
-      options.environment = kDebugMode ? 'debug' : (kReleaseMode ? 'production' : 'staging');
-      
+      options.environment =
+          kDebugMode ? 'debug' : (kReleaseMode ? 'production' : 'staging');
+
       // Formato de release: package@version+build (y commit si existe)
       String releaseName = '$packageName@$version+$buildNumber';
       if (AppConfig.commitHash != 'none') {
         releaseName += '-${AppConfig.commitHash}';
       }
       options.release = releaseName;
-      
+
       // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
       options.tracesSampleRate = 1.0;
-      
+
       options.enableAppLifecycleBreadcrumbs = true;
       options.enableWindowMetricBreadcrumbs = true;
-      
+
       // Habilitar logs en consola para depuración
       if (kDebugMode) {
         options.debug = true;
@@ -93,7 +94,7 @@ void main() async {
       // Asegurar inicialización dentro del Zone de Sentry para evitar "Zone mismatch" en Web
       // Aunque ya se llamó fuera, volver a llamarlo aquí asegura el vínculo con el Zone actual.
       WidgetsFlutterBinding.ensureInitialized();
-      
+
       // 1. Inicialización crítica (rápida)
       final prefs = await SharedPreferences.getInstance();
 
@@ -109,7 +110,8 @@ void main() async {
       // Esto elimina la fricción durante el registro para nuevos usuarios.
       AppConfig.showAds = token != null;
 
-      debugPrint('Main: Publicidad habilitada: ${AppConfig.showAds} (Token: ${token != null})');
+      debugPrint(
+          'Main: Publicidad habilitada: ${AppConfig.showAds} (Token: ${token != null})');
 
       // Inicializar rastreo de instalaciones (asíncrono, no bloqueante)
       InstallTrackingService.checkAndSendReferrer(prefs).catchError((e) {
@@ -182,6 +184,10 @@ void main() async {
             await adService.initialize();
             if (canRequestAds) {
               adService.preloadNativeAds();
+              // Precargar full-screen (Intersticial + App Open) en frío para
+              // que el primer trigger los muestre YA — sin esto el primer
+              // show() solo cargaba y hacía return (impresión perdida).
+              adService.preloadFullScreenAds();
             }
           } catch (e) {
             debugPrint('Main: error inicializando AdMob: $e');
@@ -189,28 +195,29 @@ void main() async {
         });
       }
 
-  // Establecer identidad en Sentry si ya ha iniciado sesión
-  if (isLoggedIn) {
-    final userEmail = await SessionStorage.getEmail();
-    final userId = await SessionStorage.getUserId();
-    if (userEmail != null && userId != null) {
-      Sentry.configureScope((scope) {
-        scope.setUser(SentryUser(id: userId.toString(), email: userEmail));
-      });
-    }
-  }
+      // Establecer identidad en Sentry si ya ha iniciado sesión
+      if (isLoggedIn) {
+        final userEmail = await SessionStorage.getEmail();
+        final userId = await SessionStorage.getUserId();
+        if (userEmail != null && userId != null) {
+          Sentry.configureScope((scope) {
+            scope.setUser(SentryUser(id: userId.toString(), email: userEmail));
+          });
+        }
+      }
       // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
       Future.microtask(() async {
         // ESPERAR a que termine la lógica de permisos/avisos
         if (!kIsWeb) {
           await _requestPermissions();
         }
-        
+
         // Reutilizamos prefs inicializado arriba o cargamos de nuevo si es necesario
         // pero evitamos redeclarar 'final prefs' si ya existe en el ámbito.
         await prefs.reload();
-        final backgroundDisabled = prefs.getBool('background_location_disabled') ?? false;
-        
+        final backgroundDisabled =
+            prefs.getBool('background_location_disabled') ?? false;
+
         if (!kIsWeb) {
           // Solo iniciar servicios de segundo plano si el permiso NO ha sido rechazado
           // y el de sistema NO está denegado totalmente.
@@ -218,7 +225,7 @@ void main() async {
             await ForegroundService.initialize();
             await BusAlertService().initialize();
           }
-          
+
           AssistantService.initialize();
           SocketService().initialize();
           GamificationService().initialize();
@@ -233,27 +240,30 @@ void main() async {
         final stopsService = StopsService();
         final stops = await stopsService.loadStops();
         debugPrint('Main: Paradas cargadas en segundo plano: ${stops.length}');
-        
-        final stopsData = stops.map((stop) => {
-          'id': stop.id,
-          'name': stop.name,
-          'lat': stop.lat,
-          'lng': stop.lng,
-          'lines': stop.lines,
-        }).toList();
-        
+
+        final stopsData = stops
+            .map((stop) => {
+                  'id': stop.id,
+                  'name': stop.name,
+                  'lat': stop.lat,
+                  'lng': stop.lng,
+                  'lines': stop.lines,
+                })
+            .toList();
+
         await prefs.setString('bus_stops', jsonEncode(stopsData));
-        
+
         // Iniciar simulación global
         final busSimService = container.read(busSimulationProvider);
-        
+
         // CRÍTICO: Registrar las paradas de cada línea ANTES del escaneo inicial
         for (final line in ['L1', 'L2', 'L3']) {
           final routeStops = await stopsService.loadLineRoute(line);
           busSimService.setLineStops(line, routeStops);
-          debugPrint('Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
+          debugPrint(
+              'Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
         }
-        
+
         await busSimService.initialScan(stopsData);
         busSimService.startSimulation();
       });
@@ -290,7 +300,7 @@ Future<void> _requestPermissions() async {
 
       // 5. Pedir Ubicación Foreground (primero, obligatorio en Android 10+)
       final locationStatus = await Permission.location.request();
-      
+
       if (locationStatus.isGranted) {
         // 6. Pedir Ubicación en Segundo Plano (inmediatamente después)
         await Permission.locationAlways.request();
@@ -299,12 +309,11 @@ Future<void> _requestPermissions() async {
       // Si el usuario pulsa "No permitir", guardamos su preferencia
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('background_location_disabled', true);
-      debugPrint('Main: El usuario ha rechazado explícitamente la ubicación en segundo plano');
+      debugPrint(
+          'Main: El usuario ha rechazado explícitamente la ubicación en segundo plano');
     }
   }
 }
-
-
 
 class AlzitransApp extends ConsumerStatefulWidget {
   const AlzitransApp({super.key});
@@ -313,8 +322,8 @@ class AlzitransApp extends ConsumerStatefulWidget {
   ConsumerState<AlzitransApp> createState() => _AlzitransAppState();
 }
 
-class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBindingObserver {
-  
+class _AlzitransAppState extends ConsumerState<AlzitransApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -328,7 +337,7 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
-  
+
   static DateTime? _lastNotifyTimestamp;
 
   void _notifyAppOpen() {
@@ -340,7 +349,7 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
 
     try {
       _lastNotifyTimestamp = DateTime.now();
-      
+
       // Pequeño retardo inicial para asegurar que el ApiClient tenga tiempo de cargar el token
       // si el usuario ya estaba logueado.
       Future.delayed(const Duration(seconds: 2), () {
@@ -361,7 +370,7 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
           ref.read(adServiceProvider).showAppOpenAdIfAvailable();
         }
       });
-      
+
       // Notificar al backend (con el cooldown aplicado dentro de la función)
       _notifyAppOpen();
     }
@@ -371,52 +380,55 @@ class _AlzitransAppState extends ConsumerState<AlzitransApp> with WidgetsBinding
   Widget build(BuildContext context) {
     final currentLocale = ref.watch(localeProvider);
     final isHighVisibility = ref.watch(highVisibilityProvider);
-    
+
     final theme = isHighVisibility
         ? AlzitransTheme.lightTheme.copyWith(
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AlzitransColors.burgundy,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+                textStyle:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
-            iconTheme: const IconThemeData(size: 32, color: AlzitransColors.burgundy),
+            iconTheme:
+                const IconThemeData(size: 32, color: AlzitransColors.burgundy),
           )
         : AlzitransTheme.lightTheme;
 
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-          routerConfig: router,
-          title: 'Alzitrans',
-          theme: theme,
-          debugShowCheckedModeBanner: false,
-          locale: currentLocale,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('es'),
-            Locale('en'),
-            Locale('ca'),
-          ],
-          builder: (context, child) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: isHighVisibility
-                    ? const TextScaler.linear(1.6)
-                    : const TextScaler.linear(1.0),
-              ),
-              child: child!,
-            );
-          },
+      routerConfig: router,
+      title: 'Alzitrans',
+      theme: theme,
+      debugShowCheckedModeBanner: false,
+      locale: currentLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'),
+        Locale('en'),
+        Locale('ca'),
+      ],
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: isHighVisibility
+                ? const TextScaler.linear(1.6)
+                : const TextScaler.linear(1.0),
+          ),
+          child: child!,
         );
+      },
+    );
   }
 }
-

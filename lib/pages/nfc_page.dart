@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
@@ -8,10 +7,8 @@ import '../models/bus_card.dart' show BusCardKind;
 import '../widgets/card_stack.dart';
 import '../widgets/nfc_card_visual.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../widgets/ad_ui_factory.dart';
-import '../services/ad_service.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../constants/app_config.dart';
 
 class NfcPage extends ConsumerStatefulWidget {
@@ -21,43 +18,33 @@ class NfcPage extends ConsumerStatefulWidget {
   ConsumerState<NfcPage> createState() => _NfcPageState();
 }
 
-class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _NfcPageState extends ConsumerState<NfcPage>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   late NfcController _nfcNotifier;
-  
-  dynamic _bannerAd;
-  bool _isBannerAdLoaded = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     _nfcNotifier = ref.read(nfcControllerProvider.notifier);
-    
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
+
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
-    _loadBannerAd();
-  }
-
-  void _loadBannerAd() {
-    if (!AppConfig.showAds || kIsWeb) return;
-    // La inicialización de BannerAd se movió para ser segura en compilación
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
-    _bannerAd?.dispose();
     _nfcNotifier.stopScan();
     super.dispose();
   }
@@ -135,15 +122,16 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                 value: nfcState.lowBalanceWarningsEnabled,
                 onChanged: (value) {
                   ref.read(nfcControllerProvider.notifier).updatePreferences(
-                    warningsEnabled: value,
-                    threshold: nfcState.lowBalanceThreshold,
-                  );
+                        warningsEnabled: value,
+                        threshold: nfcState.lowBalanceThreshold,
+                      );
                 },
               ),
               const Divider(),
               ListTile(
                 title: const Text('Avisar cuando queden'),
-                subtitle: Text('${nfcState.lowBalanceThreshold} viajes o menos'),
+                subtitle:
+                    Text('${nfcState.lowBalanceThreshold} viajes o menos'),
               ),
               Slider(
                 value: nfcState.lowBalanceThreshold.toDouble(),
@@ -153,10 +141,13 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                 label: '${nfcState.lowBalanceThreshold} viajes',
                 onChanged: nfcState.lowBalanceWarningsEnabled
                     ? (value) {
-                        ref.read(nfcControllerProvider.notifier).updatePreferences(
-                          warningsEnabled: nfcState.lowBalanceWarningsEnabled,
-                          threshold: value.toInt(),
-                        );
+                        ref
+                            .read(nfcControllerProvider.notifier)
+                            .updatePreferences(
+                              warningsEnabled:
+                                  nfcState.lowBalanceWarningsEnabled,
+                              threshold: value.toInt(),
+                            );
                       }
                     : null,
               ),
@@ -202,7 +193,8 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                       animation: _pulseAnimation,
                       builder: (context, _) => Transform.scale(
                         scale: _pulseAnimation.value,
-                        child: Icon(Icons.nfc, size: 48, color: Colors.grey.shade400),
+                        child: Icon(Icons.nfc,
+                            size: 48, color: Colors.grey.shade400),
                       ),
                     )
                   : Icon(Icons.nfc, size: 48, color: Colors.grey.shade400),
@@ -251,9 +243,10 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final state = ref.watch(nfcControllerProvider);
     final controller = ref.read(nfcControllerProvider.notifier);
-    
+
     final trips = state.cardData?.trips;
-    final isLowBalance = trips != null && trips > 0 && trips <= state.lowBalanceThreshold;
+    final isLowBalance =
+        trips != null && trips > 0 && trips <= state.lowBalanceThreshold;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     // Variante SUMA (ATMV / Generalitat Valenciana). Cambia colores, texto y
     // deshabilita "Validar viaje" porque la app solo lee este tipo, no escribe.
@@ -273,14 +266,18 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(kIsWeb ? Icons.web_asset_off : Icons.phonelink_erase, size: 80, color: Colors.grey.shade400),
+                    Icon(kIsWeb ? Icons.web_asset_off : Icons.phonelink_erase,
+                        size: 80, color: Colors.grey.shade400),
                     const SizedBox(height: 24),
                     Builder(builder: (context) {
                       final l = AppLocalizations.of(context)!;
                       return Text(
-                        kIsWeb ? l.featureNotAvailableWeb : l.featureAndroidOnly,
+                        kIsWeb
+                            ? l.featureNotAvailableWeb
+                            : l.featureAndroidOnly,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
                       );
                     }),
                     const SizedBox(height: 16),
@@ -289,7 +286,8 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                       return Text(
                         kIsWeb ? l.nfcWebExplained : l.nfcIosExplained,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                        style: TextStyle(
+                            fontSize: 16, color: Colors.grey.shade600),
                       );
                     }),
                     if (kIsWeb) ...[
@@ -297,7 +295,8 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                       ElevatedButton.icon(
                         onPressed: () {
                           launchUrl(
-                            Uri.parse('https://play.google.com/store/apps/details?id=com.alzitrans.app'),
+                            Uri.parse(
+                                'https://play.google.com/store/apps/details?id=com.alzitrans.app'),
                             mode: LaunchMode.externalApplication,
                           );
                         },
@@ -306,8 +305,10 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AlzitransColors.burgundy,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ],
@@ -332,9 +333,12 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                           _buildCardArea(state),
                           const SizedBox(height: 32),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
                             decoration: BoxDecoration(
-                              color: isLowBalance ? Colors.orange.withOpacity(0.1) : Colors.grey.withOpacity(0.05),
+                              color: isLowBalance
+                                  ? Colors.orange.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
@@ -342,7 +346,9 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isLowBalance ? Colors.orange.shade900 : Colors.grey[800],
+                                color: isLowBalance
+                                    ? Colors.orange.shade900
+                                    : Colors.grey[800],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -355,52 +361,78 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                 // SUMA es solo lectura: no manipulamos el saldo de
                                 // la tarjeta de la ATMV desde la app. Desactivamos
                                 // el botón y abajo cambiamos el texto.
-                                onPressed: (state.storedTrips > 0 && !state.isUnlimited && !isSuma) ? () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text(AppLocalizations.of(context)!.confirmTripTitle),
-                                      content: Text(AppLocalizations.of(context)!.validateTripPrompt),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context, false),
-                                          child: const Text('Cancelar'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () => Navigator.pop(context, true),
-                                          style: ElevatedButton.styleFrom(backgroundColor: AlzitransColors.burgundy),
-                                          child: const Text('Validar'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirm == true) {
-                                    int newTrips = await controller.validateTrip();
-                                    if (newTrips >= 0 && mounted) {
-                                      final l = AppLocalizations.of(context)!;
-                                      final balanceStr = (newTrips * 1.5).toStringAsFixed(2);
-                                      controller.speak(l.nfcBalanceAnnounce(balanceStr, newTrips));
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Viaje validado. Te quedan $newTrips viajes.'),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                } : null,
+                                onPressed: (state.storedTrips > 0 &&
+                                        !state.isUnlimited &&
+                                        !isSuma)
+                                    ? () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text(
+                                                AppLocalizations.of(context)!
+                                                    .confirmTripTitle),
+                                            content: Text(
+                                                AppLocalizations.of(context)!
+                                                    .validateTripPrompt),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, false),
+                                                child: const Text('Cancelar'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, true),
+                                                style: ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        AlzitransColors
+                                                            .burgundy),
+                                                child: const Text('Validar'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          int newTrips =
+                                              await controller.validateTrip();
+                                          if (newTrips >= 0 && mounted) {
+                                            final l =
+                                                AppLocalizations.of(context)!;
+                                            final balanceStr = (newTrips * 1.5)
+                                                .toStringAsFixed(2);
+                                            controller.speak(
+                                                l.nfcBalanceAnnounce(
+                                                    balanceStr, newTrips));
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                    'Viaje validado. Te quedan $newTrips viajes.'),
+                                                backgroundColor: Colors.green,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      }
+                                    : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: isSuma
                                       ? const Color(0xFFB81D2C)
-                                      : (state.isUnlimited ? AlzitransColors.wine : Colors.green.shade700),
+                                      : (state.isUnlimited
+                                          ? AlzitransColors.wine
+                                          : Colors.green.shade700),
                                   foregroundColor: Colors.white,
                                   disabledBackgroundColor: isSuma
                                       ? const Color(0xFFB81D2C).withOpacity(0.5)
-                                      : (state.isUnlimited ? AlzitransColors.wine.withOpacity(0.5) : Colors.grey),
+                                      : (state.isUnlimited
+                                          ? AlzitransColors.wine
+                                              .withOpacity(0.5)
+                                          : Colors.grey),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 16),
                                   minimumSize: const Size(double.infinity, 56),
                                 ),
                                 child: Row(
@@ -409,7 +441,9 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                     Icon(
                                       isSuma
                                           ? Icons.lock_outline
-                                          : (state.isUnlimited ? Icons.all_inclusive : Icons.check_circle_outline),
+                                          : (state.isUnlimited
+                                              ? Icons.all_inclusive
+                                              : Icons.check_circle_outline),
                                       size: 28,
                                     ),
                                     const SizedBox(width: 8),
@@ -417,7 +451,9 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                       child: Text(
                                         isSuma
                                             ? 'Solo lectura · valida en el torno'
-                                            : (state.isUnlimited ? 'Viajes Ilimitados Activos' : 'Confirmar / Validar Viaje'),
+                                            : (state.isUnlimited
+                                                ? 'Viajes Ilimitados Activos'
+                                                : 'Confirmar / Validar Viaje'),
                                         style: const TextStyle(fontSize: 18),
                                         textAlign: TextAlign.center,
                                       ),
@@ -442,35 +478,46 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton(
-                                onPressed: state.nfcAvailable ? () {
-                                  controller.startScan(
-                                    onError: () {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('NFC no disponible')),
-                                        );
+                                onPressed: state.nfcAvailable
+                                    ? () {
+                                        controller.startScan(onError: () {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'NFC no disponible')),
+                                            );
+                                          }
+                                        }, onVoiceAnnounce: (type) {
+                                          if (mounted) {
+                                            final l =
+                                                AppLocalizations.of(context)!;
+                                            if (state.isUnlimited) {
+                                              controller.speak(
+                                                  l.nfcUnlimitedAnnounce);
+                                            } else {
+                                              final balanceStr =
+                                                  (state.storedTrips * 1.5)
+                                                      .toStringAsFixed(2);
+                                              controller.speak(
+                                                  l.nfcBalanceAnnounce(
+                                                      balanceStr,
+                                                      state.storedTrips));
+                                            }
+                                          }
+                                        });
                                       }
-                                    },
-                                    onVoiceAnnounce: (type) {
-                                      if (mounted) {
-                                        final l = AppLocalizations.of(context)!;
-                                        if (state.isUnlimited) {
-                                          controller.speak(l.nfcUnlimitedAnnounce);
-                                        } else {
-                                          final balanceStr = (state.storedTrips * 1.5).toStringAsFixed(2);
-                                          controller.speak(l.nfcBalanceAnnounce(balanceStr, state.storedTrips));
-                                        }
-                                      }
-                                    }
-                                  );
-                                } : null,
+                                    : null,
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AlzitransColors.burgundy,
-                                  side: const BorderSide(color: AlzitransColors.burgundy),
+                                  side: const BorderSide(
+                                      color: AlzitransColors.burgundy),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 16),
                                   minimumSize: const Size(double.infinity, 50),
                                 ),
                                 child: Row(
@@ -480,7 +527,9 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        state.storedTrips > 0 ? 'Actualizar / Leer Tarjeta' : 'Leer Tarjeta NFC',
+                                        state.storedTrips > 0
+                                            ? 'Actualizar / Leer Tarjeta'
+                                            : 'Leer Tarjeta NFC',
                                         style: const TextStyle(fontSize: 16),
                                         textAlign: TextAlign.center,
                                       ),
@@ -497,11 +546,13 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                                 padding: const EdgeInsets.all(16.0),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.warning_amber, color: Colors.orange),
+                                    const Icon(Icons.warning_amber,
+                                        color: Colors.orange),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        AppLocalizations.of(context)!.rechargeYourCardSoon,
+                                        AppLocalizations.of(context)!
+                                            .rechargeYourCardSoon,
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
@@ -519,13 +570,15 @@ class _NfcPageState extends ConsumerState<NfcPage> with SingleTickerProviderStat
                     ),
                   ),
                 ),
-                if (AppConfig.showAds && _bannerAd != null && _isBannerAdLoaded)
-                  Container(
-                    alignment: Alignment.center,
-                    width: _bannerAd!.size.width.toDouble(),
-                    height: _bannerAd!.size.height.toDouble(),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: buildNativeAdStub(ad: _bannerAd),
+                // Banner inferior de la pantalla NFC. Antes aquí había un
+                // stub muerto (`_bannerAd` nunca se cargaba) → la pantalla
+                // NFC, de las más usadas, no mostraba NINGÚN anuncio.
+                // AdBannerWidget gestiona init diferido, adaptativo,
+                // banner-free y placeholder por sí mismo.
+                if (AppConfig.showAds && !kIsWeb)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 16, top: 4),
+                    child: AdBannerWidget(),
                   ),
               ],
             ),

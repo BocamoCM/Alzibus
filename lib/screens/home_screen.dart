@@ -71,9 +71,11 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends ConsumerState<HomePage>
+    with WidgetsBindingObserver {
   int _index = 0;
-  final FlutterLocalNotificationsPlugin _notif = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notif =
+      FlutterLocalNotificationsPlugin();
   bool _notificationsEnabled = true;
   double _notificationDistance = 80.0;
   int _notificationCooldown = 5;
@@ -81,23 +83,24 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   int _noticesCount = 0; // Número de avisos activos
   int _storedTrips = 0;
   bool _isUnlimited = false;
-  
+
   // Heartbeat timer
   Timer? _heartbeatTimer;
   StreamSubscription? _assistantSubscription;
   StreamSubscription? _arrivalSubscription;
-  StreamSubscription? _ipcSubscription; // Fix #3: retener suscripción IPC para poder cancelarla
+  StreamSubscription?
+      _ipcSubscription; // Fix #3: retener suscripción IPC para poder cancelarla
   AuthService get _authService => ref.read(authServiceProvider);
-  
+
   // Para intersticial al volver de background
   DateTime? _lastPausedTime;
-  
+
   // Nuevos ajustes
   bool _showSimulatedBuses = true;
   bool _autoRefreshTimes = true;
   bool _vibrationEnabled = true;
   bool _ttsEnabled = false;
-  
+
   // Para navegar a una parada desde Rutas
   final GlobalKey<MapPageState> _mapPageKey = GlobalKey<MapPageState>();
 
@@ -108,12 +111,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     _initNotifications();
     _loadPreferences();
     _loadNoticesCount();
-    
+
     // Iniciar heartbeat cada 2 minutos
     if (!kIsWeb) {
       _startHeartbeat();
     }
-    
+
     // Verificar viaje pendiente inmediatamente al entrar
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _checkPendingTrip();
@@ -125,19 +128,24 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       if (!kIsWeb && _notificationsEnabled) {
         await ForegroundService.start();
       }
-      
+
       // Precargar anuncios tras iniciar (esperando a que AdMob se inicialice)
       if (!kIsWeb) {
         final adService = ref.read(adServiceProvider);
         adService.initializationFuture.then((_) {
           adService.loadRewardedAd();
           adService.preloadNativeAds();
+          // Precargar Intersticial + App Open: así el primer trigger en frío
+          // (scan NFC, consulta de parada, resume) muestra el anuncio al
+          // instante en vez de limitarse a lanzar la carga y volver.
+          adService.preloadFullScreenAds();
         });
       }
     });
 
     // Escuchar navegación desde Assistant / Shortcuts
-    _assistantSubscription = AssistantService.navigationStream.listen((destination) {
+    _assistantSubscription =
+        AssistantService.navigationStream.listen((destination) {
       if (mounted) {
         setState(() {
           switch (destination) {
@@ -171,7 +179,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     // Escuchar IPC desde el ForegroundService (Isolate separado)
     if (!kIsWeb) {
       // Fix #3: Guardar la suscripción para poder cancelarla en dispose()
-      _ipcSubscription = FlutterBackgroundService().on('bus_arrived').listen((event) {
+      _ipcSubscription =
+          FlutterBackgroundService().on('bus_arrived').listen((event) {
         debugPrint('[HomeScreen] IPC "bus_arrived" received: $event');
         if (mounted && event != null && !_isShowingTripDialog) {
           _showTripConfirmDialog(event);
@@ -185,7 +194,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     final notices = await service.loadNotices();
     final prefs = await SharedPreferences.getInstance();
     final lastSeenStr = prefs.getString('last_seen_notices_at');
-    final lastSeen = lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null;
+    final lastSeen =
+        lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null;
 
     final unseenCount = lastSeen == null
         ? notices.length
@@ -193,12 +203,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
     if (mounted) setState(() => _noticesCount = unseenCount);
   }
+
   @override
   void dispose() {
     _heartbeatTimer?.cancel();
     _assistantSubscription?.cancel();
     _arrivalSubscription?.cancel();
-    _ipcSubscription?.cancel(); // Fix #3: cancelar suscripción IPC para evitar callbacks en widget destruido
+    _ipcSubscription
+        ?.cancel(); // Fix #3: cancelar suscripción IPC para evitar callbacks en widget destruido
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -209,33 +221,34 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     _authService.getToken().then((token) {
       if (token != null) _authService.sendHeartbeat();
     });
-    
+
     // Pulsos periódicos cada 2 minutos, solo si hay sesión activa
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (timer) async {
       final token = await _authService.getToken();
       if (token != null) _authService.sendHeartbeat();
     });
   }
-  
+
   // Cuando la app vuelve al frente, comprobar viaje pendiente, reanudar heartbeat y mostrar ads
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final adService = ref.read(adServiceProvider);
-    
+
     if (state == AppLifecycleState.resumed) {
       _checkPendingTrip();
       if (!kIsWeb) _startHeartbeat();
-      
+
       // Mostrar App Open Ad al volver. Si se muestra, NO mostramos el intersticial también.
       final hadAppOpenAd = adService.hasAppOpenAdReady;
       adService.showAppOpenAdIfAvailable();
-      
+
       // Mostrar Intersticial solo si NO había App Open Ad disponible
       if (!kIsWeb && !hadAppOpenAd) {
         adService.showInterstitialOnResume(_lastPausedTime);
       }
       _lastPausedTime = null;
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       if (!kIsWeb) _heartbeatTimer?.cancel();
       _lastPausedTime ??= DateTime.now();
       // Precargar el próximo App Open al irse al background para que esté
@@ -280,26 +293,28 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     if (kIsWeb) {
       return;
     }
-    
-    const android = AndroidInitializationSettings('@drawable/ic_launcher_foreground');
+
+    const android =
+        AndroidInitializationSettings('@drawable/ic_launcher_foreground');
     const initSettings = InitializationSettings(android: android);
     await _notif.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationResponse,
-      onDidReceiveBackgroundNotificationResponse: onBackgroundNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          onBackgroundNotificationResponse,
     );
   }
-  
+
   Future<void> _checkPendingTrip() async {
     // Evitar mostrar múltiples diálogos
     if (_isShowingTripDialog) return;
-    
+
     // Solo mostrar si el usuario tiene sesión activa
     if (!await _authService.isLoggedIn()) return;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload(); // Recargar para ver cambios del background service
-    
+
     // Sincronizar estado local con SharedPreferences
     if (mounted) {
       setState(() {
@@ -310,11 +325,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
     final historyService = TripHistoryService(prefs);
     final pending = historyService.getPendingTrip();
-    
-    debugPrint('[TripDialog] Checking pending trip: ${pending != null ? "FOUND" : "none"}');
+
+    debugPrint(
+        '[TripDialog] Checking pending trip: ${pending != null ? "FOUND" : "none"}');
     if (pending != null) {
       debugPrint('[TripDialog] Pending trip data: $pending');
-      
+
       final tripData = pending; // Capturar en variable local para el callback
       // Hay un viaje pendiente, mostrar diálogo después de que se construya el widget
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -324,7 +340,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       });
     }
   }
-  
+
   void _showTripConfirmDialog(Map<String, dynamic> trip) {
     _isShowingTripDialog = true;
     final l = AppLocalizations.of(context)!;
@@ -342,7 +358,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         timeAgo = l.daysAgo(diff.inDays);
       }
     }
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -361,17 +377,19 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                   color: AlzitransColors.burgundy.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.directions_bus, size: 50, color: AlzitransColors.burgundy),
+                child: const Icon(Icons.directions_bus,
+                    size: 50, color: AlzitransColors.burgundy),
               ),
               const SizedBox(height: 20),
-              
+
               // Título
               Text(
                 l.didYouTakeTheBus,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              
+
               // Info del viaje
               Container(
                 padding: const EdgeInsets.all(16),
@@ -384,26 +402,32 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: AlzitransColors.burgundy,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             l.lineWithNumber(trip['line']?.toString() ?? ''),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                         if (timeAgo.isNotEmpty) ...[
                           const Spacer(),
-                          Text(timeAgo, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                          Text(timeAgo,
+                              style: TextStyle(
+                                  color: Colors.grey[600], fontSize: 12)),
                         ],
                       ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, color: AlzitransColors.coral, size: 20),
+                        const Icon(Icons.location_on,
+                            color: AlzitransColors.coral, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -413,11 +437,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                         ),
                       ],
                     ),
-                    if (trip['destination'] != null && trip['destination'].toString().isNotEmpty) ...[
+                    if (trip['destination'] != null &&
+                        trip['destination'].toString().isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.arrow_forward, color: Colors.green, size: 20),
+                          const Icon(Icons.arrow_forward,
+                              color: Colors.green, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -432,7 +458,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               Text(
                 _isUnlimited
                     ? l.unlimitedTrips
@@ -440,14 +466,16 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                         ? l.oneTripWillBeDeducted(_storedTrips)
                         : l.noTripsOnCard),
                 style: TextStyle(
-                  color: _isUnlimited || _storedTrips > 0 ? Colors.green[700] : Colors.red[700],
+                  color: _isUnlimited || _storedTrips > 0
+                      ? Colors.green[700]
+                      : Colors.red[700],
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              
+
               // Botones
               Column(
                 children: [
@@ -463,19 +491,24 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                             final historyService = TripHistoryService(prefs);
                             final token = await _authService.getToken();
                             if (token != null) {
-                              await historyService.confirmTrip(token, paymentMethod: 'card');
+                              await historyService.confirmTrip(token,
+                                  paymentMethod: 'card');
                               await prefs.reload();
-                              if (mounted) setState(() => _storedTrips = prefs.getInt('stored_trips') ?? 0);
+                              if (mounted)
+                                setState(() => _storedTrips =
+                                    prefs.getInt('stored_trips') ?? 0);
                             }
                             if (mounted) _showTripRegisteredSnackBar(true);
                           },
                           icon: const Icon(Icons.credit_card, size: 18),
-                          label: const Text('Con Tarjeta', style: TextStyle(fontSize: 12)),
+                          label: const Text('Con Tarjeta',
+                              style: TextStyle(fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AlzitransColors.burgundy,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ),
@@ -490,17 +523,20 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                             final historyService = TripHistoryService(prefs);
                             final token = await _authService.getToken();
                             if (token != null) {
-                              await historyService.confirmTrip(token, paymentMethod: 'cash');
+                              await historyService.confirmTrip(token,
+                                  paymentMethod: 'cash');
                             }
                             if (mounted) _showTripRegisteredSnackBar(false);
                           },
                           icon: const Icon(Icons.payments, size: 18),
-                          label: const Text('En Efectivo', style: TextStyle(fontSize: 12)),
+                          label: const Text('En Efectivo',
+                              style: TextStyle(fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green[700],
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ),
@@ -511,7 +547,10 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                       padding: const EdgeInsets.only(top: 12.0),
                       child: Text(
                         '💡 Paga en efectivo si no quieres usar tus viajes',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 11, fontStyle: FontStyle.italic),
+                        style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic),
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -538,7 +577,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                       label: Text(l.iDidntGetOn),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         side: BorderSide(color: Colors.grey[300]!),
                       ),
                     ),
@@ -577,19 +617,19 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       ),
     );
   }
-  
+
   void _onNotificationResponse(NotificationResponse response) async {
     final payload = response.payload;
-    
+
     // Si tocó la notificación de "bus llegando", mostrar diálogo
     if (payload == 'trip_confirm') {
       if (!await _authService.isLoggedIn()) return;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
       final historyService = TripHistoryService(prefs);
       final pending = historyService.getPendingTrip();
-      
+
       if (pending != null) {
         // Esperar a que el contexto esté disponible
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -598,15 +638,15 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       }
       return;
     }
-    
+
     // Para acciones de botones (si las hubiera)
     final action = response.actionId;
     if (action == null) return;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
     final historyService = TripHistoryService(prefs);
-    
+
     if (action == 'confirm_trip') {
       final token = await _authService.getToken();
       if (token != null) await historyService.confirmTrip(token);
@@ -803,4 +843,3 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     );
   }
 }
-
