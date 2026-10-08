@@ -57,6 +57,50 @@ node server.js
 - `backend/POLITICA_PRIVACIDAD_ALZITRANS.md` — política de privacidad ya redactada.
 - `build_release.ps1`, `build_web.ps1` — scripts de build con inyección de API_KEY.
 
+## Sesión 2026-10-08 (parte 2) — monetización y monedas/skins
+
+Trabajo hecho con los subagentes `flutter-nfc` (ads) y `backend-api` (monedas),
+revisado y verificado antes de commitear. Commits:
+
+- `ffac95e security(backend)`: sync de monedas/skins endurecido — `GREATEST`
+  atómico (fin de la carrera read-modify-write) y validación regex + tope de
+  64 en `owned_skins` (antes se podía inyectar la coma del CSV).
+- `662cf70 feat(ads)`: recuperadas impresiones perdidas. Diagnóstico cruzado
+  con el panel de AdMob (show rate 32,8% → 2 de cada 3 anuncios rellenados no
+  se mostraban). Precarga en frío de Intersticial/App-Open, banner NFC que
+  estaba muerto reactivado, y el tap de parada en el mapa ahora cuenta para el
+  intersticial. No toca el diferido de 3s ni la anti-bucle de App Open.
+- `e33ab06 fix(game)`: **compra de skins server-authoritative**. Antes el gasto
+  se revertía por el max-wins y las skins salían gratis. Nuevo endpoint
+  `POST /api/game/skins/purchase {skinId, coins}` que cobra atómicamente; coste
+  en `backend/src/config/skin-catalog.js` (mantener en sync con
+  `lib/models/albus_skin.dart`). Cliente adopta el saldo autoritativo.
+
+### ⚠️ IMPORTANTE antes de publicar a Play Store
+El APK con el cliente nuevo llama a `/api/game/skins/purchase`. **Hay que
+desplegar primero el backend en la Pi** (`git pull` + reiniciar PM2/Docker) o
+las compras de skins fallarán con "no se pudo completar" (404). El GitHub
+Release que crea la CI no llega solo a usuarios, pero al subir a Play sí.
+
+### Acciones pendientes en el PANEL de AdMob (no son código, las haces tú)
+- **Mediation → crear grupo** y añadir fuentes/bidding (Meta, AppLovin, Pangle).
+  Es la mayor palanca del eCPM ($0,84 ahora): solo hay "AdMob default".
+- **Publisher data (BETA) → activar First-party IDs** (recupera personalización).
+- Intersticial `Interstitial_Tras_NFC` tiene tope "1 impr/10 min"; vigilar que
+  no estrangule ahora que se dispara más.
+
+### AdSense web — APARCADO (decisión 2026-10-08)
+alzitrans.es rechazado por "Low value content" (53 páginas de parada tipo
+plantilla, ~1,1k chars). AdSense no puede monetizar el Flutter web (`/app/`),
+solo páginas de contenido, y ésas son las que Google ve como finas. ROI bajo
+para el tráfico actual → se deja aparcado. Si se retoma: guía de tarifas/SUMA10
++ FAQ + enriquecer/noindexar las paradas. robots.txt/ads.txt/sitemap están OK.
+
+### Loose end
+`pubspec.lock` tiene bumps transitivos (meta 1.17→1.18, test 1.30→1.31) de un
+`pub get` de esta sesión; quedó SIN commitear a propósito. Commitear o revertir
+según convenga.
+
 ## Pendiente / en el radar (no son tareas urgentes, solo contexto)
 
 - **Comercialización**: se está valorando licenciar Alzitrans al Ayuntamiento de Alzira (modelo licencia + mantenimiento, sin ceder propiedad del software). Posible relevancia: contratos menores LCSP hasta 15.000€ sin licitación (primer año); separar responsable (ayuntamiento) / encargado del tratamiento (él) para RGPD si se gestionan datos de usuarios.
