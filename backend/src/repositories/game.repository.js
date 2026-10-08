@@ -99,6 +99,59 @@ class GameRepository {
     }
 
     /**
+     * COMPRA server-authoritative de una skin, ATÓMICA en una sola
+     * sentencia. En un único UPDATE:
+     *   1. Sincroniza el saldo al mayor entre el de BD y el que trae el
+     *      cliente (`GREATEST`, misma semántica max-wins que el sync de
+     *      ganancias), de modo que las monedas ganadas offline cuenten.
+     *   2. Resta el coste de verdad.
+     *   3. Añade la skin al CSV.
+     * Todo condicionado a que (a) el saldo efectivo alcance el coste y
+     * (b) la skin NO esté ya poseída (comparación exacta con
+     * `string_to_array`, sin comodines de LIKE).
+     *
+     * Devuelve {coins, ownedSkins} si la compra se realizó, o `null` si no
+     * se actualizó ninguna fila (saldo insuficiente, o skin ya poseída —
+     * el service distingue ambos casos leyendo el estado).
+     * Resiliente a missing column.
+     *
+     * @param {number} clientCoins saldo local que afirma el cliente (ya
+     *   validado y floored en el service).
+     */
+    async purchaseSkin(userId, skinId, cost, clientCoins) {
+        try {
+            const res = await pool.query(
+                `UPDATE users
+                 SET game_coins = GREATEST(game_coins, $4) - $3,
+                     owned_skins = CASE
+                         WHEN COALESCE(owned_skins, '') = '' THEN 'default,' || $2
+                         ELSE owned_skins || ',' || $2
+                     END
+                 WHERE id = $1
+                   AND GREATEST(game_coins, $4) >= $3
+                   AND NOT ($2 = ANY(string_to_array(COALESCE(owned_skins, ''), ',')))
+                 RETURNING game_coins, owned_skins`,
+                [userId, skinId, cost, clientCoins]
+            );
+            if (res.rows.length === 0) return null;
+            const row = res.rows[0];
+            return {
+                coins: row.game_coins,
+                ownedSkins: (row.owned_skins || 'default')
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean),
+            };
+        } catch (err) {
+            if (err.code === '42703') {
+                console.warn('[GameRepository] purchaseSkin: falta columna, no se persiste');
+                return null;
+            }
+            throw err;
+        }
+    }
+
+    /**
      * Actualiza el set de skins poseídos como CSV.
      * Resiliente a missing column.
      */

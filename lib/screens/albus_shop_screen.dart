@@ -7,6 +7,7 @@ import 'package:alzitrans/l10n/app_localizations.dart';
 import '../core/providers/ad_provider.dart';
 import '../core/providers/game_currency_provider.dart';
 import '../models/albus_skin.dart';
+import '../services/game_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
 
@@ -40,7 +41,8 @@ class AlbusShopScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.amber.shade700,
                   borderRadius: BorderRadius.circular(20),
@@ -154,7 +156,8 @@ class AlbusShopScreen extends ConsumerWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               ),
               child: const Text(
                 'Ganar',
@@ -216,9 +219,9 @@ class AlbusShopScreen extends ConsumerWidget {
     }
 
     final added = await ref.read(gameCurrencyProvider.notifier).add(
-      30,
-      source: CoinSource.rewardedAd,
-    );
+          30,
+          source: CoinSource.rewardedAd,
+        );
     final l = AppLocalizations.of(context)!;
     if (added == 0) {
       // Llegó al cap diario de anuncios — la moneda no se añadió.
@@ -279,7 +282,8 @@ class AlbusShopScreen extends ConsumerWidget {
             Expanded(
               child: Text(
                 AppLocalizations.of(context)!.dailyEarningsExplained,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF6B5500), height: 1.35),
+                style: const TextStyle(
+                    fontSize: 13, color: Color(0xFF6B5500), height: 1.35),
               ),
             ),
           ],
@@ -341,7 +345,8 @@ class AlbusShopScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: gc >= cap ? Colors.orange.shade700 : Colors.black87,
+                      color:
+                          gc >= cap ? Colors.orange.shade700 : Colors.black87,
                     ),
                   ),
                 ],
@@ -370,7 +375,9 @@ class AlbusShopScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: ads >= adCap ? Colors.orange.shade700 : Colors.black87,
+                      color: ads >= adCap
+                          ? Colors.orange.shade700
+                          : Colors.black87,
                     ),
                   ),
                 ],
@@ -395,7 +402,8 @@ class AlbusShopScreen extends ConsumerWidget {
     );
   }
 
-  Future<({int gameCoins, int adsWatched})> _readDailyProgress(WidgetRef ref) async {
+  Future<({int gameCoins, int adsWatched})> _readDailyProgress(
+      WidgetRef ref) async {
     final n = ref.read(gameCurrencyProvider.notifier);
     return (
       gameCoins: await n.earnedTodayFromGames(),
@@ -403,7 +411,8 @@ class AlbusShopScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _attemptBuy(BuildContext context, WidgetRef ref, AlbusSkin skin) async {
+  Future<void> _attemptBuy(
+      BuildContext context, WidgetRef ref, AlbusSkin skin) async {
     final l = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     // Confirmación
@@ -430,14 +439,34 @@ class AlbusShopScreen extends ConsumerWidget {
     );
     if (confirmed != true) return;
 
-    final ok = await ref.read(gameCurrencyProvider.notifier).spend(skin.cost);
-    if (!ok) {
+    // Compra SERVER-AUTHORITATIVE. Antes se hacía `spend()` en local y luego
+    // el sync max-wins devolvía el saldo viejo más alto → las monedas
+    // gastadas reaparecían y las skins salían gratis. Ahora el servidor cobra
+    // de verdad de forma atómica y adoptamos el saldo que nos devuelve.
+    //
+    // Enviamos el saldo local para que las monedas ganadas offline cuenten;
+    // el COSTE lo valida el servidor (no el cliente).
+    final localCoins = ref.read(gameCurrencyProvider);
+    final ({int coins, List<String> ownedSkins}) result;
+    try {
+      result = await GameService().purchaseSkin(skin.id, localCoins);
+    } catch (e) {
+      // Sin red o saldo insuficiente en servidor: la compra NO se realiza.
+      // No tocamos nada local → el saldo se mantiene intacto.
       messenger.showSnackBar(
-        SnackBar(content: Text(l.notEnoughCoins)),
+        SnackBar(content: Text(l.purchaseFailed)),
       );
       return;
     }
-    await ref.read(ownedSkinsProvider.notifier).unlock(skin.id);
+
+    // Adoptar el estado autoritativo del servidor (saldo ya descontado +
+    // skins poseídos). Sin programar sync: el servidor ya es la verdad.
+    await ref
+        .read(gameCurrencyProvider.notifier)
+        .setAuthoritative(result.coins);
+    await ref
+        .read(ownedSkinsProvider.notifier)
+        .adoptFromServer(result.ownedSkins);
     // Equipar automáticamente tras comprar
     await ref.read(equippedSkinProvider.notifier).equip(skin.id);
     messenger.showSnackBar(
@@ -445,7 +474,8 @@ class AlbusShopScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _equip(BuildContext context, WidgetRef ref, AlbusSkin skin) async {
+  Future<void> _equip(
+      BuildContext context, WidgetRef ref, AlbusSkin skin) async {
     await ref.read(equippedSkinProvider.notifier).equip(skin.id);
     if (context.mounted) {
       final l = AppLocalizations.of(context)!;
@@ -524,7 +554,8 @@ class _SkinCard extends StatelessWidget {
                       ),
                       if (equipped)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: skin.accentColor,
                             borderRadius: BorderRadius.circular(10),
@@ -572,7 +603,8 @@ class _SkinCard extends StatelessWidget {
             foregroundColor: skin.accentColor,
             side: BorderSide(color: skin.accentColor.withValues(alpha: 0.4)),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
           ),
         ),
       );
@@ -588,7 +620,8 @@ class _SkinCard extends StatelessWidget {
             backgroundColor: skin.accentColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
           ),
         ),
       );
@@ -601,11 +634,11 @@ class _SkinCard extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: canAfford ? onBuy : null,
         icon: const Text('🪙', style: TextStyle(fontSize: 13)),
-        label: Text(canAfford
-            ? l.unlockForCost(skin.cost)
-            : l.missingCoins(missing)),
+        label: Text(
+            canAfford ? l.unlockForCost(skin.cost) : l.missingCoins(missing)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: canAfford ? Colors.amber.shade700 : Colors.grey.shade300,
+          backgroundColor:
+              canAfford ? Colors.amber.shade700 : Colors.grey.shade300,
           foregroundColor: canAfford ? Colors.white : Colors.grey.shade600,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),

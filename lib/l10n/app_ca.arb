@@ -275,6 +275,7 @@
   "@unlockSkinBody": { "placeholders": { "cost": { "type": "int" } } },
   "unlockButton": "Desbloquejar",
   "notEnoughCoins": "No tens prou monedes.",
+  "purchaseFailed": "No s'ha pogut completar la compra. Comprova la connexió i torna-ho a provar.",
   "skinEquipped": "{skin} equipat",
   "@skinEquipped": { "placeholders": { "skin": { "type": "String" } } },
 

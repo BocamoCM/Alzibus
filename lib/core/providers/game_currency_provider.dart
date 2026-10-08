@@ -36,6 +36,7 @@ enum CoinSource {
 ///     con la suma. Aceptable para monedas decorativas).
 class GameCurrencyNotifier extends Notifier<int> {
   static const String _key = 'game_coins_v1';
+
   /// Debounce del POST tras cada add/spend. Evita martillear el server
   /// cuando el usuario hace cosas en cadena (10 puntos seguidos en un
   /// minijuego = 1 sync al final, no 10).
@@ -45,8 +46,10 @@ class GameCurrencyNotifier extends Notifier<int> {
   /// Máximo de monedas/día que se pueden ganar JUGANDO.
   /// Más allá de esto, las partidas siguen pero no suman al monedero.
   static const int _dailyGameCap = 30;
+
   /// Máximo de anuncios rewarded/día que dan monedas extra.
   static const int _dailyAdCap = 2;
+
   /// Monedas por anuncio rewarded visto.
   static const int _coinsPerAd = 30;
 
@@ -131,7 +134,8 @@ class GameCurrencyNotifier extends Notifier<int> {
     if (source == CoinSource.game) {
       // Cap de juegos: 30 monedas/día. Si ya hemos llegado, no añadir.
       final lastDate = prefs.getString(_earnedDateKey);
-      int earnedToday = lastDate == today ? (prefs.getInt(_earnedTodayKey) ?? 0) : 0;
+      int earnedToday =
+          lastDate == today ? (prefs.getInt(_earnedTodayKey) ?? 0) : 0;
       final remaining = _dailyGameCap - earnedToday;
       if (remaining <= 0) return 0;
       actualAmount = amount > remaining ? remaining : amount;
@@ -187,9 +191,26 @@ class GameCurrencyNotifier extends Notifier<int> {
   int get dailyAdCap => _dailyAdCap;
   int get coinsPerAd => _coinsPerAd;
 
+  /// Adopta un saldo AUTORITATIVO devuelto por el servidor (p. ej. tras una
+  /// compra de skin que descontó monedas en servidor de forma atómica).
+  ///
+  /// A diferencia de [add]/[spend], NO programa el sync max-wins: el servidor
+  /// ya es la fuente de verdad del nuevo saldo y reenviarlo solo arriesgaría
+  /// que el GREATEST reinflara un valor intermedio. Solo fija y persiste local.
+  Future<void> setAuthoritative(int value) async {
+    await _loadCompleter.future;
+    state = value < 0 ? 0 : value;
+    await _persistLocal(state);
+  }
+
   /// Resta monedas si hay suficientes (en LOCAL). Devuelve `true` si la
   /// operación se pudo completar, `false` si el saldo era insuficiente.
   /// Dispara sync debounced al servidor.
+  ///
+  /// NOTA: para COMPRAR skins NO uses esto — usa el flujo de compra
+  /// server-authoritative ([GameService.purchaseSkin] + [setAuthoritative]).
+  /// El gasto puramente local se revertía por el sync max-wins. `spend`
+  /// queda para gastos locales que no dependan de saldo autoritativo.
   Future<bool> spend(int amount) async {
     await _loadCompleter.future;
     if (state < amount) return false;
@@ -216,7 +237,8 @@ class GameCurrencyNotifier extends Notifier<int> {
         await _persistLocal(updated);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('[Coins] push sync error (reintenta luego): $e');
+      if (kDebugMode)
+        debugPrint('[Coins] push sync error (reintenta luego): $e');
     }
   }
 }
@@ -388,6 +410,15 @@ class OwnedSkinsNotifier extends Notifier<Set<String>> {
     state = {...state, skinId};
     await _persistLocal();
     _scheduleSync();
+  }
+
+  /// Adopta el set de skins AUTORITATIVO devuelto por el servidor (p. ej.
+  /// tras una compra). Une con el estado actual (nunca perdemos skins) +
+  /// persiste, SIN programar sync: el servidor ya los tiene.
+  Future<void> adoptFromServer(List<String> skins) async {
+    await _loadCompleter.future;
+    state = {...state, ...skins, 'default'};
+    await _persistLocal();
   }
 
   bool owns(String skinId) => state.contains(skinId);

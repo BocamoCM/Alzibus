@@ -1504,6 +1504,12 @@ abstract class AppLocalizations {
   /// **'No tienes suficientes monedas.'**
   String get notEnoughCoins;
 
+  /// No description provided for @purchaseFailed.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo completar la compra. Revisa tu conexión e inténtalo de nuevo.'**
+  String get purchaseFailed;
+
   /// No description provided for @skinEquipped.
   ///
   /// In es, this message translates to:

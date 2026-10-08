@@ -803,6 +803,10 @@ class AppLocalizationsCa extends AppLocalizations {
   String get notEnoughCoins => 'No tens prou monedes.';
 
   @override
+  String get purchaseFailed =>
+      'No s\'ha pogut completar la compra. Comprova la connexió i torna-ho a provar.';
+
+  @override
   String skinEquipped(String skin) {
     return '$skin equipat';
   }

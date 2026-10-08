@@ -802,6 +802,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notEnoughCoins => 'No tienes suficientes monedas.';
 
   @override
+  String get purchaseFailed =>
+      'No se pudo completar la compra. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
   String skinEquipped(String skin) {
     return '$skin equipado';
   }

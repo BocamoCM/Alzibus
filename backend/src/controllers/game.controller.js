@@ -24,6 +24,15 @@ class GameController {
             res.json(result);
         } catch (err) { next(err); }
     }
+
+    async purchaseSkin(req, res, next) {
+        try {
+            const result = await gameService.purchaseSkin(
+                req.user.id, req.body?.skinId, req.body?.coins
+            );
+            res.json(result);
+        } catch (err) { next(err); }
+    }
 }
 
 module.exports = new GameController();

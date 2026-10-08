@@ -275,6 +275,7 @@
   "@unlockSkinBody": { "placeholders": { "cost": { "type": "int" } } },
   "unlockButton": "Desbloquear",
   "notEnoughCoins": "No tienes suficientes monedas.",
+  "purchaseFailed": "No se pudo completar la compra. Revisa tu conexión e inténtalo de nuevo.",
   "skinEquipped": "{skin} equipado",
   "@skinEquipped": { "placeholders": { "skin": { "type": "String" } } },
 

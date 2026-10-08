@@ -15,6 +15,7 @@
 
 const gameRepository = require('../repositories/game.repository');
 const { BadRequestError } = require('../utils/errors');
+const { SKIN_CATALOG } = require('../config/skin-catalog');
 
 // Límites de sanidad. Si un cliente intenta enviar > MAX_COINS asumimos
 // abuso/bug y se rechaza. No es 100% prevención de fraude — para eso
@@ -109,6 +110,52 @@ class GameService {
             await gameRepository.setOwnedSkins(userId, union);
         }
         return { ownedSkins: union };
+    }
+
+    /**
+     * COMPRA server-authoritative de una skin. Resuelve el fallo por el que
+     * el gasto se revertía solo: antes el cliente restaba en local y luego
+     * `coins/sync` (max-wins) le devolvía el saldo viejo más alto → las
+     * skins salían gratis. Ahora el servidor cobra de verdad, de forma
+     * atómica, y el cliente adopta el saldo resultante.
+     *
+     * El cliente envía su saldo local (`coins`) para que las monedas
+     * ganadas offline cuenten (el repo hace GREATEST+resta en una query).
+     * El COSTE lo decide el servidor (SKIN_CATALOG), nunca el cliente.
+     *
+     * Idempotente: si la skin ya está poseída, NO vuelve a cobrar; devuelve
+     * el estado actual. Si no hay saldo suficiente, lanza 400.
+     */
+    async purchaseSkin(userId, skinId, clientCoins) {
+        if (typeof skinId !== 'string' || !SKIN_ID_REGEX.test(skinId)) {
+            throw new BadRequestError('skinId inválido');
+        }
+        if (!Object.prototype.hasOwnProperty.call(SKIN_CATALOG, skinId)) {
+            throw new BadRequestError('skin desconocida');
+        }
+        if (typeof clientCoins !== 'number' || !Number.isFinite(clientCoins) || clientCoins < 0) {
+            throw new BadRequestError('coins debe ser un número finito no negativo');
+        }
+        if (clientCoins > MAX_COINS) {
+            throw new BadRequestError(`coins no puede exceder ${MAX_COINS}`);
+        }
+
+        const cost = SKIN_CATALOG[skinId];
+        const result = await gameRepository.purchaseSkin(
+            userId, skinId, cost, Math.floor(clientCoins)
+        );
+
+        if (result) {
+            // Compra realizada (saldo descontado atómicamente).
+            return result;
+        }
+
+        // 0 filas: o ya la tenía (idempotente, no recobrar) o no le llega.
+        const state = await gameRepository.getState(userId);
+        if (state.ownedSkins.includes(skinId)) {
+            return state;
+        }
+        throw new BadRequestError('Monedas insuficientes para comprar esta skin');
     }
 }
 
