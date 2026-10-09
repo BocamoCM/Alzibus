@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Placeholder mascot "Albus" — sustituir por versión definitiva (Rive .riv o PNG generado con IA). -->
+  <!-- Colores: brand purple #4A1D3D, accent yellow #FFC857, white #FFFFFF. -->
+
+  <defs>
+    <linearGradient id="busBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6B2C5C"/>
+      <stop offset="100%" stop-color="#4A1D3D"/>
+    </linearGradient>
+    <radialGradient id="eyeShine" cx="30%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E8E8E8"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Suelo / sombra -->
+  <ellipse cx="200" cy="365" rx="120" ry="12" fill="#000000" opacity="0.15"/>
+
+  <!-- Cuerpo del bus (cuerpo principal con esquinas redondeadas) -->
+  <g filter="url(#softShadow)">
+    <rect x="80" y="120" width="240" height="220" rx="50" ry="50" fill="url(#busBody)"/>
+
+    <!-- Ventana frontal grande (parabrisas) -->
+    <path d="M 110 165 Q 110 145 130 145 L 270 145 Q 290 145 290 165 L 290 215 Q 290 230 275 230 L 125 230 Q 110 230 110 215 Z"
+          fill="#B8E0F5" stroke="#4A1D3D" stroke-width="3"/>
+
+    <!-- Brillo en parabrisas -->
+    <path d="M 130 160 Q 135 155 145 158 L 170 200 Q 165 210 155 207 Z"
+          fill="#FFFFFF" opacity="0.5"/>
+
+    <!-- Ojos (dentro del parabrisas, dándole vida) -->
+    <!-- Ojo izquierdo -->
+    <circle cx="170" cy="190" r="22" fill="url(#eyeShine)"/>
+    <circle cx="173" cy="193" r="12" fill="#2A1530"/>
+    <circle cx="177" cy="189" r="4" fill="#FFFFFF"/>
+
+    <!-- Ojo derecho -->
+    <circle cx="230" cy="190" r="22" fill="url(#eyeShine)"/>
+    <circle cx="233" cy="193" r="12" fill="#2A1530"/>
+    <circle cx="237" cy="189" r="4" fill="#FFFFFF"/>
+
+    <!-- Mejillas (rubor) -->
+    <ellipse cx="135" cy="250" rx="14" ry="8" fill="#FF6B9D" opacity="0.5"/>
+    <ellipse cx="265" cy="250" rx="14" ry="8" fill="#FF6B9D" opacity="0.5"/>
+
+    <!-- Sonrisa -->
+    <path d="M 170 270 Q 200 295 230 270" stroke="#2A1530" stroke-width="5"
+          stroke-linecap="round" fill="none"/>
+
+    <!-- Ventanas laterales (pequeñas) -->
+    <rect x="95" y="255" width="20" height="35" rx="4" fill="#B8E0F5" stroke="#2A1530" stroke-width="2"/>
+    <rect x="285" y="255" width="20" height="35" rx="4" fill="#B8E0F5" stroke="#2A1530" stroke-width="2"/>
+
+    <!-- Detalle: línea decorativa lateral con color acento -->
+    <rect x="80" y="310" width="240" height="6" fill="#FFC857"/>
+  </g>
+
+  <!-- Ruedas -->
+  <g>
+    <!-- Rueda izquierda -->
+    <circle cx="130" cy="345" r="22" fill="#1A0E20"/>
+    <circle cx="130" cy="345" r="10" fill="#666666"/>
+    <circle cx="130" cy="345" r="4" fill="#1A0E20"/>
+
+    <!-- Rueda derecha -->
+    <circle cx="270" cy="345" r="22" fill="#1A0E20"/>
+    <circle cx="270" cy="345" r="10" fill="#666666"/>
+    <circle cx="270" cy="345" r="4" fill="#1A0E20"/>
+  </g>
+
+  <!-- Antena/luz superior (toque de personalidad) -->
+  <g>
+    <rect x="195" y="105" width="10" height="20" fill="#4A1D3D"/>
+    <circle cx="200" cy="100" r="10" fill="#FFC857">
+      <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Nombre flotante (opcional, quitar si no se quiere) -->
+  <!-- <text x="200" y="395" text-anchor="middle" font-family="Arial Black, sans-serif"
+        font-size="20" fill="#4A1D3D" font-weight="900">ALBUS</text> -->
+</svg>

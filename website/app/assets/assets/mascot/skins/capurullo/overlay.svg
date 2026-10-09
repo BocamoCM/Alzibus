@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay CAPURULLO v3 — nazareno de Setmana Santa d'Alzira.
+       Capirote con sombra de contacto + túnica y cíngulo que ABRAZAN el
+       contorno (antes la túnica y el cinturón sobresalían como barras).
+       Sin filtros SVG → sombras con gradientes, compatible flutter_svg. -->
+
+  <defs>
+    <linearGradient id="cpCapirote" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4A1356"/>
+      <stop offset="50%" stop-color="#6D2080"/>
+      <stop offset="100%" stop-color="#3D0E47"/>
+    </linearGradient>
+    <linearGradient id="cpTunica" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5D1A6B"/>
+      <stop offset="60%" stop-color="#4A1356"/>
+      <stop offset="100%" stop-color="#3D0E47"/>
+    </linearGradient>
+    <linearGradient id="cpGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD66E"/>
+      <stop offset="100%" stop-color="#B5860B"/>
+    </linearGradient>
+    <radialGradient id="cpContact" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.30"/>
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cpAO" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sombra de contacto del capirote sobre el techo -->
+  <ellipse cx="200" cy="126" rx="72" ry="14" fill="url(#cpContact)"/>
+
+  <!-- ═══ CAPIROTE ═══ -->
+  <g>
+    <!-- Sombra proyectada del cono -->
+    <path d="M 200 -8 L 204 -3 L 268 124 L 140 124 L 196 -3 Z"
+          fill="#000000" opacity="0.13" transform="translate(5,5)"/>
+    <!-- Cono -->
+    <path d="M 200 -8 Q 202 -8 204 -3 L 264 122 L 136 122 L 196 -3 Q 198 -8 200 -8 Z"
+          fill="url(#cpCapirote)" stroke="#2A0530" stroke-width="2.5"/>
+    <path d="M 200 -8 L 196 -3 L 140 122 L 200 122 Z" fill="#3D0E47" opacity="0.45"/>
+    <path d="M 200 -8 L 204 -3 L 250 105 L 220 105 Z" fill="#8A35A0" opacity="0.35"/>
+    <line x1="180" y1="35" x2="166" y2="105" stroke="#3D0E47" stroke-width="0.7" opacity="0.6"/>
+    <line x1="220" y1="35" x2="234" y2="105" stroke="#3D0E47" stroke-width="0.7" opacity="0.6"/>
+
+    <!-- Cinta blanca de la base -->
+    <rect x="134" y="115" width="132" height="3" fill="url(#cpGold)"/>
+    <rect x="134" y="118" width="132" height="9" fill="#FFFFFF" stroke="#2A0530" stroke-width="1.2"/>
+    <rect x="134" y="124" width="132" height="3" fill="url(#cpGold)"/>
+    <g fill="#B5860B">
+      <circle cx="150" cy="122" r="1.2"/><circle cx="170" cy="122" r="1.2"/>
+      <circle cx="200" cy="122" r="1.5"/><circle cx="230" cy="122" r="1.2"/>
+      <circle cx="250" cy="122" r="1.2"/>
+    </g>
+
+    <!-- Cruz pectoral -->
+    <g transform="translate(200, 78)">
+      <rect x="-3" y="-13" width="6" height="26" fill="#000000" opacity="0.3"/>
+      <rect x="-2.5" y="-14" width="5" height="25" fill="url(#cpGold)" stroke="#7A5A07" stroke-width="0.8"/>
+      <rect x="-10" y="-5" width="20" height="5" fill="url(#cpGold)" stroke="#7A5A07" stroke-width="0.8"/>
+      <rect x="-1" y="-12" width="1.5" height="22" fill="#FFE99B" opacity="0.8"/>
+    </g>
+  </g>
+
+  <!-- ═══ TÚNICA que abraza el contorno ═══ -->
+  <g>
+    <path d="M 63 250 Q 100 262 140 259 Q 200 264 260 259 Q 300 262 337 250
+             L 328 318 Q 267 327 200 325 Q 133 327 72 318 Z"
+          fill="url(#cpTunica)" stroke="#2A0530" stroke-width="2"/>
+    <!-- Pliegues verticales -->
+    <g stroke="#2A0530" stroke-width="1" opacity="0.4" fill="none">
+      <path d="M 100 260 Q 102 290 104 318"/>
+      <path d="M 140 262 Q 142 290 143 322"/>
+      <path d="M 175 263 Q 178 292 179 324"/>
+      <path d="M 225 263 Q 222 292 221 324"/>
+      <path d="M 260 262 Q 258 290 257 322"/>
+      <path d="M 300 260 Q 298 290 296 318"/>
+    </g>
+    <path d="M 200 263 L 200 325" stroke="#2A0530" stroke-width="2" opacity="0.5"/>
+    <!-- Sombra inferior -->
+    <path d="M 72 318 Q 133 327 200 325 Q 267 327 328 318
+             L 324 324 Q 267 333 200 331 Q 133 333 76 324 Z"
+          fill="#2A0530" opacity="0.25"/>
+
+    <!-- Oclusión sobre el cíngulo -->
+    <path d="M 68 266 Q 133 273 200 271 Q 267 273 332 266
+             L 332 278 Q 267 285 200 283 Q 133 285 68 278 Z" fill="url(#cpAO)"/>
+
+    <!-- ═══ CÍNGULO que abraza el contorno ═══ -->
+    <path d="M 66 277 Q 133 284 200 282 Q 267 284 334 277
+             L 330 291 Q 267 298 200 296 Q 133 298 70 291 Z"
+          fill="url(#cpGold)" stroke="#7A5A07" stroke-width="1.2"/>
+    <g stroke="#7A5A07" stroke-width="0.7" opacity="0.5" fill="none">
+      <path d="M 80 280 l 7 12"/><path d="M 95 280 l 7 12"/><path d="M 110 281 l 7 12"/>
+      <path d="M 125 281 l 7 12"/><path d="M 140 282 l 7 12"/><path d="M 155 282 l 7 12"/>
+      <path d="M 245 282 l 7 12"/><path d="M 260 282 l 7 12"/><path d="M 275 281 l 7 12"/>
+      <path d="M 290 281 l 7 12"/><path d="M 305 280 l 7 12"/><path d="M 320 280 l 7 12"/>
+    </g>
+
+    <!-- Hebilla central -->
+    <g transform="translate(200, 284)">
+      <rect x="-16" y="-9" width="32" height="20" fill="#000000" opacity="0.3"/>
+      <rect x="-15" y="-8" width="30" height="18" fill="url(#cpGold)" stroke="#7A5A07" stroke-width="1.5"/>
+      <rect x="-11" y="-4" width="22" height="10" fill="#B5860B"/>
+      <circle r="3.5" fill="url(#cpGold)" stroke="#7A5A07" stroke-width="0.8"/>
+      <circle r="2" fill="#FFE99B"/>
+    </g>
+
+    <!-- Cordón colgando -->
+    <g>
+      <path d="M 278 292 Q 283 306 280 322" stroke="url(#cpGold)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="280" cy="328" r="5" fill="url(#cpGold)" stroke="#7A5A07" stroke-width="1"/>
+      <line x1="276" y1="332" x2="276" y2="338" stroke="#7A5A07" stroke-width="0.8"/>
+      <line x1="280" y1="332" x2="280" y2="340" stroke="#7A5A07" stroke-width="0.8"/>
+      <line x1="284" y1="332" x2="284" y2="338" stroke="#7A5A07" stroke-width="0.8"/>
+    </g>
+  </g>
+</svg>

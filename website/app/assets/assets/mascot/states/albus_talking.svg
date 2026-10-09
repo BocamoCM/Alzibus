@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- ALBUS · estado TALKING — boca abierta, mano derecha señalando -->
+  <defs>
+    <linearGradient id="busBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7A3268"/>
+      <stop offset="55%" stop-color="#4A1D3D"/>
+      <stop offset="100%" stop-color="#3A1530"/>
+    </linearGradient>
+    <radialGradient id="windshield" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#D6F0FF"/>
+      <stop offset="60%" stop-color="#A0D2EE"/>
+      <stop offset="100%" stop-color="#7BB8D9"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5"/>
+      <feOffset dx="0" dy="5"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.28"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <ellipse cx="200" cy="372" rx="135" ry="14" fill="#000" opacity="0.18"/>
+
+  <g filter="url(#shadow)">
+    <rect x="65" y="95" width="270" height="245" rx="58" ry="58" fill="url(#busBody)"/>
+    <path d="M 90 100 Q 200 80 310 100 L 310 130 Q 200 110 90 130 Z" fill="#9B4D7D" opacity="0.4"/>
+    <path d="M 100 142 Q 100 122 122 122 L 278 122 Q 300 122 300 142 L 300 222 Q 300 238 282 238 L 118 238 Q 100 238 100 222 Z"
+          fill="url(#windshield)" stroke="#2A0F26" stroke-width="3"/>
+    <path d="M 122 142 Q 138 134 155 138 L 178 198 Q 168 208 158 203 Z" fill="#FFF" opacity="0.45"/>
+
+    <!-- Ojos atentos, mirando al frente con cejitas ligeramente alzadas -->
+    <path d="M 145 158 Q 167 152 189 160" stroke="#2A0F26" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M 211 160 Q 233 152 255 158" stroke="#2A0F26" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <ellipse cx="167" cy="180" rx="28" ry="30" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="169" cy="185" r="14" fill="#2A0F26"/>
+    <circle cx="174" cy="180" r="5" fill="#FFF"/>
+    <ellipse cx="233" cy="180" rx="28" ry="30" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="235" cy="185" r="14" fill="#2A0F26"/>
+    <circle cx="240" cy="180" r="5" fill="#FFF"/>
+
+    <ellipse cx="130" cy="225" rx="16" ry="9" fill="#FF6B9D" opacity="0.55"/>
+    <ellipse cx="270" cy="225" rx="16" ry="9" fill="#FF6B9D" opacity="0.55"/>
+
+    <!-- Boca abierta (ovalada) hablando -->
+    <ellipse cx="200" cy="252" rx="20" ry="14" fill="#2A0F26" stroke="#2A0F26" stroke-width="2"/>
+    <ellipse cx="200" cy="256" rx="14" ry="8" fill="#FF6B9D"/>
+    <path d="M 186 250 Q 200 245 214 250" stroke="#FFF" stroke-width="1.5" fill="none" opacity="0.4"/>
+
+    <rect x="72" y="250" width="22" height="42" rx="6" fill="url(#windshield)" stroke="#2A0F26" stroke-width="2"/>
+    <rect x="306" y="250" width="22" height="42" rx="6" fill="url(#windshield)" stroke="#2A0F26" stroke-width="2"/>
+    <rect x="65" y="305" width="270" height="9" fill="#FFC857"/>
+    <rect x="65" y="305" width="270" height="3" fill="#FFD980"/>
+  </g>
+
+  <!-- Mano izquierda quieta -->
+  <circle cx="55" cy="275" r="20" fill="#FFF" stroke="#2A0F26" stroke-width="2.5"/>
+
+  <!-- Mano derecha LEVANTADA señalando (apuntando) -->
+  <g>
+    <!-- Brazo (línea oscura conectando) -->
+    <path d="M 335 270 Q 365 240 380 200" stroke="#2A0F26" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Mano apuntando -->
+    <circle cx="380" cy="200" r="22" fill="#FFF" stroke="#2A0F26" stroke-width="2.5"/>
+    <path d="M 380 178 L 384 162" stroke="#2A0F26" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <circle cx="130" cy="345" r="27" fill="#1A0A18" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="130" cy="345" r="13" fill="#777"/>
+    <circle cx="130" cy="345" r="5" fill="#1A0A18"/>
+    <circle cx="270" cy="345" r="27" fill="#1A0A18" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="270" cy="345" r="13" fill="#777"/>
+    <circle cx="270" cy="345" r="5" fill="#1A0A18"/>
+  </g>
+
+  <g>
+    <rect x="195" y="78" width="10" height="20" fill="#4A1D3D"/>
+    <circle cx="200" cy="72" r="11" fill="#FFC857" stroke="#A67400" stroke-width="1.5">
+      <animate attributeName="opacity" values="1;0.55;1" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Bocadillo decorativo de "está hablando" -->
+  <g opacity="0.7">
+    <circle cx="335" cy="115" r="6" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="355" cy="100" r="9" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="380" cy="85" r="12" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+  </g>
+</svg>

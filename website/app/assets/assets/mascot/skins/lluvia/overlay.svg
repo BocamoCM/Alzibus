@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay LLUVIA v3 — paraguas (flota, Albus no tiene manos) +
+       chubasquero que ABRAZA el contorno + gotas y charcos.
+       El chubasquero antes sobresalía (x=56..344); ahora sus bajos se
+       meten siguiendo las esquinas inferiores del cuerpo. -->
+
+  <defs>
+    <linearGradient id="lvUmbrella" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE066"/>
+      <stop offset="100%" stop-color="#FFC857"/>
+    </linearGradient>
+    <linearGradient id="lvUmbrellaShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="lvCoat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD54F"/>
+      <stop offset="100%" stop-color="#E6A800"/>
+    </linearGradient>
+    <radialGradient id="lvContact" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.26"/>
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.13"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lvAO" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.20"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ═══ PARAGUAS flotando ═══ -->
+  <g>
+    <!-- Sombra que proyecta el paraguas sobre el techo (suave, radial) -->
+    <ellipse cx="200" cy="96" rx="118" ry="14" fill="url(#lvContact)"/>
+    <line x1="200" y1="32" x2="200" y2="82" stroke="#5D4037" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 90 75 Q 95 32 140 18 Q 175 8 200 8 Q 225 8 260 18 Q 305 32 310 75
+             Q 200 105 90 75 Z"
+          fill="url(#lvUmbrella)" stroke="#A67400" stroke-width="2.5"/>
+    <path d="M 90 75 Q 95 32 140 18 Q 175 8 200 8 Q 225 8 260 18 Q 305 32 310 75
+             Q 200 105 90 75 Z" fill="url(#lvUmbrellaShade)"/>
+    <g stroke="#A67400" stroke-width="1.5" fill="none" opacity="0.7">
+      <path d="M 125 28 Q 138 55 138 82"/>
+      <path d="M 162 14 Q 170 50 170 92"/>
+      <path d="M 200 8 L 200 100"/>
+      <path d="M 238 14 Q 230 50 230 92"/>
+      <path d="M 275 28 Q 262 55 262 82"/>
+    </g>
+    <circle cx="200" cy="8" r="4.5" fill="#A67400"/>
+    <g fill="url(#lvUmbrella)" stroke="#A67400" stroke-width="1.5">
+      <path d="M 90 75 Q 115 92 138 82"/><path d="M 138 82 Q 155 96 170 88"/>
+      <path d="M 170 88 Q 185 102 200 92"/><path d="M 200 92 Q 215 102 230 88"/>
+      <path d="M 230 88 Q 245 96 262 82"/><path d="M 262 82 Q 285 92 310 75"/>
+    </g>
+  </g>
+
+  <!-- ═══ CHUBASQUERO que abraza el contorno ═══ -->
+  <path d="M 70 272 Q 133 280 200 278 Q 267 280 330 272
+           L 330 285 Q 267 293 200 291 Q 133 293 70 285 Z" fill="url(#lvAO)"/>
+  <g>
+    <!-- Cuerpo del chubasquero: top combado, bajos metidos en las esquinas -->
+    <path d="M 66 284 Q 133 292 200 290 Q 267 292 334 284
+             L 322 321 Q 267 330 200 328 Q 133 330 78 321 Z"
+          fill="url(#lvCoat)" stroke="#A67400" stroke-width="2"/>
+    <!-- Brillo impermeable -->
+    <path d="M 70 289 Q 134 297 200 295 Q 266 297 330 289"
+          stroke="#FFFFFF" stroke-width="4" fill="none" opacity="0.25"/>
+    <!-- Solapas del cuello -->
+    <path d="M 168 290 L 182 309 L 196 291 Z" fill="#E6A800" stroke="#A67400" stroke-width="1"/>
+    <path d="M 204 291 L 218 309 L 232 290 Z" fill="#E6A800" stroke="#A67400" stroke-width="1"/>
+    <!-- Botones -->
+    <circle cx="200" cy="302" r="3.5" fill="#8D6E00" stroke="#5D4500" stroke-width="0.8"/>
+    <circle cx="200" cy="315" r="3.5" fill="#8D6E00" stroke="#5D4500" stroke-width="0.8"/>
+    <!-- Textura curva -->
+    <g stroke="#FFFFFF" stroke-width="1" fill="none" opacity="0.35">
+      <path d="M 90 302 Q 100 307 110 302"/>
+      <path d="M 290 302 Q 300 307 310 302"/>
+    </g>
+    <!-- Sombra inferior sobre el cuerpo -->
+    <path d="M 78 321 Q 133 330 200 328 Q 267 330 322 321
+             L 318 327 Q 267 335 200 333 Q 133 335 82 327 Z"
+          fill="#000000" opacity="0.15"/>
+  </g>
+
+  <!-- ═══ GOTAS ═══ -->
+  <g fill="#5BA3D5" stroke="#3A7BA8" stroke-width="0.8">
+    <path d="M 50 180 Q 47 188 50 192 Q 53 188 50 180 Z"/>
+    <path d="M 75 230 Q 72 238 75 242 Q 78 238 75 230 Z"/>
+    <path d="M 350 195 Q 347 203 350 207 Q 353 203 350 195 Z"/>
+    <path d="M 325 245 Q 322 253 325 257 Q 328 253 325 245 Z"/>
+    <path d="M 40 270 Q 37 277 40 281 Q 43 277 40 270 Z"/>
+    <path d="M 370 270 Q 367 277 370 281 Q 373 277 370 270 Z"/>
+    <g fill="#FFFFFF" opacity="0.6" stroke="none">
+      <circle cx="49" cy="184" r="1"/><circle cx="74" cy="234" r="1"/>
+      <circle cx="349" cy="199" r="1"/><circle cx="324" cy="249" r="1"/>
+      <circle cx="39" cy="274" r="1"/><circle cx="369" cy="274" r="1"/>
+    </g>
+  </g>
+  <g fill="#5BA3D5" opacity="0.6" stroke="#3A7BA8" stroke-width="0.5">
+    <ellipse cx="80" cy="378" rx="14" ry="3"/>
+    <ellipse cx="320" cy="378" rx="12" ry="2.5"/>
+  </g>
+</svg>

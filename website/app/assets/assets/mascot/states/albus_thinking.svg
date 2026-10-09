@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- ALBUS · estado THINKING — ojos mirando arriba, signo de interrogación flotante -->
+  <defs>
+    <linearGradient id="busBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7A3268"/>
+      <stop offset="55%" stop-color="#4A1D3D"/>
+      <stop offset="100%" stop-color="#3A1530"/>
+    </linearGradient>
+    <radialGradient id="windshield" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#D6F0FF"/>
+      <stop offset="60%" stop-color="#A0D2EE"/>
+      <stop offset="100%" stop-color="#7BB8D9"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5"/>
+      <feOffset dx="0" dy="5"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.28"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <ellipse cx="200" cy="372" rx="135" ry="14" fill="#000" opacity="0.18"/>
+
+  <g filter="url(#shadow)">
+    <rect x="65" y="95" width="270" height="245" rx="58" ry="58" fill="url(#busBody)"/>
+    <path d="M 90 100 Q 200 80 310 100 L 310 130 Q 200 110 90 130 Z" fill="#9B4D7D" opacity="0.4"/>
+    <path d="M 100 142 Q 100 122 122 122 L 278 122 Q 300 122 300 142 L 300 222 Q 300 238 282 238 L 118 238 Q 100 238 100 222 Z"
+          fill="url(#windshield)" stroke="#2A0F26" stroke-width="3"/>
+    <path d="M 122 142 Q 138 134 155 138 L 178 198 Q 168 208 158 203 Z" fill="#FFF" opacity="0.45"/>
+
+    <!-- Cejitas pensativas (una más alzada que otra) -->
+    <path d="M 145 152 Q 167 160 189 154" stroke="#2A0F26" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M 211 154 Q 233 148 255 160" stroke="#2A0F26" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+    <!-- Ojos mirando arriba y a la derecha (pupila desplazada) -->
+    <ellipse cx="167" cy="180" rx="28" ry="30" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="173" cy="172" r="14" fill="#2A0F26"/>
+    <circle cx="178" cy="168" r="5" fill="#FFF"/>
+    <ellipse cx="233" cy="180" rx="28" ry="30" fill="#FFF" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="239" cy="172" r="14" fill="#2A0F26"/>
+    <circle cx="244" cy="168" r="5" fill="#FFF"/>
+
+    <ellipse cx="130" cy="225" rx="16" ry="9" fill="#FF6B9D" opacity="0.55"/>
+    <ellipse cx="270" cy="225" rx="16" ry="9" fill="#FF6B9D" opacity="0.55"/>
+
+    <!-- Boca pequeña en "o" (cara de "mmm...") -->
+    <ellipse cx="200" cy="252" rx="8" ry="6" fill="#2A0F26" stroke="#2A0F26" stroke-width="2"/>
+
+    <rect x="72" y="250" width="22" height="42" rx="6" fill="url(#windshield)" stroke="#2A0F26" stroke-width="2"/>
+    <rect x="306" y="250" width="22" height="42" rx="6" fill="url(#windshield)" stroke="#2A0F26" stroke-width="2"/>
+    <rect x="65" y="305" width="270" height="9" fill="#FFC857"/>
+    <rect x="65" y="305" width="270" height="3" fill="#FFD980"/>
+  </g>
+
+  <!-- Mano izquierda quieta -->
+  <circle cx="55" cy="275" r="20" fill="#FFF" stroke="#2A0F26" stroke-width="2.5"/>
+  <!-- Mano derecha tocando la "barbilla" del bus -->
+  <g>
+    <path d="M 335 270 Q 330 250 340 235" stroke="#2A0F26" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="340" cy="235" r="20" fill="#FFF" stroke="#2A0F26" stroke-width="2.5"/>
+  </g>
+
+  <g>
+    <circle cx="130" cy="345" r="27" fill="#1A0A18" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="130" cy="345" r="13" fill="#777"/>
+    <circle cx="130" cy="345" r="5" fill="#1A0A18"/>
+    <circle cx="270" cy="345" r="27" fill="#1A0A18" stroke="#2A0F26" stroke-width="2"/>
+    <circle cx="270" cy="345" r="13" fill="#777"/>
+    <circle cx="270" cy="345" r="5" fill="#1A0A18"/>
+  </g>
+
+  <g>
+    <rect x="195" y="78" width="10" height="20" fill="#4A1D3D"/>
+    <circle cx="200" cy="72" r="11" fill="#FFC857" stroke="#A67400" stroke-width="1.5">
+      <animate attributeName="opacity" values="1;0.55;1" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ? flotante (con animación suave de subir/bajar) -->
+  <g>
+    <text x="320" y="65" font-family="Arial Black, sans-serif" font-size="48" font-weight="900" fill="#4A1D3D">?
+      <animateTransform attributeName="transform" type="translate"
+                        values="0,0; 0,-8; 0,0" dur="2s" repeatCount="indefinite"/>
+    </text>
+  </g>
+</svg>
