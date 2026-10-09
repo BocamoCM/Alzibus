@@ -28,20 +28,32 @@ class AppConfig {
   /// el APK y verla); su valor es servir de filtro anti-bots. La seguridad
   /// real reside en la auth JWT por endpoint y el rate limiting del servidor.
   static const String apiKey = String.fromEnvironment('API_KEY');
-  
+
+  /// API Key de TomTom para tráfico en tiempo real (incidencias/atascos).
+  /// Plan Freemium: gratis, sin tarjeta, uso comercial permitido
+  /// (~2.500 peticiones/día). Consíguela en developer.tomtom.com y pásala
+  /// con `--dart-define=TOMTOM_API_KEY=...`. Si está vacía, el aviso de
+  /// tráfico de Albus queda desactivado (no se llama a la API).
+  static const String tomtomApiKey = String.fromEnvironment('TOMTOM_API_KEY');
+
+  /// `true` si hay key de tráfico configurada.
+  static bool get trafficEnabled => tomtomApiKey.isNotEmpty;
+
   /// URL de la Política de Privacidad (Requerido por Google Play)
-  static const String privacyPolicyUrl = 'https://github.com/BocamoCM/Alzibus/blob/main/backend/POLITICA_PRIVACIDAD_ALZITRANS.md';
+  static const String privacyPolicyUrl =
+      'https://github.com/BocamoCM/Alzibus/blob/main/backend/POLITICA_PRIVACIDAD_ALZITRANS.md';
 
   /// DSN de Sentry para el monitoreo de errores.
   static const String sentryDsn = String.fromEnvironment(
     'SENTRY_DSN',
-    defaultValue: 'https://b2bd0df7d8dfeb7fa13a08e0377d1898@o4510974925406208.ingest.de.sentry.io/4510974939299920',
+    defaultValue:
+        'https://b2bd0df7d8dfeb7fa13a08e0377d1898@o4510974925406208.ingest.de.sentry.io/4510974939299920',
   );
 
   /// --- CONFIGURACIÓN DE MONETIZACIÓN (ADMOB) ---
-  
+
   /// Permite desactivar todos los anuncios de la app de forma global.
-  static bool showAds = true; // Reactivado tras capturas de pantalla 
+  static bool showAds = true; // Reactivado tras capturas de pantalla
 
   /// ID de la Aplicación AdMob (Android)
   static const String admobAppId = 'ca-app-pub-5215993257564469~3690891315';
@@ -50,13 +62,15 @@ class AppConfig {
   static const String bannerAdId = 'ca-app-pub-5215993257564469/6729019552';
 
   /// ID del Banner de Ajustes (Inferior)
-  static const String settingsBannerAdId = 'ca-app-pub-5215993257564469/4213160138';
+  static const String settingsBannerAdId =
+      'ca-app-pub-5215993257564469/4213160138';
 
   /// ID del Anuncio Nativo (Ficha de Parada)
   static const String nativeAdId = 'ca-app-pub-5215993257564469/1679805649';
 
   /// ID del Anuncio Intersticial (Post-NFC)
-  static const String interstitialAdId = 'ca-app-pub-5215993257564469/8708248424';
+  static const String interstitialAdId =
+      'ca-app-pub-5215993257564469/8708248424';
 
   /// ID del Anuncio Recompensado (Quitar banners 30 min)
   static const String rewardedAdId = 'ca-app-pub-5215993257564469/5201537623';
@@ -67,14 +81,15 @@ class AppConfig {
   /// --- FIN MONETIZACIÓN ---
 
   /// Hash del commit actual (opcional, vía --dart-define=COMMIT_HASH=...)
-  static const String commitHash = String.fromEnvironment('COMMIT_HASH', defaultValue: 'none');
+  static const String commitHash =
+      String.fromEnvironment('COMMIT_HASH', defaultValue: 'none');
 
   /// Timeout para peticiones HTTP.
   static const Duration httpTimeout = Duration(seconds: 10);
 
   /// Headers comunes para todas las peticiones.
   static Map<String, String> get headers => {
-    'Content-Type': 'application/json',
-    'X-API-Key': apiKey,
-  };
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+      };
 }
