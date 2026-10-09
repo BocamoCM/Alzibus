@@ -578,5 +578,6 @@
   "impactEmptyLine": "Take your first bus and start making an impact 💚",
   "habitsTitle": "Your routines",
   "habitsSubtitle": "Albus learned your usual trips",
-  "weatherRainLine": "It's raining in Alzira ☔ — there may be some delays. Don't forget your umbrella!"
+  "weatherRainLine": "It's raining in Alzira ☔ — there may be some delays. Don't forget your umbrella!",
+  "trafficDelayLine": "Heavy traffic in Alzira 🚗 — your bus might run a little late."
 }

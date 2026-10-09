@@ -2878,6 +2878,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Está lloviendo en Alzira ☔ — puede haber algún retraso. ¡No olvides el paraguas!'**
   String get weatherRainLine;
+
+  /// No description provided for @trafficDelayLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay tráfico denso en Alzira 🚗 — tu bus podría llegar con algún retraso.'**
+  String get trafficDelayLine;
 }
 
 class _AppLocalizationsDelegate

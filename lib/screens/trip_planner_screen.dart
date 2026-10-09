@@ -13,6 +13,7 @@ import '../models/trip_plan.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
 import '../widgets/weather_albus_banner.dart';
+import '../widgets/traffic_albus_banner.dart';
 import 'albus_shop_screen.dart';
 import 'share_trip_screen.dart';
 
@@ -317,6 +318,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
         children: [
           _buildAlbusHeader(),
           const WeatherAlbusBanner(),
+          const TrafficAlbusBanner(),
           const SizedBox(height: 20),
           _buildStopSelectors(stops),
           const SizedBox(height: 16),

@@ -1638,4 +1638,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get weatherRainLine =>
       'It\'s raining in Alzira ☔ — there may be some delays. Don\'t forget your umbrella!';
+
+  @override
+  String get trafficDelayLine =>
+      'Heavy traffic in Alzira 🚗 — your bus might run a little late.';
 }

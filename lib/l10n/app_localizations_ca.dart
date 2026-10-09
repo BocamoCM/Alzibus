@@ -1644,4 +1644,8 @@ class AppLocalizationsCa extends AppLocalizations {
   @override
   String get weatherRainLine =>
       'Està plovent a Alzira ☔ — pot haver-hi algun retard. No oblides el paraigua!';
+
+  @override
+  String get trafficDelayLine =>
+      'Hi ha trànsit dens a Alzira 🚗 — el teu bus podria arribar amb algun retard.';
 }
