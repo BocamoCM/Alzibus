@@ -577,5 +577,6 @@
   "impactAlbusLine": "Has evitat {co2} de CO₂ este mes triant el bus! 💚",
   "impactEmptyLine": "Agafa el teu primer bus i comença a sumar impacte 💚",
   "habitsTitle": "Les teues rutines",
-  "habitsSubtitle": "Albus ha aprés els teus viatges habituals"
+  "habitsSubtitle": "Albus ha aprés els teus viatges habituals",
+  "weatherRainLine": "Està plovent a Alzira ☔ — pot haver-hi algun retard. No oblides el paraigua!"
 }

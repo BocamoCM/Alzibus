@@ -2872,6 +2872,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Albus ha aprendido tus viajes habituales'**
   String get habitsSubtitle;
+
+  /// No description provided for @weatherRainLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Está lloviendo en Alzira ☔ — puede haber algún retraso. ¡No olvides el paraguas!'**
+  String get weatherRainLine;
 }
 
 class _AppLocalizationsDelegate

@@ -1640,4 +1640,8 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get habitsSubtitle => 'Albus ha aprés els teus viatges habituals';
+
+  @override
+  String get weatherRainLine =>
+      'Està plovent a Alzira ☔ — pot haver-hi algun retard. No oblides el paraigua!';
 }

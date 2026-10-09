@@ -580,5 +580,6 @@
   },
   "impactEmptyLine": "Coge tu primer bus y empieza a sumar impacto 💚",
   "habitsTitle": "Tus rutinas",
-  "habitsSubtitle": "Albus ha aprendido tus viajes habituales"
+  "habitsSubtitle": "Albus ha aprendido tus viajes habituales",
+  "weatherRainLine": "Está lloviendo en Alzira ☔ — puede haber algún retraso. ¡No olvides el paraguas!"
 }

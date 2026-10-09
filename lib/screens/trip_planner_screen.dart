@@ -12,6 +12,7 @@ import '../models/bus_stop.dart';
 import '../models/trip_plan.dart';
 import '../theme/app_theme.dart';
 import '../widgets/albus_mascot.dart';
+import '../widgets/weather_albus_banner.dart';
 import 'albus_shop_screen.dart';
 import 'share_trip_screen.dart';
 
@@ -189,8 +190,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
       if (nearest == null) {
         throw l.noStopsNearYou;
       }
-      final distM = _haversineM(
-        pos.latitude, pos.longitude, nearest.lat, nearest.lng);
+      final distM =
+          _haversineM(pos.latitude, pos.longitude, nearest.lat, nearest.lng);
 
       if (!mounted) return;
       final l2 = AppLocalizations.of(context)!;
@@ -238,8 +239,10 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
     final dLat = toRad(lat2 - lat1);
     final dLng = toRad(lng2 - lng1);
     final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(toRad(lat1)) * math.cos(toRad(lat2)) *
-            math.sin(dLng / 2) * math.sin(dLng / 2);
+        math.cos(toRad(lat1)) *
+            math.cos(toRad(lat2)) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return r * c;
   }
@@ -274,7 +277,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.amber.shade700,
                   borderRadius: BorderRadius.circular(20),
@@ -312,6 +316,7 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildAlbusHeader(),
+          const WeatherAlbusBanner(),
           const SizedBox(height: 20),
           _buildStopSelectors(stops),
           const SizedBox(height: 16),
@@ -361,16 +366,17 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlzitransColors.burgundy,
                   side: const BorderSide(
-                    color: AlzitransColors.burgundy, width: 1.5),
+                      color: AlzitransColors.burgundy, width: 1.5),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 icon: _isLocating
                     ? const SizedBox(
-                        width: 16, height: 16,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(
-                          color: AlzitransColors.burgundy, strokeWidth: 2),
+                            color: AlzitransColors.burgundy, strokeWidth: 2),
                       )
                     : const Icon(Icons.gps_fixed, size: 18),
                 label: Text(
@@ -388,7 +394,9 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
               label: _originUserCoord != null
                   ? AppLocalizations.of(context)!.fromNearestStop
                   : AppLocalizations.of(context)!.fromLabel,
-              icon: _originUserCoord != null ? Icons.gps_fixed : Icons.my_location,
+              icon: _originUserCoord != null
+                  ? Icons.gps_fixed
+                  : Icons.my_location,
               stops: stops,
               selected: _origin,
               onPicked: (s) => setState(() {
@@ -410,7 +418,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                 IconButton(
                   tooltip: AppLocalizations.of(context)!.swap,
                   onPressed: _swapOriginDestination,
-                  icon: const Icon(Icons.swap_vert, color: AlzitransColors.burgundy),
+                  icon: const Icon(Icons.swap_vert,
+                      color: AlzitransColors.burgundy),
                 ),
                 const Expanded(child: Divider()),
               ],
@@ -424,9 +433,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
                 _destination = s;
                 _albusState = AlbusState.talking;
                 final l = AppLocalizations.of(context)!;
-                _albusMessage = _origin == null
-                    ? l.okToStop(s.name)
-                    : l.readyToSearch;
+                _albusMessage =
+                    _origin == null ? l.okToStop(s.name) : l.readyToSearch;
               }),
             ),
           ],
@@ -445,7 +453,8 @@ class _TripPlannerScreenState extends ConsumerState<TripPlannerScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       icon: const Icon(Icons.directions_bus),
-      label: Text(AppLocalizations.of(context)!.searchRoute, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      label: Text(AppLocalizations.of(context)!.searchRoute,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -490,7 +499,8 @@ class _StopPicker extends StatelessWidget {
         backgroundColor: AlzitransColors.burgundy.withValues(alpha: 0.1),
         child: Icon(icon, color: AlzitransColors.burgundy),
       ),
-      title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      title:
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       subtitle: Text(
         selected?.name ?? 'Toca para elegir',
         style: TextStyle(
@@ -543,7 +553,8 @@ class _StopSearchDialogState extends State<_StopSearchDialog> {
               child: Row(
                 children: [
                   Text(widget.title,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w600)),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -559,7 +570,8 @@ class _StopSearchDialogState extends State<_StopSearchDialog> {
                 decoration: InputDecoration(
                   hintText: AppLocalizations.of(context)!.searchStopByName,
                   prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -573,8 +585,10 @@ class _StopSearchDialogState extends State<_StopSearchDialog> {
                   return ListTile(
                     leading: const Icon(Icons.directions_bus,
                         color: AlzitransColors.burgundy),
-                    title: Text(s.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(AppLocalizations.of(context)!.linesWithList(s.lines.join(", "))),
+                    title: Text(s.name,
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(AppLocalizations.of(context)!
+                        .linesWithList(s.lines.join(", "))),
                     onTap: () => Navigator.of(context).pop(s),
                   );
                 },
@@ -591,7 +605,8 @@ class _PlanCard extends StatelessWidget {
   final TripPlan plan;
   final bool isPrimary;
   final int index;
-  const _PlanCard({required this.plan, required this.isPrimary, required this.index});
+  const _PlanCard(
+      {required this.plan, required this.isPrimary, required this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -612,7 +627,10 @@ class _PlanCard extends StatelessWidget {
           children: [
             _planHeader(l),
             const SizedBox(height: 12),
-            ...plan.steps.asMap().entries.map((e) => _stepTile(e.key, e.value, l)),
+            ...plan.steps
+                .asMap()
+                .entries
+                .map((e) => _stepTile(e.key, e.value, l)),
             const SizedBox(height: 8),
             _shareButton(),
           ],
@@ -652,7 +670,8 @@ class _PlanCard extends StatelessWidget {
             foregroundColor: AlzitransColors.burgundy,
             side: const BorderSide(color: AlzitransColors.burgundy, width: 1.5),
             padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
           icon: const Icon(Icons.share_location, size: 18),
           label: Text(AppLocalizations.of(context)!.shareThisTripLive,
@@ -793,9 +812,11 @@ class _PlanCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(l.boardAt(step.fromStop.name),
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           Text(l.alightAt(step.toStop.name),
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           const SizedBox(height: 6),
           _AlbusHint(text: step.albusSays(l)),
         ],

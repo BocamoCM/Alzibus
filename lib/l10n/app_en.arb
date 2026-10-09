@@ -577,5 +577,6 @@
   "impactAlbusLine": "You've avoided {co2} of CO₂ this month by taking the bus! 💚",
   "impactEmptyLine": "Take your first bus and start making an impact 💚",
   "habitsTitle": "Your routines",
-  "habitsSubtitle": "Albus learned your usual trips"
+  "habitsSubtitle": "Albus learned your usual trips",
+  "weatherRainLine": "It's raining in Alzira ☔ — there may be some delays. Don't forget your umbrella!"
 }

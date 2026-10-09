@@ -1634,4 +1634,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get habitsSubtitle => 'Albus learned your usual trips';
+
+  @override
+  String get weatherRainLine =>
+      'It\'s raining in Alzira ☔ — there may be some delays. Don\'t forget your umbrella!';
 }
