@@ -1613,4 +1613,25 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get travelersRankingHeader => '🏆 Rànquing de Viatgers';
+
+  @override
+  String get impactCardTitle => 'El teu impacte este mes';
+
+  @override
+  String get impactCo2Label => 'CO₂ evitat';
+
+  @override
+  String get impactKmLabel => 'Km en bus';
+
+  @override
+  String get impactMoneyLabel => 'Cost en cotxe';
+
+  @override
+  String impactAlbusLine(String co2) {
+    return 'Has evitat $co2 de CO₂ este mes triant el bus! 💚';
+  }
+
+  @override
+  String get impactEmptyLine =>
+      'Agafa el teu primer bus i comença a sumar impacte 💚';
 }

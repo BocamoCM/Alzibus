@@ -569,5 +569,11 @@
   "rankingLoadError": "No s'ha pogut carregar el rànquing",
   "noTripsRankingMonth": "Ningú ha viatjat aquest mes encara. Sigues el primer!",
   "noTripsRankingAll": "Encara no hi ha viatges registrats.",
-  "travelersRankingHeader": "🏆 Rànquing de Viatgers"
+  "travelersRankingHeader": "🏆 Rànquing de Viatgers",
+  "impactCardTitle": "El teu impacte este mes",
+  "impactCo2Label": "CO₂ evitat",
+  "impactKmLabel": "Km en bus",
+  "impactMoneyLabel": "Cost en cotxe",
+  "impactAlbusLine": "Has evitat {co2} de CO₂ este mes triant el bus! 💚",
+  "impactEmptyLine": "Agafa el teu primer bus i comença a sumar impacte 💚"
 }

@@ -569,5 +569,14 @@
   "rankingLoadError": "No se pudo cargar el ranking",
   "noTripsRankingMonth": "Nadie ha viajado este mes aún. ¡Sé el primero!",
   "noTripsRankingAll": "Aún no hay viajes registrados.",
-  "travelersRankingHeader": "🏆 Ranking de Viajeros"
+  "travelersRankingHeader": "🏆 Ranking de Viajeros",
+  "impactCardTitle": "Tu impacto este mes",
+  "impactCo2Label": "CO₂ evitado",
+  "impactKmLabel": "Km en bus",
+  "impactMoneyLabel": "Coste en coche",
+  "impactAlbusLine": "¡Has evitado {co2} de CO₂ este mes eligiendo el bus! 💚",
+  "@impactAlbusLine": {
+    "placeholders": { "co2": { "type": "String" } }
+  },
+  "impactEmptyLine": "Coge tu primer bus y empieza a sumar impacto 💚"
 }

@@ -569,5 +569,11 @@
   "rankingLoadError": "Could not load ranking",
   "noTripsRankingMonth": "No one has traveled this month yet. Be the first!",
   "noTripsRankingAll": "No trips registered yet.",
-  "travelersRankingHeader": "🏆 Traveler Ranking"
+  "travelersRankingHeader": "🏆 Traveler Ranking",
+  "impactCardTitle": "Your impact this month",
+  "impactCo2Label": "CO₂ avoided",
+  "impactKmLabel": "Km by bus",
+  "impactMoneyLabel": "Car cost",
+  "impactAlbusLine": "You've avoided {co2} of CO₂ this month by taking the bus! 💚",
+  "impactEmptyLine": "Take your first bus and start making an impact 💚"
 }

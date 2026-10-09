@@ -12,13 +12,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_config.dart';
 import '../widgets/ad_banner_widget.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:google_mobile_ads/google_mobile_ads.dart' if (dart.library.js_util) 'package:flutter/widgets.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'
+    if (dart.library.js_util) 'package:flutter/widgets.dart';
 import '../widgets/ad_ui_factory.dart';
 import '../services/ad_service.dart';
 import '../core/providers/ad_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/game_currency_provider.dart';
 import '../models/albus_skin.dart';
+import '../widgets/impact_card.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -85,6 +87,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _buildAvatar(theme),
                       const SizedBox(height: 24),
                       _buildStatsCards(theme, l),
+                      const SizedBox(height: 16),
+                      ImpactCard(
+                        monthTrips: (_profile?['stats']
+                                    as Map<String, dynamic>?)?['thisMonthTrips']
+                                as int? ??
+                            0,
+                      ),
                       const SizedBox(height: 24),
                       _buildInfoCard(theme, l),
                       const SizedBox(height: 16),
@@ -158,7 +167,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 12),
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(email, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          child: Text(email,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 4),
         Builder(builder: (context) {
@@ -172,7 +183,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-
   Widget _buildStatsCards(ThemeData theme, AppLocalizations l) {
     final stats = _profile?['stats'] as Map<String, dynamic>? ?? {};
     final totalTrips = stats['totalTrips'] as int? ?? 0;
@@ -181,16 +191,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Row(
       children: [
-        _statCard(theme, Icons.directions_bus, l.totalTrips, '$totalTrips', AlzitransColors.burgundy),
+        _statCard(theme, Icons.directions_bus, l.totalTrips, '$totalTrips',
+            AlzitransColors.burgundy),
         const SizedBox(width: 12),
-        _statCard(theme, Icons.route, l.mostUsedLine, mostUsedLine, AlzitransColors.coral),
+        _statCard(theme, Icons.route, l.mostUsedLine, mostUsedLine,
+            AlzitransColors.coral),
         const SizedBox(width: 12),
-        _statCard(theme, Icons.calendar_month, l.thisMonth, '$thisMonthTrips', Colors.teal),
+        _statCard(theme, Icons.calendar_month, l.thisMonth, '$thisMonthTrips',
+            Colors.teal),
       ],
     );
   }
 
-  Widget _statCard(ThemeData theme, IconData icon, String label, String value, Color color) {
+  Widget _statCard(
+      ThemeData theme, IconData icon, String label, String value, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -213,7 +227,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -228,7 +243,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         adUnitId: AppConfig.settingsBannerAdId,
       );
     }
-    
+
     final adService = ref.read(adServiceProvider);
     final preloadedAd = adService.profileNativeAd;
 
@@ -253,9 +268,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l.accountInfo,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _infoRow(Icons.email_outlined, l.email, _profile?['email'] as String? ?? '—'),
+            _infoRow(Icons.email_outlined, l.email,
+                _profile?['email'] as String? ?? '—'),
             const Divider(height: 24),
             _infoRow(Icons.access_time, l.lastAccess, lastAccess),
           ],
@@ -273,11 +290,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text(label,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+                child: Text(value,
+                    style: const TextStyle(fontWeight: FontWeight.w500)),
               ),
             ],
           ),
@@ -292,31 +311,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.bar_chart, color: AlzitransColors.burgundy),
+            leading:
+                const Icon(Icons.bar_chart, color: AlzitransColors.burgundy),
             title: Text(l.tripHistory),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => const TripHistoryRoute().push(context),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.emoji_events, color: AlzitransColors.burgundy),
-            title: Text(l.rankingTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(l.rankingSubtitle, style: const TextStyle(fontSize: 11)),
+            leading:
+                const Icon(Icons.emoji_events, color: AlzitransColors.burgundy),
+            title: Text(l.rankingTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle:
+                Text(l.rankingSubtitle, style: const TextStyle(fontSize: 11)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => const RankingRoute().push(context),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.settings_outlined, color: AlzitransColors.burgundy),
+            leading: const Icon(Icons.settings_outlined,
+                color: AlzitransColors.burgundy),
             title: Text(l.tabSettings),
             trailing: const Icon(Icons.chevron_right),
             onTap: widget.onSettingsTap,
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.support_agent, color: AlzitransColors.burgundy),
-            title: const Text('Ayuda y Soporte', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Reportar bugs, quejas o sugerencias', style: TextStyle(fontSize: 11)),
+            leading: const Icon(Icons.support_agent,
+                color: AlzitransColors.burgundy),
+            title: const Text('Ayuda y Soporte',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Reportar bugs, quejas o sugerencias',
+                style: TextStyle(fontSize: 11)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -328,16 +355,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (AppConfig.showAds && !kIsWeb) ...[
             const Divider(height: 1, indent: 56),
             ListTile(
-              leading: const Icon(Icons.tv_off, color: AlzitransColors.burgundy),
-              title: Text(l.removeAdsTitle, style: const TextStyle(color: AlzitransColors.burgundy, fontWeight: FontWeight.bold)),
-              subtitle: Text(l.removeAdsSubtitle, style: const TextStyle(fontSize: 11)),
-              trailing: const Icon(Icons.stars, color: AlzitransColors.burgundy),
+              leading:
+                  const Icon(Icons.tv_off, color: AlzitransColors.burgundy),
+              title: Text(l.removeAdsTitle,
+                  style: const TextStyle(
+                      color: AlzitransColors.burgundy,
+                      fontWeight: FontWeight.bold)),
+              subtitle: Text(l.removeAdsSubtitle,
+                  style: const TextStyle(fontSize: 11)),
+              trailing:
+                  const Icon(Icons.stars, color: AlzitransColors.burgundy),
               onTap: () {
                 final adService = ref.read(adServiceProvider);
                 if (adService.isRewardedAdReady) {
                   showDialog(
                     context: context,
-                    builder: (ctx) => const Center(child: CircularProgressIndicator()),
+                    builder: (ctx) =>
+                        const Center(child: CircularProgressIndicator()),
                   );
                   adService.showRewardedAd(
                     onRewarded: () {
@@ -349,7 +383,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             backgroundColor: Colors.green,
                           ),
                         );
-                        setState(() {}); // Forzar redibujado de la UI para ocultar banners
+                        setState(
+                            () {}); // Forzar redibujado de la UI para ocultar banners
                       }
                     },
                   );
@@ -367,14 +402,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.edit_outlined, color: AlzitransColors.burgundy),
+            leading: const Icon(Icons.edit_outlined,
+                color: AlzitransColors.burgundy),
             title: Text(l.editEmail),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showChangeEmailDialog(l),
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.lock_outline, color: AlzitransColors.burgundy),
+            leading:
+                const Icon(Icons.lock_outline, color: AlzitransColors.burgundy),
             title: Text(l.changePassword),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showChangePasswordDialog(l),
@@ -388,8 +425,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: Text(l.deleteAccountTitle, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            subtitle: Text(l.deleteAccountSubtitle, style: const TextStyle(fontSize: 11)),
+            title: Text(l.deleteAccountTitle,
+                style: const TextStyle(
+                    color: Colors.red, fontWeight: FontWeight.bold)),
+            subtitle: Text(l.deleteAccountSubtitle,
+                style: const TextStyle(fontSize: 11)),
             onTap: () => _confirmDeleteAccount(l),
           ),
         ],
@@ -402,7 +442,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(l.deleteAccountDialogTitle, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: Text(l.deleteAccountDialogTitle,
+            style: const TextStyle(
+                color: Colors.red, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,9 +461,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () async {
               Navigator.pop(ctx);
               _performDeletion(l);
@@ -460,7 +504,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         Navigator.pop(context); // Quitar el loading
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.genericError(e.toString())), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(l.genericError(e.toString())),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -483,7 +529,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           keyboardType: TextInputType.emailAddress,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
           ElevatedButton(
             onPressed: () async {
               final newEmail = ctrl.text.trim();
@@ -494,7 +541,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   await _auth.updateEmail(_token!, newEmail);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l.emailUpdatedSuccess), backgroundColor: Colors.green),
+                      SnackBar(
+                          content: Text(l.emailUpdatedSuccess),
+                          backgroundColor: Colors.green),
                     );
                     _loadProfile();
                   }
@@ -502,7 +551,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l.genericError(e.toString())), backgroundColor: Colors.red),
+                    SnackBar(
+                        content: Text(l.genericError(e.toString())),
+                        backgroundColor: Colors.red),
                   );
                 }
               }
@@ -524,7 +575,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setStateDialog) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(l.changePassword),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -536,10 +588,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   labelText: l.currentPassword,
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(obscureCurrent ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setStateDialog(() => obscureCurrent = !obscureCurrent),
+                    icon: Icon(obscureCurrent
+                        ? Icons.visibility
+                        : Icons.visibility_off),
+                    onPressed: () =>
+                        setStateDialog(() => obscureCurrent = !obscureCurrent),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -550,23 +606,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   labelText: l.newPassword,
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
-                    icon: Icon(obscureNew ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setStateDialog(() => obscureNew = !obscureNew),
+                    icon: Icon(
+                        obscureNew ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () =>
+                        setStateDialog(() => obscureNew = !obscureNew),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
             ElevatedButton(
               onPressed: () async {
                 if (currentCtrl.text.isEmpty || newCtrl.text.isEmpty) return;
                 Navigator.pop(ctx);
                 try {
                   if (_token != null) {
-                    await _auth.updatePassword(_token!, currentCtrl.text, newCtrl.text);
+                    await _auth.updatePassword(
+                        _token!, currentCtrl.text, newCtrl.text);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -579,7 +640,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l.genericError(e.toString())), backgroundColor: Colors.red),
+                      SnackBar(
+                          content: Text(l.genericError(e.toString())),
+                          backgroundColor: Colors.red),
                     );
                   }
                 }
@@ -600,7 +663,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: Text(l.logout),
         content: Text(l.logoutConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -664,11 +728,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _debugButton('+1.000 🪙', Colors.amber.shade700, () => _grantCoins(1000)),
-                _debugButton('+10.000 🪙', Colors.orange.shade700, () => _grantCoins(10000)),
-                _debugButton('Desbloquear todas skins', Colors.deepPurple, _unlockAllSkins),
-                _debugButton('Reset monedero (0)', Colors.red.shade400, _resetCoins),
-                _debugButton('Reset cap diario', Colors.blue.shade600, _resetDailyCap),
+                _debugButton('+1.000 🪙', Colors.amber.shade700,
+                    () => _grantCoins(1000)),
+                _debugButton('+10.000 🪙', Colors.orange.shade700,
+                    () => _grantCoins(10000)),
+                _debugButton('Desbloquear todas skins', Colors.deepPurple,
+                    _unlockAllSkins),
+                _debugButton(
+                    'Reset monedero (0)', Colors.red.shade400, _resetCoins),
+                _debugButton(
+                    'Reset cap diario', Colors.blue.shade600, _resetDailyCap),
               ],
             ),
           ],
@@ -694,9 +763,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _grantCoins(int amount) async {
     // Usamos CoinSource.unlimited para saltarse el cap diario de juegos.
     final added = await ref.read(gameCurrencyProvider.notifier).add(
-      amount,
-      source: CoinSource.unlimited,
-    );
+          amount,
+          source: CoinSource.unlimited,
+        );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -730,7 +799,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Monedero a 0'), duration: Duration(seconds: 2)),
+      const SnackBar(
+          content: Text('Monedero a 0'), duration: Duration(seconds: 2)),
     );
   }
 

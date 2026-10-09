@@ -1611,4 +1611,25 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get travelersRankingHeader => '🏆 Ranking de Viajeros';
+
+  @override
+  String get impactCardTitle => 'Tu impacto este mes';
+
+  @override
+  String get impactCo2Label => 'CO₂ evitado';
+
+  @override
+  String get impactKmLabel => 'Km en bus';
+
+  @override
+  String get impactMoneyLabel => 'Coste en coche';
+
+  @override
+  String impactAlbusLine(String co2) {
+    return '¡Has evitado $co2 de CO₂ este mes eligiendo el bus! 💚';
+  }
+
+  @override
+  String get impactEmptyLine =>
+      'Coge tu primer bus y empieza a sumar impacto 💚';
 }

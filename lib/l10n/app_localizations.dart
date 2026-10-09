@@ -2824,6 +2824,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'🏆 Ranking de Viajeros'**
   String get travelersRankingHeader;
+
+  /// No description provided for @impactCardTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu impacto este mes'**
+  String get impactCardTitle;
+
+  /// No description provided for @impactCo2Label.
+  ///
+  /// In es, this message translates to:
+  /// **'CO₂ evitado'**
+  String get impactCo2Label;
+
+  /// No description provided for @impactKmLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Km en bus'**
+  String get impactKmLabel;
+
+  /// No description provided for @impactMoneyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Coste en coche'**
+  String get impactMoneyLabel;
+
+  /// No description provided for @impactAlbusLine.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Has evitado {co2} de CO₂ este mes eligiendo el bus! 💚'**
+  String impactAlbusLine(String co2);
+
+  /// No description provided for @impactEmptyLine.
+  ///
+  /// In es, this message translates to:
+  /// **'Coge tu primer bus y empieza a sumar impacto 💚'**
+  String get impactEmptyLine;
 }
 
 class _AppLocalizationsDelegate
