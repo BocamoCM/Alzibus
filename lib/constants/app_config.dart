@@ -29,15 +29,9 @@ class AppConfig {
   /// real reside en la auth JWT por endpoint y el rate limiting del servidor.
   static const String apiKey = String.fromEnvironment('API_KEY');
 
-  /// API Key de TomTom para tráfico en tiempo real (incidencias/atascos).
-  /// Plan Freemium: gratis, sin tarjeta, uso comercial permitido
-  /// (~2.500 peticiones/día). Consíguela en developer.tomtom.com y pásala
-  /// con `--dart-define=TOMTOM_API_KEY=...`. Si está vacía, el aviso de
-  /// tráfico de Albus queda desactivado (no se llama a la API).
-  static const String tomtomApiKey = String.fromEnvironment('TOMTOM_API_KEY');
-
-  /// `true` si hay key de tráfico configurada.
-  static bool get trafficEnabled => tomtomApiKey.isNotEmpty;
+  // El tráfico (TomTom) se consulta a través de NUESTRO backend (/traffic),
+  // que cachea el resultado y guarda la key en su propio .env. Por eso aquí
+  // ya NO hay TOMTOM_API_KEY: la key nunca viaja en el APK.
 
   /// URL de la Política de Privacidad (Requerido por Google Play)
   static const String privacyPolicyUrl =

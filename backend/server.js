@@ -377,6 +377,54 @@ app.get('/api/proxy/bus-times', async (req, res) => {
     });
 });
 
+// ── Tráfico en tiempo real (TomTom), CACHEADO ──
+// El tráfico de Alzira es el mismo para todos los usuarios, así que
+// consultamos a TomTom como mucho una vez por intervalo y servimos el
+// resultado cacheado a toda la app. Así el gasto de la cuota NO depende del
+// número de usuarios (≈480 llamadas/día con TTL de 3 min) y la key de TomTom
+// vive solo aquí (nunca en el APK).
+let _trafficCache = { data: null, at: 0 };
+const TRAFFIC_TTL_MS = 3 * 60 * 1000; // 3 minutos
+
+app.get('/api/traffic', async (req, res) => {
+    const key = process.env.TOMTOM_API_KEY;
+    // Sin key configurada: la app recibe "unknown" y Albus no dice nada.
+    if (!key) return res.json({ unknown: true });
+
+    const now = Date.now();
+    if (_trafficCache.data && (now - _trafficCache.at) < TRAFFIC_TTL_MS) {
+        return res.json({ ..._trafficCache.data, cached: true });
+    }
+
+    // Caja de Alzira: minLon,minLat,maxLon,maxLat
+    const params = new URLSearchParams({
+        key,
+        bbox: '-0.46,39.13,-0.41,39.17',
+        fields: '{incidents{properties{iconCategory}}}',
+        language: 'es-ES',
+    });
+    const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?${params}`;
+
+    try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) {
+            console.error('[Traffic] TomTom HTTP', r.status);
+            // Si hay algo cacheado (aunque esté viejo), mejor eso que nada.
+            if (_trafficCache.data) return res.json({ ..._trafficCache.data, stale: true });
+            return res.json({ unknown: true });
+        }
+        const json = await r.json();
+        const incidents = Array.isArray(json.incidents) ? json.incidents : [];
+        const data = { incidentCount: incidents.length, hasIncidents: incidents.length > 0 };
+        _trafficCache = { data, at: now };
+        return res.json(data);
+    } catch (err) {
+        console.error('[Traffic] error:', err.message);
+        if (_trafficCache.data) return res.json({ ..._trafficCache.data, stale: true });
+        return res.json({ unknown: true });
+    }
+});
+
 
 // ── Rutas públicas para cumplimiento de Google Play ──
 // Google Play requiere que las apps tengan una URL pública accesible para:

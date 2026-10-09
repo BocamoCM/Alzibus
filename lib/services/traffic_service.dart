@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
-import '../constants/app_config.dart';
+import '../core/network/api_client.dart';
 
 /// Estado del tráfico cerca de Alzira, para que Albus avise de posibles
 /// retrasos por atascos/incidencias.
@@ -11,8 +8,8 @@ class TrafficStatus {
   /// Nº de incidencias detectadas en el área (0 = circulación normal).
   final int incidentCount;
 
-  /// `true` si no se pudo consultar (sin key, sin red, error) — en ese caso
-  /// Albus simplemente no dice nada de tráfico.
+  /// `true` si no se pudo consultar (sin key en el backend, sin red, error) —
+  /// en ese caso Albus simplemente no dice nada de tráfico.
   final bool unknown;
 
   const TrafficStatus({required this.incidentCount, this.unknown = false});
@@ -24,53 +21,23 @@ class TrafficStatus {
   bool get hasIncidents => !unknown && incidentCount > 0;
 }
 
-/// Consulta incidencias de tráfico en tiempo real con la API de TomTom
-/// (Traffic Incidents v5). Gratis en el plan Freemium.
-///
-/// Uso previsto: al planificar un viaje o al abrir la app, llamar a
-/// [fetchAround] con el centro de Alzira; si [TrafficStatus.hasIncidents],
-/// Albus avisa de que puede haber variaciones por el tráfico.
-///
-/// NO se llama a la red si [AppConfig.trafficEnabled] es false (sin key).
+/// Consulta el estado del tráfico a NUESTRO backend (`/traffic`), que a su vez
+/// consulta TomTom una vez por intervalo y cachea el resultado para toda la
+/// app. Ventajas frente a llamar a TomTom desde el móvil: el gasto de cuota no
+/// depende del nº de usuarios y la key de TomTom nunca viaja en el APK.
 class TrafficService {
-  /// Caja aproximada de Alzira (min/max lon y lat). Cubre el casco urbano y
-  /// los accesos por donde circulan las líneas.
-  static const double _minLon = -0.46;
-  static const double _minLat = 39.13;
-  static const double _maxLon = -0.41;
-  static const double _maxLat = 39.17;
-
-  final http.Client _client;
-
-  TrafficService({http.Client? client}) : _client = client ?? http.Client();
-
-  /// Devuelve el estado del tráfico en el área de Alzira. Nunca lanza: ante
-  /// cualquier problema devuelve [TrafficStatus.unknown].
-  Future<TrafficStatus> fetchAlzira() =>
-      _fetch(_minLon, _minLat, _maxLon, _maxLat);
-
-  Future<TrafficStatus> _fetch(
-      double minLon, double minLat, double maxLon, double maxLat) async {
-    if (!AppConfig.trafficEnabled) return const TrafficStatus.unknown();
-
-    final uri =
-        Uri.https('api.tomtom.com', '/traffic/services/5/incidentDetails', {
-      'key': AppConfig.tomtomApiKey,
-      'bbox': '$minLon,$minLat,$maxLon,$maxLat',
-      // Pedimos solo lo mínimo: el tipo de incidencia por icono.
-      'fields': '{incidents{properties{iconCategory}}}',
-      'language': 'es-ES',
-    });
-
+  /// Estado del tráfico en Alzira. Nunca lanza: ante cualquier problema
+  /// devuelve [TrafficStatus.unknown].
+  Future<TrafficStatus> fetchAlzira() async {
     try {
-      final res = await _client.get(uri).timeout(AppConfig.httpTimeout);
-      if (res.statusCode != 200) {
-        debugPrint('[Traffic] HTTP ${res.statusCode}');
+      final res = await ApiClient().get('/traffic');
+      if (res.statusCode != 200 || res.data is! Map) {
         return const TrafficStatus.unknown();
       }
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final incidents = (data['incidents'] as List?) ?? const [];
-      return TrafficStatus(incidentCount: incidents.length);
+      final data = Map<String, dynamic>.from(res.data as Map);
+      if (data['unknown'] == true) return const TrafficStatus.unknown();
+      final count = (data['incidentCount'] as num?)?.toInt() ?? 0;
+      return TrafficStatus(incidentCount: count);
     } catch (e) {
       debugPrint('[Traffic] error: $e');
       return const TrafficStatus.unknown();
