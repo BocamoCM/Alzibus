@@ -575,5 +575,7 @@
   "impactKmLabel": "Km en bus",
   "impactMoneyLabel": "Cost en cotxe",
   "impactAlbusLine": "Has evitat {co2} de CO₂ este mes triant el bus! 💚",
-  "impactEmptyLine": "Agafa el teu primer bus i comença a sumar impacte 💚"
+  "impactEmptyLine": "Agafa el teu primer bus i comença a sumar impacte 💚",
+  "habitsTitle": "Les teues rutines",
+  "habitsSubtitle": "Albus ha aprés els teus viatges habituals"
 }

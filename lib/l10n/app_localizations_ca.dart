@@ -1634,4 +1634,10 @@ class AppLocalizationsCa extends AppLocalizations {
   @override
   String get impactEmptyLine =>
       'Agafa el teu primer bus i comença a sumar impacte 💚';
+
+  @override
+  String get habitsTitle => 'Les teues rutines';
+
+  @override
+  String get habitsSubtitle => 'Albus ha aprés els teus viatges habituals';
 }

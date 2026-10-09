@@ -578,5 +578,7 @@
   "@impactAlbusLine": {
     "placeholders": { "co2": { "type": "String" } }
   },
-  "impactEmptyLine": "Coge tu primer bus y empieza a sumar impacto 💚"
+  "impactEmptyLine": "Coge tu primer bus y empieza a sumar impacto 💚",
+  "habitsTitle": "Tus rutinas",
+  "habitsSubtitle": "Albus ha aprendido tus viajes habituales"
 }

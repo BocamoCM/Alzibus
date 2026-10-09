@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/game_currency_provider.dart';
 import '../models/albus_skin.dart';
 import '../widgets/impact_card.dart';
+import '../widgets/habits_card.dart';
 
 /// Pantalla de perfil del usuario: muestra datos personales y estadísticas de viajes.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -94,6 +95,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 as int? ??
                             0,
                       ),
+                      const SizedBox(height: 16),
+                      const HabitsCard(),
                       const SizedBox(height: 24),
                       _buildInfoCard(theme, l),
                       const SizedBox(height: 16),

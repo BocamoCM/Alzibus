@@ -1628,4 +1628,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get impactEmptyLine =>
       'Take your first bus and start making an impact 💚';
+
+  @override
+  String get habitsTitle => 'Your routines';
+
+  @override
+  String get habitsSubtitle => 'Albus learned your usual trips';
 }

@@ -16,6 +16,9 @@ dependencies:
   geolocator: ^13.0.2
   permission_handler: ^11.4.0
   flutter_local_notifications: ^18.0.1
+  # Para programar los avisos semanales de "tu bus de siempre" (zonedSchedule
+  # requiere TZDateTime). Zona fijada a Europe/Madrid (la app es de Alzira).
+  timezone: ^0.9.4
   # flutter_nfc_kit eliminado: el código solo usa nfc_manager (lib/core/providers/nfc_controller.dart).
   # Tener dos plugins NFC inflaba el AAB y aumentaba la superficie de fallos.
   google_mobile_ads: ^5.1.0

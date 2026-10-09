@@ -575,5 +575,7 @@
   "impactKmLabel": "Km by bus",
   "impactMoneyLabel": "Car cost",
   "impactAlbusLine": "You've avoided {co2} of CO₂ this month by taking the bus! 💚",
-  "impactEmptyLine": "Take your first bus and start making an impact 💚"
+  "impactEmptyLine": "Take your first bus and start making an impact 💚",
+  "habitsTitle": "Your routines",
+  "habitsSubtitle": "Albus learned your usual trips"
 }

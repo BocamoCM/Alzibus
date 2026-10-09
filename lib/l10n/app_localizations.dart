@@ -2860,6 +2860,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Coge tu primer bus y empieza a sumar impacto 💚'**
   String get impactEmptyLine;
+
+  /// No description provided for @habitsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus rutinas'**
+  String get habitsTitle;
+
+  /// No description provided for @habitsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Albus ha aprendido tus viajes habituales'**
+  String get habitsSubtitle;
 }
 
 class _AppLocalizationsDelegate
