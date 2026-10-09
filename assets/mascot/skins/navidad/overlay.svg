@@ -1,148 +1,134 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-  <!-- Skin overlay NAVIDAD — gorro de Santa, bufanda y copos.
+  <!-- Skin overlay NAVIDAD v3 — gorro de Santa, bufanda que ABRAZA el
+       contorno y sombras de contacto para que no parezca pegado.
 
-       Referencias del Albus base (viewBox 400x400):
-       - Techo del bus: y ≈ 95-130. El gorro debe APOYARSE encima,
-         con su ribete blanco descansando justo sobre el techo
-         (y ≈ 100-115), no flotando ni metido dentro del cuerpo.
-       - El cono cae lateralmente hacia la derecha (gorro de Santa
-         típico), con el pompón al final. -->
+       Referencias Albus base (viewBox 400x400):
+       - Techo y ≈ 95-130 (esquinas rx58). El ribete del gorro descansa
+         en y ≈ 108, curvado como el techo.
+       - Cuerpo x = 65..335. Esquinas INFERIORES curvan de y ≈ 282 a 340,
+         así que en y ≈ 290-320 el cuerpo se estrecha: la bufanda mete sus
+         extremos siguiendo esa curva en vez de sobresalir como una barra. -->
 
   <defs>
-    <linearGradient id="santaHatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="nvHat" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#E63946"/>
       <stop offset="100%" stop-color="#A02530"/>
     </linearGradient>
-    <linearGradient id="santaHatShade" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#000000" stop-opacity="0.0"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
+    <linearGradient id="nvScarf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E84A57"/>
+      <stop offset="100%" stop-color="#9E2330"/>
     </linearGradient>
-    <radialGradient id="pompon" cx="35%" cy="35%" r="60%">
+    <radialGradient id="nvPompon" cx="35%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="60%" stop-color="#E8E8E8"/>
-      <stop offset="100%" stop-color="#B8B8B8"/>
+      <stop offset="60%" stop-color="#ECECEC"/>
+      <stop offset="100%" stop-color="#BDBDBD"/>
     </radialGradient>
-    <radialGradient id="ribbet" cx="50%" cy="40%" r="60%">
+    <radialGradient id="nvRibbet" cx="50%" cy="38%" r="65%">
       <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#DCDCDC"/>
+      <stop offset="100%" stop-color="#DADADA"/>
     </radialGradient>
+    <!-- Sombra de contacto radial suave (sin filtros → compatible flutter_svg) -->
+    <radialGradient id="nvContact" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.32"/>
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Oclusión ambiental para el borde superior de la bufanda -->
+    <linearGradient id="nvAO" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22"/>
+    </linearGradient>
   </defs>
 
   <!-- ═══ GORRO DE SANTA ═══ -->
+  <!-- Sombra de contacto del gorro sobre el techo (lo ancla, no flota) -->
+  <ellipse cx="202" cy="120" rx="80" ry="16" fill="url(#nvContact)"/>
+
   <g>
-    <!-- Base del cono: parte ancha apoyada en el techo (~y=100-110),
-         curvándose hacia arriba y a la derecha, terminando en la
-         punta donde está el pompón.
-         Camino: parte de la izquierda del ribete (x=130, y=105),
-         sube curvándose por arriba, cae hacia la derecha-arriba
-         (y=20), y vuelve por la derecha del ribete (x=270, y=105). -->
-    <path d="M 130 108
-             Q 145 70 175 50
-             Q 220 30 268 22
-             Q 295 18 310 30
-             Q 315 50 290 80
-             Q 285 95 270 108
-             Z"
-          fill="url(#santaHatGrad)"
-          stroke="#5C0E18" stroke-width="2.5"/>
-
-    <!-- Sombreado de volumen del cono -->
-    <path d="M 130 108
-             Q 145 70 175 50
-             Q 220 30 268 22
-             Q 295 18 310 30
-             Q 315 50 290 80
-             Q 285 95 270 108
-             Z"
-          fill="url(#santaHatShade)"/>
-
-    <!-- Pliegue sutil (línea de sombra interior) -->
-    <path d="M 285 25 Q 260 50 230 70"
-          stroke="#5C0E18" stroke-width="1.2" opacity="0.45" fill="none"/>
-
-    <!-- Borde blanco peludo (ribete del gorro) apoyado en el techo.
-         Tamaño: rx=80 ry=11, centrado en (200,108) — descansa sobre la
-         curvatura superior del bus. -->
-    <ellipse cx="200" cy="108" rx="78" ry="11"
-             fill="url(#ribbet)" stroke="#5C0E18" stroke-width="2"/>
-
-    <!-- Textura "pelusa" del ribete (pequeños círculos) -->
-    <g fill="#FFFFFF" stroke="#D0D0D0" stroke-width="0.5">
-      <circle cx="135" cy="106" r="4"/>
-      <circle cx="150" cy="111" r="3.6"/>
-      <circle cx="165" cy="106" r="4"/>
-      <circle cx="180" cy="111" r="3.8"/>
-      <circle cx="200" cy="107" r="4"/>
-      <circle cx="220" cy="111" r="3.8"/>
-      <circle cx="240" cy="106" r="4"/>
-      <circle cx="255" cy="110" r="3.6"/>
-      <circle cx="268" cy="106" r="4"/>
+    <!-- Sombra que proyecta el cono sobre el techo (copia desplazada) -->
+    <path d="M 132 110 Q 150 72 180 52 Q 224 32 272 24 Q 300 20 314 32
+             Q 318 52 293 82 Q 288 97 272 110 Z"
+          fill="#000000" opacity="0.14" transform="translate(4,6)"/>
+    <!-- Cono del gorro -->
+    <path d="M 130 108 Q 145 70 175 50 Q 220 30 268 22 Q 295 18 310 30
+             Q 315 50 290 80 Q 285 95 270 108 Z"
+          fill="url(#nvHat)" stroke="#5C0E18" stroke-width="2.5"/>
+    <!-- Sombreado interno del cono (volumen) -->
+    <path d="M 270 108 Q 285 95 290 80 Q 315 50 310 30 Q 300 40 286 70
+             Q 278 92 262 106 Z" fill="#000000" opacity="0.16"/>
+    <!-- Brillo del cono -->
+    <path d="M 150 80 Q 180 55 220 44 Q 200 60 175 86 Z" fill="#FFFFFF" opacity="0.18"/>
+    <!-- Ribete blanco apoyado, ligeramente curvado siguiendo el techo -->
+    <path d="M 122 108 Q 200 92 282 108 Q 282 122 200 124 Q 122 122 122 108 Z"
+          fill="url(#nvRibbet)" stroke="#5C0E18" stroke-width="2"/>
+    <!-- Pelusa del ribete -->
+    <g fill="#FFFFFF" stroke="#CFCFCF" stroke-width="0.5">
+      <circle cx="135" cy="109" r="4.2"/><circle cx="152" cy="114" r="3.8"/>
+      <circle cx="170" cy="110" r="4.2"/><circle cx="188" cy="115" r="3.9"/>
+      <circle cx="206" cy="111" r="4.2"/><circle cx="224" cy="115" r="3.9"/>
+      <circle cx="242" cy="110" r="4.2"/><circle cx="260" cy="114" r="3.8"/>
+      <circle cx="276" cy="110" r="4"/>
     </g>
-
-    <!-- Pompón blanco grande en la punta del gorro -->
-    <circle cx="305" cy="32" r="15" fill="url(#pompon)" stroke="#888" stroke-width="1.2"/>
-    <!-- Brillo del pompón -->
-    <circle cx="301" cy="28" r="4.5" fill="#FFFFFF" opacity="0.75"/>
+    <!-- Pompón -->
+    <circle cx="305" cy="32" r="15" fill="url(#nvPompon)" stroke="#8A8A8A" stroke-width="1.2"/>
+    <circle cx="300" cy="27" r="4.5" fill="#FFFFFF" opacity="0.8"/>
   </g>
 
-  <!-- ═══ BUFANDA roja con flecos ═══ -->
+  <!-- ═══ BUFANDA que abraza el contorno ═══ -->
+  <!-- Oclusión ambiental sobre el borde superior (en el cuerpo) -->
+  <path d="M 70 280 Q 133 288 200 286 Q 267 288 330 280
+           L 330 293 Q 267 301 200 299 Q 133 301 70 293 Z"
+        fill="url(#nvAO)"/>
   <g>
-    <!-- Cuerpo de la bufanda alrededor del cuello/cintura del bus -->
-    <rect x="60" y="290" width="280" height="28" fill="url(#santaHatGrad)"
-          stroke="#5C0E18" stroke-width="2"/>
-
-    <!-- Rayas blancas tipo bufanda navideña -->
-    <g fill="#FFFFFF">
-      <rect x="60" y="293" width="280" height="3"/>
-      <rect x="60" y="312" width="280" height="3"/>
+    <!-- Cuerpo de la bufanda: extremos metidos en las esquinas del cuerpo,
+         bordes combados como tela que rodea un cilindro. -->
+    <path d="M 67 292
+             Q 133 300 200 298 Q 267 300 333 292
+             L 326 314 Q 267 323 200 321 Q 133 323 74 314 Z"
+          fill="url(#nvScarf)" stroke="#5C0E18" stroke-width="2"/>
+    <!-- Rayas blancas siguiendo la comba -->
+    <path d="M 68 296 Q 134 304 200 302 Q 266 304 332 296"
+          stroke="#FFFFFF" stroke-width="3" fill="none" opacity="0.92"/>
+    <path d="M 71 309 Q 134 318 200 316 Q 266 318 329 309"
+          stroke="#FFFFFF" stroke-width="3" fill="none" opacity="0.92"/>
+    <!-- Pliegues verticales (siguen la curvatura) -->
+    <g stroke="#5C0E18" stroke-width="0.9" opacity="0.4" fill="none">
+      <path d="M 110 299 Q 110 309 112 319"/>
+      <path d="M 160 300 Q 160 311 160 321"/>
+      <path d="M 240 300 Q 240 311 240 321"/>
+      <path d="M 290 299 Q 290 309 288 319"/>
     </g>
+    <!-- Sombra inferior de la bufanda sobre el cuerpo -->
+    <path d="M 74 314 Q 133 323 200 321 Q 267 323 326 314
+             L 322 322 Q 267 330 200 328 Q 133 330 78 322 Z"
+          fill="#000000" opacity="0.15"/>
 
-    <!-- Pliegues de tela -->
-    <g stroke="#5C0E18" stroke-width="0.8" opacity="0.5" fill="none">
-      <line x1="100" y1="290" x2="100" y2="318"/>
-      <line x1="160" y1="290" x2="160" y2="318"/>
-      <line x1="240" y1="290" x2="240" y2="318"/>
-      <line x1="300" y1="290" x2="300" y2="318"/>
-    </g>
-
-    <!-- Extremo izquierdo de la bufanda colgando con FLECOS -->
-    <path d="M 60 305 L 28 325 L 26 345 L 56 340 L 60 320 Z"
-          fill="url(#santaHatGrad)" stroke="#5C0E18" stroke-width="2"/>
-    <!-- Flecos del extremo -->
-    <g stroke="#FFFFFF" stroke-width="2" stroke-linecap="round">
-      <line x1="28" y1="345" x2="26" y2="358"/>
-      <line x1="34" y1="345" x2="33" y2="360"/>
-      <line x1="40" y1="345" x2="40" y2="362"/>
-      <line x1="46" y1="345" x2="47" y2="360"/>
-      <line x1="52" y1="345" x2="53" y2="358"/>
+    <!-- Extremo colgando con flecos (lado izquierdo) -->
+    <path d="M 70 308 Q 54 318 44 336 L 40 356 Q 52 352 60 338 Q 68 324 76 314 Z"
+          fill="url(#nvScarf)" stroke="#5C0E18" stroke-width="2"/>
+    <path d="M 58 326 Q 52 336 49 348" stroke="#5C0E18" stroke-width="0.9"
+          opacity="0.45" fill="none"/>
+    <g stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round">
+      <line x1="41" y1="354" x2="39" y2="366"/>
+      <line x1="46" y1="356" x2="45" y2="368"/>
+      <line x1="51" y1="355" x2="51" y2="367"/>
+      <line x1="56" y1="353" x2="57" y2="365"/>
     </g>
   </g>
 
-  <!-- ═══ COPOS DE NIEVE decorativos ═══ -->
-  <g fill="#FFFFFF" stroke="#B0D8FF" stroke-width="0.8">
-    <!-- Copo izquierdo -->
-    <g transform="translate(40, 80)">
-      <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFFFF" stroke-width="1.5"/>
-      <line x1="-7" y1="0" x2="7" y2="0" stroke="#FFFFFF" stroke-width="1.5"/>
-      <line x1="-5" y1="-5" x2="5" y2="5" stroke="#FFFFFF" stroke-width="1.5"/>
-      <line x1="5" y1="-5" x2="-5" y2="5" stroke="#FFFFFF" stroke-width="1.5"/>
-      <circle r="2.5" fill="#FFFFFF"/>
+  <!-- ═══ COPOS DE NIEVE ═══ -->
+  <g stroke="#FFFFFF" stroke-linecap="round">
+    <g transform="translate(44, 86)" stroke-width="1.6">
+      <line x1="0" y1="-7" x2="0" y2="7"/><line x1="-7" y1="0" x2="7" y2="0"/>
+      <line x1="-5" y1="-5" x2="5" y2="5"/><line x1="5" y1="-5" x2="-5" y2="5"/>
     </g>
-    <!-- Copo derecho abajo (el de arriba lo ocupa ahora el pompón) -->
-    <g transform="translate(360, 180)">
-      <line x1="0" y1="-8" x2="0" y2="8" stroke="#FFFFFF" stroke-width="1.8"/>
-      <line x1="-8" y1="0" x2="8" y2="0" stroke="#FFFFFF" stroke-width="1.8"/>
-      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#FFFFFF" stroke-width="1.8"/>
-      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#FFFFFF" stroke-width="1.8"/>
-      <circle r="3" fill="#FFFFFF"/>
+    <g transform="translate(360, 182)" stroke-width="1.8">
+      <line x1="0" y1="-8" x2="0" y2="8"/><line x1="-8" y1="0" x2="8" y2="0"/>
+      <line x1="-6" y1="-6" x2="6" y2="6"/><line x1="6" y1="-6" x2="-6" y2="6"/>
     </g>
-    <!-- Copo más pequeño -->
-    <g transform="translate(80, 200)">
-      <line x1="0" y1="-5" x2="0" y2="5" stroke="#FFFFFF" stroke-width="1.2"/>
-      <line x1="-5" y1="0" x2="5" y2="0" stroke="#FFFFFF" stroke-width="1.2"/>
-      <line x1="-4" y1="-4" x2="4" y2="4" stroke="#FFFFFF" stroke-width="1.2"/>
-      <line x1="4" y1="-4" x2="-4" y2="4" stroke="#FFFFFF" stroke-width="1.2"/>
-      <circle r="2" fill="#FFFFFF"/>
+    <g transform="translate(86, 206)" stroke-width="1.2">
+      <line x1="0" y1="-5" x2="0" y2="5"/><line x1="-5" y1="0" x2="5" y2="0"/>
+      <line x1="-4" y1="-4" x2="4" y2="4"/><line x1="4" y1="-4" x2="-4" y2="4"/>
     </g>
   </g>
 </svg>
