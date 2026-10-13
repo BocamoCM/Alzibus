@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Línea L2 bus Alzira - Paradas y recorrido | Alzitrans</title>
-    <meta name="description" content="Recorrido completo y todas las paradas de la línea L2 del bus urbano de Alzira. 30 paradas. Consulta tiempos en tiempo real en la app Alzitrans.">
+    <meta name="description" content="Horario, recorrido y paradas de la línea L2 del bus urbano de Alzira: frecuencias Hospital ↔ Estación RENFE y tiempos de paso en tiempo real con Alzitrans.">
     <meta name="robots" content="index, follow">
     <meta name="author" content="Alzitrans">
     <meta name="geo.region" content="ES-VC">
@@ -132,6 +132,11 @@
         .stops-list li:last-child { border-bottom: none; }
         .stops-list li a { color: var(--text); }
         .stops-list .stop-num { background: var(--burgundy); color: white; font-weight: 700; min-width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .sched-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+        .sched h3 { margin-top: 0; }
+        .sched .day { font-weight: 700; color: var(--text); margin-top: 12px; }
+        .sched .times { color: var(--text-muted); font-size: 14px; }
+        .note { font-size: 13px; color: var(--text-muted); border-left: 3px solid var(--coral); padding: 4px 0 4px 12px; margin: 8px 0; }
         .map { width: 100%; height: 380px; border-radius: 12px; border: 1px solid var(--border); margin: 16px 0; }
         .cta { background: linear-gradient(135deg, var(--burgundy), var(--coral)); color: white; padding: 32px 24px; border-radius: 16px; text-align: center; margin: 32px 0; }
         .cta h2 { color: white; margin-top: 0; }
@@ -174,6 +179,40 @@
             <a href="/lineas/l1/">Línea L1</a>
 <a href="/lineas/l3/">Línea L3</a>
         </div>
+
+
+        <h2>Horario de la línea L2</h2>
+        <p>La L2 conecta el <strong>Hospital de la Ribera</strong> con la <strong>Estación RENFE</strong>. La L2 pasa aproximadamente cada hora. Estas son sus franjas de servicio:</p>
+        <div class="sched-grid">
+            <div class="card sched">
+                <h3>Salidas desde el Hospital</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">Cada hora, de 06:15 a 21:15.</div>
+                <div class="day">Julio</div>
+                <div class="times">Cada hora de 06:15 a 14:15, y de 15:30 a 21:30.</div>
+                <div class="day">Agosto</div>
+                <div class="times">Cada hora, de 06:25 a 21:25.</div>
+                <div class="day">Sábados</div>
+                <div class="times">Cada hora, de 06:25 a 21:25.</div>
+                <div class="day">Domingos y festivos</div>
+                <div class="times">09:55 · 11:55 · 15:55 · 17:55 · 19:55</div>
+            </div>
+            <div class="card sched">
+                <h3>Salidas desde la Estación RENFE</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">Cada hora, de 06:45 a 20:45. El tren de las 21:45 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Julio</div>
+                <div class="times">Cada hora de 06:45 a 13:45, y de 15:00 a 21:00. El tren de las 22:00 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Agosto</div>
+                <div class="times">Cada hora, de 07:00 a 21:00. El tren de las 22:00 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Sábados</div>
+                <div class="times">Cada hora, de 07:00 a 21:00. El tren de las 22:00 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Domingos y festivos</div>
+                <div class="times">10:30 · 12:30 · 16:30 · 18:30 · 20:30</div>
+            </div>
+        </div>
+        <p class="note">Viernes Santo, Navidad y 1 de enero: por la tarde no hay servicio.</p>
+        <p style="font-size:14px; color:var(--text-muted)">Consulta también las <a href="/horarios/">tarifas y los horarios de todas las líneas</a>, o el tiempo de paso en tiempo real por parada en la app Alzitrans.</p>
 
         <h2>Mapa con el recorrido de la línea L2</h2>
         <div id="map" class="map"></div>
@@ -335,7 +374,7 @@
 
         <div class="cta">
             <h2>¿Cuándo pasa el siguiente bus?</h2>
-            <p>Los horarios del autobús urbano de Alzira no son fijos. Consulta los tiempos de paso en tiempo real desde la app Alzitrans o desde la versión web.</p>
+            <p>Mira el horario completo de la L2 más arriba, o consulta el tiempo de paso del próximo bus en tiempo real desde la app Alzitrans o la versión web.</p>
             <a href="/#descarga" class="btn">Descargar app</a>
             <a href="/app/" class="btn">Abrir versión web</a>
         </div>
