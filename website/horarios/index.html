@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios y tarifas del bus de Alzira (L1, L2, L3) | Alzitrans</title>
+    <meta name="description" content="Horarios y tarifas del bus urbano de Alzira: frecuencias de la L1 (Hospital y Estación RENFE), precios del billete y bonos, y tiempos de paso en tiempo real por parada con Alzitrans (Alzibus).">
+    <meta name="keywords" content="horarios bus alzira, horario autobus alzira, horarios autobuses alzira, tarifas bus alzira, precio bus alzira, billete bus alzira, bono bus alzira, horario bus alzira renfe, horario bus alzira hospital, cuando pasa el bus alzira, alzibus horarios">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Alzitrans">
+    <meta name="geo.region" content="ES-VC">
+    <meta name="geo.placename" content="Alzira, Valencia, España">
+
+    <link rel="canonical" href="https://alzitrans.es/horarios/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Horarios del bus de Alzira en tiempo real (L1, L2, L3) | Alzitrans">
+    <meta property="og:description" content="Horarios del bus urbano de Alzira en tiempo real. Tiempos de paso de las líneas L1, L2 y L3 por parada con Alzitrans.">
+    <meta property="og:url" content="https://alzitrans.es/horarios/">
+    <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Alzitrans">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Horarios del bus de Alzira en tiempo real (L1, L2, L3) | Alzitrans">
+    <meta name="twitter:description" content="Horarios del bus urbano de Alzira en tiempo real. Tiempos de paso de L1, L2 y L3 por parada.">
+    <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
+
+    <!-- Schema.org: Breadcrumb -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://alzitrans.es/" },
+    { "@type": "ListItem", "position": 2, "name": "Horarios", "item": "https://alzitrans.es/horarios/" }
+  ]
+}
+    </script>
+
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "¿Cuánto cuesta el bus de Alzira?",
+      "acceptedAnswer": { "@type": "Answer", "text": "El billete normal del bus urbano de Alzira cuesta 0,70 €, el billete festivo 1,00 € y el bono de 20 viajes 5,00 € (3,00 € la versión joven). La fianza de la tarjeta es de 3,00 €." }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Cuándo pasa el bus en Alzira?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Depende de la línea, el día y la época del año. Por ejemplo, la L1 sale del Hospital cada 30 minutos de 05:55 a 21:55 en días laborables de septiembre a junio. También puedes consultar el tiempo de paso en tiempo real de tu parada en la app Alzitrans." }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Cómo consulto los horarios del bus de Alzira?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Abre Alzitrans (gratis en Android o en la versión web), elige tu parada en el mapa y verás cuántos minutos faltan para el próximo autobús de cada línea. Puedes activar una alerta para que te avise cuando el bus esté llegando." }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Hay bus de Alzira a la Estación RENFE?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Sí. La parada Estació RENFE está cubierta por el bus urbano de Alzira. Consulta los tiempos de paso en tiempo real de esa parada en Alzitrans." }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Qué bus va al Hospital de la Ribera desde Alzira?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Varias líneas del bus urbano de Alzira paran en el Hospital. Consulta la parada Hospital en Alzitrans para ver los tiempos de llegada reales en cada momento." }
+    }
+  ]
+}
+    </script>
+
+    <!-- Google AdSense -->
+    <script defer src="/cookie-banner.js"></script>
+
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <style>
+        /* Tema oscuro consistente con website/style.css de la landing. */
+        :root {
+            --burgundy: #6B1B3D;
+            --coral: #E85A4F;
+            --bg: #0a0a0f;
+            --bg-soft: #14141c;
+            --bg-card: #1c1c28;
+            --text: #f0eff4;
+            --text-muted: rgba(240, 239, 244, 0.55);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", "Outfit", sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+        a { color: var(--coral); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+        header.topbar { background: rgba(20, 20, 28, 0.9); backdrop-filter: blur(8px); color: var(--text); padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+        header.topbar a { color: var(--text); font-weight: 600; }
+        header.topbar a.cta-btn { background: var(--burgundy); padding: 8px 18px; border-radius: 999px; color: white; }
+        header.topbar .container { max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .line-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; color: white; font-weight: 700; font-size: 13px; }
+        h1 { font-size: 32px; margin-bottom: 12px; line-height: 1.2; color: var(--text); }
+        h2 { font-size: 22px; margin: 32px 0 16px; color: var(--text); }
+        h3 { font-size: 18px; margin: 24px 0 8px; color: var(--text); }
+        p { margin-bottom: 12px; color: var(--text); }
+        .lead { font-size: 17px; color: var(--text-muted); margin-bottom: 24px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .steps { list-style: none; counter-reset: step; }
+        .steps li { position: relative; padding: 10px 0 10px 44px; border-bottom: 1px solid var(--border); }
+        .steps li:last-child { border-bottom: none; }
+        .steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 10px; width: 30px; height: 30px; background: var(--burgundy); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+        .stops-list { list-style: none; }
+        .stops-list li { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .stops-list li:last-child { border-bottom: none; }
+        .stops-list li a { color: var(--text); }
+        .cta { background: linear-gradient(135deg, var(--burgundy), var(--coral)); color: white; padding: 32px 24px; border-radius: 16px; text-align: center; margin: 32px 0; }
+        .cta h2 { color: white; margin-top: 0; }
+        .cta p { color: rgba(255,255,255,0.92); margin-bottom: 16px; }
+        .cta a.btn { display: inline-block; background: white; color: var(--burgundy); padding: 12px 24px; border-radius: 999px; font-weight: 700; margin: 4px; }
+        .cta a.btn:hover { text-decoration: none; }
+        .line-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; align-items: center; }
+        .line-links a { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); font-weight: 600; font-size: 13px; background: var(--bg-card); }
+        .line-links a:hover { text-decoration: none; border-color: var(--coral); }
+        .faq-q { font-weight: 700; margin-top: 18px; color: var(--text); }
+        table.fares { width: 100%; border-collapse: collapse; }
+        table.fares th, table.fares td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        table.fares th { color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        table.fares td.price { text-align: right; font-weight: 700; color: var(--coral); white-space: nowrap; }
+        .sched-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .sched h3 { margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        .sched .day { font-weight: 700; color: var(--text); margin-top: 12px; }
+        .sched .times { color: var(--text-muted); font-size: 14px; }
+        .note { font-size: 13px; color: var(--text-muted); border-left: 3px solid var(--coral); padding: 4px 0 4px 12px; margin: 8px 0; }
+        footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 32px 24px; margin-top: 48px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        footer a { color: var(--text-muted); margin: 0 8px; }
+        footer a:hover { color: var(--coral); }
+    </style>
+    <link rel="stylesheet" href="/cookie-banner.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a href="/" class="logo-link" style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:700;">
+                <img src="/assets/logo.png" alt="Logo Alzitrans" style="width:32px; height:32px; border-radius:8px;">
+                <span>Alzitrans</span>
+            </a>
+            <a href="/#descarga" class="cta-btn">Descargar app</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <nav class="breadcrumb"><a href="/">Inicio</a> › Horarios</nav>
+        <h1>Horarios y tarifas del bus urbano de Alzira</h1>
+        <p class="lead">El autobús urbano de Alzira (también conocido como <strong>Alzibus</strong>) funciona con <strong>frecuencias y franjas de servicio</strong> según la línea, el día y la época del año. Aquí tienes los <strong>horarios</strong> y las <strong>tarifas</strong> del servicio, y además puedes consultar el <strong>tiempo de paso real</strong> de cada parada en la app.</p>
+
+        <div class="line-links">
+            <span style="color:var(--text-muted); font-size:13px;">Ver recorrido:</span>
+            <a href="/lineas/l1/"><span class="line-badge" style="background:#1565C0">L1</span> Línea L1</a>
+            <a href="/lineas/l2/"><span class="line-badge" style="background:#2E7D32">L2</span> Línea L2</a>
+            <a href="/lineas/l3/"><span class="line-badge" style="background:#E65100">L3</span> Línea L3</a>
+        </div>
+
+        <h2 id="tarifas">Tarifas del bus de Alzira</h2>
+        <p>Precios del servicio urbano de autobús de Alzira (Servici Urbà d'Alzira):</p>
+        <div class="card" style="padding:0">
+            <table class="fares">
+                <thead><tr><th>Título de transporte</th><th style="text-align:right">Precio</th></tr></thead>
+                <tbody>
+                    <tr><td>Billete normal</td><td class="price">0,70 €</td></tr>
+                    <tr><td>Billete festivo</td><td class="price">1,00 €</td></tr>
+                    <tr><td>Bono 20 viajes</td><td class="price">5,00 €</td></tr>
+                    <tr><td>Bono 20 viajes joven</td><td class="price">3,00 €</td></tr>
+                    <tr><td>Fianza de la tarjeta</td><td class="price">3,00 €</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="note">Puedes consultar el saldo y los viajes de tu tarjeta de transporte acercándola al móvil con el lector NFC de Alzitrans.</p>
+
+        <h2>Horarios por línea</h2>
+        <p>Las tres líneas del bus urbano de Alzira conectan el <strong>Hospital de la Ribera</strong> con la <strong>Estación RENFE</strong>. Estas son sus frecuencias y franjas de servicio:</p>
+
+        <h3 id="l1"><span class="line-badge" style="background:#1565C0">L1</span> Línea L1 — Hospital ↔ Estación RENFE</h3>
+        <div class="sched-grid">
+            <div class="card sched">
+                <h3><span class="line-badge" style="background:#1565C0">L1</span> Salidas desde el Hospital</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">Cada 30 minutos, de 05:55 a 21:55.</div>
+                <div class="day">Julio</div>
+                <div class="times">Cada 30 minutos de 05:55 a 14:30. Desde las 14:30, cada hora hasta las 21:55.</div>
+                <div class="day">Agosto</div>
+                <div class="times">Cada hora, de 05:55 a 21:55.</div>
+                <div class="day">Sábados</div>
+                <div class="times">Cada hora, de 05:55 a 21:55.</div>
+                <div class="day">Domingos y festivos</div>
+                <div class="times">08:55 · 10:55 · 12:55 · 16:55 · 18:55 · 20:55</div>
+            </div>
+            <div class="card sched">
+                <h3><span class="line-badge" style="background:#1565C0">L1</span> Salidas desde la Estación RENFE</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">Cada 30 minutos, de 06:30 a 21:30. Enlaza con los últimos trenes hasta las 23:10.</div>
+                <div class="day">Julio</div>
+                <div class="times">Cada 30 minutos de 06:30 a 14:30. Desde las 14:30, cada hora hasta las 21:30. Enlaza con los últimos trenes hasta las 23:10.</div>
+                <div class="day">Agosto</div>
+                <div class="times">Cada hora, de 06:30 a 21:30. Enlaza con los últimos trenes hasta las 23:10.</div>
+                <div class="day">Sábados</div>
+                <div class="times">Cada hora, de 06:30 a 21:30. Enlaza con el tren de las 22:35.</div>
+                <div class="day">Domingos y festivos</div>
+                <div class="times">09:30 · 11:30 · 13:30 · 17:30 · 19:30 · 21:30</div>
+            </div>
+        </div>
+        <p class="note">Viernes Santo, Navidad y 1 de enero: por la tarde no hay servicio.</p>
+        <p class="note">La parada 18 (Avenida dels Esports – CIPFP Lluís Suñer) solo se atiende en las salidas desde el Hospital a las 07:55, 08:25, 14:25 y 21:25, en días lectivos.</p>
+        <h3 id="l2"><span class="line-badge" style="background:#2E7D32">L2</span> Línea L2 — Hospital ↔ Estación RENFE</h3>
+        <div class="sched-grid">
+            <div class="card sched">
+                <h3><span class="line-badge" style="background:#2E7D32">L2</span> Salidas desde el Hospital</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">Cada hora, de 06:15 a 21:15.</div>
+                <div class="day">Julio</div>
+                <div class="times">Cada hora de 06:15 a 14:15, y de 15:30 a 21:30.</div>
+                <div class="day">Agosto</div>
+                <div class="times">Cada hora, de 06:25 a 21:25.</div>
+                <div class="day">Sábados</div>
+                <div class="times">Cada hora, de 06:25 a 21:25.</div>
+                <div class="day">Domingos y festivos</div>
+                <div class="times">09:55 · 11:55 · 15:55 · 17:55 · 19:55</div>
+            </div>
+            <div class="card sched">
+                <h3><span class="line-badge" style="background:#2E7D32">L2</span> Salidas desde la Estación RENFE</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">Cada hora, de 06:45 a 20:45. El tren de las 21:45 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Julio</div>
+                <div class="times">Cada hora de 06:45 a 13:45, y de 15:00 a 21:00. El tren de las 22:00 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Agosto</div>
+                <div class="times">Cada hora, de 07:00 a 21:00. El tren de las 22:00 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Sábados</div>
+                <div class="times">Cada hora, de 07:00 a 21:00. El tren de las 22:00 se reparte desde Pza. Reino por la línea 1.</div>
+                <div class="day">Domingos y festivos</div>
+                <div class="times">10:30 · 12:30 · 16:30 · 18:30 · 20:30</div>
+            </div>
+        </div>
+        <p class="note">Viernes Santo, Navidad y 1 de enero: por la tarde no hay servicio.</p>
+
+        <h3 id="l3"><span class="line-badge" style="background:#E65100">L3</span> Línea L3 — Hospital ↔ Estación RENFE</h3>
+        <div class="sched-grid">
+            <div class="card sched">
+                <h3><span class="line-badge" style="background:#E65100">L3</span> Salidas desde el Hospital</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">06:45 · 07:45 · 08:45 · 09:45 · 10:45 · 11:45 · 12:45 · 13:45 · 14:45 · 15:45 · 16:45 · 17:45 · 18:45 · 19:45 · 20:45</div>
+            </div>
+            <div class="card sched">
+                <h3><span class="line-badge" style="background:#E65100">L3</span> Salidas desde la Estación RENFE</h3>
+                <div class="day">Laborables (septiembre a junio)</div>
+                <div class="times">07:15 · 08:15 · 09:15 · 10:15 · 11:15 · 12:15 · 13:15 · 14:15 · 15:15 · 16:15 · 17:15 · 18:15 · 19:15 · 20:15. El de las 21:15 se reparte desde Pl. Reino por la línea 3.</div>
+            </div>
+        </div>
+        <p class="note">La L3 solo circula en días laborables de septiembre a junio. En julio, agosto, sábados, domingos y festivos no hay servicio.</p>
+
+        <h2>¿Cómo consultar los horarios del bus de Alzira?</h2>
+        <div class="card" style="padding:12px 20px">
+            <ul class="steps">
+                <li>Abre <strong>Alzitrans</strong> en tu móvil Android o en la versión web desde cualquier navegador.</li>
+                <li>Selecciona tu <strong>parada</strong> en el mapa o búscala por su nombre.</li>
+                <li>Consulta cuántos <strong>minutos faltan</strong> para el próximo autobús de cada línea.</li>
+                <li>Activa una <strong>alerta</strong> y la app te avisará cuando el bus esté llegando.</li>
+            </ul>
+        </div>
+
+        <h2>Horarios por destino frecuente</h2>
+        <p>Estos son algunos de los trayectos más consultados del bus de Alzira. Pulsa para ver los tiempos de paso reales de cada parada:</p>
+        <div class="card" style="padding:0">
+            <ul class="stops-list">
+                <li>
+                    <span class="line-badge" style="background:var(--burgundy)">RENFE</span>
+                    <a href="/paradas/1-estacio-renfe/" style="flex:1">Bus Alzira → Estación RENFE</a>
+                    <span style="color:var(--text-muted); font-size:13px">Tiempos en vivo</span>
+                </li>
+                <li>
+                    <span class="line-badge" style="background:var(--burgundy)">HOSP</span>
+                    <a href="/paradas/14-hospital/" style="flex:1">Bus Alzira → Hospital de la Ribera</a>
+                    <span style="color:var(--text-muted); font-size:13px">Tiempos en vivo</span>
+                </li>
+                <li>
+                    <span class="line-badge" style="background:var(--burgundy)">52</span>
+                    <a href="/paradas/" style="flex:1">Ver todas las paradas del bus de Alzira</a>
+                    <span style="color:var(--text-muted); font-size:13px">52 paradas</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="cta">
+            <h2>Tiempos de paso en tiempo real</h2>
+            <p>Deja de esperar sin saber cuándo llega el bus. Descarga Alzitrans gratis o ábrela en el navegador y consulta los horarios reales de tu parada.</p>
+            <a href="/#descarga" class="btn">Descargar app</a>
+            <a href="/app/" class="btn">Abrir versión web</a>
+        </div>
+
+        <h2>Preguntas frecuentes sobre los horarios</h2>
+        <p class="faq-q">¿Cuánto cuesta el bus de Alzira?</p>
+        <p>El billete normal cuesta 0,70 €, el billete festivo 1,00 € y el bono de 20 viajes 5,00 € (3,00 € la versión joven). La fianza de la tarjeta es de 3,00 €. Puedes ver todas las <a href="#tarifas">tarifas aquí</a>.</p>
+        <p class="faq-q">¿Cuándo pasa el bus en Alzira?</p>
+        <p>Depende de la línea, el día y la época del año. Por ejemplo, la L1 sale del Hospital cada 30 minutos de 05:55 a 21:55 en días laborables (de septiembre a junio). Consulta los <a href="#l1">horarios de la L1</a> o mira el tiempo de paso real de tu parada en la app Alzitrans.</p>
+        <p class="faq-q">¿Cada cuánto pasa el autobús urbano de Alzira?</p>
+        <p>La frecuencia varía según la línea y la franja horaria: en hora punta la L1 pasa cada 30 minutos y en verano o festivos la frecuencia baja a cada hora. La referencia más fiable en cada momento es el tiempo de paso real que muestra la app para tu parada.</p>
+        <p class="faq-q">¿Hay bus de Alzira a la Estación RENFE?</p>
+        <p>Sí, la parada <a href="/paradas/1-estacio-renfe/">Estació RENFE</a> está cubierta por el bus urbano de Alzira. Consulta sus tiempos de paso en tiempo real en Alzitrans.</p>
+        <p class="faq-q">¿Qué bus va al Hospital de la Ribera?</p>
+        <p>Varias líneas paran en el <a href="/paradas/14-hospital/">Hospital</a>. Consulta la parada en Alzitrans para ver los tiempos de llegada reales.</p>
+    </main>
+
+    <footer>
+        <p>Alzitrans es una aplicación independiente para consultar información del bus urbano de Alzira. No es un servicio oficial de la empresa concesionaria.</p>
+        <p style="margin-top:8px">
+            <a href="/">Inicio</a> ·
+            <a href="/lineas/">Líneas</a> ·
+            <a href="/paradas/">Paradas</a> ·
+            <a href="/legal/privacidad.html">Privacidad</a> ·
+            <a href="/legal/terminos.html">Términos</a>
+        </p>
+    </footer>
+</body>
+</html>
