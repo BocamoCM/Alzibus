@@ -251,14 +251,39 @@ a {
 }
 
 .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 24px;
+    border: 2px solid var(--glass-border);
+    border-radius: 99px;
     color: var(--text-muted);
-    font-weight: 500;
+    font-weight: 600;
     font-size: 16px;
-    transition: color 0.2s;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
 .btn-ghost:hover {
     color: var(--text);
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-ghost.btn-lg {
+    padding: 16px 32px;
+    font-size: 18px;
+}
+
+/* Variante clara del botón fantasma sobre el CTA oscuro */
+.cta .btn-ghost {
+    border-color: rgba(255, 255, 255, 0.85);
+    color: #fff;
+}
+
+.cta .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #fff;
 }
 
 .hero-stats {
@@ -294,77 +319,54 @@ a {
     perspective: 1200px;
 }
 
-.phone-frame {
-    width: 260px;
-    height: 520px;
-    background: #1c1c28;
-    border-radius: 36px;
-    overflow: hidden;
+/* ---- Integración devices.css: escalado del dispositivo ----
+   El dispositivo device-iphone-x mide 428x868. Lo metemos en un
+   "stage" del tamaño ya escalado y escalamos el .device desde la
+   esquina superior izquierda, de modo que el footprint sea exacto. */
+.device-stage {
+    --k: 0.605;
+    /* factor de escala (hero) */
     position: relative;
+    width: calc(428px * var(--k));
+    height: calc(868px * var(--k));
     will-change: transform;
-    /* Alzitrans brand bezel — coral/burgundy NEON glow */
-    border: 2.5px solid rgba(232, 90, 79, 0.6);
-    box-shadow:
-        /* Side depth - simulates 3D thickness */
-        8px 8px 0px 0px #111118,
-        /* Primary shadow */
-        0 40px 80px -10px rgba(0, 0, 0, 0.7),
-        /* NEON GLOW — 4 layers for maximum visibility */
-        0 0 8px rgba(232, 90, 79, 0.5),
-        0 0 25px rgba(232, 90, 79, 0.3),
-        0 0 50px rgba(107, 27, 61, 0.5),
-        0 0 100px rgba(107, 27, 61, 0.25),
-        /* Inner highlight */
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Sharp, crisp images */
-.phone-frame img {
-    width: 100%;
-    height: 100%;
+.device-stage .device {
+    transform: scale(var(--k));
+    transform-origin: top left;
+}
+
+/* La captura llena la pantalla del dispositivo */
+.device-stage .device-screen {
     object-fit: cover;
-    display: block;
+    background: #fff;
     image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    will-change: transform;
-    /* No transforms that would blur the image */
 }
 
-/* Top glass reflection — Apple-style light strip */
-.phone-frame::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 100%;
-    background: linear-gradient(170deg,
-            rgba(255, 255, 255, 0.15) 0%,
-            rgba(255, 255, 255, 0.05) 20%,
-            transparent 50%);
-    pointer-events: none;
-    z-index: 2;
+/* Bisel metálico de la librería + sombra difusa realista y glow de marca */
+.device-stage .device-frame {
+    box-shadow:
+        inset 0 0 2px 2px #c8cacb,
+        inset 0 0 0 7px #e2e3e4,
+        0 30px 60px -18px rgba(0, 0, 0, 0.75),
+        0 0 70px -16px rgba(107, 27, 61, 0.35);
 }
 
-/* Hero phone - Apple showcase entry */
-.hero-phone .phone-frame {
+/* Hero phone - entrada tipo showcase + flotación sutil */
+.hero-phone .device-stage {
     opacity: 0;
-    transform: rotateY(-15deg) rotateX(5deg) translateY(30px) scale(0.92);
-    animation: heroAppleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform: rotateY(-15deg) rotateX(5deg) translateY(30px);
+    animation:
+        heroAppleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+        appleFloat 7s ease-in-out 1.5s infinite;
 }
 
 @keyframes heroAppleReveal {
     to {
         opacity: 1;
-        transform: rotateY(-8deg) rotateX(3deg) translateY(0) scale(1);
+        transform: rotateY(-8deg) rotateX(3deg) translateY(0);
     }
-}
-
-/* Subtle float after reveal */
-.hero-phone .phone-frame {
-    animation:
-        heroAppleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-        appleFloat 7s ease-in-out 1.5s infinite;
 }
 
 @keyframes appleFloat {
@@ -413,62 +415,28 @@ a {
     background: var(--coral);
 }
 
-/* Feature phone frames - smaller size */
-.phone-3d .phone-frame {
-    width: 240px;
-    height: 480px;
-    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.7s ease;
+/* Dispositivos de features - más pequeños que el hero */
+.phone-3d {
+    --k: 0.56;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Apple-style angled left (tilt-right means the right side goes back) */
-.phone-3d.tilt-right .phone-frame {
-    transform: perspective(1000px) rotateY(-14deg) rotateX(3deg);
-    box-shadow:
-        12px 12px 0px 0px #111118,
-        0 40px 80px -10px rgba(0, 0, 0, 0.6),
-        0 0 8px rgba(232, 90, 79, 0.5),
-        0 0 25px rgba(232, 90, 79, 0.3),
-        0 0 50px rgba(107, 27, 61, 0.5),
-        0 0 100px rgba(107, 27, 61, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+/* Inclinación tipo Apple (tilt-right = el lado derecho va hacia atrás) */
+.phone-3d.tilt-right {
+    transform: rotateY(-14deg) rotateX(3deg);
 }
 
-/* Apple-style angled right (tilt-left means the left side goes back) */
-.phone-3d.tilt-left .phone-frame {
-    transform: perspective(1000px) rotateY(14deg) rotateX(3deg);
-    box-shadow:
-        -12px 12px 0px 0px #111118,
-        0 40px 80px -10px rgba(0, 0, 0, 0.6),
-        0 0 8px rgba(232, 90, 79, 0.5),
-        0 0 25px rgba(232, 90, 79, 0.3),
-        0 0 50px rgba(107, 27, 61, 0.5),
-        0 0 100px rgba(107, 27, 61, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.phone-3d.tilt-left {
+    transform: rotateY(14deg) rotateX(3deg);
 }
 
-/* Hover → flatten to frontal like Apple product zoom */
-.feature-row:hover .phone-3d.tilt-right .phone-frame {
-    transform: perspective(1000px) rotateY(-4deg) rotateX(1deg) scale(1.06);
-    box-shadow:
-        4px 8px 0px 0px #111118,
-        0 50px 100px -10px rgba(0, 0, 0, 0.5),
-        0 0 10px rgba(232, 90, 79, 0.6),
-        0 0 30px rgba(232, 90, 79, 0.4),
-        0 0 60px rgba(107, 27, 61, 0.5),
-        0 0 120px rgba(107, 27, 61, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+/* Hover → se endereza y acerca, como un zoom de producto */
+.feature-row:hover .phone-3d.tilt-right {
+    transform: rotateY(-4deg) rotateX(1deg) scale(1.06);
 }
 
-.feature-row:hover .phone-3d.tilt-left .phone-frame {
-    transform: perspective(1000px) rotateY(4deg) rotateX(1deg) scale(1.06);
-    box-shadow:
-        -4px 8px 0px 0px #111118,
-        0 50px 100px -10px rgba(0, 0, 0, 0.5),
-        0 0 10px rgba(232, 90, 79, 0.6),
-        0 0 30px rgba(232, 90, 79, 0.4),
-        0 0 60px rgba(107, 27, 61, 0.5),
-        0 0 120px rgba(107, 27, 61, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+.feature-row:hover .phone-3d.tilt-left {
+    transform: rotateY(4deg) rotateX(1deg) scale(1.06);
 }
 
 /* ============================================
@@ -509,27 +477,16 @@ a {
     transform: translateY(0);
 }
 
-/* Apple-style staggered reveal for feature phones */
-.feature-row .phone-3d .phone-frame {
+/* Reveal escalonado de los dispositivos de features */
+.feature-row .phone-3d {
     opacity: 0;
     transition:
         opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
-        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-        box-shadow 0.7s ease;
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.feature-row.visible .phone-3d .phone-frame {
+.feature-row.visible .phone-3d {
     opacity: 1;
-}
-
-/* Image zoom-in reveal (Apple "Ken Burns" lite) */
-.feature-row .phone-frame img {
-    transform: scale(1.1);
-    transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
-}
-
-.feature-row.visible .phone-frame img {
-    transform: scale(1);
 }
 
 .feature-row.reverse {
@@ -588,6 +545,54 @@ a {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(232, 90, 79, 0.3);
     transform: translateX(4px);
+}
+
+/* Iconos SVG de línea (sustituyen a los emojis) */
+.feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.li-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--coral);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.li-code {
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--coral);
+}
+
+/* Iconos SVG dentro de los círculos de contacto */
+.c-icon svg {
+    width: 22px;
+    height: 22px;
+    color: var(--coral);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Corazón inline del footer */
+.inline-heart {
+    width: 14px;
+    height: 14px;
+    vertical-align: -2px;
+    color: var(--coral);
 }
 
 /* ============================================
@@ -935,14 +940,14 @@ a {
         padding: 0 20px 18px;
     }
 
-    /* Simplicar 3D en móvil */
-    .hero-phone .phone-frame {
+    /* Simplificar 3D en móvil: dispositivos frontales, sin inclinación */
+    .hero-phone .device-stage {
         animation: heroAppleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .phone-3d.tilt-right .phone-frame,
-    .phone-3d.tilt-left .phone-frame {
-        transform: perspective(800px) rotateY(0deg) rotateX(0deg);
+    .phone-3d.tilt-right,
+    .phone-3d.tilt-left {
+        transform: rotateY(0deg) rotateX(0deg);
     }
 }
 
@@ -1178,14 +1183,122 @@ a {
         font-size: 26px;
     }
 
-    .phone-frame {
-        width: 220px;
-        height: 440px;
+    .hero-phone .device-stage {
+        --k: 0.50;
     }
 
-    .phone-3d .phone-frame {
-        width: 200px;
-        height: 400px;
+    .phone-3d {
+        --k: 0.46;
     }
 }
 
+
+/* ============================================
+   BLOQUES MOVIDOS DESDE ESTILOS INLINE (v3.7)
+   ============================================ */
+
+/* Bloque de texto SEO bajo el hero */
+.seo-text-block {
+    padding: 2rem 0;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.seo-text-block h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.seo-text-block p {
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* Sección Líneas y paradas */
+.lineas-paradas {
+    padding: 80px 0;
+}
+
+.lineas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.linea-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 24px;
+    color: inherit;
+    display: block;
+    transition: transform 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.linea-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.linea-card.l1 { border-color: #1565C0; }
+.linea-card.l2 { border-color: #2E7D32; }
+.linea-card.l3 { border-color: #E65100; }
+
+.linea-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    color: #fff;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.linea-card.l1 .linea-badge { background: #1565C0; }
+.linea-card.l2 .linea-badge { background: #2E7D32; }
+.linea-card.l3 .linea-badge { background: #E65100; }
+
+.linea-card h3 {
+    margin-top: 12px;
+    color: var(--text);
+}
+
+.linea-card p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.lineas-all {
+    text-align: center;
+    margin-top: 32px;
+}
+
+.lineas-all a {
+    color: #fff;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 10px 20px;
+    border-radius: 999px;
+    display: inline-block;
+    margin: 6px;
+    transition: background 0.2s;
+}
+
+.lineas-all a:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Fila de acciones del CTA + título de contacto alineado a la izquierda */
+.cta-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+}
+
+.contact .section-title {
+    text-align: left;
+}
