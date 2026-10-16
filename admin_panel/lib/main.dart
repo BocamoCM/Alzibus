@@ -3,6 +3,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/stops_screen.dart';
 import 'screens/routes_screen.dart';
 import 'screens/stats_screen.dart';
+import 'screens/metrics_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/users_screen.dart';
 import 'screens/notices_admin_screen.dart';
@@ -77,6 +78,7 @@ class _AdminHomeState extends State<AdminHome> {
     NavigationItem(icon: Icons.location_on, label: 'Paradas'),
     NavigationItem(icon: Icons.route, label: 'Rutas'),
     NavigationItem(icon: Icons.bar_chart, label: 'Estadísticas'),
+    NavigationItem(icon: Icons.insights, label: 'Métricas'),
     NavigationItem(icon: Icons.people, label: 'Usuarios'),
     NavigationItem(icon: Icons.campaign, label: 'Avisos'),
     NavigationItem(icon: Icons.support_agent, label: 'Soporte'),
@@ -97,7 +99,7 @@ class _AdminHomeState extends State<AdminHome> {
             minExtendedWidth: 200,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (index) {
-              if (index == 8) {
+              if (index == 9) {
                 // Logout logic
                 ApiService().logout();
                 Navigator.of(context).pushAndRemoveUntil(
@@ -164,17 +166,19 @@ class _AdminHomeState extends State<AdminHome> {
       case 3:
         return const StatsScreen();
       case 4:
-        return const UsersScreen();
+        return const MetricsScreen();
       case 5:
-        return const NoticesAdminScreen();
+        return const UsersScreen();
       case 6:
-        return const FeedbackAdminScreen();
+        return const NoticesAdminScreen();
       case 7:
+        return const FeedbackAdminScreen();
+      case 8:
         return SettingsScreen(
           isDarkMode: widget.isDarkMode,
           onThemeToggle: widget.onThemeToggle,
         );
-      case 8:
+      case 9:
         // Logout handled in NavigationRail
         return const Center(child: CircularProgressIndicator());
       default:

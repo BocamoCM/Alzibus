@@ -262,6 +262,25 @@ class ApiService {
     return [];
   }
 
+  // ── Métricas v2 (Admin) ──
+  Future<Map<String, dynamic>> _getJson(String path) async {
+    final response = await _get(path);
+    if (response != null && response.statusCode == 200) {
+      return Map<String, dynamic>.from(json.decode(response.body));
+    }
+    return {};
+  }
+
+  Future<Map<String, dynamic>> getRetention() => _getJson('/stats/retention');
+  Future<Map<String, dynamic>> getHeatmap([String period = 'month']) => _getJson('/stats/heatmap?period=$period');
+  Future<Map<String, dynamic>> getPayments([String period = 'month']) => _getJson('/stats/payments?period=$period');
+  Future<Map<String, dynamic>> getRouteStats([String period = 'month']) => _getJson('/stats/routes?period=$period');
+  Future<Map<String, dynamic>> getPremiumStats() => _getJson('/stats/premium');
+  Future<Map<String, dynamic>> getGameStats() => _getJson('/stats/game');
+  Future<Map<String, dynamic>> getLiveShareStats([String period = 'month']) => _getJson('/stats/live-share?period=$period');
+  Future<Map<String, dynamic>> getSupportStats([String period = 'month']) => _getJson('/stats/support?period=$period');
+  Future<Map<String, dynamic>> getWebAppStats([String period = 'month']) => _getJson('/stats/web-app?period=$period');
+
   // CRUD
   Future<void> createStop(Map<String, dynamic> stop) async {
     try {
