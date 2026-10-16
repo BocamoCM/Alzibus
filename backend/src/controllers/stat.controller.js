@@ -42,6 +42,33 @@ class StatController {
     async getTelemetry(req, res, next) {
         try { res.json(await statService.getTelemetry(req.query.period)); } catch (e) { next(e); }
     }
+    async getRetention(req, res, next) {
+        try { res.json(await statService.getRetention()); } catch (e) { next(e); }
+    }
+    async getHeatmap(req, res, next) {
+        try { res.json(await statService.getTripHeatmap(req.query.period)); } catch (e) { next(e); }
+    }
+    async getPayments(req, res, next) {
+        try { res.json(await statService.getPaymentSplit(req.query.period)); } catch (e) { next(e); }
+    }
+    async getRoutes(req, res, next) {
+        try { res.json(await statService.getRoutes(req.query.period)); } catch (e) { next(e); }
+    }
+    async getPremium(req, res, next) {
+        try { res.json(await statService.getPremiumStats()); } catch (e) { next(e); }
+    }
+    async getGame(req, res, next) {
+        try { res.json(await statService.getGameStats()); } catch (e) { next(e); }
+    }
+    async getLiveShare(req, res, next) {
+        try { res.json(await statService.getLiveShareStats(req.query.period)); } catch (e) { next(e); }
+    }
+    async getSupport(req, res, next) {
+        try { res.json(await statService.getSupportStats(req.query.period)); } catch (e) { next(e); }
+    }
+    async getWebApp(req, res, next) {
+        try { res.json(await statService.getWebAppStats(req.query.period)); } catch (e) { next(e); }
+    }
     async postContact(req, res, next) {
         try { res.json(await statService.postContact(req.ip, req.body)); } catch (e) { next(e); }
     }

@@ -219,6 +219,193 @@ class StatRepository {
             bySource: totals.rows,
         };
     }
+
+    // ── Retención: DAU / WAU / MAU + serie diaria + nuevos vs recurrentes ──
+    async getRetention() {
+        const [dau, wau, mau, verified, series, newVsReturn] = await Promise.all([
+            pool.query("SELECT COUNT(DISTINCT id)::int AS c FROM users WHERE last_access >= NOW() - INTERVAL '1 day'"),
+            pool.query("SELECT COUNT(DISTINCT id)::int AS c FROM users WHERE last_access >= NOW() - INTERVAL '7 days'"),
+            pool.query("SELECT COUNT(DISTINCT id)::int AS c FROM users WHERE last_access >= NOW() - INTERVAL '30 days'"),
+            pool.query("SELECT COUNT(*)::int AS c FROM users WHERE is_verified = true"),
+            pool.query(`SELECT DATE(last_access) AS day, COUNT(DISTINCT id)::int AS active
+                        FROM users WHERE last_access >= NOW() - INTERVAL '30 days'
+                        GROUP BY day ORDER BY day`),
+            pool.query(`SELECT
+                          COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE)::int AS new_today,
+                          COUNT(*) FILTER (WHERE last_access::date = CURRENT_DATE AND created_at::date < CURRENT_DATE)::int AS returning_today
+                        FROM users`),
+        ]);
+        const dauN = dau.rows[0].c, mauN = mau.rows[0].c;
+        return {
+            dau: dauN, wau: wau.rows[0].c, mau: mauN,
+            stickiness: mauN > 0 ? +(dauN / mauN * 100).toFixed(1) : 0,
+            verifiedUsers: verified.rows[0].c,
+            dailyActive: series.rows,
+            newToday: newVsReturn.rows[0].new_today,
+            returningToday: newVsReturn.rows[0].returning_today,
+        };
+    }
+
+    // ── Mapa de calor: viajes por día de la semana (0=domingo) × hora ──
+    async getTripHeatmap(period = 'month') {
+        const interval = resolveInterval(period);
+        const res = await pool.query(`
+            SELECT EXTRACT(DOW FROM timestamp)::int AS dow,
+                   EXTRACT(HOUR FROM timestamp)::int AS hour,
+                   COUNT(*)::int AS cnt
+            FROM trips WHERE timestamp >= NOW() - INTERVAL '${interval}'
+            GROUP BY dow, hour`);
+        return { cells: res.rows };
+    }
+
+    // ── Método de pago de los viajes ──
+    async getPaymentSplit(period = 'month') {
+        const interval = resolveInterval(period);
+        const res = await pool.query(`
+            SELECT COALESCE(NULLIF(payment_method, ''), 'desconocido') AS method, COUNT(*)::int AS cnt
+            FROM trips WHERE timestamp >= NOW() - INTERVAL '${interval}'
+            GROUP BY method ORDER BY cnt DESC`);
+        return { methods: res.rows };
+    }
+
+    // ── Rutas: destinos top + pares origen→destino ──
+    async getRoutes(period = 'month') {
+        const interval = resolveInterval(period);
+        const [destinations, pairs] = await Promise.all([
+            pool.query(`SELECT destination, COUNT(*)::int AS cnt FROM trips
+                        WHERE timestamp >= NOW() - INTERVAL '${interval}' AND destination <> ''
+                        GROUP BY destination ORDER BY cnt DESC LIMIT 10`),
+            pool.query(`SELECT stop_name AS origin, destination, line, COUNT(*)::int AS cnt FROM trips
+                        WHERE timestamp >= NOW() - INTERVAL '${interval}'
+                        GROUP BY stop_name, destination, line ORDER BY cnt DESC LIMIT 15`),
+        ]);
+        return { topDestinations: destinations.rows, topRoutes: pairs.rows };
+    }
+
+    // ── Premium ──
+    async getPremiumStats() {
+        const [total, verified, premium] = await Promise.all([
+            pool.query("SELECT COUNT(*)::int AS c FROM users"),
+            pool.query("SELECT COUNT(*)::int AS c FROM users WHERE is_verified = true"),
+            pool.query("SELECT COUNT(*)::int AS c FROM users WHERE is_premium = true"),
+        ]);
+        const v = verified.rows[0].c, p = premium.rows[0].c;
+        return {
+            totalUsers: total.rows[0].c,
+            verifiedUsers: v,
+            premiumUsers: p,
+            premiumRate: v > 0 ? +(p / v * 100).toFixed(1) : 0,
+        };
+    }
+
+    // ── Gamificación (Albus): monedas y skins ──
+    async getGameStats() {
+        const [buckets, withCoins, topSkins, avgCoins] = await Promise.all([
+            pool.query(`SELECT CASE
+                          WHEN game_coins = 0 THEN '0'
+                          WHEN game_coins < 50 THEN '1-49'
+                          WHEN game_coins < 200 THEN '50-199'
+                          WHEN game_coins < 500 THEN '200-499'
+                          ELSE '500+' END AS bucket,
+                          COUNT(*)::int AS cnt
+                        FROM users GROUP BY bucket`),
+            pool.query("SELECT COUNT(*)::int AS c FROM users WHERE game_coins > 0"),
+            pool.query(`SELECT skin, COUNT(*)::int AS cnt FROM (
+                          SELECT TRIM(UNNEST(string_to_array(owned_skins, ','))) AS skin FROM users
+                        ) s WHERE skin <> '' GROUP BY skin ORDER BY cnt DESC LIMIT 10`),
+            pool.query("SELECT COALESCE(ROUND(AVG(game_coins)),0)::int AS avg FROM users WHERE game_coins > 0"),
+        ]);
+        return {
+            coinBuckets: buckets.rows,
+            usersWithCoins: withCoins.rows[0].c,
+            topSkins: topSkins.rows,
+            avgCoinsAmongPlayers: avgCoins.rows[0].avg,
+        };
+    }
+
+    // ── Compartir viaje en vivo + precisión del ETA del planificador ──
+    async getLiveShareStats(period = 'month') {
+        const interval = resolveInterval(period);
+        const [counts, adoption, duration, eta] = await Promise.all([
+            pool.query(`SELECT COUNT(*)::int AS total,
+                          COUNT(*) FILTER (WHERE status='active')::int AS active
+                        FROM live_trips WHERE started_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT COUNT(DISTINCT user_id)::int AS sharers FROM live_trips
+                        WHERE started_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT ROUND(AVG(EXTRACT(EPOCH FROM (ended_at - started_at))/60))::int AS avg_min
+                        FROM live_trips WHERE status='ended' AND ended_at IS NOT NULL
+                          AND started_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT ROUND(AVG(ABS(initial_eta_min - EXTRACT(EPOCH FROM (ended_at - started_at))/60)))::int AS avg_err_min,
+                          COUNT(*)::int AS samples
+                        FROM live_trips WHERE status='ended' AND ended_at IS NOT NULL AND initial_eta_min IS NOT NULL
+                          AND started_at >= NOW() - INTERVAL '${interval}'`),
+        ]);
+        return {
+            total: counts.rows[0].total,
+            active: counts.rows[0].active,
+            uniqueSharers: adoption.rows[0].sharers,
+            avgDurationMin: duration.rows[0].avg_min,
+            etaAvgErrorMin: eta.rows[0].avg_err_min,
+            etaSamples: eta.rows[0].samples,
+        };
+    }
+
+    // ── Soporte (feedback): volumen, tags y tiempo de primera respuesta ──
+    async getSupportStats(period = 'month') {
+        const interval = resolveInterval(period);
+        const [counts, byTag, firstResp] = await Promise.all([
+            pool.query(`SELECT COUNT(*)::int AS total,
+                          COUNT(*) FILTER (WHERE status='open')::int AS open,
+                          COUNT(*) FILTER (WHERE status<>'open')::int AS closed
+                        FROM feedback_tickets WHERE created_at >= NOW() - INTERVAL '${interval}'`),
+            pool.query(`SELECT tag, COUNT(*)::int AS cnt FROM feedback_tickets
+                        WHERE created_at >= NOW() - INTERVAL '${interval}'
+                        GROUP BY tag ORDER BY cnt DESC`),
+            pool.query(`SELECT ROUND(AVG(EXTRACT(EPOCH FROM (fr.first_admin - t.created_at))/3600)::numeric, 1) AS avg_hours
+                        FROM feedback_tickets t
+                        JOIN LATERAL (SELECT MIN(created_at) AS first_admin FROM feedback_replies r
+                                      WHERE r.ticket_id = t.id AND r.sender_type = 'admin') fr ON true
+                        WHERE t.created_at >= NOW() - INTERVAL '${interval}' AND fr.first_admin IS NOT NULL`),
+        ]);
+        return {
+            total: counts.rows[0].total,
+            open: counts.rows[0].open,
+            closed: counts.rows[0].closed,
+            byTag: byTag.rows,
+            avgFirstResponseHours: firstResp.rows[0] ? firstResp.rows[0].avg_hours : null,
+        };
+    }
+
+    // ── Métricas de la APP WEB (alzitrans.es/app) y comparativa de plataformas ──
+    async getWebAppStats(period = 'month') {
+        const interval = resolveInterval(period);
+        const [opensByDay, byPlatform, byBrowser, uniques] = await Promise.all([
+            pool.query(`SELECT DATE(created_at) AS day, COUNT(*)::int AS opens
+                        FROM web_metrics
+                        WHERE event_type IN ('app_open','visit','login') AND source = 'web_app'
+                          AND created_at >= NOW() - INTERVAL '${interval}'
+                        GROUP BY day ORDER BY day`),
+            pool.query(`SELECT COALESCE(platform,'unknown') AS platform, COUNT(*)::int AS cnt, COUNT(DISTINCT ip)::int AS uniques
+                        FROM web_metrics
+                        WHERE event_type IN ('app_open','visit','login')
+                          AND created_at >= NOW() - INTERVAL '${interval}'
+                        GROUP BY platform ORDER BY cnt DESC`),
+            pool.query(`SELECT COALESCE(browser,'unknown') AS browser, COUNT(*)::int AS cnt
+                        FROM web_metrics
+                        WHERE source = 'web_app' AND created_at >= NOW() - INTERVAL '${interval}'
+                        GROUP BY browser ORDER BY cnt DESC`),
+            pool.query(`SELECT COUNT(DISTINCT ip)::int AS uniques, COUNT(*)::int AS total
+                        FROM web_metrics WHERE source = 'web_app'
+                          AND created_at >= NOW() - INTERVAL '${interval}'`),
+        ]);
+        return {
+            opensByDay: opensByDay.rows,
+            byPlatform: byPlatform.rows,
+            byBrowser: byBrowser.rows,
+            uniqueVisitors: uniques.rows[0].uniques,
+            totalEvents: uniques.rows[0].total,
+        };
+    }
 }
 
 module.exports = new StatRepository();

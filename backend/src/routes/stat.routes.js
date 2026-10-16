@@ -27,6 +27,17 @@ router.get('/stats/peak-hours', authenticateAdmin, statController.getPeakHours);
 router.get('/stats/dashboard', authenticateAdmin, statController.getDashboard);
 router.get('/stats/telemetry', authenticateAdmin, statController.getTelemetry);
 
+// Admin Stats v2 (métricas nuevas)
+router.get('/stats/retention', authenticateAdmin, statController.getRetention);
+router.get('/stats/heatmap', authenticateAdmin, statController.getHeatmap);
+router.get('/stats/payments', authenticateAdmin, statController.getPayments);
+router.get('/stats/routes', authenticateAdmin, statController.getRoutes);
+router.get('/stats/premium', authenticateAdmin, statController.getPremium);
+router.get('/stats/game', authenticateAdmin, statController.getGame);
+router.get('/stats/live-share', authenticateAdmin, statController.getLiveShare);
+router.get('/stats/support', authenticateAdmin, statController.getSupport);
+router.get('/stats/web-app', authenticateAdmin, statController.getWebApp);
+
 // Public / Mobile Stats and Metrics
 router.get('/stats/public', statController.getPublicStats);
 router.post('/stats/log-alert', statController.logAlert);

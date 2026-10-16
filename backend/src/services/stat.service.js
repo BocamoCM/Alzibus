@@ -20,6 +20,17 @@ class StatService {
     async getPublicStats() { return await statRepository.getPublicStats(); }
     async getTelemetry(period) { return await statRepository.getTelemetryBreakdown(period); }
 
+    // ── Métricas nuevas (v2) ──
+    async getRetention() { return await statRepository.getRetention(); }
+    async getTripHeatmap(period) { return await statRepository.getTripHeatmap(period); }
+    async getPaymentSplit(period) { return await statRepository.getPaymentSplit(period); }
+    async getRoutes(period) { return await statRepository.getRoutes(period); }
+    async getPremiumStats() { return await statRepository.getPremiumStats(); }
+    async getGameStats() { return await statRepository.getGameStats(); }
+    async getLiveShareStats(period) { return await statRepository.getLiveShareStats(period); }
+    async getSupportStats(period) { return await statRepository.getSupportStats(period); }
+    async getWebAppStats(period) { return await statRepository.getWebAppStats(period); }
+
     async logAlert({ stopName, line, destination }) {
         sendDiscordNotification(`🔔 **Alerta Activada**: Usuario esperando \`${line} -> ${destination}\` en **${stopName}**`);
         return { success: true };
