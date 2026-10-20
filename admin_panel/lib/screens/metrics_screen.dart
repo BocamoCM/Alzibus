@@ -25,6 +25,7 @@ class _MetricsScreenState extends State<MetricsScreen> {
   Map<String, dynamic> _liveShare = {};
   Map<String, dynamic> _support = {};
   Map<String, dynamic> _webApp = {};
+  Map<String, dynamic> _revenue = {};
 
   static const _burgundy = Color(0xFF6B1B3D);
   static const _coral = Color(0xFFE85A4F);
@@ -50,6 +51,7 @@ class _MetricsScreenState extends State<MetricsScreen> {
         _api.getLiveShareStats(_period),
         _api.getSupportStats(_period),
         _api.getWebAppStats(_period),
+        _api.getRevenue(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -62,6 +64,7 @@ class _MetricsScreenState extends State<MetricsScreen> {
         _liveShare = results[6];
         _support = results[7];
         _webApp = results[8];
+        _revenue = results[9];
         _loading = false;
       });
     } catch (_) {
@@ -101,6 +104,8 @@ class _MetricsScreenState extends State<MetricsScreen> {
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
+              _revenueSection(),
+              const SizedBox(height: 28),
               _retentionSection(),
               const SizedBox(height: 28),
               _webAppSection(),
@@ -157,6 +162,71 @@ class _MetricsScreenState extends State<MetricsScreen> {
   }
 
   // ── Secciones ──
+  Widget _revenueSection() {
+    final configured = _revenue['configured'] == true;
+    if (!configured) {
+      final reason = '${_revenue['reason'] ?? 'Pendiente de configurar la API de Google (AdMob/AdSense).'}';
+      return _card(
+        'Ingresos (AdMob + AdSense)',
+        Row(
+          children: [
+            const Icon(Icons.payments_outlined, color: Colors.grey, size: 36),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Ingresos no configurados',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(reason, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text('Añade las credenciales OAuth de Google en backend/.env (ver tools/google-oauth.js).',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final admob = _revenue['admob'];
+    final adsense = _revenue['adsense'];
+    final errors = Map<String, dynamic>.from(_revenue['errors'] ?? {});
+    return _card(
+      'Ingresos (estimados, EUR)',
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _revenueBlock('AdMob (app)', admob, errors['admob'], _coral)),
+          const SizedBox(width: 20),
+          Expanded(child: _revenueBlock('AdSense (web)', adsense, errors['adsense'], _blue)),
+        ],
+      ),
+    );
+  }
+
+  Widget _revenueBlock(String title, dynamic data, dynamic error, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        const SizedBox(height: 10),
+        if (data == null)
+          _empty(error != null ? 'Error: $error' : 'Sin datos todavía.')
+        else
+          _kpiWrap([
+            _kpi('Hoy', '${_n(data['today']).toStringAsFixed(2)} €', '', color),
+            _kpi('Ayer', '${_n(data['yesterday']).toStringAsFixed(2)} €', '', Colors.grey),
+            _kpi('7 días', '${_n(data['last7']).toStringAsFixed(2)} €', '', _teal),
+            _kpi('30 días', '${_n(data['last30']).toStringAsFixed(2)} €', '', _burgundy),
+            _kpi('Impresiones', _n(data['impressions30']).toString(), '30 días', Colors.indigo),
+            _kpi('Clics', _n(data['clicks30']).toString(), '30 días', Colors.teal),
+          ]),
+      ],
+    );
+  }
+
   Widget _retentionSection() {
     final series = _rows(_retention['dailyActive']);
     return _card(

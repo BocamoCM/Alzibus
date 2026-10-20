@@ -37,6 +37,7 @@ router.get('/stats/game', authenticateAdmin, statController.getGame);
 router.get('/stats/live-share', authenticateAdmin, statController.getLiveShare);
 router.get('/stats/support', authenticateAdmin, statController.getSupport);
 router.get('/stats/web-app', authenticateAdmin, statController.getWebApp);
+router.get('/stats/revenue', authenticateAdmin, statController.getRevenue);
 
 // Public / Mobile Stats and Metrics
 router.get('/stats/public', statController.getPublicStats);

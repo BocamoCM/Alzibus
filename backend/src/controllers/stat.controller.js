@@ -69,6 +69,9 @@ class StatController {
     async getWebApp(req, res, next) {
         try { res.json(await statService.getWebAppStats(req.query.period)); } catch (e) { next(e); }
     }
+    async getRevenue(req, res, next) {
+        try { res.json(await statService.getRevenue()); } catch (e) { next(e); }
+    }
     async postContact(req, res, next) {
         try { res.json(await statService.postContact(req.ip, req.body)); } catch (e) { next(e); }
     }

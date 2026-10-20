@@ -30,6 +30,7 @@ class StatService {
     async getLiveShareStats(period) { return await statRepository.getLiveShareStats(period); }
     async getSupportStats(period) { return await statRepository.getSupportStats(period); }
     async getWebAppStats(period) { return await statRepository.getWebAppStats(period); }
+    async getRevenue() { return await require('./revenue.service').getRevenue(); }
 
     async logAlert({ stopName, line, destination }) {
         sendDiscordNotification(`🔔 **Alerta Activada**: Usuario esperando \`${line} -> ${destination}\` en **${stopName}**`);

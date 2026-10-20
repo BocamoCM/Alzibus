@@ -280,6 +280,7 @@ class ApiService {
   Future<Map<String, dynamic>> getLiveShareStats([String period = 'month']) => _getJson('/stats/live-share?period=$period');
   Future<Map<String, dynamic>> getSupportStats([String period = 'month']) => _getJson('/stats/support?period=$period');
   Future<Map<String, dynamic>> getWebAppStats([String period = 'month']) => _getJson('/stats/web-app?period=$period');
+  Future<Map<String, dynamic>> getRevenue() => _getJson('/stats/revenue');
 
   // CRUD
   Future<void> createStop(Map<String, dynamic> stop) async {
