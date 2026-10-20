@@ -26,6 +26,7 @@ class _MetricsScreenState extends State<MetricsScreen> {
   Map<String, dynamic> _support = {};
   Map<String, dynamic> _webApp = {};
   Map<String, dynamic> _revenue = {};
+  Map<String, dynamic> _versions = {};
 
   static const _burgundy = Color(0xFF6B1B3D);
   static const _coral = Color(0xFFE85A4F);
@@ -52,6 +53,7 @@ class _MetricsScreenState extends State<MetricsScreen> {
         _api.getSupportStats(_period),
         _api.getWebAppStats(_period),
         _api.getRevenue(),
+        _api.getVersions(_period),
       ]);
       if (!mounted) return;
       setState(() {
@@ -65,6 +67,7 @@ class _MetricsScreenState extends State<MetricsScreen> {
         _support = results[7];
         _webApp = results[8];
         _revenue = results[9];
+        _versions = results[10];
         _loading = false;
       });
     } catch (_) {
@@ -109,6 +112,8 @@ class _MetricsScreenState extends State<MetricsScreen> {
               _retentionSection(),
               const SizedBox(height: 28),
               _webAppSection(),
+              const SizedBox(height: 28),
+              _versionsSection(),
               const SizedBox(height: 28),
               _heatmapSection(),
               const SizedBox(height: 28),
@@ -289,6 +294,25 @@ class _MetricsScreenState extends State<MetricsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _versionsSection() {
+    final vers = _rows(_versions['versions']);
+    final totalDevices = vers.fold<num>(0, (p, e) => p + _n(e['devices']));
+    return _card(
+      'Versiones de la app (adopción)',
+      vers.isEmpty
+          ? _empty('Aún no se registra la versión. Se verá cuando los usuarios actualicen a la build que la envía.')
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Dispositivos por versión en el periodo (total: $totalDevices)',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                const SizedBox(height: 10),
+                _barList('', vers, 'version', 'devices', _blue),
+              ],
+            ),
     );
   }
 

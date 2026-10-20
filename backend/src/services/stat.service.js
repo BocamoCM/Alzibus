@@ -31,6 +31,14 @@ class StatService {
     async getSupportStats(period) { return await statRepository.getSupportStats(period); }
     async getWebAppStats(period) { return await statRepository.getWebAppStats(period); }
     async getRevenue() { return await require('./revenue.service').getRevenue(); }
+    async getVersionAdoption(period) { return await statRepository.getVersionAdoption(period); }
+    getAppVersionConfig() {
+        return {
+            latest: process.env.APP_LATEST_VERSION || null,
+            min: process.env.APP_MIN_VERSION || null,
+            url: process.env.APP_STORE_URL || 'https://play.google.com/store/apps/details?id=com.alzitrans.app',
+        };
+    }
 
     async logAlert({ stopName, line, destination }) {
         sendDiscordNotification(`🔔 **Alerta Activada**: Usuario esperando \`${line} -> ${destination}\` en **${stopName}**`);
@@ -48,8 +56,9 @@ class StatService {
         const source   = sanitizeSource(data.source || 'landing');
         const platform = sanitizePlatform(data.platform || parsed.platform);
         const browser  = parsed.browser;
+        const appVersion = (data.appVersion || '').toString().slice(0, 20) || null;
 
-        await statRepository.logWebMetric(ip, userAgent, event_type, source, platform, browser);
+        await statRepository.logWebMetric(ip, userAgent, event_type, source, platform, browser, appVersion);
 
         if (event_type === 'download_click') {
             let device = 'Móvil o Web';
@@ -100,11 +109,12 @@ class StatService {
 
         // event: 'app_open' (arranque) | 'login' (tras autenticar). Por defecto 'app_open'.
         const event = (data.event === 'login') ? 'login' : 'app_open';
+        const appVersion = (data.appVersion || '').toString().slice(0, 20) || null;
 
         // Persistir en web_metrics con el event_type recibido para que la consulta
         // de telemetría agregue mobile_app + web_app + landing en una sola tabla.
         try {
-            await statRepository.logWebMetric(ip, userAgent, event, source, platform, browser);
+            await statRepository.logWebMetric(ip, userAgent, event, source, platform, browser, appVersion);
         } catch (e) {
             console.error('[telemetry] logAppOpen DB error:', e.message);
         }

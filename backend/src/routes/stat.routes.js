@@ -38,6 +38,10 @@ router.get('/stats/live-share', authenticateAdmin, statController.getLiveShare);
 router.get('/stats/support', authenticateAdmin, statController.getSupport);
 router.get('/stats/web-app', authenticateAdmin, statController.getWebApp);
 router.get('/stats/revenue', authenticateAdmin, statController.getRevenue);
+router.get('/stats/versions', authenticateAdmin, statController.getVersions);
+
+// Público para la app: última versión / mínima soportada (para el aviso de actualizar)
+router.get('/app/version', statController.getAppVersion);
 
 // Public / Mobile Stats and Metrics
 router.get('/stats/public', statController.getPublicStats);

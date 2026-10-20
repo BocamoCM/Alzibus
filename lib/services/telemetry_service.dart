@@ -59,6 +59,10 @@ class TelemetryService {
     await _post(event: 'login');
   }
 
+  /// Versión de la app (p.ej. "5.4.0+46"), fijada en main() tras cargar
+  /// PackageInfo. Se envía al backend para la adopción de versiones.
+  static String? appVersion;
+
   static Future<void> _post({required String event}) async {
     try {
       await ApiClient().post(
@@ -67,6 +71,7 @@ class TelemetryService {
           'event': event,         // 'app_open' | 'login'
           'source': source,
           'platform': platform,
+          if (appVersion != null) 'appVersion': appVersion,
         },
       );
     } catch (e) {

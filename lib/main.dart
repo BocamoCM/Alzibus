@@ -64,6 +64,9 @@ void main() async {
   final buildNumber = packageInfo.buildNumber;
   final packageName = packageInfo.packageName;
 
+  // Versión que se adjunta a la telemetría (adopción de versiones en el panel).
+  TelemetryService.appVersion = '$version+$buildNumber';
+
   await SentryFlutter.init(
     (options) {
       options.dsn = AppConfig.sentryDsn;

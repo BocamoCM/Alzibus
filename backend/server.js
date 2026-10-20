@@ -266,6 +266,7 @@ async function initDatabase() {
             ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS source   VARCHAR(20);
             ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS platform VARCHAR(20);
             ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS browser  VARCHAR(20);
+            ALTER TABLE web_metrics ADD COLUMN IF NOT EXISTS app_version VARCHAR(20);
             CREATE INDEX IF NOT EXISTS idx_web_metrics_source   ON web_metrics(source);
             CREATE INDEX IF NOT EXISTS idx_web_metrics_platform ON web_metrics(platform);
 

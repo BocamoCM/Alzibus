@@ -163,12 +163,26 @@ class StatRepository {
         return { totalUsers: parseInt(result.rows[0].count) };
     }
 
-    async logWebMetric(ip, userAgent, type, source, platform, browser) {
+    async logWebMetric(ip, userAgent, type, source, platform, browser, appVersion = null) {
         await pool.query(
-            `INSERT INTO web_metrics (event_type, ip, user_agent, source, platform, browser)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [type, ip, userAgent, source, platform, browser]
+            `INSERT INTO web_metrics (event_type, ip, user_agent, source, platform, browser, app_version)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [type, ip, userAgent, source, platform, browser, appVersion]
         );
+    }
+
+    // ── Adopción de versiones de la app (quién actualiza y quién no) ──
+    async getVersionAdoption(period = 'month') {
+        const interval = resolveInterval(period);
+        const res = await pool.query(`
+            SELECT COALESCE(NULLIF(app_version, ''), 'desconocida') AS version,
+                   COUNT(DISTINCT ip)::int AS devices,
+                   COUNT(*)::int           AS events
+            FROM web_metrics
+            WHERE source = 'mobile_app' AND created_at >= NOW() - INTERVAL '${interval}'
+            GROUP BY version
+            ORDER BY devices DESC`);
+        return { versions: res.rows };
     }
 
     /**
