@@ -165,8 +165,8 @@ class AuthService {
             }
 
             await userRepository.updateLastAccess(user.id);
-            const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            
+            const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '14d' });
+
             sendDiscordNotification({
                 embeds: [{
                     title: '🟢 Usuario Conectado',
@@ -236,7 +236,7 @@ class AuthService {
         await userRepository.markAsVerified(user.id);
         await userRepository.updateLastAccess(user.id);
 
-        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '14d' });
 
         sendDiscordNotification({
             embeds: [{
