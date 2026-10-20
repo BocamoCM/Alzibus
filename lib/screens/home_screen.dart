@@ -20,6 +20,7 @@ import '../services/bus_alert_service.dart';
 import '../services/trip_history_service.dart';
 import '../services/assistant_service.dart';
 import '../services/notices_service.dart';
+import '../services/update_service.dart';
 import '../constants/app_config.dart';
 import '../theme/app_theme.dart';
 import '../pages/map_page.dart';
@@ -120,6 +121,12 @@ class _HomePageState extends ConsumerState<HomePage>
     // Verificar viaje pendiente inmediatamente al entrar
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _checkPendingTrip();
+
+      // Aviso de actualización disponible (sin Firebase: solo al abrir).
+      if (!kIsWeb && mounted) {
+        // ignore: use_build_context_synchronously
+        UpdateService.maybePrompt(context);
+      }
 
       // Arrancar el servicio de segundo plano para alertas de bus en
       // background. El bug del "app en negro al minimizar" NO era de
