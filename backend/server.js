@@ -583,6 +583,22 @@ setInterval(async () => {
             const activeCount = activeRes.rows[0].count;
             const totalUsers = totalRes.rows[0].count;
 
+            // Alerta: usuarios activos muy por debajo de la media de la última semana.
+            let alertLine = '';
+            try {
+                const avgActiveRes = await pool.query(
+                    `SELECT COALESCE(ROUND(AVG(c)), 0) AS avg FROM (
+                        SELECT last_access::date AS d, COUNT(DISTINCT id) AS c
+                        FROM users
+                        WHERE last_access >= CURRENT_DATE - INTERVAL '8 days' AND last_access < CURRENT_DATE
+                        GROUP BY d
+                     ) s`);
+                const avgActive = parseInt(avgActiveRes.rows[0].avg) || 0;
+                if (avgActive >= 5 && Number(activeCount) < avgActive * 0.6) {
+                    alertLine = `\n\n⚠️ **ALERTA**: activos ayer (\`${activeCount}\`) muy por debajo de la media semanal (\`${avgActive}\`).`;
+                }
+            } catch (_) { /* no bloquear el reporte si falla la media */ }
+
             const message = `📊 **RESUMEN DIARIO (${yStr})**\n` +
                 `━━━━━━━━━━━━━━━━━━━━\n` +
                 `👤 **Usuarios nuevos**: \`${userCount}\`\n` +
@@ -590,14 +606,43 @@ setInterval(async () => {
                 `📱 **Total registrados**: \`${totalUsers}\`\n` +
                 `🎫 **Viajes validados**: \`${tripCount}\`\n` +
                 `🚌 **Línea estrella**: \`${topLine}\`\n` +
-                `━━━━━━━━━━━━━━━━━━━━`;
+                `━━━━━━━━━━━━━━━━━━━━` + alertLine;
 
             sendDiscordNotification(message);
         } catch (e) {
             console.error('[Dashboard] Fallo al generar reporte diario:', e);
         }
     }
-}, 300000); 
+}, 300000);
+
+// ── Alerta: nuevos tickets de soporte a Discord ──
+// Inicializa con el último ID existente para no spamear al arrancar, y
+// luego avisa de cada ticket nuevo que aparezca.
+let lastAlertTicketId = 0;
+(async () => {
+    try {
+        const r = await pool.query('SELECT COALESCE(MAX(id), 0) AS m FROM feedback_tickets');
+        lastAlertTicketId = parseInt(r.rows[0].m) || 0;
+    } catch (_) { /* tabla aún no lista: se reintenta en el primer tick */ }
+})();
+setInterval(async () => {
+    try {
+        const r = await pool.query(
+            'SELECT id, user_email, tag, title FROM feedback_tickets WHERE id > $1 ORDER BY id ASC LIMIT 10',
+            [lastAlertTicketId]
+        );
+        for (const t of r.rows) {
+            lastAlertTicketId = Math.max(lastAlertTicketId, t.id);
+            sendDiscordNotification(
+                `🎫 **Nuevo ticket de soporte** #${t.id}\n` +
+                `**${t.title}**  (\`${t.tag}\`)\n` +
+                `De: ${t.user_email}`
+            );
+        }
+    } catch (e) {
+        console.error('[Alertas] Fallo en el poller de tickets:', e.message);
+    }
+}, 120000); // cada 2 minutos
 
 // ── Job de expiración de viajes en vivo ──
 // Cada 5 min marca como `expired` los live_trips que ya pasaron su
