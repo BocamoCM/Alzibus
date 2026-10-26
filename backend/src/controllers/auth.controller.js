@@ -91,6 +91,14 @@ class AuthController {
             next(error);
         }
     }
+
+    async refresh(req, res, next) {
+        try { res.json(await authService.refreshAccessToken(req.body.refreshToken)); } catch (e) { next(e); }
+    }
+
+    async revoke(req, res, next) {
+        try { res.json(await authService.revokeRefreshToken(req.body.refreshToken)); } catch (e) { next(e); }
+    }
 }
 
 module.exports = new AuthController();

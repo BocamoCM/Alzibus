@@ -270,6 +270,18 @@ async function initDatabase() {
             CREATE INDEX IF NOT EXISTS idx_web_metrics_source   ON web_metrics(source);
             CREATE INDEX IF NOT EXISTS idx_web_metrics_platform ON web_metrics(platform);
 
+            -- Refresh tokens (para que la sesión/huella no se corte cada 14 días)
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                email VARCHAR(255) NOT NULL,
+                token_hash VARCHAR(64) UNIQUE NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL,
+                revoked BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+
             -- Migración para Feedback Replies (Añadir columna faltante)
             ALTER TABLE feedback_replies ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
 

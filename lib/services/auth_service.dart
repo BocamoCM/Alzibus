@@ -126,21 +126,38 @@ class AuthService {
     if (!await authenticateWithBiometrics()) return false;
 
     final token = await SessionStorage.getToken();
-    if (token == null) return false;
-
     final expiryEpoch = await SessionStorage.getExpiry();
-    if (expiryEpoch != null) {
-      final expires = DateTime.fromMillisecondsSinceEpoch(expiryEpoch * 1000);
-      if (!DateTime.now().isBefore(expires)) {
-        // Token caducado: forzar login con OTP. No podemos renovar solo con
-        // huella porque ya no guardamos la password — y el backend tampoco
-        // tiene un endpoint de refresh todavía. Limpiamos la sesión expirada
-        // para que el resto de la app no la considere viva.
-        await SessionStorage.clear();
-        return false;
-      }
+    final expired = token == null ||
+        (expiryEpoch != null &&
+            !DateTime.now().isBefore(
+                DateTime.fromMillisecondsSinceEpoch(expiryEpoch * 1000)));
+
+    if (expired) {
+      // Access token caducado: en vez de rendirnos, renovamos con el refresh
+      // token (válido 90 días). Así la huella casi nunca pide contraseña.
+      if (await refreshAccessToken()) return true;
+      // El refresh también caducó o fue revocado → login con contraseña.
+      await SessionStorage.clear();
+      return false;
     }
     return true;
+  }
+
+  /// Canjea el refresh token guardado por un access token nuevo (14d).
+  /// Devuelve true si lo consigue; false si no hay refresh o ya no es válido.
+  Future<bool> refreshAccessToken() async {
+    final refresh = await SessionStorage.getRefreshToken();
+    if (refresh == null) return false;
+    try {
+      final res = await ApiClient().post('/auth/refresh', data: {'refreshToken': refresh});
+      final data = res.data;
+      final newToken = (data is Map) ? data['token'] as String? : null;
+      if (newToken == null) return false;
+      await SessionStorage.updateAccessToken(newToken, _extractExpiry(newToken));
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Intenta iniciar sesión. Lanza [AuthInvalidCredentialsException] si las
@@ -270,6 +287,7 @@ class AuthService {
       email: email,
       userId: userId,
       expiryEpoch: expiry,
+      refreshToken: data['refreshToken'] as String?,
     );
 
     // Establecer identidad en Sentry
@@ -325,6 +343,16 @@ class AuthService {
       await ApiClient().post('/users/logout');
     } catch (_) {
       // No bloquear el logout si falla la notificación
+    }
+
+    // Revocar el refresh token en el servidor para que no pueda reusarse.
+    try {
+      final refresh = await SessionStorage.getRefreshToken();
+      if (refresh != null) {
+        await ApiClient().post('/auth/revoke', data: {'refreshToken': refresh});
+      }
+    } catch (_) {
+      // No bloquear el logout si la revocación falla.
     }
 
     await SessionStorage.clear();

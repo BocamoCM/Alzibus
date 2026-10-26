@@ -22,6 +22,7 @@ class SessionStorage {
   static const _kEmail    = 'session_user_email';
   static const _kUserId   = 'session_user_id';
   static const _kExpiry   = 'session_token_expiry';
+  static const _kRefresh  = 'session_refresh_token';
 
   // Flag de migración (vive en SharedPreferences, no es sensible)
   static const _kMigratedSp = 'session_migrated_from_sp_v1';
@@ -96,10 +97,27 @@ class SessionStorage {
     required String email,
     required int userId,
     int? expiryEpoch,
+    String? refreshToken,
   }) async {
     await _storage.write(key: _kToken, value: token);
     await _storage.write(key: _kEmail, value: email);
     await _storage.write(key: _kUserId, value: userId.toString());
+    if (expiryEpoch != null) {
+      await _storage.write(key: _kExpiry, value: expiryEpoch.toString());
+    } else {
+      await _storage.delete(key: _kExpiry);
+    }
+    if (refreshToken != null) {
+      await _storage.write(key: _kRefresh, value: refreshToken);
+    }
+  }
+
+  static Future<String?> getRefreshToken() => _storage.read(key: _kRefresh);
+
+  /// Actualiza solo el access token + su expiración (tras un refresh),
+  /// conservando el refresh token y la identidad.
+  static Future<void> updateAccessToken(String token, int? expiryEpoch) async {
+    await _storage.write(key: _kToken, value: token);
     if (expiryEpoch != null) {
       await _storage.write(key: _kExpiry, value: expiryEpoch.toString());
     } else {
@@ -115,5 +133,6 @@ class SessionStorage {
     await _storage.delete(key: _kEmail);
     await _storage.delete(key: _kUserId);
     await _storage.delete(key: _kExpiry);
+    await _storage.delete(key: _kRefresh);
   }
 }

@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const userRepository = require('../repositories/user.repository');
+const refreshTokenRepository = require('../repositories/refreshToken.repository');
 const { BadRequestError, UnauthorizedError, ForbiddenError, TooManyRequestsError, NotFoundError } = require('../utils/errors');
 const { sendDiscordNotification } = require('../../utils/discord');
 // Antes este fichero tenía su propio nodemailer.createTransport() con
@@ -179,7 +181,7 @@ class AuthService {
                 }]
             });
 
-            return { message: 'Login biométrico exitoso', token, user: { id: user.id, email: user.email, isPremium: user.is_premium } };
+            return { message: 'Login biométrico exitoso', token, refreshToken: await this._issueRefreshToken(user), user: { id: user.id, email: user.email, isPremium: user.is_premium } };
         }
 
         const verificationCode = this._generateCode(email);
@@ -250,7 +252,7 @@ class AuthService {
             }]
         });
 
-        return { message: 'Login exitoso', token, user: { id: user.id, email: user.email, isPremium: user.is_premium } };
+        return { message: 'Login exitoso', token, refreshToken: await this._issueRefreshToken(user), user: { id: user.id, email: user.email, isPremium: user.is_premium } };
     }
 
     async resendOtp(email) {
@@ -325,6 +327,27 @@ class AuthService {
         await userRepository.updatePassword(user.id, passwordHash);
 
         return { message: 'Contraseña actualizada correctamente' };
+    }
+
+    // ── Refresh tokens (para que la huella/sesión no se corte) ──
+    async _issueRefreshToken(user) {
+        const raw = crypto.randomBytes(48).toString('hex');
+        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 días
+        await refreshTokenRepository.create(user.id, user.email, raw, expiresAt);
+        return raw;
+    }
+
+    async refreshAccessToken(rawRefresh) {
+        if (!rawRefresh) throw new UnauthorizedError('Falta el refresh token');
+        const row = await refreshTokenRepository.findValid(rawRefresh);
+        if (!row) throw new UnauthorizedError('Sesión caducada, vuelve a iniciar sesión');
+        const token = jwt.sign({ id: row.user_id, email: row.email }, process.env.JWT_SECRET, { expiresIn: '14d' });
+        return { token };
+    }
+
+    async revokeRefreshToken(rawRefresh) {
+        if (rawRefresh) await refreshTokenRepository.revoke(rawRefresh);
+        return { message: 'Sesión cerrada' };
     }
 
     async adminLogin(password, ipAddress) {

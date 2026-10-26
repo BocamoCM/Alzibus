@@ -47,6 +47,8 @@ router.post('/register', registerLimiter, authController.register);
 router.post('/verify-email', authController.verifyEmail);
 router.post('/login', loginLimiter, authController.login);
 router.post('/login/verify', loginLimiter, authController.verifyLogin);
+router.post('/auth/refresh', loginLimiter, authController.refresh);
+router.post('/auth/revoke', authController.revoke);
 router.post('/resend-otp', registerLimiter, authController.resendOtp);
 router.post('/forgot-password', registerLimiter, authController.forgotPassword);
 router.post('/reset-password', registerLimiter, authController.resetPassword);
