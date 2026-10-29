@@ -2314,6 +2314,12 @@ abstract class AppLocalizations {
   /// **'Albus UD Alzira'**
   String get skinAlziraFcName;
 
+  /// No description provided for @skinHalloweenName.
+  ///
+  /// In es, this message translates to:
+  /// **'Albus de Halloween'**
+  String get skinHalloweenName;
+
   /// No description provided for @skinDefaultDesc.
   ///
   /// In es, this message translates to:
@@ -2355,6 +2361,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Bufanda a rayas rojas y moradas del UD Alzira con flecos, escudo del club y banderín. ¡Visca la UDA!'**
   String get skinAlziraFcDesc;
+
+  /// No description provided for @skinHalloweenDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Sombrero de bruja, calabaza llena de caramelos, telaraña y ratpenats, el murciélago del escudo de València. ¡Truco o trato!'**
+  String get skinHalloweenDesc;
 
   /// No description provided for @equippedBadge.
   ///

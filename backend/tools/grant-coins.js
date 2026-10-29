@@ -29,6 +29,7 @@ const ALL_SKIN_IDS = [
     'graduado',
     'navidad',
     'alzira_fc',
+    'halloween',
 ];
 
 async function main() {

@@ -1305,6 +1305,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get skinAlziraFcName => 'Albus UD Alzira';
 
   @override
+  String get skinHalloweenName => 'Albus de Halloween';
+
+  @override
   String get skinDefaultDesc =>
       'El Albus original. El que conoces de toda la vida.';
 
@@ -1331,6 +1334,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get skinAlziraFcDesc =>
       'Bufanda a rayas rojas y moradas del UD Alzira con flecos, escudo del club y banderín. ¡Visca la UDA!';
+
+  @override
+  String get skinHalloweenDesc =>
+      'Sombrero de bruja, calabaza llena de caramelos, telaraña y ratpenats, el murciélago del escudo de València. ¡Truco o trato!';
 
   @override
   String get equippedBadge => 'EQUIPADO';

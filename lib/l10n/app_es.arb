@@ -450,6 +450,7 @@
   "skinGraduadoName": "Albus graduado",
   "skinNavidadName": "Albus de Navidad",
   "skinAlziraFcName": "Albus UD Alzira",
+  "skinHalloweenName": "Albus de Halloween",
 
   "skinDefaultDesc": "El Albus original. El que conoces de toda la vida.",
   "skinFalleroDesc": "Vestido para las Fallas: pañuelo rojo con lunares, faja y un clavel. ¡Visca Sant Josep!",
@@ -458,6 +459,7 @@
   "skinGraduadoDesc": "Birrete con borla dorada + diploma con sello. Homenaje al TFC que dio origen a Alzitrans.",
   "skinNavidadDesc": "Gorro de Papá Noel con pompón blanco, bufanda navideña a rayas y copos de nieve. ¡Feliz Navidad!",
   "skinAlziraFcDesc": "Bufanda a rayas rojas y moradas del UD Alzira con flecos, escudo del club y banderín. ¡Visca la UDA!",
+  "skinHalloweenDesc": "Sombrero de bruja, calabaza llena de caramelos, telaraña y ratpenats, el murciélago del escudo de València. ¡Truco o trato!",
   "equippedBadge": "EQUIPADO",
   "equippedLabel": "Equipado",
   "equipButton": "Equipar",

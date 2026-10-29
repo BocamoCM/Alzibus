@@ -19,6 +19,7 @@ const SKIN_CATALOG = Object.freeze({
     graduado: 350,
     navidad: 350,
     alzira_fc: 500,
+    halloween: 300,
 });
 
 module.exports = { SKIN_CATALOG };

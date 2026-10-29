@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Skin overlay HALLOWEEN — sombrero de bruja, calabaza de caramelos en
+       el suelo, telaraña en el parabrisas y ratpenats (el murciélago del
+       escudo de València) volando alrededor.
+
+       Referencias Albus base (viewBox 400x400):
+       - Techo y ≈ 95-130 (esquinas rx58). El ala del sombrero descansa en
+         y ≈ 104, igual que el ribete del gorro de Navidad.
+       - Parabrisas x = 100..300, y = 122..238. Los ojos ocupan
+         x = 139..261, y = 148..208: la telaraña se queda en la esquina
+         superior izquierda (x < 136, y < 156) para no taparlos.
+       - Suelo en y ≈ 372 (sombra base). La calabaza se apoya ahí, por
+         fuera del cuerpo (x > 322), lejos de la rueda derecha
+         (x = 243..297) y por debajo de la mano (y > 295).
+       Sin filtros (flutter_svg no los soporta bien): las sombras son
+       gradientes radiales y copias desplazadas, como en las demás skins. -->
+
+  <defs>
+    <linearGradient id="hwHat" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3D2A55"/>
+      <stop offset="100%" stop-color="#160E20"/>
+    </linearGradient>
+    <linearGradient id="hwBrim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E2040"/>
+      <stop offset="100%" stop-color="#120B1A"/>
+    </linearGradient>
+    <radialGradient id="hwPumpkin" cx="38%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#FFB347"/>
+      <stop offset="55%" stop-color="#F57F17"/>
+      <stop offset="100%" stop-color="#C2510A"/>
+    </radialGradient>
+    <radialGradient id="hwGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFE58A"/>
+      <stop offset="100%" stop-color="#FFB300"/>
+    </radialGradient>
+    <radialGradient id="hwContact" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.34"/>
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ═══ TELARAÑA en la esquina del parabrisas ═══ -->
+  <g stroke="#FFFFFF" stroke-width="1.1" fill="none" opacity="0.55" stroke-linecap="round">
+    <!-- radios desde la esquina -->
+    <path d="M 104 126 L 136 128"/>
+    <path d="M 104 126 L 132 146"/>
+    <path d="M 104 126 L 118 156"/>
+    <path d="M 104 126 L 103 154"/>
+    <!-- hilos concéntricos combados -->
+    <path d="M 114 127 Q 113 133 111 136 Q 108 139 104 140"/>
+    <path d="M 124 127.5 Q 121 138 117 145 Q 111 150 104 148"/>
+    <path d="M 133 128 Q 128 142 124 151 Q 114 157 103 153"/>
+  </g>
+  <!-- arañita colgando de su hilo -->
+  <line x1="126" y1="140" x2="126" y2="158" stroke="#FFFFFF" stroke-width="0.8" opacity="0.6"/>
+  <g fill="#1A0A18">
+    <circle cx="126" cy="161" r="3.6"/>
+    <circle cx="126" cy="156.5" r="2.2"/>
+  </g>
+  <g stroke="#1A0A18" stroke-width="1" stroke-linecap="round" fill="none">
+    <path d="M 123 159 L 119 156"/><path d="M 123 161 L 118 161"/><path d="M 123 163 L 119 166"/>
+    <path d="M 129 159 L 133 156"/><path d="M 129 161 L 134 161"/><path d="M 129 163 L 133 166"/>
+  </g>
+
+  <!-- ═══ SOMBRERO DE BRUJA ═══ -->
+  <!-- Sombra de contacto sobre el techo -->
+  <ellipse cx="200" cy="114" rx="96" ry="15" fill="url(#hwContact)"/>
+  <g>
+    <!-- Sombra proyectada del cono -->
+    <path d="M 152 101 Q 166 62 186 40 Q 206 18 246 10 Q 233 26 230 44 Q 238 72 252 101 Z"
+          fill="#000000" opacity="0.16" transform="translate(5,5)"/>
+    <!-- Cono, con la punta doblada hacia la derecha -->
+    <path d="M 150 100 Q 164 60 184 38 Q 204 16 244 8 Q 231 24 228 42 Q 236 70 250 100 Z"
+          fill="url(#hwHat)" stroke="#0A0610" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Arruga del pliegue de la punta -->
+    <path d="M 214 30 Q 222 34 228 42" stroke="#0A0610" stroke-width="1.6" fill="none" opacity="0.7"/>
+    <!-- Brillo lateral -->
+    <path d="M 166 86 Q 172 60 188 42 Q 182 62 178 88 Z" fill="#FFFFFF" opacity="0.12"/>
+    <!-- Cinta naranja -->
+    <path d="M 157 84 Q 200 76 244 84 L 248 96 Q 200 88 153 96 Z"
+          fill="#F57F17" stroke="#0A0610" stroke-width="1.6"/>
+    <!-- Hebilla dorada -->
+    <rect x="189" y="80" width="22" height="16" rx="2.5" fill="none" stroke="#FFC857" stroke-width="3.2"/>
+    <rect x="189" y="80" width="22" height="16" rx="2.5" fill="none" stroke="#8A5A00" stroke-width="0.8"/>
+    <!-- Ala del sombrero, combada como el techo -->
+    <path d="M 104 104 Q 200 86 296 104 Q 300 112 292 114 Q 200 104 108 114 Q 100 112 104 104 Z"
+          fill="url(#hwBrim)" stroke="#0A0610" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M 112 106 Q 200 92 288 106" stroke="#5E4580" stroke-width="1.4" fill="none" opacity="0.6"/>
+  </g>
+
+  <!-- ═══ CALABAZA DE CARAMELOS en el suelo, junto a la rueda derecha ═══ -->
+  <!-- Va apoyada en el suelo y no colgada de la mano: en los estados happy y
+       talking Albus levanta las manos y un asa quedaría flotando. -->
+  <!-- Sombra en el suelo -->
+  <ellipse cx="352" cy="372" rx="28" ry="5" fill="#000000" opacity="0.18"/>
+  <g transform="translate(6,10)">
+    <!-- Cuerpo de la calabaza (gajos) -->
+    <ellipse cx="346" cy="336" rx="30" ry="25" fill="url(#hwPumpkin)" stroke="#7A2E05" stroke-width="2"/>
+    <g stroke="#B5470A" stroke-width="1.6" fill="none" opacity="0.75">
+      <path d="M 346 312 Q 334 336 346 360"/>
+      <path d="M 346 312 Q 358 336 346 360"/>
+      <path d="M 330 315 Q 318 336 330 357"/>
+      <path d="M 362 315 Q 374 336 362 357"/>
+    </g>
+    <!-- Boca del cubo (borde superior) -->
+    <ellipse cx="346" cy="314" rx="18" ry="4.5" fill="#5A2104" stroke="#7A2E05" stroke-width="1.5"/>
+    <!-- Cara tallada, con luz por dentro -->
+    <path d="M 331 328 L 339 319 L 343 330 Z" fill="url(#hwGlow)" stroke="#7A2E05" stroke-width="1"/>
+    <path d="M 349 330 L 353 319 L 361 328 Z" fill="url(#hwGlow)" stroke="#7A2E05" stroke-width="1"/>
+    <path d="M 330 340 L 336 344 L 340 340 L 346 345 L 352 340 L 356 344 L 362 340
+             Q 357 352 346 353 Q 335 352 330 340 Z"
+          fill="url(#hwGlow)" stroke="#7A2E05" stroke-width="1"/>
+    <!-- Brillo -->
+    <ellipse cx="333" cy="322" rx="5" ry="8" fill="#FFFFFF" opacity="0.18" transform="rotate(-20 333 322)"/>
+    <!-- Caramelos asomando -->
+    <circle cx="340" cy="311" r="4" fill="#E63946" stroke="#7A0E18" stroke-width="1"/>
+    <circle cx="350" cy="310" r="3.6" fill="#7B2FBE" stroke="#3E1660" stroke-width="1"/>
+  </g>
+
+  <!-- ═══ RATPENATS ═══ -->
+  <g fill="#1A0A18" stroke="#000000" stroke-width="0.6" stroke-linejoin="round">
+    <!-- grande, arriba a la izquierda -->
+    <path d="M 58 62 Q 50 54 38 56 Q 44 60 42 66 Q 48 63 52 68 Q 55 62 58 66
+             Q 61 62 64 68 Q 68 63 74 66 Q 72 60 78 56 Q 66 54 58 62 Z"/>
+    <!-- mediano, a la derecha del sombrero -->
+    <path d="M 334 54 Q 328 48 319 49 Q 323 52 322 57 Q 326 55 329 58 Q 331 54 334 57
+             Q 337 54 339 58 Q 342 55 346 57 Q 345 52 349 49 Q 340 48 334 54 Z"/>
+    <!-- pequeño, a media altura a la derecha -->
+    <path d="M 366 168 Q 362 164 356 165 Q 359 167 358 170 Q 361 169 363 171 Q 364 168 366 170
+             Q 368 168 369 171 Q 371 169 374 170 Q 373 167 376 165 Q 370 164 366 168 Z"/>
+  </g>
+  <!-- ojitos de los ratpenats -->
+  <g fill="#FFC857">
+    <circle cx="56.5" cy="61.5" r="1"/><circle cx="59.5" cy="61.5" r="1"/>
+    <circle cx="332.8" cy="53.4" r="0.8"/><circle cx="335.2" cy="53.4" r="0.8"/>
+  </g>
+</svg>

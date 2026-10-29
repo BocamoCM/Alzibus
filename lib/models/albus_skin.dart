@@ -49,6 +49,7 @@ class AlbusSkin {
       case 'graduado':  return l.skinGraduadoName;
       case 'navidad':   return l.skinNavidadName;
       case 'alzira_fc': return l.skinAlziraFcName;
+      case 'halloween': return l.skinHalloweenName;
       default:          return name;
     }
   }
@@ -63,6 +64,7 @@ class AlbusSkin {
       case 'graduado':  return l.skinGraduadoDesc;
       case 'navidad':   return l.skinNavidadDesc;
       case 'alzira_fc': return l.skinAlziraFcDesc;
+      case 'halloween': return l.skinHalloweenDesc;
       default:          return description;
     }
   }
@@ -145,6 +147,19 @@ class AlbusSkin {
       // sobre el fondo claro de la tienda).
       accentColor: Color(0xFFC62828),
       previewEmoji: '⚽',
+    ),
+    AlbusSkin(
+      id: 'halloween',
+      name: 'Albus de Halloween',
+      description:
+          'Barret de bruixa, carabassa plena de caramels, teranyina i '
+          'ratpenats, el del nostre escut. Truc o tracte!',
+      cost: 300,
+      overlayAsset: 'assets/mascot/skins/halloween/overlay.svg',
+      // Naranja calabaza: el morado del sombrero se confundiría con el
+      // del propio Albus en la card de la tienda.
+      accentColor: Color(0xFFF57F17),
+      previewEmoji: '🎃',
     ),
   ];
 

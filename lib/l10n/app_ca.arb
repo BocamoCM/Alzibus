@@ -450,6 +450,7 @@
   "skinGraduadoName": "Albus graduat",
   "skinNavidadName": "Albus de Nadal",
   "skinAlziraFcName": "Albus UD Alzira",
+  "skinHalloweenName": "Albus de Halloween",
 
   "skinDefaultDesc": "L'Albus original. El que coneixes de tota la vida.",
   "skinFalleroDesc": "Vestit per a les Falles: mocador roig amb llunars, faixa i un clavell. Visca Sant Josep!",
@@ -458,6 +459,7 @@
   "skinGraduadoDesc": "Birret amb borla daurada + diploma amb segell. Homenatge al TFC que va donar origen a Alzitrans.",
   "skinNavidadDesc": "Gorro de Pare Noel amb pompó blanc, bufanda nadalenca a ratlles i flocs de neu. Bon Nadal!",
   "skinAlziraFcDesc": "Bufanda a ratlles roges i morades de l'UD Alzira amb flocs, escut del club i banderí. Visca la UDA!",
+  "skinHalloweenDesc": "Barret de bruixa, carabassa plena de caramels, teranyina i ratpenats, el del nostre escut. Truc o tracte!",
   "equippedBadge": "EQUIPAT",
   "equippedLabel": "Equipat",
   "equipButton": "Equipar",
