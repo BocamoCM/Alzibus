@@ -43,6 +43,10 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - PORT=3000
+      # Producción: el errorHandler deja de devolver la traza de error al
+      # cliente (antes se veía "stack" con rutas internas en las respuestas)
+      # y se apaga el log de depuración de cada petición.
+      - NODE_ENV=production
       # Ruta de uploads dentro del contenedor. La hacemos coincidir con la
       # ruta del host vía bind mount (ver volumes) para simplificar backups
       # y para que los adjuntos sobrevivan a recreate/rebuild del contenedor.
