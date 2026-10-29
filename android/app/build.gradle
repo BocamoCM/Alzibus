@@ -31,7 +31,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "com.alzitrans.app"
     compileSdk 36
-    ndkVersion "27.0.12077973"
+    ndkVersion "28.2.13676358"
 
     lint {
         checkReleaseBuilds false
@@ -165,5 +165,16 @@ dependencies {
     // implementation 'com.google.ads.mediation:facebook:6.18.0.0'
 
     // --- Unity Ads ---
-    implementation 'com.google.ads.mediation:unity:4.12.3.0'
+    // DESACTIVADO (2026-10): de momento solo AdMob. Los grupos de mediación
+    // de Unity en la consola de AdMob pueden quedarse; sin el adapter en la
+    // app, AdMob simplemente los salta.
+    //
+    // Al reactivar: el adapter de Google NO arrastra el SDK de Unity Ads
+    // transitivamente (se comprobó con `gradlew :app:dependencies`: solo trae
+    // play-services-ads). Sin el SDK, R8 falla en release con "Missing class
+    // com.unity3d.ads.*". Hay que declarar los dos, con versiones que casen
+    // (adapter 4.12.3.0 ↔ SDK 4.12.3), y descomentar las reglas de Unity en
+    // proguard-rules.pro.
+    // implementation 'com.google.ads.mediation:unity:4.12.3.0'
+    // implementation 'com.unity3d.ads:unity-ads:4.12.3'
 }
