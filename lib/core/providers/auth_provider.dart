@@ -43,10 +43,13 @@ class AuthNotifier extends Notifier<AuthState> {
         if (!JwtDecoder.isExpired(token)) {
           isLogged = true;
         } else {
-          // El token estaba expirado al arrancar: limpiamos el secure storage
-          // en background (no podemos await aquí — Notifier.build es síncrono).
+          // El token estaba expirado al arrancar. NO se borra todo: con la
+          // huella activada hay que conservar el refresh token para que el
+          // login biométrico pueda renovar la sesión (ver
+          // AuthService.handleExpiredSession). En background porque
+          // Notifier.build es síncrono.
           // ignore: discarded_futures
-          SessionStorage.clear();
+          ref.read(authServiceProvider).handleExpiredSession();
         }
       } catch (_) {
         // Token malformado → ignoramos y dejamos isLogged=false

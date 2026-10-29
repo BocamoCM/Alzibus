@@ -56,6 +56,10 @@ class AuthService {
   // para compartir entre instancias del servicio dentro del mismo proceso.
   static String? _tempEmail;
 
+  /// true justo después de un cierre de sesión voluntario: la pantalla de
+  /// login no lanza la huella automáticamente (solo muestra el botón).
+  static bool justLoggedOut = false;
+
   /// Comprueba si el dispositivo soporta biometría y tiene huellas registradas.
   Future<bool> canCheckBiometrics() async {
     if (kIsWeb) return false;
@@ -345,17 +349,26 @@ class AuthService {
       // No bloquear el logout si falla la notificación
     }
 
-    // Revocar el refresh token en el servidor para que no pueda reusarse.
-    try {
-      final refresh = await SessionStorage.getRefreshToken();
-      if (refresh != null) {
-        await ApiClient().post('/auth/revoke', data: {'refreshToken': refresh});
+    if (await isBiometricEnabled()) {
+      // Con la huella activada, cerrar sesión NO destruye el refresh token:
+      // se borra solo el access token y el usuario puede volver a entrar con
+      // la huella desde la pantalla de login, sin contraseña. El refresh
+      // token queda en el almacenamiento seguro y solo se usa tras validar
+      // la huella (ver loginWithBiometrics).
+      await SessionStorage.clearAccessToken();
+    } else {
+      // Sin huella: logout completo. Se revoca el refresh token en el
+      // servidor para que no pueda reusarse.
+      try {
+        final refresh = await SessionStorage.getRefreshToken();
+        if (refresh != null) {
+          await ApiClient().post('/auth/revoke', data: {'refreshToken': refresh});
+        }
+      } catch (_) {
+        // No bloquear el logout si la revocación falla.
       }
-    } catch (_) {
-      // No bloquear el logout si la revocación falla.
+      await SessionStorage.clear();
     }
-
-    await SessionStorage.clear();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('pending_trip'); // No-PII pero ligado a la sesión
 
@@ -374,12 +387,28 @@ class AuthService {
     if (expiry != null) {
       final expiryDate = DateTime.fromMillisecondsSinceEpoch(expiry * 1000);
       if (DateTime.now().isAfter(expiryDate)) {
-        debugPrint('Token JWT expirado, cerrando sesión');
-        await logout();
+        debugPrint('Token JWT expirado');
+        await handleExpiredSession();
         return false;
       }
     }
     return true;
+  }
+
+  /// Qué hacer cuando el access token (14 días) ha caducado.
+  ///
+  /// - Con huella activada: se borra SOLO el access token y se conserva el
+  ///   refresh token, para que [loginWithBiometrics] pueda renovar la sesión
+  ///   con la huella sin pedir contraseña. Antes se hacía logout() completo y
+  ///   eso destruía (y revocaba) el refresh token: la huella fallaba justo
+  ///   cuando más falta hacía.
+  /// - Sin huella: logout completo; la sesión caduca a los 14 días.
+  Future<void> handleExpiredSession() async {
+    if (await isBiometricEnabled()) {
+      await SessionStorage.clearAccessToken();
+    } else {
+      await logout();
+    }
   }
 
   Future<String?> getToken() => SessionStorage.getToken();

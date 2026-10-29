@@ -672,6 +672,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
+              AuthService.justLoggedOut = true;
               await ref.read(authProvider.notifier).logout();
               if (mounted) {
                 const LoginRoute().go(context);

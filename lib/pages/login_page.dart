@@ -43,10 +43,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         _canCheckBiometrics = canCheck && isEnabled;
       });
       
-      // Intentar login automático si está habilitado
-      if (_canCheckBiometrics) {
+      // Intentar login automático si está habilitado, salvo justo después de
+      // cerrar sesión a propósito (ahí solo se muestra el botón de huella).
+      if (_canCheckBiometrics && !AuthService.justLoggedOut) {
         _loginWithBiometrics();
       }
+      AuthService.justLoggedOut = false;
     }
   }
 

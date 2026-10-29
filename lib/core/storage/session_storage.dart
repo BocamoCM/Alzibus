@@ -128,6 +128,15 @@ class SessionStorage {
   static Future<void> updateEmail(String email) =>
       _storage.write(key: _kEmail, value: email);
 
+  /// Borra SOLO el access token (y su expiración), conservando el refresh
+  /// token y la identidad. Es lo que hay que hacer cuando el access token
+  /// caduca: si se borrara todo con [clear], el login con huella ya no
+  /// podría renovar la sesión con el refresh token.
+  static Future<void> clearAccessToken() async {
+    await _storage.delete(key: _kToken);
+    await _storage.delete(key: _kExpiry);
+  }
+
   static Future<void> clear() async {
     await _storage.delete(key: _kToken);
     await _storage.delete(key: _kEmail);

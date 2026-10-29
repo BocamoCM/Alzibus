@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+    <!-- Tema oscuro: tiene que heredar de un tema AppCompat/MaterialComponents
+         igual que el claro. Antes era @android:style/Theme.Black.NoTitleBar y,
+         con el móvil en modo oscuro, el diálogo de huella de local_auth
+         (BiometricPrompt sobre FragmentActivity) podía fallar o cerrar la app
+         en Android 8 y anteriores. -->
+    <style name="LaunchTheme" parent="Theme.MaterialComponents.NoActionBar">
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
-    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+    <style name="NormalTheme" parent="Theme.MaterialComponents.NoActionBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
 </resources>

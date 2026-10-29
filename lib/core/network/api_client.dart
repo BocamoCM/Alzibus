@@ -67,7 +67,10 @@ class ApiClient {
           // Evitar dependencias circulares con AuthService: limpiamos sesión
           // directamente. Se hará logout limpio cuando el AuthNotifier vuelva
           // a comprobar el estado.
-          await SessionStorage.clear();
+          // Solo el access token: el refresh token se conserva para que el
+          // login con huella pueda renovar la sesión. Si el refresh tampoco
+          // vale, loginWithBiometrics ya hace el clear() completo.
+          await SessionStorage.clearAccessToken();
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('pending_trip');
         }
