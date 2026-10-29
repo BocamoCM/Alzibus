@@ -97,14 +97,29 @@
         .fact { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
         .fact b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
         .fact span { font-size: 13px; color: var(--text-muted); }
-        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); }
-        table.grid { border-collapse: collapse; width: 100%; min-width: 460px; font-size: 15px; }
-        table.grid th, table.grid td { padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
-        table.grid thead th { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-        table.grid tbody th { width: 52px; font-variant-numeric: tabular-nums; color: var(--c2); font-weight: 800; }
-        table.grid tr:last-child th, table.grid tr:last-child td { border-bottom: 0; }
-        table.grid td span { display: inline-block; min-width: 34px; font-variant-numeric: tabular-nums; }
-        table.grid td span.none { color: var(--text-muted); }
+        /* Próximos trenes */
+        .next { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 8px 0 4px; }
+        .next-card { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--c2); border-radius: 12px; padding: 14px 16px; }
+        .next-card .to { font-size: 14px; color: var(--text-muted); }
+        .next-card .when { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+        .next-card .in { font-size: 15px; color: var(--c2); font-weight: 700; }
+        .next-card .after { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+        .next-hint { font-size: 13px; color: var(--text-muted); }
+        /* Selector de día */
+        .daypick { display: inline-flex; gap: 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 4px; margin: 6px 0 0; }
+        .daypick button { font: inherit; font-size: 14px; font-weight: 600; color: var(--text-muted); background: transparent; border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+        .daypick button[aria-pressed="true"] { background: var(--c2); color: #1a1205; }
+        .daypick button:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+        /* Lista de horas */
+        .dir { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 4px 18px 16px; margin: 18px 0; }
+        .dir h2 { margin: 16px 0 6px; font-size: 21px; }
+        .day-label { font-size: 14px; color: var(--text-muted); margin: 0 0 8px; }
+        .part { display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: start; padding: 8px 0; border-top: 1px solid var(--border); }
+        .part h4 { font-size: 14px; color: var(--text-muted); font-weight: 600; padding-top: 5px; }
+        ul.times { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+        ul.times li { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; background: rgba(245,166,35,0.10); border: 1px solid rgba(245,166,35,0.25); border-radius: 8px; padding: 3px 9px; }
+        ul.times li.gone { opacity: 0.35; }
+        @media (max-width: 480px) { .part { grid-template-columns: 1fr; gap: 4px; } .part h4 { padding-top: 0; } }
         .note { font-size: 13px; color: var(--text-muted); border-left: 3px solid var(--coral); padding: 4px 0 4px 12px; margin: 10px 0; }
         .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 12px 0; }
         .card p:last-child { margin-bottom: 0; }
@@ -136,68 +151,52 @@
         <h1>Estación RENFE de Alzira: trenes C2 y bus urbano</h1>
         <p class="lead">La estación de Alzira está en la línea C2 de Cercanías (València Nord – Xàtiva – Moixent). Aquí tienes los horarios de los trenes y los autobuses urbanos que la conectan con el centro y el Hospital de la Ribera.</p>
 
-        <div class="facts">
-            <div class="fact"><b>05:55</b><span>Primer tren a València (laborables)</span></div>
-            <div class="fact"><b>22:24</b><span>Último tren a València</span></div>
-            <div class="fact"><b>44</b><span>Trenes a València en laborables (33 en fin de semana)</span></div>
-            <div class="fact"><b>23:06</b><span>Último tren hacia Xàtiva</span></div>
+        <h2>Próximos trenes desde Alzira</h2>
+        <div class="next" id="next">
+            <div class="next-card"><p class="to">Hacia València Nord</p><p class="when">05:55</p><p class="after">Primer tren de lunes a viernes. Último: 22:24.</p></div>
+            <div class="next-card"><p class="to">Hacia Xàtiva</p><p class="when">06:12</p><p class="after">Primer tren de lunes a viernes. Último: 23:06.</p></div>
+        </div>
+        <p class="next-hint" id="next-hint">Horas de salida desde la estación de Alzira.</p>
+
+        <h2>Horario completo</h2>
+        <div class="daypick" role="group" aria-label="Día de la semana">
+            <button type="button" id="pick-laborable" aria-pressed="true">Lunes a viernes</button>
+            <button type="button" id="pick-finde" aria-pressed="false">Sábados y domingos</button>
         </div>
 
-        <h2><span class="badge">C2</span> Trenes de Alzira a València Nord</h2>
-        <div class="table-wrap">
-            <table class="grid">
-                <thead><tr><th>Hora</th><th>Lunes a viernes</th><th>Sábados y domingos</th></tr></thead>
-                <tbody>
-                    <tr><th scope="row">05</th><td><span>55</span></td><td><span class="none">—</span></td></tr>
-                    <tr><th scope="row">06</th><td><span>20</span> <span>50</span></td><td><span>20</span></td></tr>
-                    <tr><th scope="row">07</th><td><span>07</span> <span>18</span> <span>47</span></td><td><span>18</span> <span>47</span></td></tr>
-                    <tr><th scope="row">08</th><td><span>02</span> <span>18</span> <span>32</span> <span>47</span></td><td><span>18</span> <span>32</span></td></tr>
-                    <tr><th scope="row">09</th><td><span>20</span> <span>48</span></td><td><span>20</span> <span>48</span></td></tr>
-                    <tr><th scope="row">10</th><td><span>18</span> <span>32</span> <span>44</span></td><td><span>18</span> <span>44</span></td></tr>
-                    <tr><th scope="row">11</th><td><span>20</span> <span>42</span></td><td><span>20</span> <span>42</span></td></tr>
-                    <tr><th scope="row">12</th><td><span>18</span> <span>50</span></td><td><span>18</span> <span>50</span></td></tr>
-                    <tr><th scope="row">13</th><td><span>17</span> <span>48</span></td><td><span>17</span> <span>48</span></td></tr>
-                    <tr><th scope="row">14</th><td><span>15</span> <span>32</span> <span>50</span></td><td><span>15</span> <span>50</span></td></tr>
-                    <tr><th scope="row">15</th><td><span>07</span> <span>23</span> <span>55</span></td><td><span>23</span> <span>55</span></td></tr>
-                    <tr><th scope="row">16</th><td><span>20</span> <span>47</span></td><td><span>20</span> <span>47</span></td></tr>
-                    <tr><th scope="row">17</th><td><span>02</span> <span>18</span> <span>48</span></td><td><span>18</span> <span>48</span></td></tr>
-                    <tr><th scope="row">18</th><td><span>20</span> <span>42</span></td><td><span>20</span> <span>42</span></td></tr>
-                    <tr><th scope="row">19</th><td><span>04</span> <span>17</span> <span>33</span> <span>48</span></td><td><span>04</span> <span>33</span> <span>48</span></td></tr>
-                    <tr><th scope="row">20</th><td><span>17</span> <span>34</span></td><td><span>17</span> <span>34</span></td></tr>
-                    <tr><th scope="row">21</th><td><span>17</span> <span>32</span></td><td><span>17</span> <span>32</span></td></tr>
-                    <tr><th scope="row">22</th><td><span>02</span> <span>24</span></td><td><span>24</span></td></tr>
-                </tbody>
-            </table>
-        </div>
-        <p class="note">Minutos de salida desde Alzira. Ejemplo: en la fila 07, «18» es el tren de las 07:18.</p>
+        <section class="dir" id="valencia">
+            <h2><span class="badge">C2</span> Hacia València Nord</h2>
+            <div class="day day-laborable">
+                <p class="day-label">Lunes a viernes · 44 trenes</p>
+                <div class="part"><h4>Mañana</h4><ul class="times"><li>05:55</li><li>06:20</li><li>06:50</li><li>07:07</li><li>07:18</li><li>07:47</li><li>08:02</li><li>08:18</li><li>08:32</li><li>08:47</li><li>09:20</li><li>09:48</li><li>10:18</li><li>10:32</li><li>10:44</li><li>11:20</li><li>11:42</li><li>12:18</li><li>12:50</li><li>13:17</li><li>13:48</li></ul></div>
+                <div class="part"><h4>Tarde</h4><ul class="times"><li>14:15</li><li>14:32</li><li>14:50</li><li>15:07</li><li>15:23</li><li>15:55</li><li>16:20</li><li>16:47</li><li>17:02</li><li>17:18</li><li>17:48</li><li>18:20</li><li>18:42</li><li>19:04</li><li>19:17</li><li>19:33</li><li>19:48</li><li>20:17</li><li>20:34</li></ul></div>
+                <div class="part"><h4>Noche</h4><ul class="times"><li>21:17</li><li>21:32</li><li>22:02</li><li>22:24</li></ul></div>
+            </div>
+            <div class="day day-finde" hidden>
+                <p class="day-label">Sábados y domingos · 33 trenes</p>
+                <div class="part"><h4>Mañana</h4><ul class="times"><li>06:20</li><li>07:18</li><li>07:47</li><li>08:18</li><li>08:32</li><li>09:20</li><li>09:48</li><li>10:18</li><li>10:44</li><li>11:20</li><li>11:42</li><li>12:18</li><li>12:50</li><li>13:17</li><li>13:48</li></ul></div>
+                <div class="part"><h4>Tarde</h4><ul class="times"><li>14:15</li><li>14:50</li><li>15:23</li><li>15:55</li><li>16:20</li><li>16:47</li><li>17:18</li><li>17:48</li><li>18:20</li><li>18:42</li><li>19:04</li><li>19:33</li><li>19:48</li><li>20:17</li><li>20:34</li></ul></div>
+                <div class="part"><h4>Noche</h4><ul class="times"><li>21:17</li><li>21:32</li><li>22:24</li></ul></div>
+            </div>
+            
+        </section>
 
-        <h2><span class="badge">C2</span> Trenes de Alzira hacia Xàtiva</h2>
-        <div class="table-wrap">
-            <table class="grid">
-                <thead><tr><th>Hora</th><th>Lunes a viernes</th><th>Sábados y domingos</th></tr></thead>
-                <tbody>
-                    <tr><th scope="row">06</th><td><span>12</span> <span>48</span></td><td><span>12</span> <span>48</span></td></tr>
-                    <tr><th scope="row">07</th><td><span>06</span> <span>31</span> <span>51</span></td><td><span>31</span></td></tr>
-                    <tr><th scope="row">08</th><td><span>08</span> <span>21</span> <span>38</span> <span>51</span></td><td><span>08</span> <span>38</span></td></tr>
-                    <tr><th scope="row">09</th><td><span>08</span> <span>38</span></td><td><span>08</span> <span>38</span></td></tr>
-                    <tr><th scope="row">10</th><td><span>06</span> <span>36</span></td><td><span>36</span></td></tr>
-                    <tr><th scope="row">11</th><td><span>13</span> <span>38</span></td><td><span>13</span> <span>38</span></td></tr>
-                    <tr><th scope="row">12</th><td><span>06</span> <span>21</span> <span>38</span></td><td><span>38</span></td></tr>
-                    <tr><th scope="row">13</th><td><span>08</span> <span>38</span></td><td><span>08</span> <span>38</span></td></tr>
-                    <tr><th scope="row">14</th><td><span>10</span> <span>36</span> <span>51</span></td><td><span>10</span> <span>36</span> <span>51</span></td></tr>
-                    <tr><th scope="row">15</th><td><span>16</span> <span>26</span> <span>36</span> <span>51</span></td><td><span>16</span> <span>36</span></td></tr>
-                    <tr><th scope="row">16</th><td><span>13</span> <span>38</span></td><td><span>13</span> <span>38</span></td></tr>
-                    <tr><th scope="row">17</th><td><span>11</span> <span>51</span></td><td><span>11</span> <span>51</span></td></tr>
-                    <tr><th scope="row">18</th><td><span>06</span> <span>28</span></td><td><span>28</span></td></tr>
-                    <tr><th scope="row">19</th><td><span>06</span> <span>23</span> <span>41</span></td><td><span>06</span> <span>23</span> <span>41</span></td></tr>
-                    <tr><th scope="row">20</th><td><span>08</span> <span>21</span> <span>34</span></td><td><span>08</span> <span>34</span></td></tr>
-                    <tr><th scope="row">21</th><td><span>06</span> <span>58</span></td><td><span>06</span> <span>36</span> <span>58</span></td></tr>
-                    <tr><th scope="row">22</th><td><span>48</span></td><td><span>48</span></td></tr>
-                    <tr><th scope="row">23</th><td><span>06</span></td><td><span>06</span></td></tr>
-                </tbody>
-            </table>
-        </div>
-        <p class="note">Destinos: L'Alcúdia de Crespins y Xàtiva. 24 de los trenes de laborables terminan en L'Alcúdia de Crespins.</p>
+        <section class="dir" id="moixent">
+            <h2><span class="badge">C2</span> Hacia Xàtiva</h2>
+            <div class="day day-laborable">
+                <p class="day-label">Lunes a viernes · 43 trenes</p>
+                <div class="part"><h4>Mañana</h4><ul class="times"><li>06:12</li><li>06:48</li><li>07:06</li><li>07:31</li><li>07:51</li><li>08:08</li><li>08:21</li><li>08:38</li><li>08:51</li><li>09:08</li><li>09:38</li><li>10:06</li><li>10:36</li><li>11:13</li><li>11:38</li><li>12:06</li><li>12:21</li><li>12:38</li><li>13:08</li><li>13:38</li></ul></div>
+                <div class="part"><h4>Tarde</h4><ul class="times"><li>14:10</li><li>14:36</li><li>14:51</li><li>15:16</li><li>15:26</li><li>15:36</li><li>15:51</li><li>16:13</li><li>16:38</li><li>17:11</li><li>17:51</li><li>18:06</li><li>18:28</li><li>19:06</li><li>19:23</li><li>19:41</li><li>20:08</li><li>20:21</li><li>20:34</li></ul></div>
+                <div class="part"><h4>Noche</h4><ul class="times"><li>21:06</li><li>21:58</li><li>22:48</li><li>23:06</li></ul></div>
+            </div>
+            <div class="day day-finde" hidden>
+                <p class="day-label">Sábados y domingos · 33 trenes</p>
+                <div class="part"><h4>Mañana</h4><ul class="times"><li>06:12</li><li>06:48</li><li>07:31</li><li>08:08</li><li>08:38</li><li>09:08</li><li>09:38</li><li>10:36</li><li>11:13</li><li>11:38</li><li>12:38</li><li>13:08</li><li>13:38</li></ul></div>
+                <div class="part"><h4>Tarde</h4><ul class="times"><li>14:10</li><li>14:36</li><li>14:51</li><li>15:16</li><li>15:36</li><li>16:13</li><li>16:38</li><li>17:11</li><li>17:51</li><li>18:28</li><li>19:06</li><li>19:23</li><li>19:41</li><li>20:08</li><li>20:34</li></ul></div>
+                <div class="part"><h4>Noche</h4><ul class="times"><li>21:06</li><li>21:36</li><li>21:58</li><li>22:48</li><li>23:06</li></ul></div>
+            </div>
+            <p class="note">Todos pasan por Xàtiva; algunos siguen hasta L&#39;Alcúdia de Crespins.</p>
+        </section>
 
         <h2>Bus urbano desde la estación</h2>
         <p>Las tres líneas del bus urbano paran en la <a href="/paradas/1-estacio-renfe/">parada Estació RENFE</a>, delante de la estación:</p>
@@ -238,5 +237,61 @@
             <a href="#" onclick="return window.alzitransCookies &amp;&amp; window.alzitransCookies.open(), false;">Configurar cookies</a>
         </p>
     </footer>
+
+    <script>
+    // Próximos trenes y horario del día de hoy (hora de Madrid). Sin esto la
+    // página sigue mostrando el horario completo de lunes a viernes.
+    (function () {
+        var DATA = {"laborable":{"valencia":["05:55","06:20","06:50","07:07","07:18","07:47","08:02","08:18","08:32","08:47","09:20","09:48","10:18","10:32","10:44","11:20","11:42","12:18","12:50","13:17","13:48","14:15","14:32","14:50","15:07","15:23","15:55","16:20","16:47","17:02","17:18","17:48","18:20","18:42","19:04","19:17","19:33","19:48","20:17","20:34","21:17","21:32","22:02","22:24"],"moixent":["06:12","06:48","07:06","07:31","07:51","08:08","08:21","08:38","08:51","09:08","09:38","10:06","10:36","11:13","11:38","12:06","12:21","12:38","13:08","13:38","14:10","14:36","14:51","15:16","15:26","15:36","15:51","16:13","16:38","17:11","17:51","18:06","18:28","19:06","19:23","19:41","20:08","20:21","20:34","21:06","21:58","22:48","23:06"]},"finde":{"valencia":["06:20","07:18","07:47","08:18","08:32","09:20","09:48","10:18","10:44","11:20","11:42","12:18","12:50","13:17","13:48","14:15","14:50","15:23","15:55","16:20","16:47","17:18","17:48","18:20","18:42","19:04","19:33","19:48","20:17","20:34","21:17","21:32","22:24"],"moixent":["06:12","06:48","07:31","08:08","08:38","09:08","09:38","10:36","11:13","11:38","12:38","13:08","13:38","14:10","14:36","14:51","15:16","15:36","16:13","16:38","17:11","17:51","18:28","19:06","19:23","19:41","20:08","20:34","21:06","21:36","21:58","22:48","23:06"]}};
+        var DEST = { valencia: 'Hacia València Nord', moixent: 'Hacia Xàtiva' };
+
+        function madridNow() {
+            var parts = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+            var o = {};
+            parts.forEach(function (p) { o[p.type] = p.value; });
+            var wd = o.weekday.toLowerCase();
+            return { min: parseInt(o.hour, 10) % 24 * 60 + parseInt(o.minute, 10), weekend: wd.indexOf('sáb') === 0 || wd.indexOf('dom') === 0, sat: wd.indexOf('sáb') === 0, sun: wd.indexOf('dom') === 0 };
+        }
+        function toMin(t) { return parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.slice(3, 5), 10); }
+        function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+
+        var now = madridNow();
+        var today = now.weekend ? 'finde' : 'laborable';
+        // Mañana: el viernes pasa a fin de semana; el domingo, a laborable.
+        var tomorrow = now.sun ? 'laborable' : (now.sat ? 'finde' : (new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', weekday: 'short' }).format(new Date()).toLowerCase().indexOf('vie') === 0 ? 'finde' : 'laborable'));
+
+        var html = '';
+        ['valencia', 'moixent'].forEach(function (dir) {
+            var list = DATA[today][dir];
+            var next = list.filter(function (t) { return toMin(t) >= now.min; });
+            if (next.length) {
+                var wait = toMin(next[0]) - now.min;
+                var inTxt = wait === 0 ? 'Sale ahora' : (wait < 60 ? 'Sale en ' + wait + ' min' : 'Sale en ' + Math.floor(wait / 60) + ' h ' + (wait % 60) + ' min');
+                var after = next.slice(1, 3);
+                html += '<div class="next-card"><p class="to">' + DEST[dir] + '</p><p class="when">' + next[0] + '</p><p class="in">' + inTxt + '</p>' +
+                    (after.length ? '<p class="after">Después: ' + after.join(' y ') + '</p>' : '<p class="after">Es el último tren de hoy.</p>') + '</div>';
+            } else {
+                html += '<div class="next-card"><p class="to">' + DEST[dir] + '</p><p class="when">' + DATA[tomorrow][dir][0] + '</p><p class="in">Mañana</p><p class="after">Hoy ya no quedan trenes en este sentido.</p></div>';
+            }
+        });
+        document.getElementById('next').innerHTML = html;
+        document.getElementById('next-hint').textContent = 'Calculado con la hora actual y el horario de ' + (today === 'finde' ? 'fin de semana' : 'lunes a viernes') + '. En festivos el horario puede cambiar.';
+
+        function show(which) {
+            document.querySelectorAll('.day-laborable').forEach(function (el) { el.hidden = which !== 'laborable'; });
+            document.querySelectorAll('.day-finde').forEach(function (el) { el.hidden = which !== 'finde'; });
+            document.getElementById('pick-laborable').setAttribute('aria-pressed', which === 'laborable');
+            document.getElementById('pick-finde').setAttribute('aria-pressed', which === 'finde');
+        }
+        document.getElementById('pick-laborable').addEventListener('click', function () { show('laborable'); });
+        document.getElementById('pick-finde').addEventListener('click', function () { show('finde'); });
+        show(today);
+
+        // Atenúa los trenes que ya han salido hoy
+        document.querySelectorAll('.day-' + today + ' ul.times li').forEach(function (li) {
+            if (toMin(li.textContent) < now.min) li.classList.add('gone');
+        });
+    })();
+    </script>
 </body>
 </html>
