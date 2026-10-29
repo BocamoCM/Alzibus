@@ -1,0 +1,17 @@
+# Alzitrans · bus urbano de Alzira
+
+> App gratuita y web independiente (no oficial) con horarios y tiempo real del autobús urbano de Alzira (Valencia): líneas L1, L2 y L3, 52 paradas, tarifas y conexiones con el Hospital de la Ribera y la Estación RENFE. La crea y mantiene Borja Carreres, estudiante de DAM en Alzira.
+
+## Páginas principales
+- [Horarios y tarifas](https://alzitrans.es/horarios/): horarios por línea y temporada, precios vigentes
+- [Líneas](https://alzitrans.es/lineas/): recorrido y frecuencia de L1, L2 y L3
+- [Paradas](https://alzitrans.es/paradas/): las 52 paradas con ubicación y líneas
+- [Guía](https://alzitrans.es/guia/): cómo moverse en bus por Alzira
+- [Bus al cementerio](https://alzitrans.es/bus-cementerio/): servicio extraordinario de Tots Sants
+- [Sobre el proyecto](https://alzitrans.es/sobre/): quién lo hace y de dónde salen los datos
+- [App web](https://alzitrans.es/app/): tiempo real en el navegador
+- [App Android](https://play.google.com/store/apps/details?id=com.alzitrans.app)
+
+## Datos clave (2026)
+- Billete normal 0,70 € · festivo 1,00 € · bono 20 viajes 5,00 € · bono joven 3,00 € · fianza tarjeta 3,00 €
+- L1: cada 30 min en laborables · L2: cada hora, todo el año · L3: cada hora, solo laborables de septiembre a junio

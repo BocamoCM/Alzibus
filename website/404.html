@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página no encontrada | Alzitrans</title>
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <style>
+        :root {
+            --burgundy: #6B1B3D; --coral: #E85A4F; --bg: #0a0a0f; --bg-soft: #14141c;
+            --bg-card: #1c1c28; --text: #f0eff4; --text-muted: rgba(240, 239, 244, 0.55);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", "Outfit", sans-serif; color: var(--text); line-height: 1.7; background: var(--bg); }
+        a { color: var(--coral); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 820px; margin: 0 auto; padding: 24px; }
+        header.topbar { background: rgba(20, 20, 28, 0.9); padding: 14px 24px; border-bottom: 1px solid var(--border); }
+        header.topbar a { color: var(--text); font-weight: 600; }
+        header.topbar .container { display: flex; align-items: center; padding: 0; }
+        h1 { font-size: 32px; margin: 32px 0 12px; line-height: 1.2; }
+        h2 { font-size: 20px; margin: 32px 0 12px; }
+        p { margin-bottom: 14px; }
+        .lead { font-size: 18px; color: var(--text-muted); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        .grid a { display: block; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; color: var(--text); }
+        .grid a:hover { border-color: var(--coral); text-decoration: none; }
+        .grid strong { display: block; color: var(--coral); }
+        .grid span { font-size: 14px; color: var(--text-muted); }
+        footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 32px 24px; margin-top: 48px; text-align: center; color: var(--text-muted); font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a href="/" style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:700;">
+                <img src="/assets/logo.png" alt="Logo Alzitrans" width="32" height="32" style="width:32px; height:32px; border-radius:8px;">
+                <span>Alzitrans</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Esta página no existe</h1>
+        <p class="lead">Puede que el enlace esté mal escrito o que la página se haya movido. Esto es lo que suele buscar la gente:</p>
+
+        <div class="grid">
+            <a href="/horarios/"><strong>Horarios y tarifas</strong><span>Salidas por línea y temporada, y precios</span></a>
+            <a href="/app/"><strong>Tiempo real</strong><span>Cuándo pasa el próximo bus en tu parada</span></a>
+            <a href="/lineas/"><strong>Líneas L1, L2 y L3</strong><span>Recorridos, frecuencias y mapas</span></a>
+            <a href="/paradas/"><strong>Las 52 paradas</strong><span>Ubicación y líneas de cada parada</span></a>
+        </div>
+
+        <h2>Paradas más consultadas</h2>
+        <div class="grid">
+            <a href="/paradas/14-hospital/"><strong>Hospital de la Ribera</strong><span>L1 · L2 · L3</span></a>
+            <a href="/paradas/1-estacio-renfe/"><strong>Estación RENFE</strong><span>L1 · L2 · L3</span></a>
+        </div>
+    </main>
+
+    <footer>
+        <p>Alzitrans · bus urbano de Alzira · <a href="/">Volver al inicio</a></p>
+    </footer>
+</body>
+</html>

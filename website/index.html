@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horarios del Bus de Alzira en Tiempo Real - Líneas L1, L2, L3 | Alzitrans</title>
+    <title>Bus de Alzira: horarios y tiempo real | Alzitrans</title>
     <meta name="description"
         content="Consulta los horarios del bus de Alzira en tiempo real: líneas L1, L2 y L3, paradas, Hospital y Estación RENFE. App gratuita Alzitrans para saber cuándo pasa tu autobús urbano.">
     <meta name="keywords" content="bus alzira, horarios bus alzira, horario autobus alzira, transporte urbano alzira, autobuses alzira, alzitrans, tiempo real bus alzira, paradas bus alzira, l1 alzira, l2 alzira, l3 alzira, bus alzira hospital, bus alzira renfe, transporte publico alzira">
@@ -19,7 +19,7 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://alzitrans.es/">
-    <meta property="og:title" content="Bus Alzira en Tiempo Real - Horarios L1, L2, L3 | Alzitrans">
+    <meta property="og:title" content="Bus de Alzira: horarios y tiempo real | Alzitrans">
     <meta property="og:description" content="¿Cuándo llega tu bus en Alzira? Consulta tiempos reales, paradas y líneas L1, L2 y L3 de Alzira de forma gratuita.">
     <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
     <meta property="og:image:width" content="512">
@@ -31,7 +31,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://alzitrans.es/">
-    <meta name="twitter:title" content="Bus Alzira en Tiempo Real - Horarios L1, L2, L3 | Alzitrans">
+    <meta name="twitter:title" content="Bus de Alzira: horarios y tiempo real | Alzitrans">
     <meta name="twitter:description" content="¿Cuándo llega tu bus en Alzira? Tiempos reales, paradas y líneas L1, L2 y L3 de forma gratuita.">
     <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
 
@@ -67,10 +67,7 @@
         "price": "0",
         "priceCurrency": "EUR"
       },
-      "author": {
-        "@type": "Organization",
-        "name": "Alzitrans"
-      },
+      "author": { "@id": "https://alzitrans.es/#org" },
       "featureList": [
         "Tiempos de llegada en tiempo real",
         "Mapa interactivo con paradas",
@@ -80,7 +77,23 @@
         "Historial de viajes",
         "Paradas favoritas"
       ],
-      "screenshot": "https://alzitrans.es/assets/captsAlz/1775569305617.jpg"
+      "screenshot": "https://alzitrans.es/assets/captsAlz/app-bus-alzira-inicio.webp"
+    }
+    </script>
+
+    <!-- Schema.org: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://alzitrans.es/#org",
+      "name": "Alzitrans",
+      "alternateName": "Alzitrans · bus de Alzira",
+      "url": "https://alzitrans.es/",
+      "logo": "https://alzitrans.es/assets/logo.png",
+      "description": "Proyecto independiente de información sobre el autobús urbano de Alzira (Valencia): horarios, paradas y tiempo real.",
+      "founder": { "@type": "Person", "name": "Borja Carreres" },
+      "sameAs": ["https://play.google.com/store/apps/details?id=com.alzitrans.app"]
     }
     </script>
 
@@ -296,7 +309,7 @@
                 </div>
             </div>
             <div class="hero-phone">
-                <div class="device-stage"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305617.jpg" alt="Pantalla principal de Alzitrans - Mapa con tiempos de llegada del bus de Alzira en tiempo real" loading="eager"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                <div class="device-stage"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-inicio.webp" alt="Pantalla principal de Alzitrans - Mapa con tiempos de llegada del bus de Alzira en tiempo real" loading="eager" fetchpriority="high"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
             </div>
         </div>
     </header>
@@ -330,7 +343,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305568.jpg" alt="Mapa interactivo de paradas y líneas de bus en Alzira con tiempos de llegada" loading="lazy"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-mapa-paradas.webp" alt="Mapa interactivo de paradas y líneas de bus en Alzira con tiempos de llegada" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -348,7 +361,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305505.jpg" alt="Pantalla de alertas inteligentes de Alzitrans: notificación cuando el bus de Alzira está a 5 minutos" loading="lazy"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-alertas.webp" alt="Pantalla de alertas inteligentes de Alzitrans: notificación cuando el bus de Alzira está a 5 minutos" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -366,7 +379,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305391.jpg" alt="Lectura NFC de tarjeta de transporte de Alzira con Alzitrans - consulta saldo e historial" loading="lazy"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-tarjeta-nfc.webp" alt="Lectura NFC de tarjeta de transporte de Alzira con Alzitrans - consulta saldo e historial" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -383,7 +396,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305451.jpg" alt="Rutas y líneas"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-lineas.webp" alt="Rutas y líneas" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -401,7 +414,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305262.jpg" alt="Perfil y favoritas"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-favoritas.webp" alt="Perfil y favoritas" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -419,7 +432,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305128.jpg" alt="Historial de viajes"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-historial.webp" alt="Historial de viajes" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -437,7 +450,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305184.jpg" alt="Estadísticas del usuario"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-right"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-estadisticas.webp" alt="Estadísticas del usuario" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
 
@@ -455,7 +468,7 @@
                     </ul>
                 </div>
                 <div class="feature-phone">
-                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img class="device-screen" src="assets/captsAlz/1775569305066.jpg" alt="Ajustes multiidioma"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
+                    <div class="phone-3d device-stage tilt-left"><div class="device device-iphone-x"><div class="device-frame"><img width="760" height="1592" class="device-screen" src="assets/captsAlz/app-bus-alzira-idiomas.webp" alt="Ajustes multiidioma" loading="lazy" decoding="async"></div><div class="device-stripe"></div><div class="device-header"></div><div class="device-sensors"></div><div class="device-btns"></div><div class="device-power"></div></div></div>
                 </div>
             </div>
         </div>
@@ -664,6 +677,7 @@
                 <a href="#registro">Registro</a>
                 <a href="#preguntas">FAQ</a>
                 <a href="#contacto">Contacto</a>
+                <a href="sobre/">Sobre el proyecto</a>
                 <a href="legal/privacidad.html">Privacidad</a>
                 <a href="legal/cookies.html">Cookies</a>
                 <a href="legal/terminos.html">Términos</a>

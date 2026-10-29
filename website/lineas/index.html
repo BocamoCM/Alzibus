@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Líneas del bus urbano de Alzira (L1, L2, L3) | Alzitrans</title>
-    <meta name="description" content="Información completa de las 3 líneas del bus urbano de Alzira: L1, L2 y L3. Recorrido, paradas y mapa de cada línea.">
+    <title>Líneas del bus de Alzira: recorridos y horarios | Alzitrans</title>
+    <meta name="description" content="Las 3 líneas del bus urbano de Alzira de un vistazo: por dónde pasan, cada cuánto y qué días. L1 y L2 todo el año, L3 de septiembre a junio.">
     <meta name="robots" content="index, follow">
     <meta name="author" content="Alzitrans">
     <meta name="geo.region" content="ES-VC">
@@ -14,7 +14,7 @@
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Líneas del bus urbano de Alzira (L1, L2, L3) | Alzitrans">
+    <meta property="og:title" content="Líneas del bus de Alzira: recorridos y horarios | Alzitrans">
     <meta property="og:description" content="Información completa de las 3 líneas del bus urbano de Alzira: L1, L2 y L3. Recorrido, paradas y mapa de cada línea.">
     <meta property="og:url" content="https://alzitrans.es/lineas/">
     <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
@@ -23,7 +23,7 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Líneas del bus urbano de Alzira (L1, L2, L3) | Alzitrans">
+    <meta name="twitter:title" content="Líneas del bus de Alzira: recorridos y horarios | Alzitrans">
     <meta name="twitter:description" content="Información completa de las 3 líneas del bus urbano de Alzira: L1, L2 y L3. Recorrido, paradas y mapa de cada línea.">
     <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
 
@@ -108,7 +108,15 @@
         footer a:hover { color: var(--coral); }
         /* Leaflet: mantén el mapa con su fondo natural (es claro pero el contraste queda bien con el wrapper oscuro). */
         .leaflet-popup-content a { color: var(--burgundy); }
-    </style>
+
+        .freq-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); margin: 16px 0 8px; }
+        .freq { border-collapse: collapse; width: 100%; min-width: 600px; font-size: 15px; }
+        .freq th, .freq td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        .freq th { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+        .freq tr:last-child td { border-bottom: 0; }
+        .freq td { font-variant-numeric: tabular-nums; }
+        .freq-note { font-size: 13px; color: var(--text-muted); }
+        </style>
     <link rel="stylesheet" href="/cookie-banner.css">
 </head>
 <body>
@@ -125,7 +133,7 @@
     <main class="container">
         <nav class="breadcrumb"><a href="/">Inicio</a> › Líneas</nav>
         <h1>Líneas del bus urbano de Alzira</h1>
-        <p class="lead">El autobús urbano de Alzira tiene 3 líneas: L1, L2 y L3. Elige una para ver el recorrido, las paradas y el mapa.</p>
+        <p class="lead">El autobús urbano de Alzira tiene 3 líneas, L1, L2 y L3, que unen el Hospital de la Ribera con la Estación RENFE. Elige una para ver su horario, sus paradas y el mapa.</p>
         <div class="card" style="padding:0">
             <ul class="stops-list">
                 
@@ -146,12 +154,29 @@
                 </li>
             </ul>
         </div>
+                <h2>Frecuencias de cada línea</h2>
+        <div class="freq-wrap">
+            <table class="freq">
+                <thead><tr><th>Línea</th><th>Paradas</th><th>Laborables</th><th>Sábados</th><th>Domingos y festivos</th><th>Verano</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="/lineas/l1/"><span class="line-badge" style="background:#1565C0">L1</span></a></td><td>26</td><td>Cada 30 min, de 05:55 a 21:55</td><td>Cada hora</td><td>6 salidas</td><td>Julio: cada 30 min hasta las 14:30, luego cada hora. Agosto: cada hora</td></tr>
+                    <tr><td><a href="/lineas/l2/"><span class="line-badge" style="background:#2E7D32">L2</span></a></td><td>30</td><td>Cada hora, de 06:15 a 21:15</td><td>Cada hora</td><td>5 salidas</td><td>Cada hora (julio, con parón al mediodía)</td></tr>
+                    <tr><td><a href="/lineas/l3/"><span class="line-badge" style="background:#E65100">L3</span></a></td><td>18</td><td>Cada hora, de 06:45 a 20:45</td><td>No circula</td><td>No circula</td><td>No circula</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="freq-note">Horas de salida desde el Hospital de la Ribera. Las salidas desde la Estación RENFE y las horas exactas de festivos están en cada línea y en <a href="/horarios/">horarios</a>.</p>
+
+        <h2>Qué línea coger</h2>
+        <p>Las tres líneas van del Hospital de la Ribera a la Estación RENFE, cada una por un recorrido distinto. Para ir de un extremo al otro, la L1 es la más frecuente. Si vas a una parada concreta, búscala en el <a href="/paradas/">listado de paradas</a> para ver qué líneas pasan por ella. Recuerda que en fin de semana y en verano no hay L3.</p>
         <div class="cta">
             <h2>Tiempos de paso en tiempo real</h2>
             <p>Consulta los <a href="/horarios/" style="color:#fff; text-decoration:underline">horarios y tarifas</a> de cada línea, o el tiempo de paso del próximo bus en tiempo real con la app Alzitrans.</p>
             <a href="/#descarga" class="btn">Descargar app</a>
             <a href="/app/" class="btn">Abrir versión web</a>
         </div>
+    
+        <p class="fiabilidad" style="font-size:13px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:14px; margin-top:28px;">Horarios basados en los publicados por el servicio urbano de autobús de Alzira. Página actualizada el <time datetime="2026-10-29">29 de octubre de 2026</time>. Alzitrans es un proyecto independiente. ¿Ves un error? <a href="/sobre/#contacto">Avísanos</a>.</p>
     </main>
 
     <footer>
@@ -161,6 +186,7 @@
             <a href="/lineas/l1/">L1</a> ·
             <a href="/lineas/l2/">L2</a> ·
             <a href="/lineas/l3/">L3</a> ·
+            <a href="/sobre/">Sobre el proyecto</a> ·
             <a href="/legal/privacidad.html">Privacidad</a> ·
             <a href="/legal/cookies.html">Cookies</a> ·
             <a href="#" onclick="return window.alzitransCookies &amp;&amp; window.alzitransCookies.open(), false;">Configurar cookies</a> ·
