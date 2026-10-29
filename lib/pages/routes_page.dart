@@ -19,7 +19,10 @@ class RoutesPage extends ConsumerStatefulWidget {
 
 class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
+  /// Líneas con pestaña propia. CEM = servicio Alzira-Cementerio (jueves).
+  static const List<String> _lines = ['L1', 'L2', 'L3', 'CEM'];
+
   Map<String, List<Map<String, dynamic>>> _routes = {};
   bool _isLoading = true;
   
@@ -31,7 +34,7 @@ class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: _lines.length, vsync: this);
     _loadRoutes();
     _subscribeToBuses();
     
@@ -60,7 +63,7 @@ class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProvid
   }
 
   Future<void> _loadRoutes() async {
-    for (final line in ['L1', 'L2', 'L3']) {
+    for (final line in _lines) {
       final stops = await ref.read(lineRouteProvider(line).future);
       _routes[line] = stops;
     }
@@ -75,9 +78,31 @@ class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProvid
         return AlzitransColors.lineL2;
       case 'L3':
         return AlzitransColors.lineL3;
+      case 'CEM':
+        return AlzitransColors.lineCem;
       default:
         return Colors.grey;
     }
+  }
+
+  Widget _lineTab(String lineId) {
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: _getLineColor(lineId),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(lineId),
+        ],
+      ),
+    );
   }
 
   @override
@@ -88,70 +113,14 @@ class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProvid
         bottom: TabBar(
           controller: _tabController,
           indicatorSize: TabBarIndicatorSize.label,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: _getLineColor('L1'),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('L1'),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: _getLineColor('L2'),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('L2'),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: _getLineColor('L3'),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('L3'),
-                ],
-              ),
-            ),
-          ],
+          tabs: [for (final line in _lines) _lineTab(line)],
         ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
               controller: _tabController,
-              children: [
-                _buildRouteList('L1'),
-                _buildRouteList('L2'),
-                _buildRouteList('L3'),
-              ],
+              children: [for (final line in _lines) _buildRouteList(line)],
             ),
     );
   }
@@ -183,6 +152,24 @@ class _RoutesPageState extends ConsumerState<RoutesPage> with SingleTickerProvid
 
     return Column(
       children: [
+        // La línea del cementerio no circula a diario: se indica su horario
+        // (no tiene bus simulado, así que no saldría ningún banner de bus).
+        if (lineId == 'CEM')
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              border: Border.all(color: color.withOpacity(0.4)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'Servicio al cementerio: todos los jueves laborables. '
+              'Sale de la Plaça del Regne a las 16:00 y vuelve del cementerio '
+              'a las 17:10. Si el jueves es festivo, se hace el miércoles anterior.',
+            ),
+          ),
         // Banner del bus si existe
         if (bus != null)
           Container(

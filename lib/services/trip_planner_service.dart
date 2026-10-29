@@ -59,6 +59,8 @@ class TripPlannerService {
 
   /// Carga paradas y rutas. Llamar una vez al iniciar la app o al abrir el
   /// planificador. Idempotente — si ya está cargado, no hace nada.
+  static const Set<String> _occasionalLines = {'CEM'};
+
   Future<void> initialize() async {
     if (_allStops != null) return;
 
@@ -70,6 +72,10 @@ class TripPlannerService {
     for (final stop in _allStops!) {
       allLines.addAll(stop.lines);
     }
+    // Líneas que no circulan a diario (CEM = cementerio, solo los jueves a
+    // las 16:00): no se usan para planificar o propondría trayectos que no
+    // existen la mayoría de los días.
+    allLines.removeAll(_occasionalLines);
 
     for (final lineId in allLines) {
       final rawStops = await _stopsService.loadLineRoute(lineId);

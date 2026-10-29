@@ -32,7 +32,8 @@ class AlzitransColors {
   static const Color lineL1 = Color(0xFF1565C0);        // Azul
   static const Color lineL2 = Color(0xFF2E7D32);        // Verde
   static const Color lineL3 = Color(0xFFE65100);        // Naranja
-  
+  static const Color lineCem = Color(0xFF6A6A6A);       // Gris (Cementerio, como el operador)
+
   // Gradientes
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -258,6 +259,8 @@ class AlzitransTheme {
         return AlzitransColors.lineL2;
       case 'L3':
         return AlzitransColors.lineL3;
+      case 'CEM':
+        return AlzitransColors.lineCem;
       default:
         return AlzitransColors.burgundy;
     }

@@ -32,7 +32,7 @@ class LineFilter extends StatelessWidget {
         children: [
           Text(AppLocalizations.of(context)!.lines, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          ...['L1', 'L2', 'L3'].map((line) {
+          ...['L1', 'L2', 'L3', 'CEM'].map((line) {
             final isSelected = selectedLines.contains(line);
             return GestureDetector(
               onTap: () => onLineToggle(line),

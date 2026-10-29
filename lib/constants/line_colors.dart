@@ -9,7 +9,7 @@ class LineColors {
     'L3': AlzitransColors.lineL3,  // Naranja
     // Servicio Alzira-Cementerio (jueves laborables 16:00, vuelta 17:10).
     // Gris, el mismo color que usa el operador en su web de tiempos.
-    'CEM': Color(0xFF6A6A6A),
+    'CEM': AlzitransColors.lineCem,
   };
 
   static Color getColor(String line) {

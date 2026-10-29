@@ -47,7 +47,7 @@ class MapPage extends ConsumerStatefulWidget {
 
 class MapPageState extends ConsumerState<MapPage> {
   List<BusStop> stops = [];
-  Set<String> selectedLines = {'L1', 'L2', 'L3'};
+  Set<String> selectedLines = {'L1', 'L2', 'L3', 'CEM'};
   LatLng center = LatLng(39.1566, -0.4354);
   LatLng? myLocation;
   double? myHeading = 0.0;
@@ -389,6 +389,8 @@ class MapPageState extends ConsumerState<MapPage> {
         return const Color(0xFF2E7D32); // Verde
       case 'L3':
         return const Color(0xFFE65100);
+      case 'CEM':
+        return AlzitransColors.lineCem;
       default:
         return Colors.grey;
     }
