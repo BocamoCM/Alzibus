@@ -187,7 +187,8 @@ const validateApiKey = (req, res, next) => {
 
     // Excepciones: Rutas que no requieren API Key (Ej: Landing Page o Health Check)
     const originalPath = req.originalUrl.split('?')[0]; // Limpiar query params si los hubiera
-    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact'];
+    // /api/trains/alzira: próximos trenes C2 para la página /estacion-renfe/.
+    const publicRoutes = ['/api/stats/public', '/api/health', '/api/metrics/web', '/api/contact', '/api/trains/alzira'];
 
     // Endpoints públicos por prefijo (no son rutas exactas):
     // - /api/live-trips/public/<token> → polling del viewer de "Compartir
@@ -502,6 +503,7 @@ app.use('/api', require('./src/routes/feedback.routes'));
 app.use('/api', require('./src/routes/stat.routes'));
 app.use('/api', require('./src/routes/live-trip.routes'));
 app.use('/api', require('./src/routes/game.routes'));
+app.use('/api', require('./src/routes/train.routes'));
 
 // ── Logo de Alzitrans para el viewer ──
 // Servido en /v/logo.png ANTES de la ruta /v/:shareToken para que Express
