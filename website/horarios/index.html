@@ -12,6 +12,9 @@
     <meta name="geo.placename" content="Alzira, Valencia, España">
 
     <link rel="canonical" href="https://alzitrans.es/horarios/">
+    <link rel="alternate" hreflang="es" href="https://alzitrans.es/horarios/">
+    <link rel="alternate" hreflang="ca" href="https://alzitrans.es/va/horaris/">
+    <link rel="alternate" hreflang="x-default" href="https://alzitrans.es/horarios/">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
@@ -102,8 +105,9 @@
         header.topbar a { color: var(--text); font-weight: 600; }
         header.topbar a.cta-btn { background: var(--burgundy); padding: 8px 18px; border-radius: 999px; color: white; }
         header.topbar .container { max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0; }
-        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .breadcrumb a { color: var(--text-muted); }
+        .breadcrumb a.lang { color: var(--coral); }
         .line-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; color: white; font-weight: 700; font-size: 13px; }
         h1 { font-size: 32px; margin-bottom: 12px; line-height: 1.2; color: var(--text); }
         h2 { font-size: 22px; margin: 32px 0 16px; color: var(--text); }
@@ -155,7 +159,7 @@
     </header>
 
     <main class="container">
-        <nav class="breadcrumb"><a href="/">Inicio</a> › Horarios</nav>
+        <nav class="breadcrumb"><span><a href="/">Inicio</a> › Horarios</span><a class="lang" href="/va/horaris/" hreflang="ca" lang="ca">Llegir en valencià</a></nav>
         <h1>Horarios y tarifas del bus urbano de Alzira</h1>
         <p class="lead">El autobús urbano de Alzira funciona con <strong>frecuencias y franjas de servicio</strong> según la línea, el día y la época del año. Aquí tienes los <strong>horarios</strong> y las <strong>tarifas</strong> del servicio, y además puedes consultar el <strong>tiempo de paso real</strong> de cada parada en la app.</p>
         <p style="background:rgba(245,185,74,0.10); border:1px solid rgba(245,185,74,0.35); border-radius:12px; padding:14px 18px;"><strong>Tots Sants:</strong> hay bus extraordinario y gratuito al cementerio desde la plaza del Reino. <a href="/bus-cementerio/">Horarios del bus al cementerio</a>.</p>
