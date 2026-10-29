@@ -8,6 +8,7 @@
 - [Líneas](https://alzitrans.es/lineas/): recorrido y frecuencia de L1, L2 y L3
 - [Paradas](https://alzitrans.es/paradas/): las 52 paradas con ubicación y líneas
 - [Guía](https://alzitrans.es/guia/): cómo moverse en bus por Alzira
+- [Estación RENFE](https://alzitrans.es/estacion-renfe/): trenes Cercanías C2 en Alzira y bus urbano que enlaza
 - [Bus al cementerio](https://alzitrans.es/bus-cementerio/): servicio extraordinario de Tots Sants
 - [Sobre el proyecto](https://alzitrans.es/sobre/): quién lo hace y de dónde salen los datos
 - [App web](https://alzitrans.es/app/): tiempo real en el navegador
