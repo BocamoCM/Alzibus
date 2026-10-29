@@ -190,6 +190,7 @@ html = f"""<!DOCTYPE html>
         .next-card .in {{ font-size: 15px; color: var(--c2); font-weight: 700; }}
         .next-card .after {{ font-size: 14px; color: var(--text-muted); margin-top: 4px; }}
         .next-hint {{ font-size: 13px; color: var(--text-muted); }}
+        .renfe-notice {{ font-size: 14px; background: rgba(245,166,35,0.10); border: 1px solid rgba(245,166,35,0.35); border-radius: 12px; padding: 12px 16px; margin: 0 0 8px; }}
         .next-card .when s {{ color: var(--text-muted); font-size: 20px; font-weight: 600; }}
         .st {{ display: inline-block; vertical-align: middle; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--text-muted); }}
         .st-ok {{ background: rgba(92,194,138,0.15); color: #6fd39b; }}
@@ -242,6 +243,8 @@ html = f"""<!DOCTYPE html>
         <nav class="breadcrumb"><a href="/">Inicio</a> › Estación RENFE</nav>
         <h1>Estación RENFE de Alzira: trenes C2 y bus urbano</h1>
         <p class="lead">La estación de Alzira está en la línea C2 de Cercanías (València Nord – Xàtiva – Moixent). Aquí tienes los horarios de los trenes y los autobuses urbanos que la conectan con el centro y el Hospital de la Ribera.</p>
+
+        <p class="renfe-notice"><strong>Horarios de Renfe.</strong> Los horarios de tren salen de los datos abiertos de Renfe y los retrasos, de su información en tiempo real. Pueden variar por obras, incidencias o cambios de última hora: antes de viajar, confírmalo en <a href="https://www.renfe.com/es/es/cercanias/cercanias-valencia" rel="noopener" target="_blank">renfe.com</a> o en la estación.</p>
 
         <h2>Próximos trenes desde Alzira</h2>
         <div class="next" id="next">
