@@ -37,8 +37,12 @@ class LineFilter extends StatelessWidget {
             return GestureDetector(
               onTap: () => onLineToggle(line),
               child: Container(
+                // Ancho fijo: si no, cada botón mide lo que su texto y "CEM"
+                // (3 letras) salía más ancho que L1/L2/L3.
+                width: 52,
+                alignment: Alignment.center,
                 margin: const EdgeInsets.only(bottom: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected ? LineColors.getColor(line) : Colors.grey[300],
                   borderRadius: BorderRadius.circular(4),
