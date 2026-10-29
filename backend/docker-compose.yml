@@ -15,7 +15,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-alzibus_password}
       POSTGRES_DB: ${DB_NAME:-alzibus_db}
     ports:
-      - "5433:5432"
+      # Solo accesible desde la propia Pi: con "5433:5432" Postgres quedaba
+      # expuesto a toda la red. Los contenedores lo usan por la red interna.
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
