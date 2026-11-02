@@ -874,7 +874,11 @@ a {
     }
 
     .hero-grid {
-        grid-template-columns: 1fr;
+        /* minmax(0, 1fr) y no 1fr: un 1fr no baja del ancho mínimo de su
+           contenido (titular y maqueta del móvil) y la columna medía 356px
+           en un hueco de 327px a 375px de ancho: el texto se cortaba 5px
+           por la derecha ("Alzira," y "L2"). */
+        grid-template-columns: minmax(0, 1fr);
         text-align: center;
         gap: 40px;
     }

@@ -179,12 +179,12 @@
 
     <!-- Preload de recursos críticos -->
     <link rel="preload" href="assets/logo.png" as="image">
-    <link rel="preload" href="style.css?v=3.7" as="style">
+    <link rel="preload" href="style.css?v=3.8" as="style">
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://play.google.com">
 
     <link rel="stylesheet" href="assets/vendor/devices.min.css">
-    <link rel="stylesheet" href="style.css?v=3.7">
+    <link rel="stylesheet" href="style.css?v=3.8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
@@ -198,7 +198,12 @@
          dominio (alzitrans.es) se hace detectando que este script está
          presente en la landing. -->
     <script defer src="/cookie-banner.js"></script>
-    <link rel="stylesheet" href="/cookie-banner.css">
+    <link rel="stylesheet" href="/cookie-banner.css?v=2">
+    <!-- Speculation Rules: precarga la siguiente página cuando el usuario
+         apunta a un enlace interno, para que la navegación sea instantánea. -->
+    <script type="speculationrules">
+    {"prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/app/*"}}]}, "eagerness": "moderate"}]}
+    </script>
 </head>
 
 <body>
@@ -286,7 +291,7 @@
         <div class="container hero-grid">
             <div class="hero-content">
                 <p class="hero-tag">Transporte Urbano y Bus Alzira</p>
-                <h1>Todo el <span class="gradient-text">Bus de Alzira</span>,<br>en tu bolsillo</h1>
+                <h1>Todo el <span class="gradient-text">Bus de Alzira</span>, <br>en tu bolsillo</h1>
                 <p class="hero-desc">Consulta los horarios del bus en Alzira, tiempos de llegada reales de las líneas L1, L2 y L3, y todas las paradas del servicio de autobuses urbanos. Recibe alertas y lee tu tarjeta de transporte con el móvil.</p>
                 <div class="hero-actions">
                     <a href="#descarga" class="btn-main">
@@ -297,7 +302,7 @@
                         </svg>
                         Descargar App
                     </a>
-                    <a href="https://alzitrans.es/app" class="btn-ghost">
+                    <a href="/app/" class="btn-ghost">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -332,7 +337,7 @@
 
     <section class="features" id="funciones">
         <div class="container">
-            <h2 class="section-title">Todo lo que necesitas<br>para <span class="gradient-text">moverte por
+            <h2 class="section-title">Todo lo que necesitas <br>para <span class="gradient-text">moverte por
                     Alzira</span></h2>
             <p class="section-subtitle">Alzitrans integra todas las herramientas del transporte público en una sola app,
                 con un diseño moderno y fácil de usar.</p>
@@ -359,7 +364,7 @@
             <div class="feature-row reverse" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">02 — Alertas inteligentes</span>
-                    <h3>Tú mandas,<br>la app <span class="gradient-text">te avisa</span></h3>
+                    <h3>Tú mandas, <br>la app <span class="gradient-text">te avisa</span></h3>
                     <p>Activa una alerta para cualquier línea y parada. Alzitrans te enviará una notificación cuando el
                         bus esté a 5, 2 o 1 minuto de llegar. Nunca más correrás para coger el bus.</p>
                     <ul class="feature-list">
@@ -377,7 +382,7 @@
             <div class="feature-row" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">03 — Tarjeta NFC</span>
-                    <h3>Lee tu tarjeta<br><span class="gradient-text">con el móvil</span></h3>
+                    <h3>Lee tu tarjeta <br><span class="gradient-text">con el móvil</span></h3>
                     <p>Acerca tu tarjeta de transporte al móvil y lee al instante tu saldo y los últimos viajes
                         realizados. Compatible con tarjetas MIFARE Classic 1K del servicio de bus de Alzira.</p>
                     <ul class="feature-list">
@@ -395,7 +400,7 @@
             <div class="feature-row reverse" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">04 — Rutas y líneas</span>
-                    <h3>Todas las líneas de<br><span class="gradient-text">transporte público</span></h3>
+                    <h3>Todas las líneas de <br><span class="gradient-text">transporte público</span></h3>
                     <p>Consulta el recorrido completo de los autobuses urbanos (L1, L2 y L3) con todas sus paradas, horarios de bus en Alzira y destinos. Planifica tu viaje paso a paso.</p>
                     <ul class="feature-list">
                         <li><svg class="li-icon"><use href="#ic-map"/></svg>Recorrido de los autobuses urbanos</li>
@@ -412,7 +417,7 @@
             <div class="feature-row" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">05 — Paradas favoritas</span>
-                    <h3>Tus paradas,<br><span class="gradient-text">siempre a mano</span></h3>
+                    <h3>Tus paradas, <br><span class="gradient-text">siempre a mano</span></h3>
                     <p>Guarda tus paradas más frecuentes con un solo toque. Accede a los tiempos de llegada de tu parada
                         habitual sin tener que buscarla cada vez que abres la app.</p>
                     <ul class="feature-list">
@@ -430,7 +435,7 @@
             <div class="feature-row reverse" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">06 — Historial de viajes</span>
-                    <h3>Tu diario de<br><span class="gradient-text">desplazamientos</span></h3>
+                    <h3>Tu diario de <br><span class="gradient-text">desplazamientos</span></h3>
                     <p>Alzitrans guarda automáticamente cada viaje que realizas. Consulta cuándo y dónde cogiste el bus,
                         qué línea usaste y cuántos viajes llevas este mes.</p>
                     <ul class="feature-list">
@@ -448,7 +453,7 @@
             <div class="feature-row" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">07 — Tu perfil</span>
-                    <h3>Estadísticas<br><span class="gradient-text">personalizadas</span></h3>
+                    <h3>Estadísticas <br><span class="gradient-text">personalizadas</span></h3>
                     <p>Un espacio exclusivo donde ver tus datos: total de viajes, paradas visitadas, línea favorita y
                         mucho más. Un diseño limpio y funcional que te cuenta tu historia con el bus.</p>
                     <ul class="feature-list">
@@ -466,7 +471,7 @@
             <div class="feature-row reverse" data-animate>
                 <div class="feature-text">
                     <span class="feature-label">08 — Multiidioma</span>
-                    <h3>En tu idioma,<br><span class="gradient-text">como en casa</span></h3>
+                    <h3>En tu idioma, <br><span class="gradient-text">como en casa</span></h3>
                     <p>Alzitrans está disponible en Español, Valenciano e Inglés. Cambia el idioma desde los
                         ajustes de la app y toda la interfaz se adapta inmediatamente.</p>
                     <ul class="feature-list">
@@ -659,7 +664,7 @@
                     </svg>
                     Descargar en Android
                 </a>
-                <a href="https://alzitrans.es/app" class="btn-ghost btn-lg"
+                <a href="/app/" class="btn-ghost btn-lg"
                     target="_blank" rel="noopener noreferrer" aria-label="Abrir Alzitrans Web App para iPhone y Navegadores">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>

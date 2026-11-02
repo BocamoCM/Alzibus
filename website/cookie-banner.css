@@ -212,14 +212,33 @@
 
 /* Mobile */
 @media (max-width: 640px) {
+    #alzitrans-cookie-banner {
+        padding: 14px 16px;
+        padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    }
     #alzitrans-cookie-banner .alzi-banner-content {
         flex-direction: column;
         align-items: stretch;
+        gap: 12px;
     }
+    /* En columna, el "320px" de flex-basis pasaba a ser una ALTURA mínima:
+       el aviso ocupaba ~2/3 de la pantalla con un hueco vacío. */
+    #alzitrans-cookie-banner .alzi-banner-text {
+        flex: 0 0 auto;
+        font-size: 13px;
+    }
+    /* Configurar arriba a lo ancho; Rechazar y Aceptar debajo, lado a lado
+       y del MISMO tamaño (RGPD: rechazar debe ser tan fácil como aceptar). */
     #alzitrans-cookie-banner .alzi-banner-buttons {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
     }
     #alzitrans-cookie-banner button {
-        width: 100%;
+        flex: 1 1 40%;
+        min-width: 0;
+        padding: 10px 12px;
+    }
+    #alzitrans-cookie-banner .alzi-btn-config {
+        flex-basis: 100%;
     }
 }

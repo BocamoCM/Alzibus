@@ -450,6 +450,9 @@ app.get('/api/traffic', async (req, res) => {
 
 // Página web pública donde el usuario puede solicitar la eliminación de su cuenta
 app.get('/delete-account', (req, res) => {
+    // Página que exige Google Play para borrar la cuenta: accesible, pero no
+    // tiene sentido que aparezca en los resultados de búsqueda.
+    res.set('X-Robots-Tag', 'noindex, follow');
     res.sendFile(path.join(__dirname, 'delete-account.html'));
 });
 
