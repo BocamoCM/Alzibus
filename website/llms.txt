@@ -4,10 +4,11 @@
 
 ## Páginas principales
 - [Horarios y tarifas](https://alzitrans.es/horarios/): horarios por línea y temporada, precios vigentes
-- [Horaris en valencià](https://alzitrans.es/va/horaris/): la mateixa informació d'horaris i tarifes, en valencià
+- [Horaris en valencià](https://alzitrans.es/va/horaris/): la mateixa informació d'horaris i tarifes, en valencià (també les línies L1, L2 i L3 i l'autobús al cementeri, en /va/)
 - [Líneas](https://alzitrans.es/lineas/): recorrido y frecuencia de L1, L2 y L3
 - [Paradas](https://alzitrans.es/paradas/): las 52 paradas con ubicación y líneas
 - [Guía](https://alzitrans.es/guia/): cómo moverse en bus por Alzira
+- [Cómo llegar a Alzira](https://alzitrans.es/como-llegar-a-alzira/): tren C2 desde València (unos 37 min) y Xàtiva, y bus urbano desde la estación
 - [Estación RENFE](https://alzitrans.es/estacion-renfe/): trenes Cercanías C2 en Alzira y bus urbano que enlaza
 - [Bus al cementerio](https://alzitrans.es/bus-cementerio/): servicio extraordinario de Tots Sants
 - [Sobre el proyecto](https://alzitrans.es/sobre/): quién lo hace y de dónde salen los datos

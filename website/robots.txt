@@ -1,4 +1,7 @@
 User-agent: *
+# Preferencias de uso (Content Signals): se puede usar para buscadores y
+# para que las IA respondan citando la web, pero no para entrenar modelos.
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
 Disallow: /api/
 

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ca-ES-valencia">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Línia L1 autobús Alzira: horari, parades i mapa | Alzitrans</title>
+    <meta name="description" content="La L1 de l'autobús d'Alzira uneix l'Hospital de la Ribera i l'Estació de RENFE cada 30 minuts els dies feiners. Horari, 26 parades i mapa.">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Alzitrans">
+    <meta name="geo.region" content="ES-VC">
+    <meta name="geo.placename" content="Alzira, Valencia, España">
+
+    <link rel="canonical" href="https://alzitrans.es/va/linies/l1/">
+    <link rel="alternate" hreflang="es" href="https://alzitrans.es/lineas/l1/">
+    <link rel="alternate" hreflang="ca" href="https://alzitrans.es/va/linies/l1/">
+    <link rel="alternate" hreflang="x-default" href="https://alzitrans.es/lineas/l1/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Línia L1 autobús Alzira: horari, parades i mapa | Alzitrans">
+    <meta property="og:description" content="Recorregut complet i totes les parades de la línia L1 de l'autobús urbà d'Alzira. 26 parades. Consulta els temps en temps real en l'app Alzitrans.">
+    <meta property="og:url" content="https://alzitrans.es/va/linies/l1/">
+    <meta property="og:image" content="https://alzitrans.es/assets/logo.png">
+    <meta property="og:locale" content="ca_ES">
+    <meta property="og:locale:alternate" content="es_ES">
+    <meta property="og:site_name" content="Alzitrans">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Línia L1 autobús Alzira: horari, parades i mapa | Alzitrans">
+    <meta name="twitter:description" content="Recorregut complet i totes les parades de la línia L1 de l'autobús urbà d'Alzira. 26 parades. Consulta els temps en temps real en l'app Alzitrans.">
+    <meta name="twitter:image" content="https://alzitrans.es/assets/logo.png">
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BusTrip",
+      "name": "Línia L1 - Autobús urbà d'Alzira",
+      "description": "Recorregut de la línia L1 de l'autobús urbà d'Alzira amb 26 parades.",
+      "provider": {
+        "@type": "Organization",
+        "name": "Alzitrans",
+        "url": "https://alzitrans.es"
+      },
+      "arrivalBusStop": {
+        "@type": "BusStop",
+        "name": "GV. Comunitat Valenciana-I. S. Tulell",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 39.156635,
+          "longitude": -0.435731
+        }
+      },
+      "departureBusStop": {
+        "@type": "BusStop",
+        "name": "Estacio RENFE",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 39.153858,
+          "longitude": -0.450553
+        }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inici",
+          "item": "https://alzitrans.es/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Línies",
+          "item": "https://alzitrans.es/lineas/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Línia L1",
+          "item": "https://alzitrans.es/va/linies/l1/"
+        }
+      ]
+    }
+  ]
+}
+    </script>
+
+    <!-- Google AdSense -->
+    <script defer src="/cookie-banner.js"></script>
+
+    <!-- Leaflet (mapa interactivo OSS, sin API key) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/logo.png">
+
+    <style>
+        /* Tema oscuro consistente con website/style.css de la landing. */
+        :root {
+            --burgundy: #6B1B3D;
+            --coral: #E85A4F;
+            --bg: #0a0a0f;
+            --bg-soft: #14141c;
+            --bg-card: #1c1c28;
+            --text: #f0eff4;
+            --text-muted: rgba(240, 239, 244, 0.55);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", "Outfit", sans-serif; color: var(--text); line-height: 1.6; background: var(--bg); }
+        a { color: var(--coral); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+        header.topbar { background: rgba(20, 20, 28, 0.9); backdrop-filter: blur(8px); color: var(--text); padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+        header.topbar a { color: var(--text); font-weight: 600; }
+        header.topbar a.cta-btn { background: var(--burgundy); padding: 8px 18px; border-radius: 999px; color: white; }
+        header.topbar .container { max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 0; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin: 12px 0 24px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .line-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; color: white; font-weight: 700; font-size: 13px; }
+        h1 { font-size: 32px; margin-bottom: 12px; line-height: 1.2; color: var(--text); }
+        h2 { font-size: 22px; margin: 32px 0 16px; color: var(--text); }
+        h3 { font-size: 18px; margin: 24px 0 8px; color: var(--text); }
+        p { margin-bottom: 12px; color: var(--text); }
+        .lead { font-size: 17px; color: var(--text-muted); margin-bottom: 24px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .stops-list { list-style: none; }
+        .stops-list li { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .stops-list li:last-child { border-bottom: none; }
+        .stops-list li a { color: var(--text); }
+        .stops-list .stop-num { background: var(--burgundy); color: white; font-weight: 700; min-width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .sched-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+        .sched h3 { margin-top: 0; }
+        .sched .day { font-weight: 700; color: var(--text); margin-top: 12px; }
+        .sched .times { color: var(--text-muted); font-size: 14px; }
+        .note { font-size: 13px; color: var(--text-muted); border-left: 3px solid var(--coral); padding: 4px 0 4px 12px; margin: 8px 0; }
+        .map { width: 100%; height: 380px; border-radius: 12px; border: 1px solid var(--border); margin: 16px 0; }
+        .cta { background: linear-gradient(135deg, var(--burgundy), var(--coral)); color: white; padding: 32px 24px; border-radius: 16px; text-align: center; margin: 32px 0; }
+        .cta h2 { color: white; margin-top: 0; }
+        .cta p { color: rgba(255,255,255,0.92); margin-bottom: 16px; }
+        .cta a.btn { display: inline-block; background: white; color: var(--burgundy); padding: 12px 24px; border-radius: 999px; font-weight: 700; margin: 4px; }
+        .cta a.btn:hover { text-decoration: none; transform: translateY(-1px); }
+        .line-links { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; align-items: center; }
+        .line-links a { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text); font-weight: 600; font-size: 13px; background: var(--bg-card); }
+        .line-links a:hover { text-decoration: none; border-color: var(--coral); }
+        footer { background: var(--bg-soft); border-top: 1px solid var(--border); padding: 32px 24px; margin-top: 48px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        footer a { color: var(--text-muted); margin: 0 8px; }
+        footer a:hover { color: var(--coral); }
+        /* Leaflet: mantén el mapa con su fondo natural (es claro pero el contraste queda bien con el wrapper oscuro). */
+        .leaflet-popup-content a { color: var(--burgundy); }
+    </style>
+    <link rel="stylesheet" href="/cookie-banner.css?v=2">
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a href="/" class="logo-link" style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:700;">
+                <img src="/assets/logo.png" alt="Logo Alzitrans" style="width:32px; height:32px; border-radius:8px;">
+                <span>Alzitrans</span>
+            </a>
+            <a href="/#descarga" class="cta-btn">Descarregar l'app</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <nav class="breadcrumb">
+            <a href="/">Inici</a> › <a href="/lineas/">Línies</a> › Línia L1
+        </nav>
+        <p style="margin:-14px 0 18px; font-size:13px"><a href="/lineas/l1/" hreflang="es" lang="es">Leer en castellano</a></p>
+
+        <span class="line-badge" style="background:#1565C0">L1</span>
+        <h1>Línia L1: autobús urbà d'Alzira</h1>
+        <p class="lead">La L1 és la línia més freqüent de l'autobús d'Alzira: uneix l'Hospital de la Ribera i l'Estació de RENFE cada 30 minuts els dies feiners, amb 26 parades. També és la que enllaça amb els últims trens de la nit.</p>
+
+        <div class="line-links">
+            <strong style="align-self:center">Altres línies:</strong>
+            <a href="/va/linies/l2/">Línia L2</a>
+<a href="/va/linies/l3/">Línia L3</a>
+        </div>
+
+
+        <h2>Horari de la línia L1</h2>
+        <p>La L1 connecta l'<strong>Hospital de la Ribera</strong> amb l'<strong>Estació de RENFE</strong>. La L1 passa aproximadament cada 30 minuts els dies feiners (cada hora a l'estiu i en festius). Estes són les seues franges de servei:</p>
+        <div class="sched-grid">
+            <div class="card sched">
+                <h3>Eixides des de l'Hospital</h3>
+                <div class="day">Feiners (de setembre a juny)</div>
+                <div class="times">Cada 30 minuts, de 05:55 a 21:55.</div>
+                <div class="day">Juliol</div>
+                <div class="times">Cada 30 minuts de 05:55 a 14:30. Des de les 14:30, cada hora fins a les 21:55.</div>
+                <div class="day">Agost</div>
+                <div class="times">Cada hora, de 05:55 a 21:55.</div>
+                <div class="day">Dissabtes</div>
+                <div class="times">Cada hora, de 05:55 a 21:55.</div>
+                <div class="day">Diumenges i festius</div>
+                <div class="times">08:55 · 10:55 · 12:55 · 16:55 · 18:55 · 20:55</div>
+            </div>
+            <div class="card sched">
+                <h3>Eixides des de l'Estació de RENFE</h3>
+                <div class="day">Feiners (de setembre a juny)</div>
+                <div class="times">Cada 30 minuts, de 06:30 a 21:30. Enllaça amb els últims trens fins a les 23:10.</div>
+                <div class="day">Juliol</div>
+                <div class="times">Cada 30 minuts de 06:30 a 14:30. Des de les 14:30, cada hora fins a les 21:30. Enllaça amb els últims trens fins a les 23:10.</div>
+                <div class="day">Agost</div>
+                <div class="times">Cada hora, de 06:30 a 21:30. Enllaça amb els últims trens fins a les 23:10.</div>
+                <div class="day">Dissabtes</div>
+                <div class="times">Cada hora, de 06:30 a 21:30. Enllaça amb el tren de les 22:35.</div>
+                <div class="day">Diumenges i festius</div>
+                <div class="times">09:30 · 11:30 · 13:30 · 17:30 · 19:30 · 21:30</div>
+            </div>
+        </div>
+        <p class="note">Divendres Sant, Nadal i 1 de gener: per la vesprada no hi ha servei.</p>
+        <p class="note">La parada 18 (Avinguda dels Esports – CIPFP Lluís Suñer) només s'atén en les eixides des de l'Hospital de les 07:55, 08:25, 14:25 i 21:25, en dies lectius.</p>
+        <p style="font-size:14px; color:var(--text-muted)">Consulta també les <a href="/va/horaris/">tarifes i els horaris de totes les línies</a>, o el temps de pas en temps real per parada en l'app Alzitrans.</p>
+
+        <h2>Mapa amb el recorregut de la línia L1</h2>
+        <div id="map" class="map"></div>
+
+        <h2>Totes les parades de la línia L1</h2>
+        <ol class="stops-list card">
+            
+            <li>
+                <span class="stop-num">1</span>
+                <a href="/paradas/1-estacio-renfe/" style="flex:1">Estacio RENFE</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">2</span>
+                <a href="/paradas/2-ronda-sequia-reial-d-alzira-centre-de-salut/" style="flex:1">Ronda Sequia Reial d'Alzira-Centre de Salut</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <span class="stop-num">3</span>
+                <a href="/paradas/3-placa-del-regne-a-hospital/" style="flex:1">Plaça del Regne (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">4</span>
+                <a href="/paradas/4-placa-major-a-hospital/" style="flex:1">Plaça Major (a Hospital)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">5</span>
+                <a href="/paradas/5-perez-galdos/" style="flex:1">Perez Galdós</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">6</span>
+                <a href="/paradas/6-gandia-dr-fleming/" style="flex:1">Gandia-Dr. Fleming</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <span class="stop-num">7</span>
+                <a href="/paradas/7-alquenencia-av-del-parc/" style="flex:1">Alquenencia-Av. del Parc</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">8</span>
+                <a href="/paradas/8-pere-esplugues-mare-de-deu-del-lluch/" style="flex:1">Pere Esplugues-Mare de Deu del Lluch</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">9</span>
+                <a href="/paradas/9-pere-esplugues-favareta/" style="flex:1">Pere Esplugues-Favareta</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">10</span>
+                <a href="/paradas/10-pere-esplugues-jaume-d-olid/" style="flex:1">Pere Esplugues-Jaume d'Olid</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">11</span>
+                <a href="/paradas/11-pere-esplugues-esperanca/" style="flex:1">Pere Esplugues-Esperança</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">12</span>
+                <a href="/paradas/12-general-espartero/" style="flex:1">General Espartero</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">13</span>
+                <a href="/paradas/13-av-mediterrania-residencia/" style="flex:1">Av. Mediterrania-Residencia</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">14</span>
+                <a href="/paradas/14-hospital/" style="flex:1">Hospital</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">15</span>
+                <a href="/paradas/16-av-mediterrania-diputacio/" style="flex:1">Av. Mediterrania-Diputacio</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">16</span>
+                <a href="/paradas/18-av-dels-esports-cipfp-lluis-suner/" style="flex:1">Av. dels Esports-CIPFP Lluis Suñer</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">17</span>
+                <a href="/paradas/20-av-pare-pompili-ies-josep-m-parra/" style="flex:1">Av. Pare Pompili-IES Josep Mª Parra</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <span class="stop-num">18</span>
+                <a href="/paradas/21-av-pare-pompili-hort-de-gorreta-a-estacio/" style="flex:1">Av. Pare Pompili-Hort de Gorreta (a Estacio)</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2</span>
+            </li>
+            <li>
+                <span class="stop-num">19</span>
+                <a href="/paradas/22-jaume-d-olid/" style="flex:1">Jaume d'Olid</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">20</span>
+                <a href="/paradas/23-camil-dolz-j-pau/" style="flex:1">Camil Dolz- J. Pau</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">21</span>
+                <a href="/paradas/24-hort-dels-frares-pl-primer-de-maig/" style="flex:1">Hort dels Frares-Pl. Primer de Maig</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">22</span>
+                <a href="/paradas/25-hort-dels-frares-centre-de-salut-ii/" style="flex:1">Hort dels Frares-Centre de Salut II</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">23</span>
+                <a href="/paradas/26-sants-patrons-correus/" style="flex:1">Sants. Patrons - Correus</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">24</span>
+                <a href="/paradas/27-placa-del-regne/" style="flex:1">Plaça del Regne</a>
+                <span style="color:var(--text-muted); font-size:13px">L1 · L2 · L3</span>
+            </li>
+            <li>
+                <span class="stop-num">25</span>
+                <a href="/paradas/82-dr-ferran-benimuslem/" style="flex:1">Dr. Ferran-Benimuslem</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+            <li>
+                <span class="stop-num">26</span>
+                <a href="/paradas/83-gv-comunitat-valenciana-i-s-tulell/" style="flex:1">GV. Comunitat Valenciana-I. S. Tulell</a>
+                <span style="color:var(--text-muted); font-size:13px">L1</span>
+            </li>
+        </ol>
+
+        <div class="cta">
+            <h2>Quan passa el pròxim autobús?</h2>
+            <p>Mira l'horari complet de la L1 més amunt, o consulta el temps de pas del pròxim autobús en temps real des de l'app Alzitrans o la versió web.</p>
+            <a href="/#descarga" class="btn">Descarregar l'app</a>
+            <a href="/app/" class="btn">Obrir la versió web</a>
+        </div>
+
+        <h2>Sobre la línia L1</h2>
+        <p>La línia L1 és una de les tres línies que formen la xarxa de l'autobús urbà d'Alzira (València), juntament amb la <a href="/va/linies/l2/">L2</a> i la <a href="/va/linies/l3/">L3</a>. Cobreix 26 parades en total.</p>
+        <p>Per a saber quan arriba el pròxim autobús a una parada concreta, obri l'app Alzitrans (gratis en Google Play) o entra en la versió web en <a href="/app/">alzitrans.es/app</a>. Les dades s'actualitzen en temps real.</p>
+    
+        <p class="fiabilidad" style="font-size:13px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:14px; margin-top:28px;">Horaris basats en els publicats pel servici urbà d'autobús d'Alzira. Pàgina actualitzada el <time datetime="2026-11-02">2 de novembre de 2026</time>. Alzitrans és un projecte independent. Hi veus un error? <a href="/sobre/#contacto">Avisa'ns</a>.</p>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        (function() {
+            const stops = [{"id":1,"n":"Estacio RENFE","lat":39.153858,"lng":-0.450553,"u":"/paradas/1-estacio-renfe/"},{"id":2,"n":"Ronda Sequia Reial d'Alzira-Centre de Salut","lat":39.14553,"lng":-0.438945,"u":"/paradas/2-ronda-sequia-reial-d-alzira-centre-de-salut/"},{"id":3,"n":"Plaça del Regne (a Hospital)","lat":39.149363,"lng":-0.438956,"u":"/paradas/3-placa-del-regne-a-hospital/"},{"id":4,"n":"Plaça Major (a Hospital)","lat":39.150243,"lng":-0.43696,"u":"/paradas/4-placa-major-a-hospital/"},{"id":5,"n":"Perez Galdós","lat":39.149623,"lng":-0.433932,"u":"/paradas/5-perez-galdos/"},{"id":6,"n":"Gandia-Dr. Fleming","lat":39.148475,"lng":-0.43127,"u":"/paradas/6-gandia-dr-fleming/"},{"id":7,"n":"Alquenencia-Av. del Parc","lat":39.15029,"lng":-0.430608,"u":"/paradas/7-alquenencia-av-del-parc/"},{"id":8,"n":"Pere Esplugues-Mare de Deu del Lluch","lat":39.152721,"lng":-0.43044,"u":"/paradas/8-pere-esplugues-mare-de-deu-del-lluch/"},{"id":9,"n":"Pere Esplugues-Favareta","lat":39.153823,"lng":-0.430301,"u":"/paradas/9-pere-esplugues-favareta/"},{"id":10,"n":"Pere Esplugues-Jaume d'Olid","lat":39.155921,"lng":-0.430105,"u":"/paradas/10-pere-esplugues-jaume-d-olid/"},{"id":11,"n":"Pere Esplugues-Esperança","lat":39.158081,"lng":-0.429818,"u":"/paradas/11-pere-esplugues-esperanca/"},{"id":12,"n":"General Espartero","lat":39.160385,"lng":-0.429076,"u":"/paradas/12-general-espartero/"},{"id":13,"n":"Av. Mediterrania-Residencia","lat":39.160643,"lng":-0.421791,"u":"/paradas/13-av-mediterrania-residencia/"},{"id":14,"n":"Hospital","lat":39.159686,"lng":-0.414966,"u":"/paradas/14-hospital/"},{"id":16,"n":"Av. Mediterrania-Diputacio","lat":39.161628,"lng":-0.42511,"u":"/paradas/16-av-mediterrania-diputacio/"},{"id":18,"n":"Av. dels Esports-CIPFP Lluis Suñer","lat":39.166203,"lng":-0.430935,"u":"/paradas/18-av-dels-esports-cipfp-lluis-suner/"},{"id":20,"n":"Av. Pare Pompili-IES Josep Mª Parra","lat":39.157896,"lng":-0.428985,"u":"/paradas/20-av-pare-pompili-ies-josep-m-parra/"},{"id":21,"n":"Av. Pare Pompili-Hort de Gorreta (a Estacio)","lat":39.156086,"lng":-0.427893,"u":"/paradas/21-av-pare-pompili-hort-de-gorreta-a-estacio/"},{"id":22,"n":"Jaume d'Olid","lat":39.15606,"lng":-0.430341,"u":"/paradas/22-jaume-d-olid/"},{"id":23,"n":"Camil Dolz- J. Pau","lat":39.153391,"lng":-0.430948,"u":"/paradas/23-camil-dolz-j-pau/"},{"id":24,"n":"Hort dels Frares-Pl. Primer de Maig","lat":39.150161,"lng":-0.43154,"u":"/paradas/24-hort-dels-frares-pl-primer-de-maig/"},{"id":25,"n":"Hort dels Frares-Centre de Salut II","lat":39.150656,"lng":-0.433728,"u":"/paradas/25-hort-dels-frares-centre-de-salut-ii/"},{"id":26,"n":"Sants. Patrons - Correus","lat":39.151577,"lng":-0.438012,"u":"/paradas/26-sants-patrons-correus/"},{"id":27,"n":"Plaça del Regne","lat":39.149855,"lng":-0.438875,"u":"/paradas/27-placa-del-regne/"},{"id":82,"n":"Dr. Ferran-Benimuslem","lat":39.153797,"lng":-0.433179,"u":"/paradas/82-dr-ferran-benimuslem/"},{"id":83,"n":"GV. Comunitat Valenciana-I. S. Tulell","lat":39.156635,"lng":-0.435731,"u":"/paradas/83-gv-comunitat-valenciana-i-s-tulell/"}];
+            if (stops.length === 0) return;
+            const bounds = L.latLngBounds(stops.map(s => [s.lat, s.lng]));
+            const map = L.map('map').fitBounds(bounds, { padding: [24, 24] });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap',
+            }).addTo(map);
+            const lineColor = '#1565C0';
+            // Línea uniendo las paradas
+            L.polyline(stops.map(s => [s.lat, s.lng]), { color: lineColor, weight: 4, opacity: 0.7 }).addTo(map);
+            // Marcadores
+            stops.forEach((s, i) => {
+                const marker = L.circleMarker([s.lat, s.lng], { radius: 7, color: lineColor, fillColor: lineColor, fillOpacity: 0.9, weight: 2 }).addTo(map);
+                marker.bindPopup('<strong>' + (i+1) + '. ' + s.n + '</strong><br><a href="' + s.u + '">Veure la parada</a>');
+            });
+        })();
+    </script>
+
+    <footer>
+        <p>Alzitrans és una aplicació independent per a consultar informació de l'autobús urbà d'Alzira. No és un servici oficial de l'empresa concessionària.</p>
+        <p style="margin-top:8px">
+            <a href="/">Inici</a> ·
+            <a href="/va/linies/l1/">L1</a> ·
+            <a href="/va/linies/l2/">L2</a> ·
+            <a href="/va/linies/l3/">L3</a> ·
+            <a href="/sobre/">Sobre el projecte</a> ·
+            <a href="/legal/privacidad.html">Privacitat</a> ·
+            <a href="/legal/cookies.html">Galetes</a> ·
+            <a href="#" onclick="return window.alzitransCookies &amp;&amp; window.alzitransCookies.open(), false;">Configurar les galetes</a> ·
+            <a href="/legal/terminos.html">Termes</a>
+        </p>
+    </footer>
+</body>
+</html>
