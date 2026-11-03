@@ -258,6 +258,39 @@ void main() {
       sim.stopSimulation();
     });
 
+    test('como mucho un bus por línea aunque los datos parezcan de dos', () async {
+      // Dos "trenes" de minutos: antes de la parada 0 y antes de la 5.
+      const m = {0: 1, 1: 3, 2: 5, 3: 7, 4: 9, 5: 0, 6: 2, 7: 4, 8: 6, 9: 8};
+      var data = Map<int, int>.of(m);
+      final sim = await simWithBus((k) => data[k] == null ? '--' : '${data[k]} min');
+      expect(sim.buses, hasLength(1));
+      final id = sim.buses.keys.single;
+      expect(id, 'T');
+      // Otro escaneo con un tercer "bus" en la parada 8: sigue habiendo uno.
+      data = {...m, 8: 0, 9: 2};
+      BusTimesService.clearCache();
+      await sim.rescanNow();
+      expect(sim.buses, hasLength(1));
+      expect(sim.buses.keys.single, id);
+      sim.stopSimulation();
+    });
+
+    test('si los datos dejan de encajar con el bus, se recoloca (no se duplica)', () async {
+      var phase = 0;
+      final sim = await simWithBus((k) => phase == 0 ? (k >= 3 ? '${4 + (k - 3) * 2} min' : '50 min') : (k == 8 ? '1 min' : (k == 9 ? '3 min' : '--')));
+      final geo = sim.geometryOf('T')!;
+      expect(sim.buses.values.single.nextStopIndex, 3);
+      phase = 1; // el operador ahora lo da antes de la parada 8 (lejos de donde iba)
+      for (var i = 0; i < 2; i++) {
+        BusTimesService.clearCache();
+        await sim.rescanNow();
+      }
+      expect(sim.buses, hasLength(1));
+      final bus = sim.buses.values.single;
+      expect(geo.nextStopIndex(bus.distance), 8);
+      sim.stopSimulation();
+    });
+
     test('rescan: actualiza el bus existente, y lo quita tras dos escaneos sin verlo', () async {
       var on = true;
       final sim = await simWithBus((k) => !on ? '--' : (k >= 3 ? '${4 + (k - 3) * 2} min' : '50 min'));

@@ -75,11 +75,15 @@ class SimulatedBus {
 /// Bus detectado en un escaneo: antes de la parada [stopIndex], a [minutes].
 @visibleForTesting
 class DetectedBus {
-  DetectedBus(this.stopIndex, this.minutes, this.distance, this.segmentSpeedMps);
+  DetectedBus(this.stopIndex, this.minutes, this.distance, this.segmentSpeedMps, [this.support = 0]);
   final int stopIndex;
   final int minutes;
   final double distance;
   final double segmentSpeedMps;
+
+  /// Paradas siguientes cuyos minutos encajan con este mismo bus: cuanto más
+  /// alto, más respaldado por los datos del operador.
+  int support;
 }
 
 class BusSimulationService {
@@ -94,7 +98,6 @@ class BusSimulationService {
   final Map<String, List<Map<String, dynamic>>> _lineStops = {};
   final Map<String, RouteGeometry> _geometry = {};
   final Map<String, double> _lineSpeed = {};
-  int _nextBusNumber = 1;
 
   Timer? _updateTimer;
   Timer? _trackingTimer;
@@ -349,7 +352,30 @@ class BusSimulationService {
       final back = min(_etaSeconds(m) * v, max(0.0, prevDist - 5)); // no más atrás que la parada anterior
       detected.add(DetectedBus(j, m, geo.wrap(geo.stopDistances[j] - back), v));
     }
+
+    // Respaldo de cada uno: cuántas paradas seguidas encajan con él.
+    final starts = detected.map((d) => d.stopIndex).toSet();
+    for (final d in detected) {
+      var (i, a) = (d.stopIndex, d.minutes);
+      var count = 0;
+      while (count < geo.stopCount) {
+        final nb = _validNeighbor(geo, minutesByStop, i, forward: true);
+        if (nb == null || starts.contains(nb.$1) || !_sameBusPossible(geo, i, a, nb.$1, nb.$2)) break;
+        (i, a) = nb;
+        count++;
+      }
+      d.support = count;
+    }
     return detected;
+  }
+
+  /// El bus de la línea según un escaneo: el más respaldado por los datos
+  /// (y, si empatan, el que está más cerca de una parada).
+  @visibleForTesting
+  static DetectedBus? bestDetection(List<DetectedBus> detected) {
+    if (detected.isEmpty) return null;
+    final sorted = [...detected]..sort((x, y) => y.support != x.support ? y.support - x.support : x.minutes - y.minutes);
+    return sorted.first;
   }
 
   /// Escaneo inicial: consulta todas las paradas para encontrar buses.
@@ -391,50 +417,55 @@ class BusSimulationService {
   /// Junta lo detectado con los buses que ya había: actualiza su dato de
   /// llegada (sin moverlos de golpe), crea los nuevos y quita los que llevan
   /// dos escaneos sin aparecer.
+  /// Como mucho UN bus por línea. Si ya hay uno, se actualiza con lo
+  /// detectado cerca de donde va (sin moverlo de golpe). Si lo detectado no
+  /// encaja con él durante dos escaneos seguidos, se recoloca. Si no hay
+  /// ninguno, se crea con lo mejor respaldado por los datos.
   void _reconcile(String lineId, RouteGeometry geo, List<DetectedBus> detected, {required bool initial}) {
     final existing = _buses.values.where((b) => b.lineId == lineId).toList();
-    final matched = <SimulatedBus>{};
+    // Por si quedara alguno de más de una versión anterior.
+    for (final extra in existing.skip(1)) {
+      _buses.remove(extra.busId);
+    }
+    final bus = existing.isEmpty ? null : existing.first;
     final now = clock();
 
-    for (final d in detected) {
-      SimulatedBus? best;
-      var bestGap = double.infinity;
-      for (final b in existing) {
-        if (matched.contains(b)) continue;
+    if (bus != null) {
+      DetectedBus? near;
+      var nearGap = double.infinity;
+      for (final d in detected) {
         // Distancia con signo de la posición actual a la detectada (−L/2..L/2).
-        var gap = geo.forward(b.distance, d.distance);
+        var gap = geo.forward(bus.distance, d.distance);
         if (gap > geo.length / 2) gap -= geo.length;
         if (gap < -400 || gap > 1500) continue;
-        if (gap.abs() < bestGap) {
-          bestGap = gap.abs();
-          best = b;
+        if (gap.abs() < nearGap) {
+          nearGap = gap.abs();
+          near = d;
         }
       }
-      if (best != null) {
-        matched.add(best);
-        best.missedScans = 0;
-        _setEta(best, geo, d.stopIndex, d.minutes, d.segmentSpeedMps, now);
-      } else {
-        final bus = SimulatedBus(
-          lineId: lineId,
-          busId: '$lineId#${_nextBusNumber++}',
-          currentPosition: geo.positionAt(d.distance),
-          distance: d.distance,
-          segmentSpeedMps: d.segmentSpeedMps,
-        );
-        _setEta(bus, geo, d.stopIndex, d.minutes, d.segmentSpeedMps, now);
-        _updateDerived(bus, geo);
-        _buses[bus.busId] = bus;
-        debugPrint('==> Bus ${bus.busId}: antes de la parada ${d.stopIndex} en ${d.minutes} min');
+      if (near != null) {
+        bus.missedScans = 0;
+        _setEta(bus, geo, near.stopIndex, near.minutes, near.segmentSpeedMps, now);
+        return;
       }
+      if (initial || ++bus.missedScans < 2) return;
+      _buses.remove(bus.busId);
+      // Sigue abajo: se recoloca donde dicen los datos (si dicen algo).
     }
 
-    if (!initial) {
-      for (final b in existing) {
-        if (matched.contains(b)) continue;
-        if (++b.missedScans >= 2) _buses.remove(b.busId);
-      }
-    }
+    final best = bestDetection(detected);
+    if (best == null) return;
+    final created = SimulatedBus(
+      lineId: lineId,
+      busId: lineId,
+      currentPosition: geo.positionAt(best.distance),
+      distance: best.distance,
+      segmentSpeedMps: best.segmentSpeedMps,
+    );
+    _setEta(created, geo, best.stopIndex, best.minutes, best.segmentSpeedMps, now);
+    _updateDerived(created, geo);
+    _buses[created.busId] = created;
+    debugPrint('==> Bus $lineId: antes de la parada ${best.stopIndex} en ${best.minutes} min (respaldo ${best.support})');
   }
 
   void _setEta(SimulatedBus bus, RouteGeometry geo, int stopIndex, int minutes, double v, DateTime now) {
