@@ -591,8 +591,8 @@
   "tipSupportTitle": "¿Algún problema con la app?",
   "tipSupportBody": "Abre un ticket y te respondemos lo antes posible.",
   "tipSupportAction": "Abrir ticket",
-  "tipCo2Title": "¡Bien hecho! 🌱",
-  "tipCo2Body": "Con tus {trips} viajes en bus has ahorrado unos {co2} de CO₂ frente a ir en coche.",
+  "tipCo2Title": "¡Bien hecho!",
+  "tipCo2Body": "Con tus {trips} viajes en bus has ahorrado unos {co2} de CO2 frente a ir en coche.",
   "@tipCo2Body": {"placeholders": {"trips": {"type": "int"}, "co2": {"type": "String"}}},
   "tipCo2Action": "Ver mis viajes",
   "tipAlertsTitle": "¿Sabías que…?",
@@ -611,5 +611,9 @@
   "tipClose": "Cerrar",
   "conditionsRainChip": "Lluvia",
   "conditionsTrafficChip": "Tráfico denso",
-  "conditionsShowMore": "Ver aviso"
+  "conditionsShowMore": "Ver aviso",
+  "conditionsRainTitle": "Lluvia en Alzira",
+  "conditionsRainBody": "Puede haber algún retraso. ¡No olvides el paraguas!",
+  "conditionsTrafficTitle": "Tráfico denso",
+  "conditionsTrafficBody": "Tu bus podría llegar con algo de retraso."
 }

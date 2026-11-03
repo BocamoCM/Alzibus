@@ -588,8 +588,8 @@
   "tipSupportTitle": "Algun problema amb l'app?",
   "tipSupportBody": "Obri un tiquet i et responem al més prompte possible.",
   "tipSupportAction": "Obrir tiquet",
-  "tipCo2Title": "Molt bé! 🌱",
-  "tipCo2Body": "Amb els teus {trips} viatges en bus has estalviat uns {co2} de CO₂ respecte a anar en cotxe.",
+  "tipCo2Title": "Molt bé!",
+  "tipCo2Body": "Amb els teus {trips} viatges en bus has estalviat uns {co2} de CO2 respecte a anar en cotxe.",
   "@tipCo2Body": {"placeholders": {"trips": {"type": "int"}, "co2": {"type": "String"}}},
   "tipCo2Action": "Vore els meus viatges",
   "tipAlertsTitle": "Sabies que…?",
@@ -608,5 +608,9 @@
   "tipClose": "Tancar",
   "conditionsRainChip": "Pluja",
   "conditionsTrafficChip": "Trànsit dens",
-  "conditionsShowMore": "Vore avís"
+  "conditionsShowMore": "Vore avís",
+  "conditionsRainTitle": "Pluja a Alzira",
+  "conditionsRainBody": "Pot haver-hi algun retard. No oblides el paraigua!",
+  "conditionsTrafficTitle": "Trànsit dens",
+  "conditionsTrafficBody": "El teu bus podria arribar amb algun retard."
 }

@@ -1675,11 +1675,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tipSupportAction => 'Abrir ticket';
 
   @override
-  String get tipCo2Title => '¡Bien hecho! 🌱';
+  String get tipCo2Title => '¡Bien hecho!';
 
   @override
   String tipCo2Body(int trips, String co2) {
-    return 'Con tus $trips viajes en bus has ahorrado unos $co2 de CO₂ frente a ir en coche.';
+    return 'Con tus $trips viajes en bus has ahorrado unos $co2 de CO2 frente a ir en coche.';
   }
 
   @override
@@ -1739,4 +1739,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get conditionsShowMore => 'Ver aviso';
+
+  @override
+  String get conditionsRainTitle => 'Lluvia en Alzira';
+
+  @override
+  String get conditionsRainBody =>
+      'Puede haber algún retraso. ¡No olvides el paraguas!';
+
+  @override
+  String get conditionsTrafficTitle => 'Tráfico denso';
+
+  @override
+  String get conditionsTrafficBody =>
+      'Tu bus podría llegar con algo de retraso.';
 }

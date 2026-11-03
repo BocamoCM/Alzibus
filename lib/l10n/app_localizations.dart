@@ -2936,13 +2936,13 @@ abstract class AppLocalizations {
   /// No description provided for @tipCo2Title.
   ///
   /// In es, this message translates to:
-  /// **'¡Bien hecho! 🌱'**
+  /// **'¡Bien hecho!'**
   String get tipCo2Title;
 
   /// No description provided for @tipCo2Body.
   ///
   /// In es, this message translates to:
-  /// **'Con tus {trips} viajes en bus has ahorrado unos {co2} de CO₂ frente a ir en coche.'**
+  /// **'Con tus {trips} viajes en bus has ahorrado unos {co2} de CO2 frente a ir en coche.'**
   String tipCo2Body(int trips, String co2);
 
   /// No description provided for @tipCo2Action.
@@ -3052,6 +3052,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver aviso'**
   String get conditionsShowMore;
+
+  /// No description provided for @conditionsRainTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lluvia en Alzira'**
+  String get conditionsRainTitle;
+
+  /// No description provided for @conditionsRainBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Puede haber algún retraso. ¡No olvides el paraguas!'**
+  String get conditionsRainBody;
+
+  /// No description provided for @conditionsTrafficTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tráfico denso'**
+  String get conditionsTrafficTitle;
+
+  /// No description provided for @conditionsTrafficBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu bus podría llegar con algo de retraso.'**
+  String get conditionsTrafficBody;
 }
 
 class _AppLocalizationsDelegate

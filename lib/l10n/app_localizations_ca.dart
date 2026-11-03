@@ -1677,11 +1677,11 @@ class AppLocalizationsCa extends AppLocalizations {
   String get tipSupportAction => 'Obrir tiquet';
 
   @override
-  String get tipCo2Title => 'Molt bé! 🌱';
+  String get tipCo2Title => 'Molt bé!';
 
   @override
   String tipCo2Body(int trips, String co2) {
-    return 'Amb els teus $trips viatges en bus has estalviat uns $co2 de CO₂ respecte a anar en cotxe.';
+    return 'Amb els teus $trips viatges en bus has estalviat uns $co2 de CO2 respecte a anar en cotxe.';
   }
 
   @override
@@ -1741,4 +1741,18 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get conditionsShowMore => 'Vore avís';
+
+  @override
+  String get conditionsRainTitle => 'Pluja a Alzira';
+
+  @override
+  String get conditionsRainBody =>
+      'Pot haver-hi algun retard. No oblides el paraigua!';
+
+  @override
+  String get conditionsTrafficTitle => 'Trànsit dens';
+
+  @override
+  String get conditionsTrafficBody =>
+      'El teu bus podria arribar amb algun retard.';
 }

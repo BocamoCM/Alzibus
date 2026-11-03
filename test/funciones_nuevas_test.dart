@@ -88,13 +88,13 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
       expect(find.byKey(const Key('conditions_card')), findsOneWidget);
-      expect(find.textContaining('lloviendo'), findsOneWidget);
+      expect(find.text('Lluvia en Alzira'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 11));
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byKey(const Key('conditions_card')), findsNothing);
       expect(find.byKey(const Key('conditions_chip')), findsOneWidget);
-      expect(find.textContaining('Lluvia'), findsOneWidget);
+      expect(find.text('Lluvia'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('conditions_chip')));
       await tester.pump(const Duration(milliseconds: 400));
@@ -110,8 +110,8 @@ void main() {
       )));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
-      expect(find.textContaining('tráfico denso'), findsOneWidget);
-      expect(find.textContaining('lloviendo'), findsOneWidget);
+      expect(find.text('Tráfico denso'), findsOneWidget);
+      expect(find.text('Lluvia en Alzira'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pumpWidget(const SizedBox());
     });

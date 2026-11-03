@@ -588,8 +588,8 @@
   "tipSupportTitle": "Having trouble with the app?",
   "tipSupportBody": "Open a ticket and we'll get back to you as soon as possible.",
   "tipSupportAction": "Open ticket",
-  "tipCo2Title": "Well done! 🌱",
-  "tipCo2Body": "With your {trips} bus trips you've saved about {co2} of CO₂ compared to driving.",
+  "tipCo2Title": "Well done!",
+  "tipCo2Body": "With your {trips} bus trips you've saved about {co2} of CO2 compared to driving.",
   "@tipCo2Body": {"placeholders": {"trips": {"type": "int"}, "co2": {"type": "String"}}},
   "tipCo2Action": "See my trips",
   "tipAlertsTitle": "Did you know…?",
@@ -608,5 +608,9 @@
   "tipClose": "Close",
   "conditionsRainChip": "Rain",
   "conditionsTrafficChip": "Heavy traffic",
-  "conditionsShowMore": "See notice"
+  "conditionsShowMore": "See notice",
+  "conditionsRainTitle": "Rain in Alzira",
+  "conditionsRainBody": "There may be some delays. Don't forget your umbrella!",
+  "conditionsTrafficTitle": "Heavy traffic",
+  "conditionsTrafficBody": "Your bus may arrive a little late."
 }

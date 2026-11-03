@@ -1671,11 +1671,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tipSupportAction => 'Open ticket';
 
   @override
-  String get tipCo2Title => 'Well done! 🌱';
+  String get tipCo2Title => 'Well done!';
 
   @override
   String tipCo2Body(int trips, String co2) {
-    return 'With your $trips bus trips you\'ve saved about $co2 of CO₂ compared to driving.';
+    return 'With your $trips bus trips you\'ve saved about $co2 of CO2 compared to driving.';
   }
 
   @override
@@ -1735,4 +1735,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conditionsShowMore => 'See notice';
+
+  @override
+  String get conditionsRainTitle => 'Rain in Alzira';
+
+  @override
+  String get conditionsRainBody =>
+      'There may be some delays. Don\'t forget your umbrella!';
+
+  @override
+  String get conditionsTrafficTitle => 'Heavy traffic';
+
+  @override
+  String get conditionsTrafficBody => 'Your bus may arrive a little late.';
 }
