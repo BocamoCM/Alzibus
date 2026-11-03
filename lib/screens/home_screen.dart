@@ -40,6 +40,11 @@ import '../core/providers/tts_provider.dart';
 import '../services/ad_service.dart';
 import '../providers/high_visibility_provider.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../widgets/feature_tip_card.dart';
+import '../services/feature_tips_service.dart';
+import '../screens/feedback_screen.dart';
+import '../screens/albus_shop_screen.dart';
+import '../core/storage/session_storage.dart';
 import '../widgets/active_live_trip_banner.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/ad_provider.dart';
@@ -662,6 +667,35 @@ class _HomePageState extends ConsumerState<HomePage>
     }
   }
 
+  /// Viajes totales del usuario (para el consejo del CO₂); null si no se sabe.
+  Future<int?> _loadTotalTrips() async {
+    final token = await SessionStorage.getToken();
+    if (token == null) return null;
+    final profile = await AuthService().getProfile(token);
+    final stats = profile?['stats'];
+    return stats is Map ? (stats['totalTrips'] as num?)?.toInt() : null;
+  }
+
+  /// Abre la función de la que habla un consejo.
+  void _openFeature(FeatureTip tip) {
+    switch (tip) {
+      case FeatureTip.games:
+        const GamesHubRoute().push(context);
+      case FeatureTip.support:
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const FeedbackScreen()));
+      case FeatureTip.co2:
+        const TripHistoryRoute().push(context);
+      case FeatureTip.planner:
+        const TripPlannerRoute().push(context);
+      case FeatureTip.shop:
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const AlbusShopScreen()));
+      case FeatureTip.share:
+        const ShareTripRoute().push(context);
+      case FeatureTip.alerts:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -787,7 +821,25 @@ class _HomePageState extends ConsumerState<HomePage>
           // Banner persistente cuando hay un viaje compartido en vivo.
           // Self-managed: el propio widget se oculta si no hay viaje activo.
           const ActiveLiveTripBanner(),
-          Expanded(child: pages[_index]),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(child: pages[_index]),
+                // Consejos para descubrir funciones (juegos, tickets, CO₂…),
+                // solo en el mapa y encima del botón del planificador.
+                if (_index == 0)
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 84,
+                    child: FeatureTipCard(
+                      loadTotalTrips: _loadTotalTrips,
+                      onAction: _openFeature,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
       // Entrada al planificador con Albus. FAB extendido para que sea

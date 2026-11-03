@@ -1655,4 +1655,90 @@ class AppLocalizationsCa extends AppLocalizations {
   @override
   String get trafficDelayLine =>
       'Hi ha trànsit dens a Alzira 🚗 — el teu bus podria arribar amb algun retard.';
+
+  @override
+  String get tipGamesTitle => 'T\'avorrixes esperant el bus?';
+
+  @override
+  String get tipGamesBody =>
+      'Juga una partida a Atrapa el Bus, Memòria de Parades o la Trivia d\'Alzira.';
+
+  @override
+  String get tipGamesAction => 'Jugar';
+
+  @override
+  String get tipSupportTitle => 'Algun problema amb l\'app?';
+
+  @override
+  String get tipSupportBody =>
+      'Obri un tiquet i et responem al més prompte possible.';
+
+  @override
+  String get tipSupportAction => 'Obrir tiquet';
+
+  @override
+  String get tipCo2Title => 'Molt bé! 🌱';
+
+  @override
+  String tipCo2Body(int trips, String co2) {
+    return 'Amb els teus $trips viatges en bus has estalviat uns $co2 de CO₂ respecte a anar en cotxe.';
+  }
+
+  @override
+  String get tipCo2Action => 'Vore els meus viatges';
+
+  @override
+  String get tipAlertsTitle => 'Sabies que…?';
+
+  @override
+  String get tipAlertsBody =>
+      'Toca una parada i prem «Avisar cuando llegue»: t\'avisem quan el teu bus estiga a prop.';
+
+  @override
+  String get tipAlertsAction => 'Entesos';
+
+  @override
+  String get tipPlannerTitle => 'No saps quin bus agafar?';
+
+  @override
+  String get tipPlannerBody =>
+      'Digues-li a Albus on vas i et diu quina línia et porta.';
+
+  @override
+  String get tipPlannerAction => 'Planificar';
+
+  @override
+  String get tipShopTitle => 'Vist Albus';
+
+  @override
+  String get tipShopBody =>
+      'A la botiga tens skins per a Albus: Halloween, Nadal, Falles i més.';
+
+  @override
+  String get tipShopAction => 'Vore botiga';
+
+  @override
+  String get tipShareTitle => 'Compartix el teu viatge';
+
+  @override
+  String get tipShareBody =>
+      'Envia un enllaç perquè vegen per on va el teu bus en directe.';
+
+  @override
+  String get tipShareAction => 'Compartir';
+
+  @override
+  String get tipDontShowAgain => 'No mostrar més';
+
+  @override
+  String get tipClose => 'Tancar';
+
+  @override
+  String get conditionsRainChip => 'Pluja';
+
+  @override
+  String get conditionsTrafficChip => 'Trànsit dens';
+
+  @override
+  String get conditionsShowMore => 'Vore avís';
 }

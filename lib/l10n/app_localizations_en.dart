@@ -1649,4 +1649,90 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get trafficDelayLine =>
       'Heavy traffic in Alzira 🚗 — your bus might run a little late.';
+
+  @override
+  String get tipGamesTitle => 'Bored waiting for the bus?';
+
+  @override
+  String get tipGamesBody =>
+      'Play a round of Catch the Bus, Stops Memory or the Alzira Trivia.';
+
+  @override
+  String get tipGamesAction => 'Play';
+
+  @override
+  String get tipSupportTitle => 'Having trouble with the app?';
+
+  @override
+  String get tipSupportBody =>
+      'Open a ticket and we\'ll get back to you as soon as possible.';
+
+  @override
+  String get tipSupportAction => 'Open ticket';
+
+  @override
+  String get tipCo2Title => 'Well done! 🌱';
+
+  @override
+  String tipCo2Body(int trips, String co2) {
+    return 'With your $trips bus trips you\'ve saved about $co2 of CO₂ compared to driving.';
+  }
+
+  @override
+  String get tipCo2Action => 'See my trips';
+
+  @override
+  String get tipAlertsTitle => 'Did you know…?';
+
+  @override
+  String get tipAlertsBody =>
+      'Tap a stop and press “Avisar cuando llegue”: we\'ll let you know when your bus is close.';
+
+  @override
+  String get tipAlertsAction => 'Got it';
+
+  @override
+  String get tipPlannerTitle => 'Not sure which bus to take?';
+
+  @override
+  String get tipPlannerBody =>
+      'Tell Albus where you\'re going and he\'ll tell you which line takes you there.';
+
+  @override
+  String get tipPlannerAction => 'Plan';
+
+  @override
+  String get tipShopTitle => 'Dress up Albus';
+
+  @override
+  String get tipShopBody =>
+      'The shop has skins for Albus: Halloween, Christmas, Fallas and more.';
+
+  @override
+  String get tipShopAction => 'See shop';
+
+  @override
+  String get tipShareTitle => 'Share your trip';
+
+  @override
+  String get tipShareBody =>
+      'Send a link so others can see where your bus is, live.';
+
+  @override
+  String get tipShareAction => 'Share';
+
+  @override
+  String get tipDontShowAgain => 'Don\'t show again';
+
+  @override
+  String get tipClose => 'Close';
+
+  @override
+  String get conditionsRainChip => 'Rain';
+
+  @override
+  String get conditionsTrafficChip => 'Heavy traffic';
+
+  @override
+  String get conditionsShowMore => 'See notice';
 }

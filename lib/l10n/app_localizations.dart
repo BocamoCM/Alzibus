@@ -2896,6 +2896,162 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Hay tráfico denso en Alzira 🚗 — tu bus podría llegar con algún retraso.'**
   String get trafficDelayLine;
+
+  /// No description provided for @tipGamesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Te aburres esperando el bus?'**
+  String get tipGamesTitle;
+
+  /// No description provided for @tipGamesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Echa una partida a Atrapa el Bus, Memoria de Paradas o la Trivia de Alzira.'**
+  String get tipGamesBody;
+
+  /// No description provided for @tipGamesAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Jugar'**
+  String get tipGamesAction;
+
+  /// No description provided for @tipSupportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Algún problema con la app?'**
+  String get tipSupportTitle;
+
+  /// No description provided for @tipSupportBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Abre un ticket y te respondemos lo antes posible.'**
+  String get tipSupportBody;
+
+  /// No description provided for @tipSupportAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir ticket'**
+  String get tipSupportAction;
+
+  /// No description provided for @tipCo2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Bien hecho! 🌱'**
+  String get tipCo2Title;
+
+  /// No description provided for @tipCo2Body.
+  ///
+  /// In es, this message translates to:
+  /// **'Con tus {trips} viajes en bus has ahorrado unos {co2} de CO₂ frente a ir en coche.'**
+  String tipCo2Body(int trips, String co2);
+
+  /// No description provided for @tipCo2Action.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver mis viajes'**
+  String get tipCo2Action;
+
+  /// No description provided for @tipAlertsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Sabías que…?'**
+  String get tipAlertsTitle;
+
+  /// No description provided for @tipAlertsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca una parada y pulsa «Avisar cuando llegue»: te avisamos cuando tu bus esté cerca.'**
+  String get tipAlertsBody;
+
+  /// No description provided for @tipAlertsAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Entendido'**
+  String get tipAlertsAction;
+
+  /// No description provided for @tipPlannerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿No sabes qué bus coger?'**
+  String get tipPlannerTitle;
+
+  /// No description provided for @tipPlannerBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Dile a Albus adónde vas y te dice qué línea te lleva.'**
+  String get tipPlannerBody;
+
+  /// No description provided for @tipPlannerAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Planificar'**
+  String get tipPlannerAction;
+
+  /// No description provided for @tipShopTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Viste a Albus'**
+  String get tipShopTitle;
+
+  /// No description provided for @tipShopBody.
+  ///
+  /// In es, this message translates to:
+  /// **'En la tienda tienes skins para Albus: Halloween, Navidad, Fallas y más.'**
+  String get tipShopBody;
+
+  /// No description provided for @tipShopAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver tienda'**
+  String get tipShopAction;
+
+  /// No description provided for @tipShareTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparte tu viaje'**
+  String get tipShareTitle;
+
+  /// No description provided for @tipShareBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Manda un enlace para que vean por dónde va tu bus en directo.'**
+  String get tipShareBody;
+
+  /// No description provided for @tipShareAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir'**
+  String get tipShareAction;
+
+  /// No description provided for @tipDontShowAgain.
+  ///
+  /// In es, this message translates to:
+  /// **'No mostrar más'**
+  String get tipDontShowAgain;
+
+  /// No description provided for @tipClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar'**
+  String get tipClose;
+
+  /// No description provided for @conditionsRainChip.
+  ///
+  /// In es, this message translates to:
+  /// **'Lluvia'**
+  String get conditionsRainChip;
+
+  /// No description provided for @conditionsTrafficChip.
+  ///
+  /// In es, this message translates to:
+  /// **'Tráfico denso'**
+  String get conditionsTrafficChip;
+
+  /// No description provided for @conditionsShowMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver aviso'**
+  String get conditionsShowMore;
 }
 
 class _AppLocalizationsDelegate
