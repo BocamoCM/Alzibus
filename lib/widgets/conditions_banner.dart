@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:alzitrans/l10n/app_localizations.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 import '../services/traffic_service.dart';
 import '../services/weather_service.dart';
 
@@ -31,9 +33,20 @@ class ConditionsBanner extends StatefulWidget {
   State<ConditionsBanner> createState() => _ConditionsBannerState();
 }
 
+/// Iconos dibujados como SVG en el propio código, para que se vean aunque el
+/// navegador tenga guardada una fuente de iconos de otra versión.
+class _Svg {
+  static const drop = '<svg viewBox="0 0 24 24"><path fill="#000" d="M12 2.7c-.3 0-.6.1-.8.4C9.6 5 5 10.6 5 14.6 5 18.7 8.1 22 12 22s7-3.3 7-7.4c0-4-4.6-9.6-6.2-11.5-.2-.3-.5-.4-.8-.4z"/></svg>';
+  static const traffic = '<svg viewBox="0 0 24 24"><path fill="#000" d="M9 2h6a2 2 0 0 1 2 2v1h2a1 1 0 0 1 0 2h-2v2h2a1 1 0 0 1 0 2h-2v2h2a1 1 0 0 1 0 2h-2v2a2 2 0 0 1-2 2h-1v1a1 1 0 0 1-2 0v-1H9a2 2 0 0 1-2-2v-2H5a1 1 0 0 1 0-2h2v-2H5a1 1 0 0 1 0-2h2V7H5a1 1 0 0 1 0-2h2V4a2 2 0 0 1 2-2zm3 3.2a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zm0 5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zm0 5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z" fill-rule="evenodd"/></svg>';
+  static const close = '<svg viewBox="0 0 24 24"><path fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>';
+}
+
+Widget _svgIcon(String svg, double size, Color color) =>
+    SvgPicture.string(svg, width: size, height: size, colorFilter: ColorFilter.mode(color, BlendMode.srcIn));
+
 class _Condition {
   const _Condition(this.icon, this.color, this.title, this.body, this.chip);
-  final IconData icon;
+  final String icon;
   final Color color;
   final String title;
   final String body;
@@ -101,8 +114,8 @@ class _ConditionsBannerState extends State<ConditionsBanner> with SingleTickerPr
   }
 
   List<_Condition> _conditions(AppLocalizations l) => [
-        if (_raining) _Condition(Icons.water_drop_rounded, _rainColor, l.conditionsRainTitle, l.conditionsRainBody, l.conditionsRainChip),
-        if (_traffic) _Condition(Icons.traffic_rounded, _trafficColor, l.conditionsTrafficTitle, l.conditionsTrafficBody, l.conditionsTrafficChip),
+        if (_raining) _Condition(_Svg.drop, _rainColor, l.conditionsRainTitle, l.conditionsRainBody, l.conditionsRainChip),
+        if (_traffic) _Condition(_Svg.traffic, _trafficColor, l.conditionsTrafficTitle, l.conditionsTrafficBody, l.conditionsTrafficChip),
       ];
 
   @override
@@ -159,7 +172,7 @@ class _ConditionsBannerState extends State<ConditionsBanner> with SingleTickerPr
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(color: c.color.withValues(alpha: 0.12), shape: BoxShape.circle),
-                              child: Icon(c.icon, size: 18, color: c.color),
+                              child: Center(child: _svgIcon(c.icon, 18, c.color)),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -182,7 +195,7 @@ class _ConditionsBannerState extends State<ConditionsBanner> with SingleTickerPr
             IconButton(
               key: const Key('conditions_close'),
               visualDensity: VisualDensity.compact,
-              icon: Icon(Icons.close_rounded, size: 18, color: Colors.grey[500]),
+              icon: _svgIcon(_Svg.close, 16, Colors.grey.shade500),
               tooltip: l.tipClose,
               onPressed: () {
                 _collapse?.cancel();
@@ -219,7 +232,7 @@ class _ConditionsBannerState extends State<ConditionsBanner> with SingleTickerPr
                   children: [
                     for (final c in items) ...[
                       if (c != items.first) const SizedBox(width: 10),
-                      Icon(c.icon, size: 16, color: c.color),
+                      _svgIcon(c.icon, 16, c.color),
                       const SizedBox(width: 4),
                       Text(c.chip, style: TextStyle(color: c.color, fontWeight: FontWeight.w600, fontSize: 13)),
                     ],
