@@ -253,17 +253,57 @@ class BusSimulationService {
 
   // ───────────────────────── Detección de buses ─────────────────────────
 
+  /// Minutos válidos de la parada [k], o null si no hay dato o es una cifra
+  /// fuera de lugar (más de [maxUsefulMinutes]: el operador a veces da horas
+  /// de espera en una parada por la que el bus sí pasa).
+  static int? _valid(RouteGeometry geo, Map<int, int> minutesByStop, int k) {
+    if (geo.offRoute[k]) return null;
+    final m = minutesByStop[k];
+    return (m == null || m > maxUsefulMinutes) ? null : m;
+  }
+
+  /// Parada anterior/siguiente del recorrido que tiene dato válido, saltando
+  /// las que no tienen dato o dan una cifra fuera de lugar. Devuelve
+  /// (índice, minutos).
+  static (int, int)? _validNeighbor(RouteGeometry geo, Map<int, int> minutesByStop, int k, {required bool forward}) {
+    var j = k;
+    for (var i = 0; i < geo.stopCount; i++) {
+      j = forward ? geo.nextOnRoute(j) : geo.prevOnRoute(j);
+      if (j == k) return null;
+      final m = _valid(geo, minutesByStop, j);
+      if (m != null) return (j, m);
+    }
+    return null;
+  }
+
+  /// ¿Puede un mismo bus estar a [a] min de la parada [i] y a [b] min de la
+  /// [j] (que va después)? Tiene que poder llegar en ese tiempo. Se es
+  /// generoso (72 km/h y un minuto de margen) porque el operador redondea a
+  /// minutos y a veces da cifras raras en alguna parada; solo se separan
+  /// buses que de verdad no pueden ser el mismo.
+  static bool _sameBusPossible(RouteGeometry geo, int i, int a, int j, int b) {
+    if (b < a) return false;
+    final d = geo.forward(geo.stopDistances[i], geo.stopDistances[j]);
+    return d <= (b - a + 1) * 60 * _plausibleSpeedMps;
+  }
+
+  /// Velocidad límite para decidir si dos tiempos pueden ser del mismo bus.
+  static const double _plausibleSpeedMps = 20.0;
+
   /// Velocidad media de la línea según el operador: distancia entre paradas
   /// seguidas de un mismo bus dividida entre la diferencia de sus minutos.
   /// Usa tramos largos en conjunto, así el redondeo a minutos casi no influye.
   @visibleForTesting
   static double lineSpeedFrom(RouteGeometry geo, Map<int, int> minutesByStop) {
-    final n = geo.stopCount;
     var meters = 0.0, seconds = 0.0;
-    for (var j = 0; j < n; j++) {
-      final a = minutesByStop[j], b = minutesByStop[(j + 1) % n];
-      if (a == null || b == null || a > maxUsefulMinutes || b > maxUsefulMinutes || b < a || b - a > 20) continue;
-      meters += geo.forward(geo.stopDistances[j], geo.stopDistances[(j + 1) % n]);
+    for (var j = 0; j < geo.stopCount; j++) {
+      final a = _valid(geo, minutesByStop, j);
+      if (a == null) continue;
+      final nb = _validNeighbor(geo, minutesByStop, j, forward: true);
+      if (nb == null) continue;
+      final (k, b) = nb;
+      if (b < a || b - a > 20 || !_sameBusPossible(geo, j, a, k, b)) continue;
+      meters += geo.forward(geo.stopDistances[j], geo.stopDistances[k]);
       seconds += (b - a) * 60;
     }
     if (seconds < 120) return defaultSpeedMps;
@@ -271,39 +311,37 @@ class BusSimulationService {
   }
 
   /// Velocidad para llegar a la parada [k] (con [m] min) desde la siguiente
-  /// ([next] min). Con menos de 2 min de diferencia el redondeo la falsea y
-  /// se usa la media de la línea.
+  /// del recorrido ([next] min). Con menos de 2 min de diferencia el redondeo
+  /// la falsea y se usa la media de la línea.
   static double segmentSpeed(RouteGeometry geo, int k, int m, int? next, double lineSpeed) {
     if (next == null || next > maxUsefulMinutes || next - m < 2) return lineSpeed;
-    final n = geo.stopCount;
-    final d = geo.forward(geo.stopDistances[k], geo.stopDistances[(k + 1) % n]);
+    final d = geo.forward(geo.stopDistances[k], geo.stopDistances[geo.nextOnRoute(k)]);
     return (d / ((next - m) * 60)).clamp(_minSpeedMps, _maxSegmentSpeedMps).toDouble();
   }
 
   /// Detecta los buses de una línea a partir de los minutos de cada parada.
   ///
-  /// Recorriendo las paradas en orden, un bus está justo antes de la parada j
-  /// cuando sus minutos son menores que los de la parada anterior (en la
-  /// anterior ya se espera al bus siguiente). Si la parada siguiente da un
-  /// tiempo enorme, ese bus termina el servicio ahí y no se simula.
+  /// Recorriendo las paradas del recorrido en orden, un bus está justo antes
+  /// de la parada j cuando no puede ser el mismo que el de la parada anterior
+  /// con dato (porque esa espera un tiempo mayor, o porque no le daría tiempo
+  /// a llegar). Las paradas sin dato fiable se saltan.
   @visibleForTesting
   static List<DetectedBus> detectBuses(RouteGeometry geo, Map<int, int> minutesByStop) {
-    final n = geo.stopCount;
     final detected = <DetectedBus>[];
-    if (n < 2) return detected;
+    if (geo.stopCount < 2) return detected;
     final lineSpeed = lineSpeedFrom(geo, minutesByStop);
 
-    for (var j = 0; j < n; j++) {
-      final m = minutesByStop[j];
-      if (m == null || m > maxUsefulMinutes) continue;
-      final prev = minutesByStop[(j - 1 + n) % n];
-      if (prev != null && prev <= maxUsefulMinutes && prev <= m) continue; // es el mismo bus que viene de atrás
-      final nextIdx = (j + 1) % n;
-      final next = minutesByStop[nextIdx];
-      if (next != null && (next > maxUsefulMinutes || next < m)) continue; // termina el servicio aquí
+    for (var j = 0; j < geo.stopCount; j++) {
+      final m = _valid(geo, minutesByStop, j);
+      if (m == null) continue;
+      final prev = _validNeighbor(geo, minutesByStop, j, forward: false);
+      if (prev != null && _sameBusPossible(geo, prev.$1, prev.$2, j, m)) continue; // el mismo bus que viene de atrás
+      final next = _validNeighbor(geo, minutesByStop, j, forward: true);
+      if (next != null && next.$2 < m) continue; // la siguiente espera antes a otro bus: este termina aquí
 
-      final v = segmentSpeed(geo, j, m, next, lineSpeed);
-      final prevDist = geo.forward(geo.stopDistances[(j - 1 + n) % n], geo.stopDistances[j]);
+      final nextOnRoute = geo.nextOnRoute(j);
+      final v = segmentSpeed(geo, j, m, nextOnRoute == next?.$1 ? next?.$2 : null, lineSpeed);
+      final prevDist = geo.forward(geo.stopDistances[geo.prevOnRoute(j)], geo.stopDistances[j]);
       // Un bus "antes de j" tiene que poder llegar desde la parada anterior en
       // esos minutos (a 2 m/s y con 10 min de margen por si regula). Si no, es
       // el tiempo de otro bus que da la vuelta entera: no hay bus ahí.
@@ -430,8 +468,8 @@ class BusSimulationService {
     if (geo == null) return;
     final n = geo.stopCount;
     final k = geo.nextStopIndex(bus.distance);
-    final k2 = (k + 1) % n;
-    final k3 = (k + 2) % n;
+    final k2 = geo.nextOnRoute(k);
+    final k3 = geo.nextOnRoute(k2);
     final minutes = await _fetchLineMinutes(bus.lineId, [k, k2, k3], reuse: const Duration(seconds: 5));
 
     // Primero la próxima parada; si su dato no encaja (el bus real ya la ha
@@ -476,7 +514,7 @@ class BusSimulationService {
     final remaining = bus.etaSeconds! - elapsed;
     var target = toStop - remaining * bus.segmentSpeedMps;
     final n = geo.stopCount;
-    final limit = toStop + geo.forward(geo.stopDistances[k], geo.stopDistances[(k + 1) % n]) - 20;
+    final limit = toStop + geo.forward(geo.stopDistances[k], geo.stopDistances[geo.nextOnRoute(k)]) - 20;
     if (target > limit) target = limit;
     return target;
   }
@@ -520,9 +558,8 @@ class BusSimulationService {
   void _updateDerived(SimulatedBus bus, RouteGeometry geo, [DateTime? now]) {
     bus.currentPosition = geo.positionAt(bus.distance);
     bus.heading = geo.headingAt(bus.distance);
-    final n = geo.stopCount;
     final next = geo.nextStopIndex(bus.distance, margin: 0);
-    final prev = (next - 1 + n) % n;
+    final prev = geo.prevOnRoute(next);
     bus.nextStopIndex = next;
     bus.currentStopIndex = prev;
     final seg = geo.forward(geo.stopDistances[prev], geo.stopDistances[next]);

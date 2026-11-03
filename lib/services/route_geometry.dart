@@ -8,13 +8,17 @@ import 'package:latlong2/latlong.dart';
 /// vez sobre el recorrido, siempre hacia delante, así que la parada k+1
 /// queda siempre después de la k (salvo al dar la vuelta).
 class RouteGeometry {
-  RouteGeometry._(this.points, this._cum, this.stopDistances);
+  RouteGeometry._(this.points, this._cum, this.stopDistances, this.offRoute);
 
   final List<LatLng> points;
   final List<double> _cum;
 
   /// Distancia sobre el recorrido de cada parada, en el orden de la línea.
   final List<double> stopDistances;
+
+  /// Paradas por las que el recorrido no pasa (las que la línea solo hace en
+  /// algunas expediciones). La simulación las ignora.
+  final List<bool> offRoute;
 
   double get length => _cum.last;
   int get stopCount => stopDistances.length;
@@ -38,20 +42,24 @@ class RouteGeometry {
     final total = cum.last;
 
     final stopDist = <double>[];
+    final off = <bool>[];
     var last = 0.0;
     for (var k = 0; k < stops.length; k++) {
-      final d = _projectForward(pts, cum, stops[k], k == 0 ? 0 : last);
-      stopDist.add(total > 0 ? d % total : 0);
-      last = d;
+      final r = _projectForward(pts, cum, stops[k], k == 0 ? 0 : last);
+      // Si el recorrido no pasa cerca, la parada queda fuera y no hace avanzar
+      // la búsqueda (si no, descolocaría a todas las siguientes).
+      off.add(!r.near);
+      stopDist.add(total > 0 ? (r.near ? r.pos : last) % total : 0);
+      if (r.near) last = r.pos;
     }
-    return RouteGeometry._(pts, cum, stopDist);
+    return RouteGeometry._(pts, cum, stopDist, off);
   }
 
   /// Proyecta [p] sobre el recorrido buscando desde [from] hacia delante y
   /// quedándose con el primer paso cerca de la parada (el recorrido puede
   /// pasar dos veces por la misma calle). Si no hay ninguno cerca, el más
   /// cercano por delante.
-  static double _projectForward(List<LatLng> pts, List<double> cum, LatLng p, double from) {
+  static ({double pos, bool near}) _projectForward(List<LatLng> pts, List<double> cum, LatLng p, double from) {
     double? best;
     double bestD = double.infinity;
     double? nearest;
@@ -74,7 +82,8 @@ class RouteGeometry {
         break;
       }
     }
-    return best ?? nearest ?? from;
+    if (best != null) return (pos: best, near: true);
+    return (pos: nearest ?? from, near: false);
   }
 
   static ({double d, double t}) _projectOnSegment(LatLng p, LatLng a, LatLng b) {
@@ -127,12 +136,32 @@ class RouteGeometry {
     return (atan2(y, x) * 180 / pi + 360) % 360;
   }
 
-  /// Índice de la primera parada que está por delante de [s] (más de [margin] m).
+  /// Siguiente parada del recorrido después de [k] (saltando las de fuera).
+  int nextOnRoute(int k) {
+    for (var i = 1; i <= stopCount; i++) {
+      final j = (k + i) % stopCount;
+      if (!offRoute[j]) return j;
+    }
+    return k;
+  }
+
+  /// Parada del recorrido anterior a [k] (saltando las de fuera).
+  int prevOnRoute(int k) {
+    for (var i = 1; i <= stopCount; i++) {
+      final j = (k - i + stopCount) % stopCount;
+      if (!offRoute[j]) return j;
+    }
+    return k;
+  }
+
+  /// Índice de la primera parada del recorrido que está por delante de [s]
+  /// (más de [margin] m).
   int nextStopIndex(double s, {double margin = 5}) {
     if (stopCount == 0) return 0;
     var best = 0;
     var bestD = double.infinity;
     for (var k = 0; k < stopCount; k++) {
+      if (offRoute[k]) continue;
       var d = forward(s, stopDistances[k]);
       if (d <= margin) d += length;
       if (d < bestD) {

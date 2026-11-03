@@ -23,6 +23,15 @@ LINES = ["L1", "L2", "L3"]
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
 MAX_DIST_M = 40
 
+# Paradas que la línea hace solo en algunas expediciones: la parada existe y
+# tiene servicio, pero la mayoría de buses no entran, así que no se dibujan en
+# el recorrido simulado (si no, el bus haría un desvío que no hace).
+# L1 / 18 AV. DELS ESPORTS-CIPFP LLUIS SUÑER: el 3/11 a las 17:27 y a las 18:27
+# el operador daba Av. Mediterrània -> Pare Pompili en 1-2 min (2,85 km con el
+# desvío: imposible) y para CIPFP el bus de ~21:30. El mapa oficial dibuja el
+# recorrido completo, pero no qué expediciones entran.
+VARIANT_STOPS = {"L1": {18}}
+
 
 def dist(a, b):
     r = 6371000
@@ -92,8 +101,13 @@ def osrm(pts, approaches, overview):
     return data["routes"][0]
 
 
-def generate(line):
+def route_stops(line):
     stops = json.loads((ROUTES / f"{line}.json").read_text(encoding="utf-8"))
+    return [s for s in stops if s["id"] not in VARIANT_STOPS.get(line, set())]
+
+
+def generate(line):
+    stops = route_stops(line)
     pts = stops + [stops[0]]  # vuelta completa
     # curb: llegar a cada parada por su lado de la calle (la derecha). Si en un
     # tramo eso obliga a dar una vuelta a la manzana de más de 250 m, en esa
@@ -116,7 +130,7 @@ def main():
     failed = False
     for line in LINES:
         if check_only:
-            stops = json.loads((ROUTES / f"{line}.json").read_text(encoding="utf-8"))
+            stops = route_stops(line)
             track = json.loads((ROUTES / f"{line}_gps.json").read_text(encoding="utf-8"))
         else:
             stops, track = generate(line)
