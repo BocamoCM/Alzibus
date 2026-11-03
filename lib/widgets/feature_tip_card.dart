@@ -16,7 +16,7 @@ class FeatureTipCard extends StatefulWidget {
     super.key,
     required this.onAction,
     this.loadTotalTrips,
-    this.delay = const Duration(seconds: 20),
+    this.delay = const Duration(seconds: 8),
     this.visibleFor = const Duration(seconds: 15),
     this.now,
   });
