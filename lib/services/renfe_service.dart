@@ -150,8 +150,61 @@ class RenfeService {
     TrainSchedule(tripId: '4062V24127C2', time: '22:38', destination: 'Xàtiva', direction: 'moixent'),
   ];
   
-  /// Obtiene los próximos trenes desde Alzira
-  static Future<List<TrainArrival>> getNextTrains({int limit = 5}) async {
+  /// Próximos trenes desde Alzira. Primero los de nuestro backend
+  /// (`/trains/alzira`: horario oficial de Renfe actualizado + retrasos en
+  /// tiempo real). En la web es la única opción: el navegador bloquea (CORS)
+  /// la petición directa a Renfe. Si el backend no responde, se usa el
+  /// horario local de respaldo.
+  static Future<List<TrainArrival>> getNextTrains({int limit = 5, DateTime? now}) async {
+    final fromBackend = await _fetchFromBackend(limit, now ?? DateTime.now());
+    if (fromBackend != null) return fromBackend;
+    return _localSchedule(limit);
+  }
+
+  static const Map<String, String> _destinations = {'valencia': 'València Nord', 'xativa': 'Xàtiva'};
+
+  static Future<List<TrainArrival>?> _fetchFromBackend(int limit, DateTime now) async {
+    try {
+      final response = await ApiClient().get('/trains/alzira');
+      if (response.statusCode != 200) return null;
+      final raw = response.data;
+      final data = (raw is String ? json.decode(raw) : raw) as Map;
+      final directions = data['directions'];
+      if (directions is! Map) return null;
+      return parseBackendTrains(directions, limit: limit, now: now);
+    } catch (e) {
+      debugPrint('[RenfeService] Backend de trenes no disponible: $e');
+      return null;
+    }
+  }
+
+  /// Convierte la respuesta de `/trains/alzira` en llegadas ordenadas por la
+  /// hora real (con retraso), sin cancelados ni trenes que ya han salido.
+  @visibleForTesting
+  static List<TrainArrival> parseBackendTrains(Map directions, {required int limit, required DateTime now}) {
+    final list = <TrainArrival>[];
+    directions.forEach((dir, trains) {
+      if (trains is! List) return;
+      for (final t in trains) {
+        if (t is! Map || t['canceled'] == true) continue;
+        final scheduled = t['scheduled'] as String?;
+        if (scheduled == null || !RegExp(r'^\d{2}:\d{2}$').hasMatch(scheduled)) continue;
+        final delay = (t['delayMin'] as num?)?.toInt() ?? 0;
+        if (minutesUntilArrival(scheduled, delay, now: now) < -1) continue;
+        list.add(TrainArrival(
+          scheduledTime: scheduled,
+          destination: _destinations[dir] ?? dir.toString(),
+          direction: dir.toString(),
+          delayMinutes: delay,
+          line: 'C2',
+        ));
+      }
+    });
+    list.sort((a, b) => a.actualTime.compareTo(b.actualTime));
+    return list.take(limit).toList();
+  }
+
+  static Future<List<TrainArrival>> _localSchedule(int limit) async {
     final now = DateTime.now();
     final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     
@@ -163,8 +216,9 @@ class RenfeService {
     // Ordenar por hora
     upcomingTrains.sort((a, b) => a.time.compareTo(b.time));
     
-    // Obtener retrasos en tiempo real
-    final delays = await _fetchDelays();
+    // Retrasos en tiempo real directos de Renfe (en la web el navegador lo
+    // bloquea por CORS, así que ahí solo se muestra el horario).
+    final delays = kIsWeb ? <String, int>{} : await _fetchDelays();
     
     // Combinar horarios con retrasos
     final arrivals = upcomingTrains.take(limit).map((train) {
@@ -220,8 +274,8 @@ class RenfeService {
   }
   
   /// Calcula los minutos hasta la llegada del tren
-  static int minutesUntilArrival(String scheduledTime, int delayMinutes) {
-    final now = DateTime.now();
+  static int minutesUntilArrival(String scheduledTime, int delayMinutes, {DateTime? now}) {
+    now ??= DateTime.now();
     final parts = scheduledTime.split(':');
     final scheduledDateTime = DateTime(
       now.year, now.month, now.day,
