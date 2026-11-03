@@ -562,7 +562,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get registerTitle => 'Register in Alzibus';
+  String get registerTitle => 'Sign up for Alzitrans';
 
   @override
   String get registerInfoBox =>

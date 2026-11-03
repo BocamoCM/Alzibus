@@ -568,7 +568,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get registerTitle => 'Registro en Alzibus';
+  String get registerTitle => 'Registro en Alzitrans';
 
   @override
   String get registerInfoBox =>

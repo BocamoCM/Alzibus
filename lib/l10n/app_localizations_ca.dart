@@ -569,7 +569,7 @@ class AppLocalizationsCa extends AppLocalizations {
   }
 
   @override
-  String get registerTitle => 'Registre en Alzibus';
+  String get registerTitle => 'Registre en Alzitrans';
 
   @override
   String get registerInfoBox =>

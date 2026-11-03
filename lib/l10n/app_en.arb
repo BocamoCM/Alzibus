@@ -201,7 +201,7 @@
   "@biometricLoginError": { "placeholders": { "error": { "type": "String" } } },
   "unexpectedError": "Unexpected error: {error}",
   "@unexpectedError": { "placeholders": { "error": { "type": "String" } } },
-  "registerTitle": "Register in Alzibus",
+  "registerTitle": "Sign up for Alzitrans",
   "registerInfoBox": "We'll send you a code when you log in. If you don't log in within 7 days, the account will be deleted automatically.",
   "accountCreatedSnack": "Account created. Log in within the next 7 days or it will be deleted automatically.",
   "registerButton": "Sign up",

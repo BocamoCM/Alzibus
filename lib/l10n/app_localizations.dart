@@ -1159,7 +1159,7 @@ abstract class AppLocalizations {
   /// No description provided for @registerTitle.
   ///
   /// In es, this message translates to:
-  /// **'Registro en Alzibus'**
+  /// **'Registro en Alzitrans'**
   String get registerTitle;
 
   /// No description provided for @registerInfoBox.

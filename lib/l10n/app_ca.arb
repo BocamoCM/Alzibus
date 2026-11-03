@@ -201,7 +201,7 @@
   "@biometricLoginError": { "placeholders": { "error": { "type": "String" } } },
   "unexpectedError": "Error inesperat: {error}",
   "@unexpectedError": { "placeholders": { "error": { "type": "String" } } },
-  "registerTitle": "Registre en Alzibus",
+  "registerTitle": "Registre en Alzitrans",
   "registerInfoBox": "T'enviarem un codi en iniciar sessió. Si no inicies sessió en 7 dies, el compte s'eliminarà automàticament.",
   "accountCreatedSnack": "Compte creat. Inicia sessió en els pròxims 7 dies o s'eliminarà automàticament.",
   "registerButton": "Registrar-se",
