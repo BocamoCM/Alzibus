@@ -38,8 +38,10 @@ class ApiClient {
       baseUrl: AppConfig.baseUrl,
       connectTimeout: AppConfig.httpTimeout,
       receiveTimeout: AppConfig.httpTimeout,
+      // La X-API-Key NO va aquí: se añade en el interceptor solo para nuestro
+      // API, para no mandarla a servidores de terceros (p. ej. el del operador).
       headers: {
-        ...AppConfig.headers,
+        'Content-Type': 'application/json',
         // En web Dio NO permite sobrescribir 'user-agent' (es un header prohibido
         // por la fetch spec; el navegador siempre pone el suyo). En móvil/desktop sí.
         if (!kIsWeb) 'User-Agent': _buildUserAgent(),
@@ -53,6 +55,7 @@ class ApiClient {
         final isInternalApi = options.path.startsWith('/') || options.uri.toString().startsWith(AppConfig.baseUrl);
 
         if (isInternalApi) {
+          options.headers.addAll(AppConfig.headers);
           final token = await SessionStorage.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';

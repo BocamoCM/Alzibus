@@ -10,7 +10,9 @@ class StopsService {
   Future<List<BusStop>> loadStops() async {
     try {
       // 1. Intentar cargar desde la API (Base de datos)
-      final response = await ApiClient().get('/stops');
+      // 4 s como máximo: si el servidor tarda, se usan las paradas locales
+      // en vez de dejar el mapa esperando los 10 s del timeout general.
+      final response = await ApiClient().get('/stops').timeout(const Duration(seconds: 4));
       
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = response.data;

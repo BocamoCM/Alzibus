@@ -1,4 +1,5 @@
 // No action needed: 'pages/splash_page.dart' is not imported.
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart';
@@ -208,7 +209,10 @@ void main() async {
           });
         }
       }
-      // 3. Todo lo pesado (API, Simulaciones, Servicios de fondo) se carga después sin bloquear
+      // 3. Buses del mapa: arrancan ya, sin esperar a permisos ni servicios.
+      unawaited(_startBusSimulation(container, prefs));
+
+      // 4. Todo lo pesado (permisos, servicios de fondo) se carga después sin bloquear
       Future.microtask(() async {
         // ESPERAR a que termine la lógica de permisos/avisos
         if (!kIsWeb) {
@@ -239,39 +243,60 @@ void main() async {
           SocketService().initialize();
           await container.read(localeProvider.notifier).loadLocale();
         }
-
-        final stopsService = StopsService();
-        final stops = await stopsService.loadStops();
-        debugPrint('Main: Paradas cargadas en segundo plano: ${stops.length}');
-
-        final stopsData = stops
-            .map((stop) => {
-                  'id': stop.id,
-                  'name': stop.name,
-                  'lat': stop.lat,
-                  'lng': stop.lng,
-                  'lines': stop.lines,
-                })
-            .toList();
-
-        await prefs.setString('bus_stops', jsonEncode(stopsData));
-
-        // Iniciar simulación global
-        final busSimService = container.read(busSimulationProvider);
-
-        // CRÍTICO: Registrar las paradas de cada línea ANTES del escaneo inicial
-        for (final line in ['L1', 'L2', 'L3']) {
-          final routeStops = await stopsService.loadLineRoute(line);
-          busSimService.setLineStops(line, routeStops);
-          debugPrint(
-              'Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
-        }
-
-        await busSimService.initialScan(stopsData);
-        busSimService.startSimulation();
       });
     },
   );
+}
+
+/// Carga las paradas y coloca los buses en el mapa lo antes posible.
+///
+/// Si hay paradas guardadas de una sesión anterior, el escaneo empieza con
+/// ellas al momento y la lista se actualiza desde el servidor en paralelo.
+/// Solo la primera vez (sin caché) espera a la API.
+Future<void> _startBusSimulation(ProviderContainer container, SharedPreferences prefs) async {
+  try {
+    final stopsService = StopsService();
+
+    Future<List<Map<String, dynamic>>> refreshStops() async {
+      final stops = await stopsService.loadStops();
+      debugPrint('Main: Paradas cargadas en segundo plano: ${stops.length}');
+      final stopsData = stops
+          .map((stop) => {
+                'id': stop.id,
+                'name': stop.name,
+                'lat': stop.lat,
+                'lng': stop.lng,
+                'lines': stop.lines,
+              })
+          .toList();
+      await prefs.setString('bus_stops', jsonEncode(stopsData));
+      return stopsData;
+    }
+
+    List<Map<String, dynamic>> stopsData = [];
+    final cached = prefs.getString('bus_stops');
+    if (cached != null) {
+      stopsData = (jsonDecode(cached) as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    final refreshing = refreshStops();
+    if (stopsData.isEmpty) stopsData = await refreshing;
+
+    // Iniciar simulación global
+    final busSimService = container.read(busSimulationProvider);
+
+    // CRÍTICO: Registrar las paradas de cada línea ANTES del escaneo inicial
+    for (final line in ['L1', 'L2', 'L3']) {
+      final routeStops = await stopsService.loadLineRoute(line);
+      busSimService.setLineStops(line, routeStops);
+      debugPrint('Main: Registradas ${routeStops.length} paradas (en orden de ruta) para línea $line');
+    }
+
+    await busSimService.initialScan(stopsData);
+    busSimService.startSimulation();
+    await refreshing;
+  } catch (e) {
+    debugPrint('Main: error iniciando la simulación de buses: $e');
+  }
 }
 
 Future<void> _requestPermissions() async {

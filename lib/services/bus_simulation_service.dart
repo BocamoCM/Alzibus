@@ -117,10 +117,15 @@ class BusSimulationService {
     // guardamos el bus más cercano encontrado por cada línea
     final Map<String, Map<String, dynamic>> closestBusByLine = {};
 
-    for (final stop in allStops) {
+    // Solo las paradas de líneas que simulamos (las de solo CEM no aportan).
+    final pending = allStops.where((stop) {
       final stopId = stop['id'] as int? ?? 0;
-      if (stopId == 0) continue;
+      final lines = List<String>.from(stop['lines'] as List? ?? const []);
+      return stopId != 0 && lines.any(_lineStops.containsKey);
+    }).toList();
 
+    Future<void> scanStop(Map<String, dynamic> stop) async {
+      final stopId = stop['id'] as int;
       final lines = List<String>.from(stop['lines'] as List);
 
       try {
@@ -152,9 +157,20 @@ class BusSimulationService {
       } catch (e) {
         debugPrint('Error en parada $stopId: $e');
       }
-
-      await Future.delayed(const Duration(milliseconds: 50));
     }
+
+    // Antes se consultaban de una en una (~15-20 s con 53 paradas). Ahora
+    // hay 6 consultas a la vez: suficiente para que tarde 3-4 s sin saturar
+    // el servidor del operador.
+    const concurrency = 6;
+    var next = 0;
+    Future<void> worker() async {
+      while (next < pending.length) {
+        await scanStop(pending[next++]);
+      }
+    }
+
+    await Future.wait(List.generate(concurrency, (_) => worker()));
 
     for (final entry in closestBusByLine.entries) {
       final lineId = entry.key;
