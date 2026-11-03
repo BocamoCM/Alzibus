@@ -62,16 +62,34 @@ function getJson(url, timeoutMs = 8000) {
     });
 }
 
-async function cached(slot, url, ttl) {
-    const now = Date.now();
-    if (slot.data && now - slot.at < ttl) return slot.data;
-    try {
-        slot.data = await getJson(url);
-        slot.at = now;
-    } catch (err) {
-        console.warn(`[Trenes] No se pudo leer ${url}: ${err.message}`);
-        // Si Renfe falla, se sigue sirviendo el último dato bueno (si lo hay).
+function refresh(slot, url) {
+    // Una sola descarga en curso por feed aunque lleguen varias peticiones a la vez.
+    if (!slot.pending) {
+        slot.pending = getJson(url)
+            .then((data) => {
+                slot.data = data;
+                slot.at = Date.now();
+            })
+            .catch((err) => {
+                console.warn(`[Trenes] No se pudo leer ${url}: ${err.message}`);
+                // Si Renfe falla, se sigue sirviendo el último dato bueno (si lo hay).
+            })
+            .finally(() => {
+                slot.pending = null;
+            });
     }
+    return slot.pending;
+}
+
+async function cached(slot, url, ttl) {
+    if (slot.data && Date.now() - slot.at < ttl) return slot.data;
+    // Caducado pero con dato: se responde ya con el anterior y se renueva en
+    // segundo plano, así nadie espera a que Renfe conteste (a veces tarda varios segundos).
+    if (slot.data) {
+        refresh(slot, url);
+        return slot.data;
+    }
+    await refresh(slot, url);
     return slot.data;
 }
 
