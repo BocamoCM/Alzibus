@@ -16,6 +16,8 @@ import '../core/providers/stops_provider.dart';
 import '../services/bus_simulation_service.dart';
 import '../services/foreground_service.dart';
 import '../widgets/line_filter.dart';
+import '../widgets/conditions_banner.dart';
+import '../widgets/map_top_bar.dart';
 import '../widgets/stop_info_sheet.dart';
 import '../widgets/multi_line_stop_marker.dart';
 import '../widgets/animated_bus_marker.dart';
@@ -620,45 +622,16 @@ class MapPageState extends ConsumerState<MapPage> {
             MarkerLayer(markers: markers),
           ],
         ),
-        // Barra de búsqueda superior
+        // Búsqueda + aviso de lluvia/tráfico + filtro de líneas.
         Positioned(
           top: 16,
           left: 16,
-          right: 80,
-          child: GestureDetector(
-            onTap: _showSearchDialog,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, color: Colors.grey[600]),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Buscar parada...',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 16,
           right: 16,
-          child: LineFilter(
+          child: MapTopBar(
             selectedLines: selectedLines,
             onLineToggle: _toggleLine,
+            onSearchTap: _showSearchDialog,
+            belowSearch: const ConditionsBanner(),
           ),
         ),
         // Botón para centrar en mi ubicación.
