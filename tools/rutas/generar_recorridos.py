@@ -23,14 +23,10 @@ LINES = ["L1", "L2", "L3"]
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
 MAX_DIST_M = 40
 
-# Paradas que la línea hace solo en algunas expediciones: la parada existe y
-# tiene servicio, pero la mayoría de buses no entran, así que no se dibujan en
-# el recorrido simulado (si no, el bus haría un desvío que no hace).
-# L1 / 18 AV. DELS ESPORTS-CIPFP LLUIS SUÑER: el 3/11 a las 17:27 y a las 18:27
-# el operador daba Av. Mediterrània -> Pare Pompili en 1-2 min (2,85 km con el
-# desvío: imposible) y para CIPFP el bus de ~21:30. El mapa oficial dibuja el
-# recorrido completo, pero no qué expediciones entran.
-VARIANT_STOPS = {"L1": {18}}
+# Paradas que no deben entrar en el recorrido. Ninguna: todas las líneas pasan
+# por todas sus paradas (mapa oficial del operador) y la simulación se guía
+# solo por el tiempo real.
+VARIANT_STOPS: dict = {}
 
 
 def dist(a, b):

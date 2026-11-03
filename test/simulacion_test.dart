@@ -83,9 +83,9 @@ void main() {
         final stops = loadStops(line);
         expect(geo.length, greaterThan(5000));
 
-        // Solo queda fuera la parada que la L1 hace en algunas expediciones (CIPFP).
+        // Todas las paradas están en el recorrido (mapa oficial del operador).
         final off = [for (var k = 0; k < geo.stopCount; k++) if (geo.offRoute[k]) stops[k]['id']];
-        expect(off, line == 'L1' ? [18] : isEmpty);
+        expect(off, isEmpty);
         var last = -1.0;
         for (var k = 0; k < geo.stopCount; k++) {
           if (geo.offRoute[k]) continue;
@@ -129,23 +129,23 @@ void main() {
   });
 
   group('detectBuses', () {
-    test('datos reales de la L1 (3/11 17:27): un solo bus, en la Av. Mediterrània, aunque la parada 2 dé 241 min', () {
+    test('datos reales de la L1 (3/11 17:27 y 18:27): el bus elegido es el que sigue la cadena de minutos', () {
       final geo = geometryFor('L1');
-      // Minutos reales por índice de parada de L1.json (la 2, CIPFP, da una cifra fuera de lugar: 241 min).
-      final m = <int, int>{0: 57, 1: 0, 2: 241, 3: 1, 4: 2, 5: 4, 6: 5, 7: 7, 8: 8, 9: 10, 10: 13, 11: 16, 12: 17, 13: 32, 14: 38, 15: 40, 16: 42, 17: 43, 18: 44, 19: 45, 20: 47, 21: 48, 22: 49, 23: 50, 24: 51, 25: 53};
-      final buses = BusSimulationService.detectBuses(geo, m);
-      expect(buses.map((b) => b.stopIndex).toList(), [1]);
-      expect(buses.single.distance, closeTo(geo.stopDistances[1], 1), reason: '"< < <": está en la parada');
+      // La parada 2 (CIPFP) daba 241 y 183 min: cifra fuera de rango, no se usa para colocar el bus.
+      final a = <int, int>{0: 57, 1: 0, 2: 241, 3: 1, 4: 2, 5: 4, 6: 5, 7: 7, 8: 8, 9: 10, 10: 13, 11: 16, 12: 17, 13: 32, 14: 38, 15: 40, 16: 42, 17: 43, 18: 44, 19: 45, 20: 47, 21: 48, 22: 49, 23: 50, 24: 51, 25: 53};
+      final best = BusSimulationService.bestDetection(BusSimulationService.detectBuses(geo, a))!;
+      expect(best.stopIndex, 3, reason: 'el que encaja con las 22 paradas siguientes');
+      final b = <int, int>{0: 0, 1: 1, 2: 183, 3: 3, 4: 4, 5: 6, 6: 7, 7: 9, 8: 10, 9: 12, 10: 15, 11: 18, 12: 19, 13: 34, 14: 40, 15: 42, 16: 44, 17: 45, 18: 46, 19: 47, 20: 49, 21: 50, 22: 51, 23: 52, 24: 53, 25: 55};
+      final best2 = BusSimulationService.bestDetection(BusSimulationService.detectBuses(geo, b))!;
+      expect(best2.stopIndex, 0, reason: 'en el Hospital ("< < <")');
+      final v = BusSimulationService.lineSpeedFrom(geo, b);
+      expect(v, inInclusiveRange(3.0, 6.0));
     });
 
-    test('datos reales de la L1 (3/11 18:27): un solo bus, en el Hospital', () {
+    test('datos reales de la L1 (3/11 17:38): un bus en la parada 9', () {
       final geo = geometryFor('L1');
-      final m = <int, int>{0: 0, 1: 1, 2: 183, 3: 3, 4: 4, 5: 6, 6: 7, 7: 9, 8: 10, 9: 12, 10: 15, 11: 18, 12: 19, 13: 34, 14: 40, 15: 42, 16: 44, 17: 45, 18: 46, 19: 47, 20: 49, 21: 50, 22: 51, 23: 52, 24: 53, 25: 55};
-      final buses = BusSimulationService.detectBuses(geo, m);
-      expect(buses.map((b) => b.stopIndex).toList(), [0]);
-      // Velocidad de la línea coherente con los minutos (≈ 14 km en ~55 min).
-      final v = BusSimulationService.lineSpeedFrom(geo, m);
-      expect(v, inInclusiveRange(3.0, 6.0));
+      final m = <int, int>{0: 45, 1: 47, 2: 241, 3: 51, 4: 52, 5: 54, 6: 55, 7: 57, 8: 58, 9: 0, 10: 3, 11: 6, 12: 7, 13: 22, 14: 28, 15: 30, 16: 32, 17: 33, 18: 34, 19: 35, 20: 37, 21: 38, 22: 39, 23: 40, 24: 41, 25: 43};
+      expect(BusSimulationService.bestDetection(BusSimulationService.detectBuses(geo, m))!.stopIndex, 9);
     });
 
     test('dos buses reales a la vez (uno no puede llegar a tiempo a la parada del otro)', () {
