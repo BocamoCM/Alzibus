@@ -4,7 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'bus_times_service.dart';
 import 'gps_track_service.dart';
+import 'route_geometry.dart';
 
+/// Bus simulado a partir de los tiempos de llegada del operador.
+///
+/// La posición real es [distance] (metros sobre el recorrido de su línea);
+/// el resto de campos se derivan de ella para la interfaz.
 class SimulatedBus {
   final String lineId;
   final String busId;
@@ -25,6 +30,21 @@ class SimulatedBus {
   DateTime? lastApiUpdate;
   double targetProgress;
 
+  /// Metros recorridos desde el principio del recorrido de la línea.
+  double distance;
+
+  /// Velocidad actual en m/s (la de la animación).
+  double speedMps;
+
+  /// Velocidad del tramo según el operador (m/s), para convertir minutos en metros.
+  double segmentSpeedMps;
+
+  /// Segundos que quedaban hasta [trackingStopIndex] cuando se recibió el dato.
+  double? etaSeconds;
+
+  /// Rescans completos seguidos en los que no se ha vuelto a detectar.
+  int missedScans;
+
   SimulatedBus({
     required this.lineId,
     required this.busId,
@@ -44,23 +64,67 @@ class SimulatedBus {
     this.trackToIndex = 0,
     this.lastApiUpdate,
     this.targetProgress = 0,
+    this.distance = 0,
+    this.speedMps = 0,
+    this.segmentSpeedMps = BusSimulationService.defaultSpeedMps,
+    this.etaSeconds,
+    this.missedScans = 0,
   });
+}
+
+/// Bus detectado en un escaneo: antes de la parada [stopIndex], a [minutes].
+@visibleForTesting
+class DetectedBus {
+  DetectedBus(this.stopIndex, this.minutes, this.distance, this.segmentSpeedMps);
+  final int stopIndex;
+  final int minutes;
+  final double distance;
+  final double segmentSpeedMps;
 }
 
 class BusSimulationService {
   BusSimulationService();
 
+  /// Reloj de la simulación (los tests lo sustituyen para controlar el tiempo).
+  @visibleForTesting
+  DateTime Function() clock = DateTime.now;
+
   final BusTimesService _busTimesService = BusTimesService();
   final Map<String, SimulatedBus> _buses = {};
   final Map<String, List<Map<String, dynamic>>> _lineStops = {};
+  final Map<String, RouteGeometry> _geometry = {};
+  final Map<String, double> _lineSpeed = {};
+  int _nextBusNumber = 1;
 
   Timer? _updateTimer;
   Timer? _trackingTimer;
+  Timer? _rescanTimer;
+  DateTime? _lastTick;
+  bool _isTracking = false;
+  bool _isRescanning = false;
   StreamController<Map<String, SimulatedBus>>? _busStreamController;
   bool _isDisposed = false;
 
-  // Interval of the position update timer (500ms)
+  // ── Parámetros del modelo ──
   static const double _tickSeconds = 0.5;
+
+  /// Velocidad media por defecto (≈14 km/h con paradas, medida en la L1).
+  static const double defaultSpeedMps = 4.0;
+  static const double _minSpeedMps = 2.0;
+  static const double _maxSegmentSpeedMps = 12.0;
+
+  /// Velocidad máxima de la animación (≈50 km/h): nunca hay saltos.
+  static const double maxSpeedMps = 14.0;
+
+  /// Tiempo de reacción al perseguir la posición objetivo.
+  static const double _tauSeconds = 8.0;
+
+  /// Más de esto en minutos se considera "no viene en esta vuelta".
+  static const int maxUsefulMinutes = 75;
+
+  /// Si pasa más tiempo que esto entre ticks (app en segundo plano), se
+  /// recoloca el bus directamente en lugar de animar el recorrido.
+  static const double _resyncAfterSeconds = 20;
 
   Stream<Map<String, SimulatedBus>> get busStream {
     _busStreamController ??= StreamController<Map<String, SimulatedBus>>.broadcast(
@@ -76,397 +140,403 @@ class BusSimulationService {
   Map<String, SimulatedBus> get buses => Map.unmodifiable(_buses);
 
   void _emitBuses() {
-    if (!_isDisposed &&
-        _busStreamController != null &&
-        !_busStreamController!.isClosed) {
+    if (!_isDisposed && _busStreamController != null && !_busStreamController!.isClosed) {
       _busStreamController!.add(_buses);
     }
   }
 
   void setLineStops(String lineId, List<Map<String, dynamic>> stops) {
     _lineStops[lineId] = stops;
+    _geometry.remove(lineId);
   }
 
   List<Map<String, dynamic>>? getLineStops(String lineId) => _lineStops[lineId];
 
+  @visibleForTesting
+  RouteGeometry? geometryOf(String lineId) => _geometry[lineId];
+
+  /// Para tests: usar un recorrido concreto en lugar del de assets.
+  @visibleForTesting
+  void setGeometry(String lineId, List<LatLng> track) {
+    final stops = _lineStops[lineId] ?? const [];
+    _geometry[lineId] = RouteGeometry.build(track, stops.map(_stopLatLng).toList());
+  }
+
+  Future<RouteGeometry?> _ensureGeometry(String lineId) async {
+    final cached = _geometry[lineId];
+    if (cached != null) return cached;
+    final stops = _lineStops[lineId];
+    if (stops == null || stops.length < 2) return null;
+    final track = await GpsTrackService.loadTrack(lineId);
+    final geo = RouteGeometry.build(track, stops.map(_stopLatLng).toList());
+    _geometry[lineId] = geo;
+    return geo;
+  }
+
   void startSimulation() {
+    _lastTick = clock();
     _updateTimer?.cancel();
     _updateTimer = Timer.periodic(
       Duration(milliseconds: (_tickSeconds * 1000).toInt()),
-      (_) => _updateBusPositions(),
+      (_) => _tick(),
     );
-
     _trackingTimer?.cancel();
-    _trackingTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _trackBuses(),
-    );
+    _trackingTimer = Timer.periodic(const Duration(seconds: 20), (_) => _trackBuses());
+    // Escaneo completo cada 3 min: detecta buses nuevos y quita los que ya no están.
+    _rescanTimer?.cancel();
+    _rescanTimer = Timer.periodic(const Duration(minutes: 3), (_) => _rescan());
   }
 
   void stopSimulation() {
     _updateTimer?.cancel();
     _trackingTimer?.cancel();
+    _rescanTimer?.cancel();
     _updateTimer = null;
     _trackingTimer = null;
+    _rescanTimer = null;
+  }
+
+  // ───────────────────────── Lectura de tiempos ─────────────────────────
+
+  /// Minutos hasta la llegada, o null si el texto no se entiende.
+  /// "< < <" / "llegando" → 0; "12 min" → 12; "21:40" → minutos hasta esa hora.
+  @visibleForTesting
+  static int? parseMinutes(String timeStr, {DateTime? now}) {
+    final s = timeStr.trim().toLowerCase();
+    if (s.isEmpty) return null;
+    if (s.contains('<') || s.contains('llegando') || s.contains('&lt;')) return 0;
+    final clock = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(s);
+    if (clock != null) {
+      final n = now ?? DateTime.now();
+      var t = DateTime(n.year, n.month, n.day, int.parse(clock.group(1)!), int.parse(clock.group(2)!));
+      if (t.isBefore(n.subtract(const Duration(minutes: 5)))) t = t.add(const Duration(days: 1));
+      return max(0, t.difference(n).inSeconds ~/ 60);
+    }
+    final mins = RegExp(r"^(\d{1,3})\s*(min|m|')?\.?$").firstMatch(s);
+    if (mins != null) return int.parse(mins.group(1)!);
+    return null;
+  }
+
+  /// Segundos aproximados que representa un tiempo del operador en minutos enteros.
+  static double _etaSeconds(int minutes) => minutes <= 0 ? 0 : minutes * 60.0 - 30;
+
+  /// Minutos de la línea en cada parada (índice de parada → minutos), consultando
+  /// [indices] con 6 peticiones a la vez. Las paradas sin dato no aparecen.
+  Future<Map<int, int>> _fetchLineMinutes(String lineId, Iterable<int> indices, {Duration reuse = const Duration(seconds: 15)}) async {
+    final stops = _lineStops[lineId]!;
+    final result = <int, int>{};
+    final pending = indices.toList();
+    var next = 0;
+    Future<void> worker() async {
+      while (next < pending.length) {
+        final k = pending[next++];
+        try {
+          final stopId = stops[k]['id'] as int;
+          // Paradas compartidas entre líneas: si se acaban de consultar, no se repite.
+          final arrivals = BusTimesService.cachedArrivals(stopId, maxAge: reuse) ?? await _busTimesService.getArrivalTimes(stopId);
+          int? best;
+          for (final a in arrivals) {
+            if (a.line.trim().toUpperCase() != lineId) continue;
+            final m = parseMinutes(a.time);
+            if (m != null && (best == null || m < best)) best = m;
+          }
+          if (best != null) result[k] = best;
+        } catch (e) {
+          debugPrint('Error en parada ${stops[k]['id']}: $e');
+        }
+      }
+    }
+
+    await Future.wait(List.generate(min(6, pending.length), (_) => worker()));
+    return result;
+  }
+
+  // ───────────────────────── Detección de buses ─────────────────────────
+
+  /// Velocidad media de la línea según el operador: distancia entre paradas
+  /// seguidas de un mismo bus dividida entre la diferencia de sus minutos.
+  /// Usa tramos largos en conjunto, así el redondeo a minutos casi no influye.
+  @visibleForTesting
+  static double lineSpeedFrom(RouteGeometry geo, Map<int, int> minutesByStop) {
+    final n = geo.stopCount;
+    var meters = 0.0, seconds = 0.0;
+    for (var j = 0; j < n; j++) {
+      final a = minutesByStop[j], b = minutesByStop[(j + 1) % n];
+      if (a == null || b == null || a > maxUsefulMinutes || b > maxUsefulMinutes || b < a || b - a > 20) continue;
+      meters += geo.forward(geo.stopDistances[j], geo.stopDistances[(j + 1) % n]);
+      seconds += (b - a) * 60;
+    }
+    if (seconds < 120) return defaultSpeedMps;
+    return (meters / seconds).clamp(_minSpeedMps, _maxSegmentSpeedMps).toDouble();
+  }
+
+  /// Velocidad para llegar a la parada [k] (con [m] min) desde la siguiente
+  /// ([next] min). Con menos de 2 min de diferencia el redondeo la falsea y
+  /// se usa la media de la línea.
+  static double segmentSpeed(RouteGeometry geo, int k, int m, int? next, double lineSpeed) {
+    if (next == null || next > maxUsefulMinutes || next - m < 2) return lineSpeed;
+    final n = geo.stopCount;
+    final d = geo.forward(geo.stopDistances[k], geo.stopDistances[(k + 1) % n]);
+    return (d / ((next - m) * 60)).clamp(_minSpeedMps, _maxSegmentSpeedMps).toDouble();
+  }
+
+  /// Detecta los buses de una línea a partir de los minutos de cada parada.
+  ///
+  /// Recorriendo las paradas en orden, un bus está justo antes de la parada j
+  /// cuando sus minutos son menores que los de la parada anterior (en la
+  /// anterior ya se espera al bus siguiente). Si la parada siguiente da un
+  /// tiempo enorme, ese bus termina el servicio ahí y no se simula.
+  @visibleForTesting
+  static List<DetectedBus> detectBuses(RouteGeometry geo, Map<int, int> minutesByStop) {
+    final n = geo.stopCount;
+    final detected = <DetectedBus>[];
+    if (n < 2) return detected;
+    final lineSpeed = lineSpeedFrom(geo, minutesByStop);
+
+    for (var j = 0; j < n; j++) {
+      final m = minutesByStop[j];
+      if (m == null || m > maxUsefulMinutes) continue;
+      final prev = minutesByStop[(j - 1 + n) % n];
+      if (prev != null && prev <= maxUsefulMinutes && prev <= m) continue; // es el mismo bus que viene de atrás
+      final nextIdx = (j + 1) % n;
+      final next = minutesByStop[nextIdx];
+      if (next != null && (next > maxUsefulMinutes || next < m)) continue; // termina el servicio aquí
+
+      final v = segmentSpeed(geo, j, m, next, lineSpeed);
+      final prevDist = geo.forward(geo.stopDistances[(j - 1 + n) % n], geo.stopDistances[j]);
+      // Un bus "antes de j" tiene que poder llegar desde la parada anterior en
+      // esos minutos (a 2 m/s y con 10 min de margen por si regula). Si no, es
+      // el tiempo de otro bus que da la vuelta entera: no hay bus ahí.
+      if (m > prevDist / _minSpeedMps / 60 + 10) continue;
+      final back = min(_etaSeconds(m) * v, max(0.0, prevDist - 5)); // no más atrás que la parada anterior
+      detected.add(DetectedBus(j, m, geo.wrap(geo.stopDistances[j] - back), v));
+    }
+    return detected;
   }
 
   /// Escaneo inicial: consulta todas las paradas para encontrar buses.
   Future<void> initialScan(List<Map<String, dynamic>> allStops) async {
     debugPrint('=== ESCANEO INICIAL DE TODAS LAS PARADAS ===');
-
-    // guardamos el bus más cercano encontrado por cada línea
-    final Map<String, Map<String, dynamic>> closestBusByLine = {};
-
-    // Solo las paradas de líneas que simulamos (las de solo CEM no aportan).
-    final pending = allStops.where((stop) {
-      final stopId = stop['id'] as int? ?? 0;
-      final lines = List<String>.from(stop['lines'] as List? ?? const []);
-      return stopId != 0 && lines.any(_lineStops.containsKey);
-    }).toList();
-
-    Future<void> scanStop(Map<String, dynamic> stop) async {
-      final stopId = stop['id'] as int;
-      final lines = List<String>.from(stop['lines'] as List);
-
-      try {
-        final arrivals = await _busTimesService.getArrivalTimes(stopId);
-
-        for (final arrival in arrivals) {
-          if (!lines.contains(arrival.line)) continue;
-          if (!_lineStops.containsKey(arrival.line)) continue;
-
-          final lineStops = _lineStops[arrival.line]!;
-          final stopIndex = lineStops.indexWhere((s) => s['id'] == stopId);
-          if (stopIndex < 0) continue;
-
-          final minutes = _parseMinutes(arrival.time);
-          final lineId = arrival.line;
-
-          if (!closestBusByLine.containsKey(lineId) ||
-              minutes < (closestBusByLine[lineId]!['minutes'] as int)) {
-            closestBusByLine[lineId] = {
-              'minutes': minutes,
-              'stopIndex': stopIndex,
-              'stopId': stopId,
-              'stopName': stop['name'],
-              'destination': arrival.destination,
-            };
-            debugPrint('$lineId: Bus en ${stop['name']} -> ${arrival.destination} ($minutes min)');
-          }
-        }
-      } catch (e) {
-        debugPrint('Error en parada $stopId: $e');
-      }
-    }
-
-    // Antes se consultaban de una en una (~15-20 s con 53 paradas). Ahora
-    // hay 6 consultas a la vez: suficiente para que tarde 3-4 s sin saturar
-    // el servidor del operador.
-    const concurrency = 6;
-    var next = 0;
-    Future<void> worker() async {
-      while (next < pending.length) {
-        await scanStop(pending[next++]);
-      }
-    }
-
-    await Future.wait(List.generate(concurrency, (_) => worker()));
-
-    for (final entry in closestBusByLine.entries) {
-      final lineId = entry.key;
-      final data = entry.value;
-      final lineStops = _lineStops[lineId]!;
-
-      final stopIndex = data['stopIndex'] as int;
-      final minutes = data['minutes'] as int;
-
-      // Mejora 1: Calcular progreso inicial calibrado según minutos reales
-      final estimatedStopIndex = _estimateCurrentStop(stopIndex, minutes, lineStops.length);
-      final double initialProgress = _progressFromMinutes(minutes);
-
-      final pos = _getStopPosition(lineStops[estimatedStopIndex]);
-
-      debugPrint('');
-      debugPrint('==> Creando bus $lineId:');
-      debugPrint('    Llegara a parada ${data['stopName']} en $minutes min');
-      debugPrint('    Posicion estimada: parada $estimatedStopIndex de ${lineStops.length}');
-      debugPrint('    Progreso inicial: ${(initialProgress * 100).toInt()}%');
-
-      final bus = SimulatedBus(
-        lineId: lineId,
-        busId: lineId,
-        currentPosition: pos,
-        currentStopIndex: estimatedStopIndex,
-        nextStopIndex: (estimatedStopIndex + 1) % lineStops.length,
-        progress: initialProgress,
-        targetProgress: initialProgress,
-        lastKnownMinutes: minutes,
-        trackingStopId: data['stopId'] as int,
-        trackingStopIndex: data['stopIndex'] as int,
-        lastApiUpdate: DateTime.now(),
-        speed: 1.0,
-      );
-
-      final gpsTrack = await GpsTrackService.loadTrack(lineId);
-      if (gpsTrack.isNotEmpty) {
-        bus.gpsTrack = gpsTrack;
-      }
-
-      _buses[lineId] = bus;
-      _updateBusTrackSegment(bus);
-    }
-
-    debugPrint('');
+    await _scanAllLines(initial: true);
     debugPrint('=== ESCANEO COMPLETO: ${_buses.length} buses encontrados ===');
     _emitBuses();
   }
 
-  /// Convierte minutos de llegada a un progreso inicial [0..1].
-  /// 0 min → 0.95 (casi llegando), 5+ min → ~0.05 (acaba de salir).
-  double _progressFromMinutes(int minutes) {
-    if (minutes <= 0) return 0.95;
-    if (minutes == 1) return 0.75;
-    if (minutes == 2) return 0.50;
-    if (minutes <= 4) return 0.20;
-    return 0.05;
+  @visibleForTesting
+  Future<void> rescanNow() => _rescan();
+
+  @visibleForTesting
+  Future<void> trackNow() => _trackBuses();
+
+  Future<void> _rescan() async {
+    if (_isRescanning || _isDisposed) return;
+    _isRescanning = true;
+    try {
+      await _scanAllLines(initial: false);
+      _emitBuses();
+    } finally {
+      _isRescanning = false;
+    }
   }
 
-  /// Seguimiento continuo: consulta la API para calibrar cada bus.
-  /// Mejora 2: si la parada siguiente no tiene datos, prueba adyacentes.
+  Future<void> _scanAllLines({required bool initial}) async {
+    for (final lineId in _lineStops.keys.toList()) {
+      final geo = await _ensureGeometry(lineId);
+      if (geo == null) continue;
+      final minutes = await _fetchLineMinutes(lineId, List.generate(geo.stopCount, (i) => i));
+      if (minutes.isNotEmpty) _lineSpeed[lineId] = lineSpeedFrom(geo, minutes);
+      final detected = detectBuses(geo, minutes);
+      _reconcile(lineId, geo, detected, initial: initial);
+    }
+  }
+
+  /// Junta lo detectado con los buses que ya había: actualiza su dato de
+  /// llegada (sin moverlos de golpe), crea los nuevos y quita los que llevan
+  /// dos escaneos sin aparecer.
+  void _reconcile(String lineId, RouteGeometry geo, List<DetectedBus> detected, {required bool initial}) {
+    final existing = _buses.values.where((b) => b.lineId == lineId).toList();
+    final matched = <SimulatedBus>{};
+    final now = clock();
+
+    for (final d in detected) {
+      SimulatedBus? best;
+      var bestGap = double.infinity;
+      for (final b in existing) {
+        if (matched.contains(b)) continue;
+        // Distancia con signo de la posición actual a la detectada (−L/2..L/2).
+        var gap = geo.forward(b.distance, d.distance);
+        if (gap > geo.length / 2) gap -= geo.length;
+        if (gap < -400 || gap > 1500) continue;
+        if (gap.abs() < bestGap) {
+          bestGap = gap.abs();
+          best = b;
+        }
+      }
+      if (best != null) {
+        matched.add(best);
+        best.missedScans = 0;
+        _setEta(best, geo, d.stopIndex, d.minutes, d.segmentSpeedMps, now);
+      } else {
+        final bus = SimulatedBus(
+          lineId: lineId,
+          busId: '$lineId#${_nextBusNumber++}',
+          currentPosition: geo.positionAt(d.distance),
+          distance: d.distance,
+          segmentSpeedMps: d.segmentSpeedMps,
+        );
+        _setEta(bus, geo, d.stopIndex, d.minutes, d.segmentSpeedMps, now);
+        _updateDerived(bus, geo);
+        _buses[bus.busId] = bus;
+        debugPrint('==> Bus ${bus.busId}: antes de la parada ${d.stopIndex} en ${d.minutes} min');
+      }
+    }
+
+    if (!initial) {
+      for (final b in existing) {
+        if (matched.contains(b)) continue;
+        if (++b.missedScans >= 2) _buses.remove(b.busId);
+      }
+    }
+  }
+
+  void _setEta(SimulatedBus bus, RouteGeometry geo, int stopIndex, int minutes, double v, DateTime now) {
+    final stops = _lineStops[bus.lineId]!;
+    bus.trackingStopIndex = stopIndex;
+    bus.trackingStopId = stops[stopIndex]['id'] as int;
+    bus.etaSeconds = _etaSeconds(minutes);
+    bus.lastApiUpdate = now;
+    bus.lastKnownMinutes = minutes;
+    bus.segmentSpeedMps = v;
+  }
+
+  // ───────────────────────── Seguimiento ─────────────────────────
+
+  /// Cada 20 s: consulta la próxima parada de cada bus (y la siguiente para
+  /// la velocidad del tramo). Solo acepta tiempos coherentes con donde está
+  /// el bus; si no, son de otro bus y se ignoran.
   Future<void> _trackBuses() async {
-    for (final bus in _buses.values.toList()) {
-      final lineStops = _lineStops[bus.lineId];
-      if (lineStops == null || lineStops.isEmpty) continue;
-
-      // Candidatos: próxima parada y sus vecinas (fallback)
-      final candidateIndices = [
-        bus.nextStopIndex,
-        (bus.nextStopIndex + 1) % lineStops.length,
-        (bus.nextStopIndex - 1 + lineStops.length) % lineStops.length,
-      ];
-
-      bool matched = false;
-      for (final idx in candidateIndices) {
-        final stopData = lineStops[idx];
-        final stopId = stopData['id'] as int;
-
-        try {
-          final arrivals = await _busTimesService.getArrivalTimes(stopId);
-          final lineArrivals = arrivals.where((a) => a.line == bus.lineId).toList();
-
-          if (lineArrivals.isEmpty) continue;
-
-          final arrival = lineArrivals.first;
-          final minutes = _parseMinutes(arrival.time);
-
-          if (bus.lastKnownMinutes == null ||
-              (bus.lastKnownMinutes! - minutes).abs() > 1) {
-            debugPrint('${bus.lineId}: Próxima parada ${stopData['name']} en $minutes min');
-          }
-
-          bus.lastApiUpdate = DateTime.now();
-          bus.lastKnownMinutes = minutes;
-          bus.trackingStopId = stopId;
-          bus.trackingStopIndex = idx;
-
-          // Mejora 4: targetProgress solo avanza, nunca retrocede
-          final newTarget = _computeTargetProgress(bus.progress, minutes);
-          if (newTarget > bus.targetProgress) {
-            bus.targetProgress = newTarget;
-          }
-
-          // Ajustar velocidad relativa
-          bus.speed = _speedFromMinutes(minutes);
-          bus.isAtStop = false;
-          bus.departureTime = null;
-
-          matched = true;
-          break;
-        } catch (_) {
-          continue;
-        }
-      }
-
-      if (!matched) {
-        // Sin datos de API: avanzar a velocidad media conservadora
-        bus.speed = 0.8;
-      }
+    if (_isTracking || _isDisposed) return;
+    _isTracking = true;
+    try {
+      await Future.wait(_buses.values.toList().map(_trackBus));
+      _emitBuses();
+    } finally {
+      _isTracking = false;
     }
-
-    _emitBuses();
   }
 
-  /// Calcula el targetProgress asegurando que el bus llegue al destino
-  /// exactamente cuando la API dice (sin saltos ni retrocesos).
-  double _computeTargetProgress(double currentProgress, int minutes) {
-    if (minutes <= 0) return 1.0;
-    // Objetivo: llegar al 100% en exactly `minutes` minutos
-    // Cada tick = 0.5s → totalTicks = minutes * 120 ticks
-    // incrementoPorTick = (1.0 - currentProgress) / totalTicks
-    // Ajustamos el objetivo al trayecto completo restante
-    final remaining = 1.0 - currentProgress;
-    final estimatedTarget = currentProgress + (remaining * (1.0 / (minutes * 2.0)));
-    return estimatedTarget.clamp(currentProgress, 1.0);
-  }
+  Future<void> _trackBus(SimulatedBus bus) async {
+    final geo = _geometry[bus.lineId];
+    if (geo == null) return;
+    final n = geo.stopCount;
+    final k = geo.nextStopIndex(bus.distance);
+    final k2 = (k + 1) % n;
+    final k3 = (k + 2) % n;
+    final minutes = await _fetchLineMinutes(bus.lineId, [k, k2, k3], reuse: const Duration(seconds: 5));
 
-  double _speedFromMinutes(int minutes) {
-    if (minutes <= 0) return 2.5;
-    if (minutes == 1) return 1.8;
-    if (minutes <= 2) return 1.3;
-    if (minutes <= 4) return 1.0;
-    return 0.7;
-  }
-
-  int _estimateCurrentStop(int targetStopIndex, int minutesToArrival, int totalStops) {
-    if (minutesToArrival <= 1) {
-      int prev = targetStopIndex - 1;
-      if (prev < 0) prev = totalStops - 1;
-      return prev;
+    // Primero la próxima parada; si su dato no encaja (el bus real ya la ha
+    // pasado y marca el de la vuelta siguiente), la de después.
+    for (final (stop, following) in [(k, k2), (k2, k3)]) {
+      final m = minutes[stop];
+      if (m == null || m > maxUsefulMinutes) continue;
+      if (!_plausible(bus, geo, stop, m)) continue;
+      final v = segmentSpeed(geo, stop, m, minutes[following], _lineSpeed[bus.lineId] ?? bus.segmentSpeedMps);
+      _setEta(bus, geo, stop, m, v, clock());
+      return;
     }
-    // ~2.5 min/parada en promedio
-    final stopsAway = (minutesToArrival / 2.5).ceil();
-    int estimated = targetStopIndex - stopsAway;
-    while (estimated < 0) {
-      estimated += totalStops;
+  }
+
+  /// ¿Puede ser de este bus que la parada [stop] diga [m] minutos?
+  /// Mucho MENOS de lo esperado: hay otro bus entre este y la parada → no.
+  /// Más de lo esperado sí (va lento o está regulando en una parada).
+  /// Lo esperado es lo que tardaría por distancia o, si es más, lo que aún le
+  /// quedaba según su último dato (p. ej. un bus que espera en la parada).
+  bool _plausible(SimulatedBus bus, RouteGeometry geo, int stop, int m) {
+    final ahead = geo.forward(bus.distance, geo.stopDistances[stop]);
+    var expectedSec = ahead / bus.segmentSpeedMps;
+    if (bus.trackingStopIndex == stop && bus.etaSeconds != null && bus.lastApiUpdate != null) {
+      final remaining = bus.etaSeconds! - clock().difference(bus.lastApiUpdate!).inMilliseconds / 1000;
+      expectedSec = max(expectedSec, remaining);
     }
-    return estimated % totalStops;
+    final expectedMin = expectedSec / 60;
+    return m >= expectedMin - (2 + 0.3 * expectedMin) && m <= expectedMin + 20;
   }
 
-  int _parseMinutes(String timeStr) {
-    if (timeStr.contains('<') || timeStr.contains('>')) return 0;
-    if (timeStr.toLowerCase().contains('llegando')) return 0;
-    final match = RegExp(r'(\d+)').firstMatch(timeStr);
-    if (match != null) return int.tryParse(match.group(1)!) ?? 0;
-    return 0;
+  // ───────────────────────── Movimiento ─────────────────────────
+
+  /// Distancia (con signo, respecto a [bus.distance]) a la que debería estar
+  /// el bus ahora según su último dato de llegada. Nunca pasa de la parada
+  /// siguiente a la del dato: sin datos nuevos, el bus espera ahí.
+  double _targetAhead(SimulatedBus bus, RouteGeometry geo, DateTime now) {
+    final k = bus.trackingStopIndex;
+    if (k == null || bus.etaSeconds == null || bus.lastApiUpdate == null) return bus.segmentSpeedMps * _tickSeconds;
+    var toStop = geo.forward(bus.distance, geo.stopDistances[k]);
+    if (toStop > geo.length / 2) toStop -= geo.length; // ya ha pasado la parada
+    final elapsed = now.difference(bus.lastApiUpdate!).inMilliseconds / 1000;
+    final remaining = bus.etaSeconds! - elapsed;
+    var target = toStop - remaining * bus.segmentSpeedMps;
+    final n = geo.stopCount;
+    final limit = toStop + geo.forward(geo.stopDistances[k], geo.stopDistances[(k + 1) % n]) - 20;
+    if (target > limit) target = limit;
+    return target;
   }
 
-  void _updateBusPositions() {
-    bool changed = false;
+  void _tick() {
+    final now = clock();
+    final dt = _lastTick == null ? _tickSeconds : now.difference(_lastTick!).inMilliseconds / 1000;
+    _lastTick = now;
+    advance(dt, now);
+  }
 
+  /// Avanza la simulación [dt] segundos. Público para los tests.
+  @visibleForTesting
+  void advance(double dt, [DateTime? now]) {
+    final t = now ?? clock();
+    var changed = false;
     for (final bus in _buses.values) {
-      if (bus.isAtStop) {
-        if (bus.departureTime == null) {
-          // Mejora 5: tiempo en parada escalado por minutos (3..15 seg)
-          final stopSeconds = (bus.lastKnownMinutes != null)
-              ? (bus.lastKnownMinutes! * 2).clamp(3, 15)
-              : 5;
-          bus.departureTime =
-              DateTime.now().add(Duration(seconds: stopSeconds));
-        } else if (DateTime.now().isAfter(bus.departureTime!)) {
-          bus.isAtStop = false;
-          bus.departureTime = null;
-          bus.targetProgress = 0;
-          _updateBusTrackSegment(bus);
-        }
-        continue;
-      }
-
-      final stops = _lineStops[bus.lineId];
-      if (stops == null || stops.length < 2) continue;
-
-      // Mejora 1: avance calibrado por tiempo real
-      // Si tenemos minutos reales, calcular delta exacto para llegar a tiempo
-      final minutes = bus.lastKnownMinutes;
-      double delta;
-
-      if (minutes != null && minutes > 0 && bus.lastApiUpdate != null) {
-        // Segundos restantes de los datos de la API ajustados al tiempo transcurrido
-        final elapsed = DateTime.now().difference(bus.lastApiUpdate!).inSeconds;
-        final remainingSeconds = (minutes * 60 - elapsed).clamp(1, 3600).toDouble();
-        final remainingProgress = 1.0 - bus.progress;
-        // Delta para completar el progreso restante en el tiempo restante
-        delta = (remainingProgress / remainingSeconds) * _tickSeconds;
-        delta = delta.clamp(0.001, 0.05); // límites de seguridad
+      final geo = _geometry[bus.lineId];
+      if (geo == null) continue;
+      final ahead = _targetAhead(bus, geo, t);
+      double move;
+      if (dt > _resyncAfterSeconds) {
+        // Volvemos de segundo plano: recolocar sin animar el camino.
+        move = max(0.0, min(ahead, 3000.0));
       } else {
-        delta = 0.006 * (bus.speed);
+        final v = (ahead / _tauSeconds).clamp(0.0, maxSpeedMps);
+        move = v * dt;
+        if (move > ahead) move = max(0.0, ahead);
       }
-
-      // Mejora 4: no retroceder — siempre avanzar
-      bus.progress = (bus.progress + delta).clamp(bus.progress, 1.0);
-
-      // Suavizar hacia targetProgress si este está por delante
-      if (bus.targetProgress > bus.progress + 0.02) {
-        final diff = bus.targetProgress - bus.progress;
-        bus.progress += diff * 0.04;
+      bus.speedMps = dt > 0 ? move / dt : 0;
+      if (move > 0) {
+        bus.distance = geo.wrap(bus.distance + move);
+        changed = true;
       }
-
-      changed = true;
-
-      if (bus.progress >= 1.0) {
-        bus.progress = 0;
-        bus.targetProgress = 0;
-        bus.currentStopIndex = bus.nextStopIndex;
-        bus.nextStopIndex = (bus.nextStopIndex + 1) % stops.length;
-        bus.isAtStop = true;
-        // Mejora 3: NO resetear lastApiUpdate al llegar a parada
-        _updateBusTrackSegment(bus);
-      }
-
-      // Actualizar posición física
-      if (bus.gpsTrack != null &&
-          bus.gpsTrack!.isNotEmpty &&
-          bus.trackFromIndex < bus.gpsTrack!.length &&
-          bus.trackToIndex < bus.gpsTrack!.length &&
-          bus.trackToIndex > bus.trackFromIndex) {
-        bus.currentPosition = GpsTrackService.interpolateOnTrack(
-          bus.gpsTrack!,
-          bus.trackFromIndex,
-          bus.trackToIndex,
-          bus.progress,
-        );
-        bus.heading = GpsTrackService.getHeadingOnTrack(
-          bus.gpsTrack!,
-          bus.trackFromIndex,
-          bus.trackToIndex,
-          bus.progress,
-        );
-      } else {
-        // Fallback a línea recta
-        final from = _getStopPosition(stops[bus.currentStopIndex]);
-        final to = _getStopPosition(stops[bus.nextStopIndex]);
-        bus.currentPosition = _interpolate(from, to, bus.progress);
-        bus.heading = _calculateHeading(from, to);
-      }
+      _updateDerived(bus, geo, t);
     }
-
     if (changed) _emitBuses();
   }
 
-  void _updateBusTrackSegment(SimulatedBus bus) {
-    final stops = _lineStops[bus.lineId];
-    if (stops == null || stops.length < 2) return;
-    if (bus.gpsTrack == null || bus.gpsTrack!.isEmpty) return;
-
-    final from = _getStopPosition(stops[bus.currentStopIndex]);
-    final to = _getStopPosition(stops[bus.nextStopIndex]);
-
-    final segment = GpsTrackService.findSegmentBetweenStops(bus.gpsTrack!, from, to);
-    bus.trackFromIndex = segment.fromIndex;
-    bus.trackToIndex = segment.toIndex;
+  /// Rellena los campos que usa la interfaz a partir de [bus.distance].
+  void _updateDerived(SimulatedBus bus, RouteGeometry geo, [DateTime? now]) {
+    bus.currentPosition = geo.positionAt(bus.distance);
+    bus.heading = geo.headingAt(bus.distance);
+    final n = geo.stopCount;
+    final next = geo.nextStopIndex(bus.distance, margin: 0);
+    final prev = (next - 1 + n) % n;
+    bus.nextStopIndex = next;
+    bus.currentStopIndex = prev;
+    final seg = geo.forward(geo.stopDistances[prev], geo.stopDistances[next]);
+    bus.progress = seg <= 0 ? 0 : (geo.forward(geo.stopDistances[prev], bus.distance) / seg).clamp(0.0, 1.0);
+    final nearStop = min(geo.forward(bus.distance, geo.stopDistances[next]), geo.forward(geo.stopDistances[prev], bus.distance));
+    bus.isAtStop = nearStop < 25 && bus.speedMps < 0.8;
+    bus.speed = bus.speedMps / defaultSpeedMps;
+    if (bus.etaSeconds != null && bus.lastApiUpdate != null) {
+      final remaining = bus.etaSeconds! - (now ?? clock()).difference(bus.lastApiUpdate!).inSeconds;
+      bus.lastKnownMinutes = max(0, (remaining / 60).ceil());
+    }
   }
 
-  LatLng _getStopPosition(Map<String, dynamic> stop) {
-    return LatLng(
-      (stop['lat'] as num).toDouble(),
-      (stop['lng'] as num).toDouble(),
-    );
-  }
-
-  LatLng _interpolate(LatLng from, LatLng to, double t) {
-    return LatLng(
-      from.latitude + (to.latitude - from.latitude) * t,
-      from.longitude + (to.longitude - from.longitude) * t,
-    );
-  }
-
-  double _calculateHeading(LatLng from, LatLng to) {
-    final dLng = (to.longitude - from.longitude) * pi / 180;
-    final lat1 = from.latitude * pi / 180;
-    final lat2 = to.latitude * pi / 180;
-    final y = sin(dLng) * cos(lat2);
-    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
-    return (atan2(y, x) * 180 / pi + 360) % 360;
-  }
+  LatLng _stopLatLng(Map<String, dynamic> stop) => LatLng((stop['lat'] as num).toDouble(), (stop['lng'] as num).toDouble());
 
   void dispose() {
     _isDisposed = true;

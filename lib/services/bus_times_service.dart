@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:html/parser.dart' as html_parser;
 import '../core/network/api_client.dart';
 import '../constants/app_config.dart';
@@ -34,6 +34,9 @@ class BusTimesService {
     if (c == null || DateTime.now().difference(c.at) > maxAge) return null;
     return c.arrivals;
   }
+
+  @visibleForTesting
+  static void clearCache() => _cache.clear();
 
   Future<List<BusArrival>> getArrivalTimes(int stopId) async {
     try {

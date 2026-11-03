@@ -149,7 +149,7 @@ void main() {
       expect(adapter.maxInFlight, inInclusiveRange(2, 6));
       // 20 paradas × 40 ms en serie serían 800 ms; en paralelo bastante menos.
       expect(sw.elapsedMilliseconds, lessThan(600));
-      expect(sim.buses.keys, contains('L1'), reason: 'se crea el bus de la L1');
+      expect(sim.buses.values.map((b) => b.lineId), contains('L1'), reason: 'se crea el bus de la L1');
       sim.stopSimulation();
     });
 
