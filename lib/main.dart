@@ -83,8 +83,9 @@ void main() async {
       }
       options.release = releaseName;
 
-      // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-      options.tracesSampleRate = 1.0;
+      // Rendimiento: el 100 % en debug, el 20 % en producción (medir cada
+      // sesión añadía trabajo a toda la app y gasta la cuota de Sentry).
+      options.tracesSampleRate = kReleaseMode ? 0.2 : 1.0;
 
       options.enableAppLifecycleBreadcrumbs = true;
       options.enableWindowMetricBreadcrumbs = true;
@@ -176,6 +177,30 @@ void main() async {
       // ────────────────────────────────────────────────────────────────────
       if (!kIsWeb && AppConfig.showAds) {
         Future.delayed(const Duration(seconds: 3), () async {
+          var adsStarted = false;
+          Future<void> startAds() async {
+            if (adsStarted) return;
+            adsStarted = true;
+            try {
+              final adService = container.read(adServiceProvider);
+              await adService.initialize();
+              adService.preloadNativeAds();
+              // Precargar full-screen (Intersticial + App Open) en frío para
+              // que el primer trigger los muestre YA — sin esto el primer
+              // show() solo cargaba y hacía return (impresión perdida).
+              adService.preloadFullScreenAds();
+            } catch (e) {
+              debugPrint('Main: error inicializando AdMob: $e');
+            }
+          }
+
+          // Si el consentimiento ya se dio en una sesión anterior, UMP lo tiene
+          // guardado: los anuncios arrancan ya, sin esperar a su consulta de red.
+          try {
+            if (await ConsentService.canRequestAds()) unawaited(startAds());
+          } catch (e) {
+            debugPrint('Main: error leyendo el consentimiento guardado: $e');
+          }
           try {
             await ConsentService.gatherConsent();
           } catch (e) {
@@ -184,14 +209,11 @@ void main() async {
           try {
             final canRequestAds = await ConsentService.canRequestAds();
             debugPrint('Main: canRequestAds=$canRequestAds');
-            final adService = container.read(adServiceProvider);
-            await adService.initialize();
             if (canRequestAds) {
-              adService.preloadNativeAds();
-              // Precargar full-screen (Intersticial + App Open) en frío para
-              // que el primer trigger los muestre YA — sin esto el primer
-              // show() solo cargaba y hacía return (impresión perdida).
-              adService.preloadFullScreenAds();
+              await startAds();
+            } else {
+              // Igual que antes: el SDK se inicializa aunque no haya consentimiento.
+              await container.read(adServiceProvider).initialize();
             }
           } catch (e) {
             debugPrint('Main: error inicializando AdMob: $e');

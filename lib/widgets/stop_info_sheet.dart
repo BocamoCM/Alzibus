@@ -217,7 +217,13 @@ class _StopInfoSheetState extends ConsumerState<StopInfoSheet> {
 
   Future<void> _loadArrivalTimes({bool shouldSpeak = false}) async {
     if (!mounted) return;
-    setState(() => _loading = true);
+    // Si ya hay tiempos (guardados o del refresco anterior) se siguen viendo
+    // mientras se actualizan; el indicador de carga solo sale sin datos.
+    final cached = _arrivals == null ? BusTimesService.cachedArrivals(widget.stop.id) : null;
+    setState(() {
+      if (cached != null) _arrivals = cached;
+      _loading = _arrivals == null;
+    });
     
     final arrivals = await _busTimesService.getArrivalTimes(widget.stop.id);
     

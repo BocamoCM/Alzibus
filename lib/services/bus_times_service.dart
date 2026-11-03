@@ -15,8 +15,25 @@ class BusArrival {
   });
 }
 
+class _CachedArrivals {
+  final DateTime at;
+  final List<BusArrival> arrivals;
+  _CachedArrivals(this.at, this.arrivals);
+}
+
 class BusTimesService {
   static const String baseUrl = 'https://servidor.autocareslozano.es/Alzira/webtiempos/PopupPoste.aspx';
+
+  // Últimos tiempos de cada parada (los rellena también el escaneo inicial),
+  // para que la ficha de una parada se abra con datos al momento.
+  static final Map<int, _CachedArrivals> _cache = {};
+
+  /// Tiempos guardados de la parada si tienen menos de [maxAge]; si no, null.
+  static List<BusArrival>? cachedArrivals(int stopId, {Duration maxAge = const Duration(seconds: 45)}) {
+    final c = _cache[stopId];
+    if (c == null || DateTime.now().difference(c.at) > maxAge) return null;
+    return c.arrivals;
+  }
 
   Future<List<BusArrival>> getArrivalTimes(int stopId) async {
     try {
@@ -54,7 +71,8 @@ class BusTimesService {
           }
         }
       }
-      
+
+      _cache[stopId] = _CachedArrivals(DateTime.now(), arrivals);
       return arrivals;
     } catch (e) {
       print('Error obteniendo tiempos de llegada: $e');
