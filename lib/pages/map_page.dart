@@ -18,6 +18,7 @@ import '../services/foreground_service.dart';
 import '../widgets/line_filter.dart';
 import '../widgets/conditions_banner.dart';
 import '../widgets/map_top_bar.dart';
+import '../utils/stop_search.dart';
 import '../widgets/stop_info_sheet.dart';
 import '../widgets/multi_line_stop_marker.dart';
 import '../widgets/animated_bus_marker.dart';
@@ -459,7 +460,7 @@ class MapPageState extends ConsumerState<MapPage> {
                   controller: _searchController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    hintText: 'Buscar parada...',
+                    hintText: AppLocalizations.of(context).searchStopByName,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.clear),
@@ -473,18 +474,15 @@ class MapPageState extends ConsumerState<MapPage> {
                     filled: true,
                     fillColor: Colors.grey[100],
                   ),
-                  onChanged: (value) {
-                    // Actualiza el filtro
-                  },
                 ),
               ),
               Expanded(
-                child: StatefulBuilder(
-                  builder: (context, setStateLocal) {
-                    final query = _searchController.text.toLowerCase();
-                    final filteredStops = stops.where((stop) {
-                      return stop.name.toLowerCase().contains(query);
-                    }).toList();
+                // Se reconstruye con cada letra que se escribe (antes el
+                // filtro no se actualizaba nunca).
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _searchController,
+                  builder: (context, value, _) {
+                    final filteredStops = filterStops(stops, value.text);
 
                     return ListView.builder(
                       controller: scrollController,
