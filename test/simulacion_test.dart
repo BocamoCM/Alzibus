@@ -48,10 +48,18 @@ class OperatorStub implements HttpClientAdapter {
   OperatorStub(this.minutesFor, {this.line = 'T'});
   String? Function(int stopId) minutesFor;
   final String line;
+  int calls = 0;
+  int inFlight = 0;
+  int maxInFlight = 0;
 
   @override
   Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
     final id = int.parse(options.uri.queryParameters['id']!);
+    calls++;
+    inFlight++;
+    if (inFlight > maxInFlight) maxInFlight = inFlight;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    inFlight--;
     final t = minutesFor(id);
     final row = t == null ? '' : '<tr><td>$line</td><td>DESTINO</td><td>$t</td></tr>';
     return ResponseBody.fromString('<table><tr><th>L</th><th>D</th><th>T</th></tr>$row</table>', 200);
@@ -288,6 +296,24 @@ void main() {
       expect(sim.buses, hasLength(1));
       final bus = sim.buses.values.single;
       expect(geo.nextStopIndex(bus.distance), 8);
+      sim.stopSimulation();
+    });
+
+    test('pocas peticiones al operador: 2 a la vez y 1 por bus al seguirlo', () async {
+      final l = straightLine(10, 500);
+      final stub = OperatorStub((id) => (id - 5000) >= 3 ? '${4 + (id - 5003) * 2} min' : '50 min');
+      ApiClient().dio.httpClientAdapter = stub;
+      final sim = BusSimulationService()
+        ..clock = (() => simNow)
+        ..setLineStops('T', l.stops);
+      sim.setGeometry('T', l.track);
+      await sim.initialScan(l.stops);
+      expect(stub.maxInFlight, lessThanOrEqualTo(2));
+      expect(stub.calls, 10, reason: 'una petición por parada en el escaneo inicial');
+      stub.calls = 0;
+      BusTimesService.clearCache();
+      await sim.trackNow();
+      expect(stub.calls, 1, reason: 'solo la próxima parada si su dato encaja');
       sim.stopSimulation();
     });
 

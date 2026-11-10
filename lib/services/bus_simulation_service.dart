@@ -45,6 +45,9 @@ class SimulatedBus {
   /// Rescans completos seguidos en los que no se ha vuelto a detectar.
   int missedScans;
 
+  /// Seguimientos seguidos sin un dato que cuadre con este bus.
+  int trackMisses;
+
   SimulatedBus({
     required this.lineId,
     required this.busId,
@@ -69,6 +72,7 @@ class SimulatedBus {
     this.segmentSpeedMps = BusSimulationService.defaultSpeedMps,
     this.etaSeconds,
     this.missedScans = 0,
+    this.trackMisses = 0,
   });
 }
 
@@ -185,9 +189,11 @@ class BusSimulationService {
     );
     _trackingTimer?.cancel();
     _trackingTimer = Timer.periodic(const Duration(seconds: 20), (_) => _trackBuses());
-    // Escaneo completo cada 3 min: detecta buses nuevos y quita los que ya no están.
+    // Sin reescaneo completo periódico (eran muchas peticiones al operador):
+    // cada 10 min solo se escanean las líneas que no tienen bus (p. ej. de
+    // noche, para que aparezca cuando empiece el servicio).
     _rescanTimer?.cancel();
-    _rescanTimer = Timer.periodic(const Duration(minutes: 3), (_) => _rescan());
+    _rescanTimer = Timer.periodic(const Duration(minutes: 10), (_) => _rescan(onlyLinesWithoutBus: true));
   }
 
   void stopSimulation() {
@@ -250,7 +256,9 @@ class BusSimulationService {
       }
     }
 
-    await Future.wait(List.generate(min(6, pending.length), (_) => worker()));
+    // 2 a la vez: pocas para no saturar el servidor del operador (su
+    // cortafuegos bloquea IPs que le hacen muchas peticiones).
+    await Future.wait(List.generate(min(2, pending.length), (_) => worker()));
     return result;
   }
 
@@ -392,19 +400,26 @@ class BusSimulationService {
   @visibleForTesting
   Future<void> trackNow() => _trackBuses();
 
-  Future<void> _rescan() async {
+  Future<void> _rescan({bool onlyLinesWithoutBus = false, String? onlyLine}) async {
     if (_isRescanning || _isDisposed) return;
     _isRescanning = true;
     try {
-      await _scanAllLines(initial: false);
+      Iterable<String>? lines;
+      if (onlyLine != null) {
+        lines = [onlyLine];
+      } else if (onlyLinesWithoutBus) {
+        lines = _lineStops.keys.where((l) => !_buses.values.any((b) => b.lineId == l));
+        if (lines.isEmpty) return;
+      }
+      await _scanAllLines(initial: false, lines: lines);
       _emitBuses();
     } finally {
       _isRescanning = false;
     }
   }
 
-  Future<void> _scanAllLines({required bool initial}) async {
-    for (final lineId in _lineStops.keys.toList()) {
+  Future<void> _scanAllLines({required bool initial, Iterable<String>? lines}) async {
+    for (final lineId in (lines ?? _lineStops.keys).toList()) {
       final geo = await _ensureGeometry(lineId);
       if (geo == null) continue;
       final minutes = await _fetchLineMinutes(lineId, List.generate(geo.stopCount, (i) => i));
@@ -497,21 +512,22 @@ class BusSimulationService {
   Future<void> _trackBus(SimulatedBus bus) async {
     final geo = _geometry[bus.lineId];
     if (geo == null) return;
-    final n = geo.stopCount;
     final k = geo.nextStopIndex(bus.distance);
-    final k2 = geo.nextOnRoute(k);
-    final k3 = geo.nextOnRoute(k2);
-    final minutes = await _fetchLineMinutes(bus.lineId, [k, k2, k3], reuse: const Duration(seconds: 5));
+    final lineSpeed = _lineSpeed[bus.lineId] ?? bus.segmentSpeedMps;
 
-    // Primero la próxima parada; si su dato no encaja (el bus real ya la ha
-    // pasado y marca el de la vuelta siguiente), la de después.
-    for (final (stop, following) in [(k, k2), (k2, k3)]) {
-      final m = minutes[stop];
-      if (m == null || m > maxUsefulMinutes) continue;
-      if (!_plausible(bus, geo, stop, m)) continue;
-      final v = segmentSpeed(geo, stop, m, minutes[following], _lineSpeed[bus.lineId] ?? bus.segmentSpeedMps);
-      _setEta(bus, geo, stop, m, v, clock());
+    // Una sola parada (la próxima). Solo si su dato no encaja (el bus real ya
+    // la ha pasado y marca el de la vuelta siguiente) se pregunta la de después.
+    for (final stop in [k, geo.nextOnRoute(k)]) {
+      final m = (await _fetchLineMinutes(bus.lineId, [stop], reuse: const Duration(seconds: 5)))[stop];
+      if (m == null || m > maxUsefulMinutes || !_plausible(bus, geo, stop, m)) continue;
+      _setEta(bus, geo, stop, m, lineSpeed, clock());
+      bus.trackMisses = 0;
       return;
+    }
+    // Un minuto sin datos que cuadren (3 seguimientos): se reescanea solo su línea.
+    if (++bus.trackMisses >= 3) {
+      bus.trackMisses = 0;
+      unawaited(_rescan(onlyLine: bus.lineId));
     }
   }
 
