@@ -397,6 +397,7 @@ app.get('/api/proxy/bus-times', async (req, res) => {
 // resultado cacheado a toda la app. Así el gasto de la cuota NO depende del
 // número de usuarios (≈480 llamadas/día con TTL de 3 min) y la key de TomTom
 // vive solo aquí (nunca en el APK).
+const { summarizeIncidents } = require('./src/utils/traffic');
 let _trafficCache = { data: null, at: 0 };
 const TRAFFIC_TTL_MS = 3 * 60 * 1000; // 3 minutos
 
@@ -414,7 +415,7 @@ app.get('/api/traffic', async (req, res) => {
     const params = new URLSearchParams({
         key,
         bbox: '-0.46,39.13,-0.41,39.17',
-        fields: '{incidents{properties{iconCategory}}}',
+        fields: '{incidents{properties{iconCategory,magnitudeOfDelay,delay}}}',
         language: 'es-ES',
     });
     const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?${params}`;
@@ -428,8 +429,8 @@ app.get('/api/traffic', async (req, res) => {
             return res.json({ unknown: true });
         }
         const json = await r.json();
-        const incidents = Array.isArray(json.incidents) ? json.incidents : [];
-        const data = { incidentCount: incidents.length, hasIncidents: incidents.length > 0 };
+        // Solo atascos con retraso real (no obras ni cortes de carril): ver utils/traffic.js
+        const data = summarizeIncidents(json.incidents);
         _trafficCache = { data, at: now };
         return res.json(data);
     } catch (err) {
