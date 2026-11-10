@@ -93,6 +93,13 @@ class DetectedBus {
 class BusSimulationService {
   BusSimulationService();
 
+  /// Pausa entre peticiones al operador.
+  @visibleForTesting
+  Duration requestGap = const Duration(milliseconds: 80);
+
+  /// Último reescaneo de cada línea por no cuadrar su bus (como mucho uno cada 5 min).
+  final Map<String, DateTime> _lastLineRescan = {};
+
   /// Reloj de la simulación (los tests lo sustituyen para controlar el tiempo).
   @visibleForTesting
   DateTime Function() clock = DateTime.now;
@@ -242,7 +249,12 @@ class BusSimulationService {
         try {
           final stopId = stops[k]['id'] as int;
           // Paradas compartidas entre líneas: si se acaban de consultar, no se repite.
-          final arrivals = BusTimesService.cachedArrivals(stopId, maxAge: reuse) ?? await _busTimesService.getArrivalTimes(stopId);
+          var arrivals = BusTimesService.cachedArrivals(stopId, maxAge: reuse);
+          if (arrivals == null) {
+            arrivals = await _busTimesService.getArrivalTimes(stopId);
+            // Pausa entre peticiones, como en la 5.5.0, para no parecer un ataque.
+            if (requestGap > Duration.zero) await Future<void>.delayed(requestGap);
+          }
           int? best;
           for (final a in arrivals) {
             if (a.line.trim().toUpperCase() != lineId) continue;
@@ -256,9 +268,9 @@ class BusSimulationService {
       }
     }
 
-    // 2 a la vez: pocas para no saturar el servidor del operador (su
-    // cortafuegos bloquea IPs que le hacen muchas peticiones).
-    await Future.wait(List.generate(min(2, pending.length), (_) => worker()));
+    // De una en una, como hacía la 5.5.0: el cortafuegos del operador bloquea
+    // las IPs que le hacen muchas peticiones seguidas.
+    await worker();
     return result;
   }
 
@@ -527,7 +539,11 @@ class BusSimulationService {
     // Un minuto sin datos que cuadren (3 seguimientos): se reescanea solo su línea.
     if (++bus.trackMisses >= 3) {
       bus.trackMisses = 0;
-      unawaited(_rescan(onlyLine: bus.lineId));
+      final last = _lastLineRescan[bus.lineId];
+      if (last == null || clock().difference(last) >= const Duration(minutes: 5)) {
+        _lastLineRescan[bus.lineId] = clock();
+        unawaited(_rescan(onlyLine: bus.lineId));
+      }
     }
   }
 

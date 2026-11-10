@@ -123,7 +123,7 @@ void main() {
   group('BusSimulationService.initialScan', () {
     List<Map<String, dynamic>> route(int n) => List.generate(n, (i) => {'id': 2000 + i, 'name': 'P$i', 'lat': 39.15 + i * 0.001, 'lng': -0.43});
 
-    test('consulta como mucho 6 paradas a la vez, cada una una sola vez, y salta las de solo CEM', () async {
+    test('consulta las paradas de una en una, cada una una sola vez, y salta las de solo CEM', () async {
       final stops = [
         ...route(20).map((s) => {...s, 'lines': ['L1']}),
         {'id': 79, 'name': 'CEMENTERI', 'lat': 39.15, 'lng': -0.39, 'lines': ['CEM']},
@@ -136,26 +136,26 @@ void main() {
       );
       ApiClient().dio.httpClientAdapter = adapter;
 
-      final sim = BusSimulationService()..setLineStops('L1', route(20));
-      final sw = Stopwatch()..start();
+      final sim = BusSimulationService()
+        ..requestGap = Duration.zero
+        ..setLineStops('L1', route(20));
       await sim.initialScan(stops);
-      sw.stop();
 
       final ids = adapter.requests.map(stopIdOf).toList();
       expect(ids, hasLength(20));
       expect(ids.toSet(), hasLength(20), reason: 'ninguna parada se consulta dos veces');
       expect(ids, isNot(contains(79)), reason: 'la parada que solo es CEM no se consulta');
       expect(ids, isNot(contains(0)));
-      expect(adapter.maxInFlight, inInclusiveRange(2, 6));
-      // 20 paradas × 40 ms en serie serían 800 ms; en paralelo bastante menos.
-      expect(sw.elapsedMilliseconds, lessThan(600));
+      expect(adapter.maxInFlight, 1, reason: 'nunca dos peticiones a la vez al operador');
       expect(sim.buses.values.map((b) => b.lineId), contains('L1'), reason: 'se crea el bus de la L1');
       sim.stopSimulation();
     });
 
     test('si todas las consultas fallan termina sin buses y sin lanzar', () async {
       ApiClient().dio.httpClientAdapter = FakeAdapter(handler: (o) => throw DioException(requestOptions: o, message: 'sin red'));
-      final sim = BusSimulationService()..setLineStops('L1', route(8));
+      final sim = BusSimulationService()
+        ..requestGap = Duration.zero
+        ..setLineStops('L1', route(8));
       await sim.initialScan(route(8).map((s) => {...s, 'lines': ['L1']}).toList());
       expect(sim.buses, isEmpty);
     });
@@ -163,7 +163,9 @@ void main() {
     test('con una lista de paradas vacía no hace ninguna petición', () async {
       final adapter = FakeAdapter();
       ApiClient().dio.httpClientAdapter = adapter;
-      final sim = BusSimulationService()..setLineStops('L1', route(3));
+      final sim = BusSimulationService()
+        ..requestGap = Duration.zero
+        ..setLineStops('L1', route(3));
       await sim.initialScan([]);
       expect(adapter.requests, isEmpty);
       expect(sim.buses, isEmpty);
@@ -173,7 +175,9 @@ void main() {
       ApiClient().dio.httpClientAdapter = FakeAdapter(
         handler: (o) => ResponseBody.fromString(operatorHtml([['L1', 'HOSPITAL', '${stopIdOf(o)! % 10} min']]), 200),
       );
-      final sim = BusSimulationService()..setLineStops('L1', route(5));
+      final sim = BusSimulationService()
+        ..requestGap = Duration.zero
+        ..setLineStops('L1', route(5));
       await sim.initialScan(route(5).map((s) => {...s, 'lines': ['L1']}).toList());
       for (var i = 0; i < 5; i++) {
         expect(BusTimesService.cachedArrivals(2000 + i), isNotNull);

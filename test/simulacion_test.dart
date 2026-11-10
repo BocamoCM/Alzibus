@@ -191,6 +191,7 @@ void main() {
       final l = straightLine(stops, gap);
       ApiClient().dio.httpClientAdapter = OperatorStub((id) => minutes(id - 5000));
       final sim = BusSimulationService()
+        ..requestGap = Duration.zero
         ..clock = (() => simNow)
         ..setLineStops('T', l.stops);
       sim.setGeometry('T', l.track);
@@ -299,16 +300,17 @@ void main() {
       sim.stopSimulation();
     });
 
-    test('pocas peticiones al operador: 2 a la vez y 1 por bus al seguirlo', () async {
+    test('pocas peticiones al operador: de una en una y 1 por bus al seguirlo', () async {
       final l = straightLine(10, 500);
       final stub = OperatorStub((id) => (id - 5000) >= 3 ? '${4 + (id - 5003) * 2} min' : '50 min');
       ApiClient().dio.httpClientAdapter = stub;
       final sim = BusSimulationService()
+        ..requestGap = Duration.zero
         ..clock = (() => simNow)
         ..setLineStops('T', l.stops);
       sim.setGeometry('T', l.track);
       await sim.initialScan(l.stops);
-      expect(stub.maxInFlight, lessThanOrEqualTo(2));
+      expect(stub.maxInFlight, 1, reason: 'de una en una');
       expect(stub.calls, 10, reason: 'una petición por parada en el escaneo inicial');
       stub.calls = 0;
       BusTimesService.clearCache();
@@ -345,6 +347,7 @@ void main() {
 
       ApiClient().dio.httpClientAdapter = OperatorStub((id) => timeFor(stops.indexWhere((s) => s['id'] == id)), line: 'L1');
       final sim = BusSimulationService()
+        ..requestGap = Duration.zero
         ..clock = (() => simNow)
         ..setLineStops('L1', stops);
       sim.setGeometry('L1', loadTrack('L1'));
