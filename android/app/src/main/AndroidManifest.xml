@@ -54,7 +54,8 @@
         </intent>
     </queries>
 
-    <uses-feature android:name="android.hardware.nfc" android:required="true" />
+    <!-- Opcional: sin NFC la app funciona igual (mapa, horarios, avisos); la pestaña NFC lo detecta y avisa. -->
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
